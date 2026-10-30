@@ -19,7 +19,7 @@ from .frame import Frame, Span, digest
 class Trial:
     """One intervention, applied: the body the scorer will read."""
 
-    id: str  # baseline, repeat, ablation, cumulative, sham-1, presentation, bypass
+    id: str  # baseline, repeat, ablation, cumulative, sham-1, presentation, bypass, control
     kind: str
     removed: tuple[str, ...]
     renamed: tuple[tuple[str, str], ...]
@@ -105,6 +105,9 @@ def plan(frame: Frame) -> list[Trial]:
     if iv.get("bypass"):
         cut = tuple(iv["bypass"])
         trials.append(Trial("bypass", "bypass", cut, (), without(spans, set(cut))))
+    if iv.get("control"):
+        cut = tuple(iv["control"])
+        trials.append(Trial("control", "control", cut, (), without(spans, set(cut))))
     return trials
 
 

@@ -47,6 +47,8 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
         (lambda r: r["interventions"].update(presentation={"a": "x", "A": "y"}), "twice"),
         (lambda r: r["interventions"].update(bypass=["r2"]), "the ablation again"),
         (lambda r: r["interventions"].update(cumulative=["r2"]), "adds no span"),
+        (lambda r: r["interventions"].update(control=["r2"]), "the ablation again"),
+        (lambda r: r["interventions"].update(control=["r9"]), "control names a span"),
     ],
 )
 def test_a_frame_that_cannot_be_assessed_is_refused(raw, change, message):
@@ -77,6 +79,13 @@ def test_the_plan_is_fixed_by_the_frame_alone(raw):
     ]
     assert [t.id for t in plan(parse(raw))] == [t.id for t in trials]
     assert [t.removed for t in plan(parse(raw))] == [t.removed for t in trials]
+
+
+def test_the_control_removes_what_it_names_last(raw):
+    raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
+    *_, control = plan(parse(raw))
+    assert control.id == "control" and control.removed == ("r1", "r2", "r3", "r4")
+    assert control.text == "These rules decide every request."
 
 
 def test_ablation_removes_the_anchors_and_nothing_else(raw):

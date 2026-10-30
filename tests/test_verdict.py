@@ -55,6 +55,31 @@ def test_cooled_when_ablation_leaves_it(raw):
     assert verdict(situate(raw)).category == COOLED
 
 
+def test_cooled_needs_a_scorer_that_can_move(raw):
+    # every trial declines: a blind scorer and an idle relation look the same
+    blind = verdict(situate(raw))
+    assert blind.category == COOLED
+    assert blind.obligations == ["discrimination: no control trial shows the scorer can move"]
+    raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
+    blind = verdict(situate(raw))
+    assert blind.category == UNRESOLVED
+    assert blind.evidence == [
+        "ablation left it at decline, and so did the control: the scorer cannot tell"
+    ]
+    seeing = verdict(situate(raw), control="grant")
+    assert seeing.category == COOLED and seeing.obligations == []
+    assert seeing.evidence == [
+        "ablation left it at decline",
+        "the control moved it decline -> grant: the scorer can tell",
+    ]
+
+
+def test_outside_scope_keeps_its_scope_check_open(raw):
+    raw["outsideScope"] = "the recipient never reads refunds"
+    finding = verdict(situate(raw), ablation="grant")
+    assert finding.obligations == ["independent scope check: the exclusion is declared, not tested"]
+
+
 def test_misaligned_when_ablation_moves_it_where_the_frame_does_not_allow(raw):
     raw["allowed"] = {"ablation": ["unclear"]}
     finding = verdict(situate(raw), ablation="grant")

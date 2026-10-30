@@ -11,14 +11,21 @@ scripts/load_bearing.py, https://github.com/mirzahusadzic/after-the-poem):
 2. coupled but misaligned: presentation moves it;
 3. coupled but misaligned: ablation moves it to an observation the frame does
    not allow (for ordered labels, the wrong way);
-4. cooled: ablation leaves it as it was;
+4. cooled: ablation leaves it as it was, unless a control trial (spans whose
+   removal must move any scorer that reads) left it too: then unresolved, as
+   the scorer cannot tell;
 5. unresolved: a sham moves it (the change is not specific to the relation);
 6. carried: otherwise.
 Outside scope only when the frame declares the exclusion; never inferred.
 
-Two carriage checks are recorded as open obligations unless the trials settle
-them: no hidden fallback (a bypass trial) and materialization (whether the
-observation is the form the recipient receives, which the frame must say).
+What the trials do not settle is recorded as an open obligation beside the
+category. Carried: no hidden fallback (a bypass trial), presentation
+invariance and specificity when their trials were not run, and
+materialization (whether the observation is the form the recipient
+receives, which the frame must say). Cooled: discrimination, unless a
+control moved it. Outside scope: the independent scope check, which only
+the receiving owner can make. Traceability rests on the records: each
+names its frame, battery, body, prompt and what served it.
 """
 
 from __future__ import annotations
@@ -125,6 +132,7 @@ def _finding(
     if frame.outside_scope:
         finding.category = OUTSIDE
         say(f"declared outside scope: {frame.outside_scope}")
+        finding.obligations.append("independent scope check: the exclusion is declared, not tested")
         return finding
     missing = [t for t, v in levels.items() if v is None]
     if missing:
@@ -149,8 +157,15 @@ def _finding(
         say(f"ablation moved it {base} -> {ablated}, which the frame does not allow")
         return finding
     if ablated == base:
+        if levels.get("control") == base:
+            say(f"ablation left it at {base}, and so did the control: the scorer cannot tell")
+            return finding
         finding.category = COOLED
         say(f"ablation left it at {base}")
+        if "control" in levels:
+            say(f"the control moved it {base} -> {levels['control']}: the scorer can tell")
+        else:
+            finding.obligations.append("discrimination: no control trial shows the scorer can move")
         if levels.get("cumulative") not in (None, base):
             say(
                 f"the cumulative ablation moved it to {levels['cumulative']}: carried elsewhere too"

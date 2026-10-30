@@ -18,7 +18,7 @@ from typing import Any
 # The situated relation L = (I, B, r, g, P, T, B0, C, p): each must be said
 # (the body B and the baseline B0 are checked on their own).
 SITUATION = ("relation", "locus", "role", "grain", "purpose", "trajectory", "crossing", "promise")
-INTERVENTIONS = ("repeat", "ablation", "cumulative", "sham", "presentation", "bypass")
+INTERVENTIONS = ("repeat", "ablation", "cumulative", "sham", "presentation", "bypass", "control")
 # Every key a frame may have: one misspelt is refused, never silently ignored.
 KEYS = {
     "name",
@@ -255,7 +255,7 @@ def _check_interventions(
     ids = [span.id for span in spans]
     if not isinstance(interventions.get("repeat", False), bool):
         raise FrameError("repeat is true or false")
-    for key in ("cumulative", "bypass"):
+    for key in ("cumulative", "bypass", "control"):
         value = interventions.get(key)
         if value is None:
             continue
@@ -264,8 +264,9 @@ def _check_interventions(
         for span_id in value:
             if span_id not in ids:
                 raise FrameError(f"{key} names a span not in the body: {span_id}")
-    if set(interventions.get("bypass") or []) == set(anchors):
-        raise FrameError("bypass removes exactly the anchors: it is the ablation again")
+    for key in ("bypass", "control"):
+        if set(interventions.get(key) or []) == set(anchors):
+            raise FrameError(f"{key} removes exactly the anchors: it is the ablation again")
     if "cumulative" in interventions and set(interventions["cumulative"]) <= set(anchors):
         raise FrameError("cumulative adds no span to the anchors: it is the ablation again")
     sham = interventions.get("sham")
