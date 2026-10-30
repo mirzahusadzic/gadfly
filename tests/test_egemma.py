@@ -41,8 +41,8 @@ def key(monkeypatch):
 def server():
     servers = []
 
-    def start(answer):
-        servers.append(Fake(answer))
+    def start(answer, routes=None):
+        servers.append(Fake(answer, routes))
         return servers[-1]
 
     yield start
@@ -159,3 +159,44 @@ def test_a_wait_is_capped_and_retries_end_in_an_opening(frame, key, server):
     observation = EGemma(fake.base + "/judge", sleep=waits.append).observe(frame, "p", 32)
     assert observation.opening == "eGemma answered 503 after 3 retries"
     assert waits == [60.0, 60.0, 60.0] and len(fake.requests) == 4
+
+
+class Clock:
+    """Time that moves only when the battery sleeps."""
+
+    def __init__(self):
+        self.now, self.waits = 100.0, []
+
+    def __call__(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.waits.append(seconds)
+        self.now += seconds
+
+
+def test_calls_are_paced_to_the_budget_egemma_publishes(raw, key, server):
+    limits = json.dumps({"judge": {"calls": 2, "seconds": 10}}).encode()
+    fake = server(reply("decline"), routes={"/rate-limits": (200, {}, limits)})
+    raw["battery"] = {"kind": "egemma"}
+    frame, clock = situate(raw), Clock()
+    battery = EGemma(fake.base + "/judge", sleep=clock.sleep, clock=clock)
+    battery.check(frame)
+    assert battery.budget == (2, 10.0)
+    for _ in range(3):
+        battery.observe(frame, "p", 32)
+    assert clock.waits == [10.0]  # the third waits until the first two leave the window
+    clock.now += 4  # t=114: only the call at 110 is in the window
+    battery.observe(frame, "p", 32)
+    assert clock.waits == [10.0]
+    battery.observe(frame, "p", 32)  # 110 and 114 fill it: wait until 120
+    assert clock.waits == [10.0, 6.0]
+
+
+def test_without_a_published_budget_only_the_backoff_remains(raw, key, server):
+    fake = server(reply("decline"), routes={"/rate-limits": (404, {}, b"{}")})
+    raw["battery"] = {"kind": "egemma"}
+    battery = EGemma(fake.base + "/judge", sleep=lambda s: None)
+    battery.check(situate(raw))
+    assert battery.budget is None
+    assert battery.observe(situate(raw), "p", 32).label == "decline"

@@ -10,15 +10,23 @@ class Fake:
     """A loopback server that records each request and replies as told: one
     reply for every request, or a list taken in order (the last one repeats)."""
 
-    def __init__(self, reply):
-        self.requests, self.reply = [], reply
+    def __init__(self, reply, routes=None):
+        self.requests, self.reply, self.routes = [], reply, dict(routes or {})
         fake = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
-                length = int(self.headers["content-length"])
+                if self.path in fake.routes:  # a route of its own, not recorded
+                    status, headers, body = fake.routes[self.path]
+                    self.send_response(status)
+                    for key, value in headers.items():
+                        self.send_header(key, value)
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+                length = int(self.headers.get("content-length") or 0)
                 headers = {k.lower(): v for k, v in self.headers.items()}
-                fake.requests.append((headers, json.loads(self.rfile.read(length))))
+                fake.requests.append((headers, json.loads(self.rfile.read(length) or b"null")))
                 if isinstance(fake.reply, list):
                     reply = fake.reply.pop(0) if len(fake.reply) > 1 else fake.reply[0]
                 else:
@@ -30,7 +38,13 @@ class Fake:
                 self.end_headers()
                 self.wfile.write(body)
 
-            do_GET = do_POST
+            def do_GET(self):
+                status, headers, body = fake.routes.get(self.path, (404, {}, b"{}"))
+                self.send_response(status)
+                for key, value in headers.items():
+                    self.send_header(key, value)
+                self.end_headers()
+                self.wfile.write(body)
 
             def log_message(self, *args):
                 pass

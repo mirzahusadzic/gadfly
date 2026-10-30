@@ -14,9 +14,11 @@ What this battery promises, whatever the frame says:
   and no redirect;
 - each call has a timeout, the budget's cap on output tokens, and a cap on
   what it reads back;
-- it calls one at a time, and when eGemma is busy (429 or 503) it waits as
-  long as eGemma asks, at most a minute, and tries at most three more times
-  before the call becomes an opening;
+- it calls one at a time and paces itself to the judge budget eGemma
+  publishes at GET /rate-limits (read once, before the first call); when
+  eGemma is busy anyway (429 or 503) it waits as long as eGemma asks, at most
+  a minute, and tries at most three more times before the call becomes an
+  opening;
 - the key comes from the file named by EGEMMA_API_KEY_FILE, else from
   EGEMMA_API_KEY or WORKBENCH_API_KEY, and is never logged or recorded.
 """
@@ -29,8 +31,10 @@ import re
 import time
 import urllib.error
 import urllib.request
+from collections import deque
 from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import urlparse
 
 from ..frame import Frame
 from ..types import Observation
@@ -99,8 +103,45 @@ class EGemma:
         url: str = DEFAULT_URL,
         timeout: float = 120.0,
         sleep: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.monotonic,
     ):
         self.url, self.timeout, self.sleep = loopback(url, "eGemma"), timeout, sleep
+        self.clock = clock
+        self.budget: tuple[int, float] | None = None  # (calls, seconds), from /rate-limits
+        self.starts: deque[float] = deque()
+
+    def read_budget(self) -> None:
+        """The judge budget eGemma publishes; without one, only the backoff."""
+        parsed = urlparse(self.url)
+        request = urllib.request.Request(f"{parsed.scheme}://{parsed.netloc}/rate-limits")
+        try:
+            with opener().open(request, timeout=10) as response:
+                limits = json.loads(response.read(MAX_RESPONSE_BYTES))
+            calls, seconds = limits["judge"]["calls"], limits["judge"]["seconds"]
+        except (OSError, ValueError, KeyError, TypeError):
+            self.budget = None
+            return
+        valid = isinstance(calls, int) and not isinstance(calls, bool) and calls >= 1
+        valid = valid and isinstance(seconds, int | float) and seconds > 0
+        self.budget = (calls, float(seconds)) if valid else None
+
+    def pace(self) -> None:
+        """Wait until one more call fits the budget's window, then count it."""
+        if self.budget is None:
+            return
+        calls, seconds = self.budget
+
+        def prune(now: float) -> None:  # eGemma counts the calls of the last `seconds`
+            while self.starts and now - self.starts[0] >= seconds:
+                self.starts.popleft()
+
+        now = self.clock()
+        prune(now)
+        if len(self.starts) >= calls:
+            self.sleep(self.starts[0] + seconds - now)
+            now = self.clock()
+            prune(now)
+        self.starts.append(now)
 
     def check(self, frame: Frame) -> None:
         battery = frame.battery
@@ -116,6 +157,7 @@ class EGemma:
             raise ValueError("battery.temperature is a number between 0 and 2")
         check_output(battery)
         _key()  # no key, no run: refuse before the first call, not at each
+        self.read_budget()
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
         request = urllib.request.Request(
@@ -125,6 +167,7 @@ class EGemma:
             headers={"content-type": "application/json", "authorization": f"Bearer {_key()}"},
         )
         for attempt in range(RETRIES + 1):
+            self.pace()  # a retry is a call too: eGemma's limiter counts it
             try:
                 with opener().open(request, timeout=self.timeout) as response:
                     body = response.read(MAX_RESPONSE_BYTES + 1)
