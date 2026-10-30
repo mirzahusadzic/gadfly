@@ -73,7 +73,8 @@ def test_a_call_sends_the_key_and_reads_the_label(frame, key, server):
         (reply(None, text='{"label": "dec', truncated=True), "the answer was cut at its token cap"),
         (reply(None), "the answer is not JSON"),
         (reply("refund"), "the answer's /label is not one of this frame's labels"),
-        ((429, {}, b"{}"), "eGemma answered 429"),
+        ((401, {}, b"{}"), "eGemma answered 401"),
+        ((422, {}, b"{}"), "eGemma answered 422"),
         ((200, {}, b"not json"), "eGemma's reply is not JSON"),
     ],
 )
@@ -132,3 +133,29 @@ def test_a_whole_run_through_the_battery(frame, key, server):
     assert result.stopped is None and len(fake.requests) == calls_needed(frame)
     [finding] = judge(frame, result.records)
     assert finding.category == "cooled"  # a battery that always declines: no influence
+
+
+def test_a_busy_egemma_is_waited_for_as_long_as_it_asks(frame, key, server):
+    waits = []
+    fake = server(
+        [
+            (
+                429,
+                {},
+                json.dumps({"detail": "Rate limit exceeded. Try again in 60 seconds."}).encode(),
+            ),
+            (503, {"retry-after": "2"}, b"{}"),
+            reply("decline"),
+        ]
+    )
+    observation = EGemma(fake.base + "/judge", sleep=waits.append).observe(frame, "p", 32)
+    assert observation.label == "decline" and waits == [60.0, 2.0]
+    assert len(fake.requests) == 3
+
+
+def test_a_wait_is_capped_and_retries_end_in_an_opening(frame, key, server):
+    waits = []
+    fake = server((503, {"retry-after": "3600"}, b"{}"))
+    observation = EGemma(fake.base + "/judge", sleep=waits.append).observe(frame, "p", 32)
+    assert observation.opening == "eGemma answered 503 after 3 retries"
+    assert waits == [60.0, 60.0, 60.0] and len(fake.requests) == 4

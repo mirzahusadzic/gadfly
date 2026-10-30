@@ -14,6 +14,9 @@ What this battery promises, whatever the frame says:
   and no redirect;
 - each call has a timeout, the budget's cap on output tokens, and a cap on
   what it reads back;
+- it calls one at a time, and when eGemma is busy (429 or 503) it waits as
+  long as eGemma asks, at most a minute, and tries at most three more times
+  before the call becomes an opening;
 - the key comes from the file named by EGEMMA_API_KEY_FILE, else from
   EGEMMA_API_KEY or WORKBENCH_API_KEY, and is never logged or recorded.
 """
@@ -22,8 +25,11 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
 
 from ..frame import Frame
@@ -32,6 +38,9 @@ from .critic import MAX_RESPONSE_BYTES, check_output, label_at, loopback, opener
 
 DEFAULT_URL = os.environ.get("EGEMMA_URL", "http://127.0.0.1:8000").rstrip("/") + "/judge"
 BATTERY_KEYS = {"kind", "temperature", "output"}
+BUSY = (429, 503)  # eGemma's rate limit, and its queue when full
+RETRIES = 3
+MAX_WAIT = 60.0
 
 
 def _key() -> str:
@@ -45,6 +54,26 @@ def _key() -> str:
     if not key:
         raise RuntimeError("no eGemma key: set EGEMMA_API_KEY_FILE or EGEMMA_API_KEY")
     return key
+
+
+def _wait(error: urllib.error.HTTPError) -> float:
+    """How long eGemma asks a busy caller to wait: its Retry-After header, or
+    the seconds its rate limiter names in the detail; at most MAX_WAIT."""
+    header = error.headers.get("retry-after") if error.headers else None
+    seconds = None
+    if header is not None:
+        try:
+            seconds = float(header)
+        except ValueError:
+            seconds = None
+    if seconds is None:
+        try:
+            detail = str(json.loads(error.read(4096) or b"{}").get("detail", ""))
+        except (ValueError, AttributeError):
+            detail = ""
+        found = re.search(r"Try again in (\d+(?:\.\d+)?) seconds?", detail)
+        seconds = float(found.group(1)) if found else 1.0
+    return min(max(seconds, 0.0), MAX_WAIT)
 
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
@@ -65,8 +94,13 @@ class EGemma:
 
     name = "egemma"
 
-    def __init__(self, url: str = DEFAULT_URL, timeout: float = 120.0):
-        self.url, self.timeout = loopback(url, "eGemma"), timeout
+    def __init__(
+        self,
+        url: str = DEFAULT_URL,
+        timeout: float = 120.0,
+        sleep: Callable[[float], None] = time.sleep,
+    ):
+        self.url, self.timeout, self.sleep = loopback(url, "eGemma"), timeout, sleep
 
     def check(self, frame: Frame) -> None:
         battery = frame.battery
@@ -90,11 +124,16 @@ class EGemma:
             method="POST",
             headers={"content-type": "application/json", "authorization": f"Bearer {_key()}"},
         )
-        try:
-            with opener().open(request, timeout=self.timeout) as response:
-                body = response.read(MAX_RESPONSE_BYTES + 1)
-        except urllib.error.HTTPError as error:
-            return Observation(label=None, opening=f"eGemma answered {error.code}")
+        for attempt in range(RETRIES + 1):
+            try:
+                with opener().open(request, timeout=self.timeout) as response:
+                    body = response.read(MAX_RESPONSE_BYTES + 1)
+                break
+            except urllib.error.HTTPError as error:
+                if error.code not in BUSY or attempt == RETRIES:
+                    tried = f" after {attempt} retries" if attempt else ""
+                    return Observation(label=None, opening=f"eGemma answered {error.code}{tried}")
+                self.sleep(_wait(error))
         if len(body) > MAX_RESPONSE_BYTES:
             return Observation(label=None, opening="the answer exceeded the size cap")
         try:
