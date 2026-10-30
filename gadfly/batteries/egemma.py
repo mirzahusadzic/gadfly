@@ -191,6 +191,16 @@ class EGemma:
             )
         if reply.get("answer") is None:
             return Observation(label=None, opening="the answer is not JSON", raw=text, usage=usage)
+        if reply.get("valid") is False:
+            # eGemma checks the whole schema; its grammar cannot hold every keyword.
+            first = (reply.get("violations") or [{}])[0]
+            where = f"{first.get('path', '')} {first.get('message', '')}".strip()
+            return Observation(
+                label=None,
+                opening=f"the answer breaks its schema: {where}"[:300],
+                raw=text,
+                usage=usage,
+            )
         label, opening = label_at(reply["answer"], frame)
         if label is None:
             return Observation(label=None, opening=opening, raw=text, usage=usage)

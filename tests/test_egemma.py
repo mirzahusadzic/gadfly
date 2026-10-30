@@ -200,3 +200,19 @@ def test_without_a_published_budget_only_the_backoff_remains(raw, key, server):
     battery.check(situate(raw))
     assert battery.budget is None
     assert battery.observe(situate(raw), "p", 32).label == "decline"
+
+
+def test_an_answer_that_breaks_its_schema_is_an_opening(frame, key, server):
+    # eGemma checks the whole schema; its grammar cannot hold every keyword.
+    breaks = reply(
+        "decline", valid=False, violations=[{"path": "/score", "message": "0 is less than 10"}]
+    )
+    fake = server(breaks)
+    observation = EGemma(fake.base + "/judge").observe(frame, "p", 32)
+    assert observation.label is None
+    assert observation.opening == "the answer breaks its schema: /score 0 is less than 10"
+
+
+def test_a_reply_without_the_valid_field_is_read_as_before(frame, key, server):
+    fake = server(reply("decline"))
+    assert EGemma(fake.base + "/judge").observe(frame, "p", 32).label == "decline"
