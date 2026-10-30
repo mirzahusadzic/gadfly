@@ -317,3 +317,29 @@ def test_the_listed_policy_names_the_category_and_lists_what_is_open(raw):
     assert raw["carriage"] == "listed"
     assert verdict(situate(raw), ablation="grant").category == CARRIED
     assert verdict(situate(raw)).category == COOLED
+
+
+CHECKED = {
+    "owner": "the refunds team",
+    "statement": "replies never quote the refund rule",
+    "source": "scope review SR-4",
+    "encounter": "the March policy review",
+}
+
+
+def test_outside_scope_needs_the_owners_scope_check(raw):
+    # the essay: the declared exclusion AND an independent scope check
+    raw.pop("carriage")
+    raw["outsideScope"] = "the recipient never reads refunds"
+    declared = verdict(situate(raw), ablation="grant")
+    assert declared.category == UNRESOLVED
+    assert declared.obligations == [
+        "independent scope check: the exclusion is declared, not tested"
+    ]
+    raw["scopeCheck"] = CHECKED
+    checked = verdict(situate(raw), ablation="grant")
+    assert checked.category == OUTSIDE and checked.obligations == []
+    assert checked.evidence[-1] == (
+        "the refunds team checked the scope at the March policy review: "
+        "replies never quote the refund rule (scope review SR-4)"
+    )

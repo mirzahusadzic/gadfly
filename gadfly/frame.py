@@ -36,7 +36,10 @@ KEYS = {
     "materialized",
     "outsideScope",
     "carriage",
+    "scopeCheck",
 }
+# The receiving owner's independent check of an outsideScope exclusion.
+SCOPE_CHECK = {"owner", "statement", "source", "encounter"}
 # How a category treats the checks its trials left open: under all-checks
 # (the default) carried and cooled need theirs passed; under listed they are
 # listed beside the category, as After the Poem's study reads them.
@@ -151,6 +154,19 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("materialized is true or false")
     if raw.get("carriage", CARRIAGE[0]) not in CARRIAGE:
         raise FrameError("carriage is all-checks or listed")
+    check = raw.get("scopeCheck")
+    if check is not None:
+        if raw.get("outsideScope") is None:
+            raise FrameError("scopeCheck checks an outsideScope exclusion: declare the exclusion")
+        if not (
+            isinstance(check, dict)
+            and set(check) == SCOPE_CHECK
+            and all(isinstance(v, str) and v.strip() for v in check.values())
+        ):
+            raise FrameError(
+                "scopeCheck says who checked the exclusion (owner), what they found "
+                "(statement), from what (source) and when (encounter)"
+            )
     scope = raw.get("outsideScope")
     if scope is not None and not (isinstance(scope, str) and scope.strip()):
         raise FrameError("outsideScope is the receiving owner's exclusion, in words")

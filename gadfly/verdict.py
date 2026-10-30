@@ -190,9 +190,24 @@ def _finding(
 ) -> Finding:
     finding = Finding(input=x, category=UNRESOLVED, levels=levels)
     if frame.outside_scope:
-        finding.category = OUTSIDE
+        # The exclusion is the owner's; the trials do not test it, so only
+        # its own check is open or settled here.
         finding.evidence.append(f"declared outside scope: {frame.outside_scope}")
-        finding.obligations.append("independent scope check: the exclusion is declared, not tested")
+        check = frame.raw.get("scopeCheck")
+        if check:
+            finding.category = OUTSIDE
+            finding.evidence.append(
+                f"{check['owner']} checked the scope at {check['encounter']}: "
+                f"{check['statement']} ({check['source']})"
+            )
+        else:
+            finding.obligations.append(
+                "independent scope check: the exclusion is declared, not tested"
+            )
+            if frame.raw.get("carriage", "all-checks") == "listed":
+                finding.category = OUTSIDE
+            else:
+                finding.evidence.append("not outside scope until the owner's check is recorded")
         return finding
     _read(frame, finding, levels, samples)
     # What the trials did not settle is listed whatever the category: a
