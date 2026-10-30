@@ -60,10 +60,12 @@ flowchart TB
         subgraph B["Batteries: one Protocol"]
             UN["<b>unified</b><br/>an LLM critic"]
             EB["<b>egemma</b><br/>Gemma 4"]
+            LJ["<b>local-json</b><br/>your evaluator"]
             OW["<b>your own</b><br/>an eval, an engine"]
         end
-    RT["<b>Unified router</b><br/>loopback, no tools,<br/>deny unless consented"]
+        RT["<b>Unified router</b><br/>loopback, no tools,<br/>deny unless consented"]
         ES["<b>eGemma /judge</b><br/>loopback, no persona,<br/>paced to its budget"]
+        LE["<b>Your evaluator</b><br/>loopback, JSON,<br/>no credentials"]
     end
     PV["<b>Providers</b><br/>Anthropic; OpenRouter,<br/>DeepSeek's models through it"]
     subgraph K["Key"]
@@ -78,6 +80,7 @@ flowchart TB
     RU -->|"prompt, cap"| B
     UN --> RT --> PV
     EB --> ES
+    LJ --> LE
     RU -->|"each record"| ST
     ST --> JU
     JU -->|"finding"| YOU
@@ -91,8 +94,8 @@ flowchart TB
     classDef group fill:#8a96a814,stroke:#8a96a8,stroke-width:2px,stroke-dasharray:6 4
     class YOU person
     class SI,PL,RU,JU engine
-    class UN,EB,OW interface
-    class RT,ES service
+    class UN,EB,LJ,OW interface
+    class RT,ES,LE service
     class ST kept
     class M,G,B,K group
     class K1 person
@@ -104,7 +107,7 @@ flowchart TB
 ```
 
 <p align="center"><em>Gadfly keeps no state: each record goes to you as it is made, and judge reads them back.
-The two shipped batteries use the loopback paths shown; your own battery is arbitrary code. One battery serves a run.</em></p>
+The shipped batteries use the loopback paths shown; your own battery is arbitrary code. One battery serves a run.</em></p>
 
 - `run` never starts a call the `Budget` cannot cover, stops between calls on `cancelled()`, and hands each `Record` to `on_record` as it is made.
 - A failed or unreadable answer is an opening, never a guessed label.
@@ -122,20 +125,23 @@ The chart is about **boundaries**, which a table cannot show as directly:
 | records → `judge` | saved evidence, not a live service | verdicts can be recomputed without another call |
 | shipped batteries → local services | schema-constrained requests to loopback | tokens and credentials stay out of observations |
 
-The two shipped batteries honor no-proxy, no-redirect and loopback rules. The
+The shipped batteries honor no-proxy, no-redirect and loopback rules. The
 `Battery` protocol does not; a third-party battery may do anything its code does.
 
 ## Current limits
 
-- The fixed-rule category and the essay's five required carriage checks do not
-  yet line up. This commit can return `carried` while fallback or materialization
-  checks are open, and can return `outside scope` from declaration alone.
+- Under the default `carriage: all-checks`, a category is named only once the
+  checks it needs have passed; `carriage: listed` names it with the open checks
+  beside it, as After the Poem's study reads them. Read the policy before the
+  category.
 - `materialized: true` is an author declaration. It does not inspect the receiving
   document, field, program or state.
 - Traceability rests on caller-kept records. Gadfly does not authenticate or sign
   them and deliberately does not check a record's prompt digest against the
   current prompt in all replay cases.
-- There is no command line, frame schema file or person-readable report in the
-  package yet. The [Extending Gadfly](roadmap.md) page proposes concrete interfaces for them.
+- `scopeCheck` records the owner's check of an exclusion; Gadfly does not make
+  that check itself.
+- The command line, the frame schema and the person-readable report are in the
+  package; see [Extending Gadfly](roadmap.md).
 - Gadfly is a small research library. A result is about the declared frame, test
   inputs, scorer and encounter; it is not a general quality score.

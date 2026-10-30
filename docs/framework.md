@@ -27,13 +27,16 @@ anchors, the observation map, the declared interventions and standing.
 | $\sigma$ | `standing.quorum`, `agree`, `stable` | observation standing |
 | $\simeq_p$ | exact label equality | no hidden similarity function |
 | $E_{p,\delta}$ | `allowed` | the permitted influence relation |
+| carriage checks | `carriage` | whether an open check holds carried and cooled back (`all-checks`) or is listed beside them (`listed`) |
+| scope check | `outsideScope`, `scopeCheck` | the owner's exclusion, and the owner's own check of it |
 
 The code hashes the **whole** frame, including the situated-use keys. This is
 stricter than changing only $\Gamma$: editing any coordinate creates a new frame
 hash and requires records to be made or replayed under that new frame.
 
-`materialized` and `outsideScope` are declarations about the receiving side. The
-current code records what they do not establish; see [Architecture and limits](architecture.md).
+`materialized`, `outsideScope` and `scopeCheck` are declarations about the
+receiving side: Gadfly reads them, it does not inspect the receiving system. See
+[Architecture and limits](architecture.md).
 
 ## The four data objects
 

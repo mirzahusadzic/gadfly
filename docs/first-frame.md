@@ -103,10 +103,15 @@ outside it is `coupled but misaligned`, not carriage.
 | Question | Trial | If omitted |
 |---|---|---|
 | Is the level stable? | `repeat` | no stability comparison |
-| Does wording drive the result? | `presentation` | presentation invariance remains an obligation on `carried` |
-| Is the change specific? | `sham` | specificity remains an obligation |
-| Is there a hidden fallback? | `bypass` | no-hidden-fallback remains an obligation |
-| Can the scorer move at all? | `control` | a `cooled` finding carries the discrimination obligation |
+| Does wording drive the result? | `presentation` | presentation invariance remains open, so the finding cannot be `carried` |
+| Does the structure drive it? | `placement` | nothing tests the span's place |
+| Is the change specific? | `sham` | specificity remains open |
+| Is there a hidden fallback? | `bypass` | no-hidden-fallback remains open |
+| Can the scorer move at all? | `control` | discrimination remains open, so the finding cannot be `cooled` |
+
+Under the default `carriage: all-checks`, a check left open keeps `carried` and
+`cooled` unresolved. A frame that says `"carriage": "listed"` names the category
+and lists the open checks beside it.
 
 `quorum` is the number of scorer calls per trial; `agree` is the number of
 identical observations needed for one level. Here one call is enough because the
@@ -135,16 +140,18 @@ print(*finding.obligations, sep="\n")
 ```
 
 ```text
-carried
+unresolved
 ablation moved it grounded -> ungrounded; held under presentation, 2 shams
+not carried while 1 carriage check is open
 no hidden fallback: bypass left it at grounded
 ```
 
-The relation moved the observation in the allowed direction, presentation and
-the shams held, and the bypass did not expose the designated opening. The last
-line is an obligation, not a passed check. The same frame read by `WordMatcher`
-instead becomes `coupled but misaligned`, because renaming *cobalt* changes its
-answer.
+The relation moved the observation in the allowed direction, and presentation
+and the shams held. But cutting the binding line left the reader answering
+`grounded`: it reads S-2 whether or not the records decide the question, so no
+hidden fallback is shown, and carried waits for that check. The last line is an
+obligation, not a passed check. The same frame read by `WordMatcher` instead
+becomes `coupled but misaligned`, because renaming *cobalt* changes its answer.
 
 Run both scorers with:
 
@@ -159,7 +166,7 @@ The first run is useful even when the category is not final. Check:
 1. `finding.levels`: did every trial reach one agreed level?
 2. `finding.evidence`: which rule produced the category?
 3. `finding.obligations`: which checks did not pass or did not run?
-4. `finding.overall`: for several inputs, did the frame-level reading weaken?
+4. `overall(findings)`: for several inputs, did the frame-level reading weaken?
 
 Do not concatenate evidence and obligations into one list in your own UI. They
 answer different questions.
@@ -176,6 +183,12 @@ answer different questions.
 | `allowed 'lower' needs observe.order` | declare the full label order before using a direction |
 | `the frame does not say its baseline` | pin $B_0$; do not leave the comparison implicit |
 | `the frame asks for the X battery, not Y` | make `battery.kind` and the battery class's `name` the same string |
+| `carriage is all-checks or listed` | the policy is one of the two words, or left out for `all-checks` |
+| `scopeCheck checks an outsideScope exclusion` | record the owner's check only beside the exclusion it checks |
+| `placement leaves the order as it is` | move the span after one it does not already follow |
+
+`gadfly check-frame my-frame.json` shows these before any call, with the
+schema's findings first when `jsonschema` is installed.
 
 Next: [Write a frame](write-a-frame.md) for the complete field reference.
 

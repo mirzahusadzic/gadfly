@@ -10,7 +10,9 @@ with [Your first frame](first-frame.md) or [Reading a verdict](reading-a-verdict
 | `gadfly.interventions` | trial planning, prompts and presentation renaming |
 | `gadfly.verdict` | categories, levels, evidence and obligations |
 | `gadfly.types` | `Observation`, `Record`, `Budget`, `Battery` |
-| `gadfly.batteries.*` | the shipped loopback critics |
+| `gadfly.batteries.*` | the shipped loopback batteries: two critics and `local-json` |
+| `gadfly.cli` | the `gadfly` command: plan, run, report, check-frame, portfolio |
+| `gadfly.portfolio` | several frames' verdicts counted, never combined |
 
 ::: gadfly.pipeline
 
@@ -27,4 +29,10 @@ with [Your first frame](first-frame.md) or [Reading a verdict](reading-a-verdict
 ::: gadfly.batteries.unified
 
 ::: gadfly.batteries.egemma
+
+::: gadfly.batteries.local_json
+
+::: gadfly.cli
+
+::: gadfly.portfolio
 

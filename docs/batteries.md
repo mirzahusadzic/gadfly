@@ -55,26 +55,34 @@ pricing are outside Gadfly's budget. Use `calls_needed(frame)` before a live run
 
 ### Privacy and routing
 
-| Promise | `unified` | `egemma` | your own |
-|---|---|---|---|
-| destination | a router on loopback over plain HTTP | eGemma on loopback over plain HTTP | unknown |
-| proxy | disabled in the opener | disabled in the opener | unknown |
-| redirects | refused | refused | unknown |
-| tools | never sent | no persona or cache fields added | unknown |
-| provider collection | `data_collection: deny` unless the exact model slug is in `trainsOnInputs` | stays on this machine by contract | unknown |
-| credentials | router token from environment or its env file; never placed in a request body or record | key from environment/file; sent only as an Authorization header | unknown |
-| verification | model and endpoint recorded when the router reports them | model and revision recorded; frame pins are enforced | unknown |
+| Promise | `unified` | `egemma` | `local-json` | your own |
+|---|---|---|---|---|
+| destination | a router on loopback over plain HTTP | eGemma on loopback over plain HTTP | `battery.url` on loopback over plain HTTP | unknown |
+| proxy | disabled in the opener | disabled in the opener | disabled in the opener | unknown |
+| redirects | refused | refused | refused | unknown |
+| tools | never sent | no persona or cache fields added | never sent | unknown |
+| provider collection | `data_collection: deny` unless the exact model slug is in `trainsOnInputs` | stays on this machine by contract | stays on this machine | unknown |
+| credentials | router token from environment or its env file; never placed in a request body or record | key from environment/file; sent only as an Authorization header | none sent | unknown |
+| deadline | whole call, `timeout` seconds, even mid-line | whole call, per attempt | whole call, `battery.timeout` (30 s) | unknown |
+| verification | model and endpoint recorded when the router reports them | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | unknown |
 
-These are guarantees of the two shipped batteries, not of the Protocol. If you
+These are guarantees of the shipped batteries, not of the Protocol. If you
 write a battery that calls a cloud service, your battery owns its consent,
 retention, credential and recording rules.
 
 ### Failure convention
 
 `observe()` should return an opening for an unreadable answer or transport
-failure. The pipeline turns an unexpected exception into an opening too, but the
-direct battery API should not require that safety net. In particular, a timeout
-must not be converted into a label or silently dropped.
+failure; the shipped batteries do, keeping what arrived before the failure. The
+pipeline turns an unexpected exception into an opening too, but the direct
+battery API should not require that safety net. In particular, a timeout must
+not be converted into a label or silently dropped.
+
+## Your evaluator, without an adapter
+
+A local classifier, test oracle or retrieval checker that already reads an
+instruction and a text and answers JSON needs no battery of its own; see
+[Local JSON battery](breadth/local-json-battery.md).
 
 ## Record provenance
 

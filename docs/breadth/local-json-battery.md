@@ -1,7 +1,7 @@
-# Proposal: a `local-json` battery
+# The local-json battery
 
-**Priority:** medium. **Effort:** medium. **Replaces:** copy-pasted loopback
-HTTP code for local evaluators that already expose a JSON `judge` endpoint.
+It replaces copy-pasted loopback HTTP code for local evaluators that already
+expose a JSON `judge` endpoint.
 
 ## Need
 
@@ -58,9 +58,10 @@ Response:
   separate battery with an explicit credential contract;
 - records use the existing `Observation` and `Record` fields, including `served`.
 
-## Cost
+## Tests
 
-About 180 lines including the HTTP adapter and tests. The difficult work is not
-the request: it is the negative tests for proxy, redirect, loopback DNS, deadline,
-oversized and malformed replies, and secret-free records.
+The request is the easy part; the tests are the negative ones: an address off
+this machine, a proxy in the environment, a redirect, an unreachable evaluator,
+a deadline passed, replies that are not JSON or not an object, an answer outside
+the frame's labels, and no credentials in any request.
 

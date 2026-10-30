@@ -16,6 +16,7 @@ call is made.
 | `cumulative` | support moved elsewhere | the initial cut removed the effect | carriage on its own |
 | `sham` | the scorer responds to irrelevant same-kind text | the ablation's change is more specific | that every possible irrelevant change is controlled |
 | `presentation` | wording drives the observation | the tested wording change is invariant | that all paraphrases are |
+| `placement` | the span's place drives the observation | the tested move is invariant | that every reordering is |
 | `bypass` | a hidden connection still carries the relation | no tested fallback is visible | receiving-system materialization |
 | `control` | the scorer can move under a required removal | the scorer or task is insensitive | that it moves for the right reason |
 
@@ -30,6 +31,8 @@ implementation's check; that is a weaker claim and should be stated as such.
 A **control** cuts material that any competent reader of the task should need.
 It is a discrimination check: if ablation leaves the observation but the control
 also leaves it, an all-constant scorer and an idle relation are not distinguishable.
+Under the default `carriage: all-checks`, a finding is `cooled` only when a
+control moved.
 
 ## Presentation is one pass
 
@@ -38,7 +41,15 @@ phrase first, consistently to body spans and the input. This prevents swaps from
 collapsing and chains from compounding. A mapping that reaches no input and no
 body span is refused as a trial identical to baseline.
 
-## SAM and cost
+## Placement is one move
+
+`placement` moves one span to follow another and changes no text. It asks the
+question presentation cannot: does the clause's place matter, a grant before or
+after an instruction, a caveat moved out of its section? A move that changes the
+level reads as `coupled but misaligned`, right after presentation. A move that
+leaves the order as it is would repeat the baseline, and is refused.
+
+## Cost
 
 For one input, the call count is the number of planned trials times `quorum`.
 For the whole frame it is inputs times trials times quorum. A sham with

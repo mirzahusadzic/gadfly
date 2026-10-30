@@ -10,7 +10,7 @@ value; a changed frame is a different frame.
 Required top-level keys are `name`, `relation`, `locus`, `role`, `grain`,
 `purpose`, `trajectory`, `crossing`, `promise`, `baseline`, `body`, `anchors`,
 `inputs`, `observe`, `interventions`, `allowed`, `standing` and `battery`.
-`materialized` and `outsideScope` are optional.
+`materialized`, `outsideScope`, `scopeCheck` and `carriage` are optional.
 
 The shapes are exact:
 
@@ -24,6 +24,7 @@ The shapes are exact:
 | `observe.labels` | at least two distinct non-empty strings |
 | `observe.instruction` | non-empty string |
 | `observe.order` | optional permutation of exactly `labels` |
+| `observe.*` | any other key is your battery's to read |
 | `interventions` | object with `ablation: true`; other keys appear in the table below |
 | `allowed.ablation` | non-empty list of labels, or `lower`/`higher` with `order` |
 | `allowed.bypass` | optional label list, or `lower`/`higher`; requires a bypass trial |
@@ -32,6 +33,8 @@ The shapes are exact:
 | `battery.kind` | non-empty string matching the battery's `name` |
 | `materialized` | optional boolean, default `false` |
 | `outsideScope` | optional non-empty exclusion in the owner's words |
+| `scopeCheck` | optional `{owner, statement, source, encounter}`, all non-empty; needs `outsideScope` |
+| `carriage` | optional `all-checks` (the default) or `listed` |
 
 The exact error strings are the public parser contract. If a frame is refused,
 fix the declaration rather than adding an ignored key.
@@ -45,6 +48,7 @@ fix the declaration rather than adding an ignored key.
 | `cumulative` | non-empty span-id list that adds at least one non-anchor span |
 | `sham` | `true`, or `{"draws": n}` with an integer `n >= 1` |
 | `presentation` | non-empty object of non-empty word-to-replacement strings; no key repeated case-insensitively; must rename something read |
+| `placement` | `{"span": id, "after": id}`: two different spans; the move must change the order |
 | `bypass` | non-empty span-id list, not exactly the anchors |
 | `control` | non-empty span-id list, not exactly the anchors |
 
@@ -62,8 +66,19 @@ misaligned; any unresolved input keeps it unresolved; carried and cooled may
 combine only when all inputs agree.
 
 If the receiving owner excludes this relation entirely, say so in `outsideScope`.
-Do not use that key to silence a failed test. It is a declaration about scope,
-and the essay requires a separate scope check.
+Do not use that key to silence a failed test: it is a declaration about scope,
+and the essay requires a separate scope check. Record the owner's check under
+`scopeCheck`; until then the finding is unresolved (under `carriage: listed`,
+outside scope with the check listed as open).
+
+## Check before you run
+
+`gadfly/frame.schema.json` is the frame's JSON Schema (draft 2020-12): point
+your editor at it for completion and inline errors. `gadfly check-frame
+frame.json` runs the schema, when `jsonschema` is installed, and then the
+parser, which has the last word on what only code can check (anchors in the
+body, a presentation map that renames something, a placement that moves
+something).
 
 ## A minimal valid skeleton
 

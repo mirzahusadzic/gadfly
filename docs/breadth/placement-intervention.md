@@ -1,8 +1,7 @@
-# Proposal: a `placement` intervention
+# The placement intervention
 
-**Priority:** medium. **Effort:** large. **Replaces:** the common workaround of
-making a second frame just to move one span, which loses a paired in-frame
-comparison and doubles setup.
+It replaces the workaround of making a second frame just to move one span, which
+loses a paired in-frame comparison and doubles setup.
 
 ## Need
 
@@ -14,7 +13,7 @@ code invariant moved away from the operation it governs.
 
 ## Interface
 
-Add one optional key:
+One optional key:
 
 ```json
 {
@@ -44,14 +43,16 @@ Semantics:
 - The record format is unchanged; `trial` is `placement`.
 - The battery still never sees the trial id.
 - The `After the Poem` replay has no placement trial and its rule path is unchanged.
-- `frame.py`, `interventions.py`, `verdict.py`, the frame table, trials table and
-  JSON Schema all need matching updates.
+- `frame.py`, `interventions.py`, `verdict.py`, the frame table, the trials
+  table and the JSON Schema all know the key.
 
-## Tests that would fail before the change
+## Tests
 
 1. A placement that reorders the body yields a distinct `body_hash` and a
-   `placement` record.
-2. A placement equal to baseline order is a `FrameError` before a call.
-3. A scorer whose label changes only under placement is `coupled but misaligned`.
-4. A legacy frame's hash and category are byte-for-byte unchanged.
+   `placement` trial, planned after presentation and before bypass.
+2. A placement that leaves the order as it is, names itself or names a span not
+   in the body is a `FrameError` before a call.
+3. A scorer whose label changes only under placement is `coupled but misaligned`,
+   and a carried finding names placement among what held.
+4. A frame without placement keeps its hash.
 

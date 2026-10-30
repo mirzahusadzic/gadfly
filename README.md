@@ -19,14 +19,17 @@ rule below names the category.
 
 | Finding | Plain meaning |
 |---|---|
-| `carried` | Ablation moved the observation as the promise allows. Tested presentation and specificity checks held; anything not tested appears under **Obligations**. |
-| `coupled but misaligned` | The relation matters, but presentation moved it or ablation moved it where the promise disallows. |
-| `cooled` | Ablation left the observation unchanged: this relation has no operative influence here. A control can show the scorer was able to move. |
-| `unresolved` | There is not enough agreed evidence: a trial is missing or split, repeat is unstable, or a sham moved too. |
-| `outside scope` | The receiving owner declares the distinction unnecessary. The code currently records the independent scope check as an obligation rather than performing it. |
+| `carried` | Ablation moved the observation as the promise allows, and every carriage check passed: presentation and the shams held, the bypass exposed its opening, and the frame says the observation is what the recipient receives. |
+| `coupled but misaligned` | The relation matters, but presentation or placement moved it, or ablation moved it where the promise disallows. |
+| `cooled` | Ablation left the observation unchanged while a control showed the scorer can move: this relation has no operative influence here. |
+| `unresolved` | There is not enough agreed evidence: a trial is missing or split, repeat is unstable, a sham moved too, the scorer cannot tell, or a check the category needs is still open. |
+| `outside scope` | The receiving owner declares the distinction unnecessary, and their own check of that exclusion is recorded. |
 
 Every finding separates **Evidence** (why this category) from **Obligations**
-(what the trials did not settle). An obligation is not a passed check.
+(what the trials did not settle). An obligation is not a passed check. By
+default (`carriage: all-checks`) an open check keeps carried, cooled and
+outside scope unresolved, and the evidence says so; a frame that says
+`carriage: listed` names the category and lists its open checks beside it.
 <!-- --8<-- [end:verdicts] -->
 
 ## Quick start
@@ -35,16 +38,22 @@ Every finding separates **Evidence** (why this category) from **Obligations**
 git clone https://github.com/mirzahusadzic/gadfly.git
 cd gadfly
 uv sync
-uv run python examples/refund.py tmp/refund-records.jsonl
+uv run python examples/refund.py refund-records.jsonl
 ```
 
 ```text
 phrase-matcher: coupled but misaligned
   presentation moved it decline -> grant
-rule-reader: carried
+  no hidden fallback: bypass left it at decline
+rule-reader: unresolved
   ablation moved it decline -> grant; held under presentation, 2 shams
+  not carried while 1 carriage check is open
   no hidden fallback: bypass left it at decline
 ```
+
+The phrase matcher reads a word, and the presentation trial catches it. The
+rule reader moves as the promise allows, but it reads the rule whether or not
+the rules bind, so its fallback check is open and carried waits for it.
 
 The same test in Python:
 
@@ -75,6 +84,16 @@ is a different frame coordinate, so call `situate()` again when you swap it.
 For several inputs, `overall(judge(frame, kept))` returns one category over all
 of them. A stopped run is continued with `run(..., kept=kept)`; records already
 in `kept` are not made again.
+
+The same from the command line (also `python -m gadfly`):
+
+```bash
+gadfly check-frame examples/refund.json   # the frame's shape, then the parser
+gadfly plan examples/refund.json          # the trials and the call count, no call
+gadfly run examples/refund.json --battery examples.refund:RuleReader \
+    --calls 7 --out records.jsonl         # each record kept as one JSON line
+gadfly report examples/refund.json records.jsonl
+```
 
 <!-- --8<-- [start:model] -->
 ## The path from premise to verdict
@@ -108,13 +127,15 @@ The top-level keys are all checked before a call:
 | `trajectory`, `baseline`, `crossing`, `promise` | the path to the recipient, everything pinned, the boundary, and what must cross it |
 | `anchors` | span ids the relation rests on; at least one |
 | `inputs` | the finite test domain, each `{id, text}` with distinct ids |
-| `observe` | `labels`, `instruction`, and `order` when labels are ordered |
+| `observe` | `labels`, `instruction`, and `order` when labels are ordered; other keys are your battery's |
 | `interventions` | the trials; `ablation` is required |
 | `allowed` | what `ablation` may produce, and optionally the opening `bypass` must expose |
 | `standing` | `quorum`, `agree`, and optionally `stable` (which needs `repeat`) |
 | `battery` | at least `kind`; shipped batteries use `model`, reasoning, schema or pins as documented below |
 | `materialized` | `true` only when the observation is the form the recipient receives |
 | `outsideScope` | the receiving owner's exclusion, in words; omit when there is none |
+| `scopeCheck` | the owner's check of that exclusion: `owner`, `statement`, `source`, `encounter` |
+| `carriage` | `all-checks` (the default) or `listed`: whether an open check holds a category back |
 
 `body.spans` are `{id, text}` with an optional `kind` used to match sham spans.
 `allowed` lists labels, or uses `lower`/`higher` along `observe.order`.
@@ -122,6 +143,8 @@ The top-level keys are all checked before a call:
 
 The frame is hashed whole. Rewording the promise, changing the grain or swapping
 the battery makes a new frame, and records from the old hash will be refused.
+`gadfly/frame.schema.json` gives editors the shape; `gadfly check-frame` runs
+it and then the parser, which has the last word.
 <!-- --8<-- [end:frame] -->
 
 <!-- --8<-- [start:trials] -->
@@ -135,8 +158,9 @@ the battery makes a new frame, and records from the old hash will be refused.
 | `cumulative` | anchors plus the spans they may fall back on | support carried elsewhere | `quorum` calls |
 | `sham-*` | as much unanchored text, of the anchors' kinds | specificity of the change | one `quorum` per draw |
 | `presentation` | mapped words renamed in one pass, body and input | whether wording rather than meaning drives the scorer | `quorum` calls |
+| `placement` | one span moved after another, its text unchanged | whether the structure rather than the meaning drives the scorer | `quorum` calls |
 | `bypass` | a named connection is cut | no hidden fallback; with `allowed.bypass`, only that opening clears it | `quorum` calls |
-| `control` | spans any reader needs | whether the scorer can move at all | `quorum` calls |
+| `control` | spans any reader needs | whether the scorer can move at all; cooled needs it to | `quorum` calls |
 
 `bypass` asks whether a fallback keeps the relation working without its
 connection. `control` asks whether the scorer changes under a removal that
@@ -171,8 +195,9 @@ working template.
 | your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
 | `unified` | an LLM through the unified model router: `anthropic/`, `openrouter/`, `deepseek/`, `ultra-spark/` | loopback, no tools, no proxy, no redirects, `data_collection: deny` unless the exact model slug is listed under `trainsOnInputs`; refuses OpenAI slugs; `endpoints` pins OpenRouter endpoints; records the model and endpoint that served |
 | `egemma` | Gemma through eGemma's `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced |
+| `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 
-The privacy and routing guarantees above belong to the two shipped batteries.
+The privacy and routing guarantees above belong to the shipped batteries.
 The `Battery` protocol does not constrain arbitrary third-party code.
 <!-- --8<-- [end:batteries] -->
 
@@ -201,12 +226,12 @@ A critic with its own schema names where the label lives with a JSON pointer:
 <!-- --8<-- [start:examples] -->
 | Example | Relation | What it teaches | Calls |
 |---|---|---|---|
-| `examples/refund.py` | a refund requires a receipt | a phrase matcher is misaligned by presentation; a rule reader carries, with a fallback left open | 7 per battery |
-| `examples/review_handoff.py` | a failure reaches a review state; a grant bounds operations | the essay's worked example, including a cooled summary and a lost record | 6–7 per system |
-| `examples/citation.py` | an answer rests on cited source S-2 | a source reader carries while a word matcher is exposed by presentation | 7 per battery |
-| `examples/system_prompt.py` | one system line governs a refusal | a request-keyed scorer cools with a moved control; an always-refuse scorer is unresolved | 6 per battery |
-| `examples/tool_permission.py` | a grant limits a tool to read-only | a scope reader carries; an eager tool permits a disallowed modification | 6 per battery |
-| `examples/code_invariant.py` | a sort line governs output order | a removed trial record is no evidence; a full run carries with its fallback open | 6 |
+| `examples/refund.py` | a refund requires a receipt | a phrase matcher is misaligned by presentation; a rule reader moves as allowed, but its open fallback keeps carried waiting | 7 per battery |
+| `examples/review_handoff.py` | a failure reaches a review state; a grant bounds operations | the essay's worked example: one system carries the finding; a "fix ready" summary cannot show its reading moves; a lost record is unresolved | 6–7 per system |
+| `examples/citation.py` | an answer rests on cited source S-2 | a word matcher is exposed by presentation; a source reader's fallback stays open | 7 per battery |
+| `examples/system_prompt.py` | one system line governs a refusal | a scorer that can move is cooled by its control; an always-refuse scorer cannot tell | 6 per battery |
+| `examples/tool_permission.py` | a grant limits a tool to read-only | an eager tool permits a disallowed modification; a scope reader's fallback stays open | 6 per battery |
+| `examples/code_invariant.py` | a sort line governs output order | a lost record is no evidence; an owner's exclusion is outside scope only once checked | 6 |
 | `examples/refund_live.py` | the refund relation through a routed model or eGemma | the same pipeline with a sampled battery and real token cost | 21 to a model |
 <!-- --8<-- [end:examples] -->
 
@@ -214,8 +239,8 @@ A critic with its own schema names where the label lives with a JSON pointer:
 
 <!-- --8<-- [start:boundaries] -->
 - A category is a fixed-rule reading of observations under one frame, not proof of causality and not a probability.
-- `carried` still requires the checks in **Obligations** to be read. In the current code it can be returned while fallback, specificity or materialization checks remain open; the essay requires all five carriage checks to pass.
-- `outside scope` is currently reached from the owner's declaration alone; the independent scope check remains an obligation.
+- Under the default `carriage: all-checks`, carried, cooled and outside scope are named only once the checks they need have passed; until then the finding is unresolved and says which check is open. `carriage: listed` names the category and lists the open checks beside it; read those before relying on it.
+- Traceability rests on the records: each names its frame, battery, body, prompt and what served it. Gadfly does not check a prompt digest against the current prompt, so a replay may keep its study's own.
 - `materialized: true` is a declaration. Gadfly does not inspect a receiving document, field or program.
 - A deterministic battery tests the frame and mechanism, not a model. A sampled live critic tests sampled behavior at that model and endpoint, not a provider's general policy.
 - Gadfly has no authentication or signature on records. Keep records somewhere you trust and record the run metadata you need outside Gadfly.

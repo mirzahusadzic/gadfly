@@ -14,18 +14,29 @@ label has at least `agree` observations. The first matching rule names the categ
 1. **unresolved** — any planned trial has no agreed level. With `stable`, baseline
    and repeat sessions must not split. A repeat level that differs from baseline
    is also unresolved: the grain cannot tell the levels apart.
-2. **coupled but misaligned** — presentation moved the observation.
+2. **coupled but misaligned** — presentation moved the observation, or
+   placement did.
 3. **coupled but misaligned** — ablation moved it outside `allowed`; for ordered
    labels, the move was in the wrong direction.
 4. **cooled** — ablation left it unchanged. If a declared control also left it
    unchanged, the finding is unresolved because the scorer cannot tell. Without a
-   control, `cooled` retains the discrimination obligation.
+   control, discrimination is open.
 5. **unresolved** — a sham moved too, so the observed change is not specific.
-6. **carried** — otherwise, with any untested carriage checks listed as obligations.
+6. **carried** — otherwise.
 
-`outside scope` short-circuits the category when `outsideScope` is declared. The
-current code still validates any supplied records, but it does not perform the
-independent scope check required by the essay.
+Then the open checks are listed, whatever the category: no hidden fallback,
+presentation invariance, specificity and materialization, and discrimination for
+cooled. Under the default `carriage: all-checks` a category is named only when
+the checks it needs have passed: every carriage check for carried, a control
+that moved for cooled. Otherwise the finding is unresolved, and its evidence
+says which (`not carried while 1 carriage check is open`). Under
+`carriage: listed` the category stands and its open checks are listed beside it.
+
+`outside scope` comes first when `outsideScope` is declared: the trials do not
+test an exclusion, so only the owner's check of it is open or settled. With
+`scopeCheck` the finding is outside scope and says who checked it, from what and
+when; without it, the finding is unresolved (under `listed`, outside scope with
+the check open). Records are still checked either way.
 
 ## Evidence is not obligation
 
@@ -43,10 +54,11 @@ says that a required check remains open. A UI must not merge the two lists or
 render an obligation as a warning on an otherwise unconditional success.
 
 The five carriage checks in the essay are required influence, presentation
-invariance, no hidden fallback, traceability and materialization. The current
-implementation treats the last three differently: fallback and materialization
-can be obligations on a carried finding, and traceability rests on the records.
-That is a semantic gap between this commit and the essay, not a stronger result.
+invariance, no hidden fallback, traceability and materialization. Required
+influence is the ablation rule; presentation invariance, no hidden fallback and
+materialization are open checks until their trials or the frame settle them;
+traceability rests on the records, each of which names its frame, battery, body,
+prompt and what served it.
 
 ## Several inputs
 
@@ -79,6 +91,7 @@ trial, a duplicate run, or a label outside `observe.labels` are refused.
 
 | Refusal | Meaning |
 |---|---|
+| `a record lacks [...]` | the stored row is not a whole record; it is refused before its call is skipped |
 | `a record belongs to another frame` | any frame coordinate changed; the record's hash no longer names this frame |
 | `a record was made by X, not the Y battery` | a frame is read only by the battery its hash names |
 | `a record names an input or trial the plan does not have` | the plan or input id changed |

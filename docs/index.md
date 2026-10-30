@@ -45,14 +45,16 @@ This is the deterministic refund example: two batteries read the same relation.
 ```text
 phrase-matcher: coupled but misaligned
   presentation moved it decline -> grant
-rule-reader: carried
+  no hidden fallback: bypass left it at decline
+rule-reader: unresolved
   ablation moved it decline -> grant; held under presentation, 2 shams
+  not carried while 1 carriage check is open
   no hidden fallback: bypass left it at decline
 ```
 
 The category answers a narrow question. The evidence says why. The obligation
 says what is still open: here, the rule reader keeps working without the
-connection removed by the bypass.
+connection removed by the bypass, so carried waits until that check passes.
 
 --8<-- "README.md:verdicts"
 
@@ -62,7 +64,7 @@ connection removed by the bypass.
 git clone https://github.com/mirzahusadzic/gadfly.git
 cd gadfly
 uv sync
-uv run python examples/refund.py tmp/refund-records.jsonl
+uv run python examples/refund.py refund-records.jsonl
 ```
 
 ## Where to go next
@@ -74,6 +76,7 @@ uv run python examples/refund.py tmp/refund-records.jsonl
 | understand evidence and obligations | [Reading a verdict](reading-a-verdict.md) |
 | use a model, local service or your own scorer | [Batteries](batteries.md) |
 | see the method on other relations | [Examples](examples.md) |
+| run, report and check frames from the command line | [Extending Gadfly](roadmap.md) |
 | see the trust boundaries and current limits | [Architecture and limits](architecture.md) |
 | find a library name | [Reference](reference.md) |
 
