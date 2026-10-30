@@ -15,3 +15,5 @@
 ::: gadfly.batteries.unified
 
 ::: gadfly.batteries.egemma
+
+::: gadfly.batteries.local_json

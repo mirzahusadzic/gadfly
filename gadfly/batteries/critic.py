@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import urllib.request
+from collections.abc import Callable
 from urllib.parse import urlparse
 
 from ..frame import Frame
@@ -31,6 +32,19 @@ def opener() -> urllib.request.OpenerDirector:
     """No proxy from the environment, no redirect: only the address named is
     called. Built per call, so no environment read at import can linger."""
     return urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+
+
+def read_reply(response, deadline: float, clock: Callable[[], float]) -> bytes | None:
+    """A reply as it comes, until it ends or passes the size cap; None if it
+    is still coming at the deadline (the socket's timeout waits per read)."""
+    body = bytearray()  # grown in place: an earlier chunk is never copied again
+    while chunk := response.read1(65_536):
+        body.extend(chunk)
+        if len(body) > MAX_RESPONSE_BYTES:
+            break
+        if clock() > deadline:
+            return None
+    return bytes(body)
 
 
 def check_output(battery: dict) -> None:

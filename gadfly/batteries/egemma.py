@@ -41,7 +41,15 @@ from urllib.parse import urlparse
 
 from ..frame import Frame
 from ..types import Observation
-from .critic import MAX_RESPONSE_BYTES, check_output, label_at, loopback, opener, output_schema
+from .critic import (
+    MAX_RESPONSE_BYTES,
+    check_output,
+    label_at,
+    loopback,
+    opener,
+    output_schema,
+    read_reply,
+)
 
 DEFAULT_URL = os.environ.get("EGEMMA_URL", "http://127.0.0.1:8000").rstrip("/") + "/judge"
 BATTERY_KEYS = {"kind", "temperature", "output", "model", "revision"}
@@ -84,19 +92,6 @@ def _wait(error: urllib.error.HTTPError) -> float:
         found = re.search(r"Try again in (\d+(?:\.\d+)?) seconds?", detail)
         seconds = float(found.group(1)) if found else 1.0
     return min(max(seconds, 0.0), MAX_WAIT)
-
-
-def _read(response, deadline: float, clock: Callable[[], float]) -> bytes | None:
-    """The reply as it comes, until it ends or passes the size cap; None if it
-    is still coming at the deadline (the socket's timeout waits per read)."""
-    body = bytearray()  # grown in place: an earlier chunk is never copied again
-    while chunk := response.read1(65_536):
-        body.extend(chunk)
-        if len(body) > MAX_RESPONSE_BYTES:
-            break
-        if clock() > deadline:
-            return None
-    return bytes(body)
 
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
@@ -202,7 +197,7 @@ class EGemma:
             deadline = self.clock() + self.timeout  # waits for eGemma's pace are not the call's
             try:
                 with opener().open(request, timeout=self.timeout) as response:
-                    body = _read(response, deadline, self.clock)
+                    body = read_reply(response, deadline, self.clock)
                 break
             except urllib.error.HTTPError as error:
                 if error.code not in BUSY or attempt == RETRIES:
