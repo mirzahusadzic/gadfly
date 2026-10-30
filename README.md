@@ -1,68 +1,199 @@
 # Gadfly
 
-Gadfly tests whether a premise is **load-bearing**: you situate a relation (its
-grain, scope and the promise a recipient needs), Gadfly removes or changes it
-under declared interventions, runs a scorer, and reads the result by fixed
-rules. It never reasons about the content itself.
+Is a premise **load-bearing**? Declare the relation, its grain and the promise
+a recipient needs; Gadfly removes or changes it under fixed interventions, has
+a scorer read each trial, and reads the verdict by fixed rules. The method:
+[When meaning is load-bearing](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing).
 
-The method is the counterfactual load-bearing test formalized in
-[When meaning is load-bearing](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing):
-fix the setting and the recipient's requirements, remove or change a relation,
-observe. An observed difference makes the relation a candidate; independent
-checks decide whether it is carried.
+```mermaid
+---
+config:
+    layout: elk
+    look: neo
+    themeVariables:
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
+    flowchart:
+        wrappingWidth: 220
+        padding: 20
+    themeCSS: >-
+        foreignObject { overflow: visible; }
+        .node foreignObject, .node foreignObject *, .edgeLabel, .edgeLabel * {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif !important; line-height: 1.5 !important; }
+        .node foreignObject, .node foreignObject * { white-space: nowrap !important; }
+        .edgeLabel, .edgeLabel p, .edgeLabel span {
+        background: transparent !important; }
+        .edgeLabel rect { fill: transparent !important; }
+        .labelBkg { --knock: var(--vscode-editor-background,
+        var(--bgColor-default, rgb(from currentColor
+        clamp(30, (128 - r) * 100, 255) clamp(30, (128 - r) * 100, 255)
+        clamp(30, (128 - r) * 100, 255)))); --ring: var(--knock);
+        --fill: color-mix(in srgb, var(--ring) 30%, var(--knock));
+        background: var(--fill) !important; border-radius: 4px;
+        box-shadow: 0 0 0 5px var(--fill), 0 0 0 7px var(--ring); }
+        .label[data-id^="L_RU_"] .labelBkg { --ring: #2e9e5b; }
+        .label[data-id^="L_YOU_"] .labelBkg { --ring: #8e5bd6; }
+        .edgeLabel p, .edgeLabel span, .edgeLabel text {
+        --halo: var(--fill, var(--vscode-editor-background,
+        var(--bgColor-default,
+        rgb(from currentColor clamp(0, (128 - r) * 100, 255)
+        clamp(0, (128 - r) * 100, 255) clamp(0, (128 - r) * 100, 255)))));
+        text-shadow: 1px 0 var(--halo), -1px 0 var(--halo),
+        0 1px var(--halo), 0 -1px var(--halo), 1px 1px var(--halo),
+        -1px -1px var(--halo), 1px -1px var(--halo), -1px 1px var(--halo),
+        0 0 3px var(--halo), 0 0 4px var(--halo); }
+---
+flowchart TB
+    YOU["<b>Your code</b><br/>a frame, a battery,<br/>where records go"]
+    subgraph M["This machine"]
+        subgraph G["Gadfly: a library, no state"]
+            SI["<b>situate</b><br/>check, hash"]
+            PL["<b>plan</b><br/>trials from the frame"]
+            RU["<b>run</b><br/>the only call out"]
+            JU["<b>judge</b><br/>rules over records"]
+        end
+        ST["<b>Your records</b><br/>file, database, fixture"]
+        subgraph B["Batteries: one Protocol"]
+            UN["<b>unified</b><br/>an LLM critic"]
+            EB["<b>egemma</b><br/>Gemma 4"]
+            OW["<b>your own</b><br/>an eval, an engine"]
+        end
+        RT["<b>Unified router</b><br/>loopback, no tools,<br/>data collection denied"]
+        ES["<b>eGemma /judge</b><br/>loopback, no persona,<br/>paced to its budget"]
+    end
+    PV["<b>Providers</b><br/>Anthropic, OpenRouter, DeepSeek"]
 
-Gadfly is a pipeline, not a service. It keeps no state: every stage returns
-typed values, and you keep them (a file, a database, a test fixture).
+    YOU -->|"frame"| SI --> PL --> RU
+    RU -->|"prompt, cap"| B
+    UN --> RT --> PV
+    EB --> ES
+    RU -->|"each record"| ST
+    ST --> JU
+    JU -->|"finding"| YOU
 
+    classDef default fill:#8a96a82e,stroke:#8a96a8,stroke-width:1px
+    classDef person fill:#8e5bd64d,stroke:#8e5bd6,stroke-width:2px
+    classDef interface fill:#ffffff40,stroke:#b5bcc6,stroke-width:2px
+    classDef service fill:#e3a0084d,stroke:#e3a008,stroke-width:2px
+    classDef kept fill:#4d6bfe4d,stroke:#4d6bfe,stroke-width:2px
+    classDef engine fill:#2e9e5b4d,stroke:#2e9e5b,stroke-width:2px
+    classDef group fill:#8a96a814,stroke:#8a96a8,stroke-width:2px,stroke-dasharray:6 4
+    class YOU person
+    class SI,PL,RU,JU engine
+    class UN,EB,OW interface
+    class RT,ES service
+    class ST kept
+    class M,G,B group
+    style OW stroke-dasharray: 5 4
 ```
-situate(frame)  ->  plan(frame)  ->  run(frame, battery, budget)  ->  judge(frame, records)
-   checked,         the trials,      the only stage that calls        the verdict, from
-   hashed           fixed first      out; each record to you          your records alone
+
+```mermaid
+---
+config:
+    layout: elk
+    look: neo
+    themeVariables:
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
+    flowchart:
+        wrappingWidth: 220
+        padding: 20
+    themeCSS: >-
+        foreignObject { overflow: visible; }
+        .node foreignObject, .node foreignObject *, .edgeLabel, .edgeLabel * {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif !important; line-height: 1.5 !important; }
+        .node foreignObject, .node foreignObject * { white-space: nowrap !important; }
+        .edgeLabel, .edgeLabel p, .edgeLabel span {
+        background: transparent !important; }
+        .edgeLabel rect { fill: transparent !important; }
+        .labelBkg { --knock: var(--vscode-editor-background,
+        var(--bgColor-default, rgb(from currentColor
+        clamp(30, (128 - r) * 100, 255) clamp(30, (128 - r) * 100, 255)
+        clamp(30, (128 - r) * 100, 255)))); --ring: var(--knock);
+        --fill: color-mix(in srgb, var(--ring) 30%, var(--knock));
+        background: var(--fill) !important; border-radius: 4px;
+        box-shadow: 0 0 0 5px var(--fill), 0 0 0 7px var(--ring); }
+        .label[data-id^="L_Q"] .labelBkg { --ring: #b5bcc6; }
+        .label[data-id^="L_FR_"] .labelBkg { --ring: #8e5bd6; }
+        .edgeLabel p, .edgeLabel span, .edgeLabel text {
+        --halo: var(--fill, var(--vscode-editor-background,
+        var(--bgColor-default,
+        rgb(from currentColor clamp(0, (128 - r) * 100, 255)
+        clamp(0, (128 - r) * 100, 255) clamp(0, (128 - r) * 100, 255)))));
+        text-shadow: 1px 0 var(--halo), -1px 0 var(--halo),
+        0 1px var(--halo), 0 -1px var(--halo), 1px 1px var(--halo),
+        -1px -1px var(--halo), 1px -1px var(--halo), -1px 1px var(--halo),
+        0 0 3px var(--halo), 0 0 4px var(--halo); }
+---
+flowchart TB
+    FR["<b>Frame</b><br/>relation, grain, promise,<br/>anchors, allowed, quorum; hashed"]
+    subgraph T["Trials, each read quorum times"]
+        BR["<b>baseline, repeat</b><br/>the level"]
+        PS["<b>presentation</b><br/>words renamed"]
+        AB["<b>ablation</b><br/>anchors removed"]
+        SH["<b>sham</b><br/>as much other text"]
+        BY["<b>bypass</b><br/>connection cut"]
+    end
+    Q1{{"agreed, stable?"}}
+    Q2{{"wording held,<br/>direction allowed?"}}
+    Q3{{"ablation moved it?"}}
+    Q4{{"shams held?"}}
+    R1["<b>unresolved</b>"]
+    R2["<b>coupled but misaligned</b>"]
+    R3["<b>cooled</b>"]
+    R4["<b>unresolved</b><br/>not specific"]
+    R5["<b>carried</b><br/>open checks listed"]
+    OS["<b>outside scope</b><br/>only when declared"]
+
+    FR --> T
+    FR -.-> OS
+    BR --> Q1
+    PS --> Q2
+    AB --> Q2
+    AB --> Q3
+    SH --> Q4
+    Q1 -->|"yes"| Q2 -->|"yes"| Q3 -->|"yes"| Q4 -->|"yes"| R5
+    Q1 -->|"no"| R1
+    Q2 -->|"no"| R2
+    Q3 -->|"no"| R3
+    Q4 -->|"no"| R4
+    BY -.->|"left it: open"| R5
+
+    classDef default fill:#8a96a82e,stroke:#8a96a8,stroke-width:1px
+    classDef person fill:#8e5bd64d,stroke:#8e5bd6,stroke-width:2px
+    classDef interface fill:#ffffff40,stroke:#b5bcc6,stroke-width:2px
+    classDef service fill:#e3a0084d,stroke:#e3a008,stroke-width:2px
+    classDef kept fill:#4d6bfe4d,stroke:#4d6bfe,stroke-width:2px
+    classDef engine fill:#2e9e5b4d,stroke:#2e9e5b,stroke-width:2px
+    classDef group fill:#8a96a814,stroke:#8a96a8,stroke-width:2px,stroke-dasharray:6 4
+    class FR person
+    class BR,AB,SH,PS,BY engine
+    class Q1,Q2,Q3,Q4 interface
+    class R1,R2,R3,R4,R5,OS default
+    class T group
 ```
 
-## The formulation you declare
+## Frame
 
-| README | Gadfly field | What you write |
+| Formalization | Field | What you write |
 |---|---|---|
-| relation $I$ at locus $v$ in body $B$ | `relation`, `locus`, `body` | the premise under test, where it acts, and the material it lives in |
-| role $r$, grain $g$, purpose $P$ | `role`, `grain`, `purpose` | whose reading, at which unit (a line, a claim, a span), for what |
-| trajectory $T$, baseline $B_0$ | `trajectory`, `baseline` | the path from body to recipient; everything pinned (hashes, versions, models) |
-| crossing $C$, promise $p$ | `crossing`, `promise` | the boundary to the recipient and the distinction it must receive |
-| anchors $A$, observation map $o_p$ | `anchors`, `observe` | the source spans the relation rests on; how a scorer's output becomes the observable |
-| test domain $X$, interventions $\Delta_I$ | `inputs`, `interventions` | the finite inputs; the admissible changes to the relation |
-| $\simeq_p$, $E_{p,\delta}$ | `observe.labels`, `allowed` | two observations are the same when they carry the same label; which labels ablation may produce (a list, or `lower` / `higher` along `observe.order`) |
-| standing $\sigma$ | `standing` | how far an observation counts: `quorum` runs per trial, `agree` of them for a level, `stable` when every run must agree |
+| relation $I$, locus $v$, body $B$ | `relation`, `locus`, `body` | the premise, where it acts, the spans it lives in |
+| role $r$, grain $g$, purpose $P$ | `role`, `grain`, `purpose` | whose reading, at which unit, for what |
+| trajectory $T$, baseline $B_0$ | `trajectory`, `baseline` | the path to the recipient; everything pinned |
+| crossing $C$, promise $p$ | `crossing`, `promise` | the boundary, and what must cross it |
+| anchors $A$, observation $o_p$ | `anchors`, `observe` | spans the relation rests on; labels (and their order) |
+| test domain $X$, interventions $\Delta_I$ | `inputs`, `interventions` | the inputs; the trials below |
+| $\simeq_p$, $E_{p,\delta}$ | `observe.labels`, `allowed` | same label, same observation; what ablation may produce |
+| standing $\sigma$ | `standing` | `quorum` runs a trial, `agree` for a level, `stable` |
 
-The whole frame is hashed before any trial runs. Changing any coordinate,
-the grain included, makes a new frame that is assessed separately.
+Hashed whole: change any coordinate, the grain included, and it is another frame.
 
-## The internals
-
-| Intervention | What changes | What it can show |
+| Trial | Changes | Settles |
 |---|---|---|
-| `baseline` | nothing | the observation the others are compared with |
-| `repeat` | nothing, fresh run | whether the scorer is stable enough to read (stochastic scorers need a quorum) |
-| `presentation` | the domain's distinctive words masked or renamed consistently | presentation invariance (carriage check 2) |
-| `ablation` | the anchors removed | required influence (check 1) |
-| `cumulative ablation` | the anchors and what the first ablation fell back on | whether support is carried elsewhere |
-| `sham` | spans of the same size and kind, not cited, removed | specificity: an effect from any removal is not this relation's |
-| `bypass` | the connection that makes the relation operative removed | no hidden fallback (check 3): the designated opening must appear |
-
-Verdicts are read by fixed rules, in this order:
-
-1. **unresolved** when a planned trial has no agreed level, the baseline and
-   repeat runs split under `stable`, or repeat differs from baseline;
-2. **coupled but misaligned** when presentation moves it, or ablation moves it
-   to a label the frame does not allow;
-3. **cooled** when ablation leaves it as it was;
-4. **unresolved** when a sham moves it too (the change is not specific);
-5. **carried** otherwise, with the carriage checks the trials did not settle
-   kept as open obligations (no hidden fallback, presentation, specificity,
-   materialization).
-
-**Outside scope** only by the recipient's declared exclusion (`outsideScope`),
-never inferred. Each finding keeps its category, levels, evidence and
-obligations.
+| `baseline`, `repeat` | nothing | the level, and whether it holds |
+| `ablation` | anchors removed | required influence |
+| `cumulative` | anchors and what they fell back on | support carried elsewhere |
+| `sham` | as much unanchored text, same kind | specificity |
+| `presentation` | words renamed consistently | presentation invariance |
+| `bypass` | the connection cut | no hidden fallback |
 
 ## Use
 
@@ -81,47 +212,32 @@ result = run(frame, RuleReader(), Budget(calls=calls_needed(frame)), on_record=k
 print(finding.category, finding.evidence)
 ```
 
-[`examples/refund.py`](examples/refund.py) runs this with two scorers on a
-refund policy. Both decline a request without a receipt and grant it once the
-receipt rule is removed; only presentation (renaming "receipt" consistently)
-shows that one reads a phrase and the other the rule:
+| Example | Shows | Calls |
+|---|---|---|
+| [`refund.py`](examples/refund.py) | presentation tells a phrase matcher (misaligned) from a rule reader (carried) | none |
+| [`refund_live.py`](examples/refund_live.py) | the same frame read by a live critic | 21 a model |
+| [`after_the_poem.py`](examples/after_the_poem.py) | a study's retained sessions reach every published category ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)) | none |
 
-```
-phrase-matcher: coupled but misaligned
-  presentation moved it decline -> grant
-rule-reader: carried
-  ablation moved it decline -> grant, and it held under presentation and the sham
-```
+All three run as tests.
 
-[`examples/after_the_poem.py`](examples/after_the_poem.py) replays a study's
-retained load-bearing sessions ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)'s
-`scripts/load_bearing.py`) through Gadfly with no new calls, and checks that
-each case reaches the category the study published. Both examples run as
-tests.
-
-## Batteries (scorers)
-
-A battery reads the exact text of one trial (it never learns which trial) and
-returns an observation: one of the frame's labels, or a typed opening when
-there is no outcome to read. It implements `gadfly.types.Battery`:
+## Batteries
 
 ```python
 class Battery(Protocol):
     name: str
 
-    def check(self, frame: Frame) -> None: ...  # refuse a frame it must not serve
+    def check(self, frame: Frame) -> None: ...  # refuse before any call
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation: ...
 ```
 
-| Battery | Scorer | Kind |
+| Battery | Reads with | Guarantees |
 |---|---|---|
-| `unified` | an LLM critic through the [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router): `anthropic/...` on Anthropic's API, `openrouter/...` on OpenRouter, `deepseek/...` on DeepSeek, each with the router's key | sampled: `quorum` runs a trial |
-| `egemma` | Gemma 4 on this machine through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge`: the frame's instruction alone, no persona, no cache | sampled, or close to deterministic at `temperature: 0` |
-| your own | a project's evaluation (a rubric reader, a prompt pack's eval gate), or a deterministic engine | deterministic: `quorum: 1`; repeat is its determinism check |
+| `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router): `anthropic/`, `openrouter/`, `deepseek/` | loopback, no tools, `data_collection: deny` unless the frame names the model under `trainsOnInputs`; OpenAI slugs refused (need Codex sign-in) |
+| `egemma` | Gemma 4 through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits` |
+| your own | an evaluation, or a deterministic engine (`quorum: 1`) | yours |
 
-Both critics answer in JSON to a schema, `{"label": ...}` by default. A
-critic of your own keeps its schema and names where the label is, the
-observation map $o_p$ made explicit:
+Critics answer JSON to a schema, `{"label": ...}` by default. Your own critic
+keeps its schema and points at the label:
 
 ```json
 "battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5", "reasoning": "low",
@@ -129,30 +245,11 @@ observation map $o_p$ made explicit:
                        "label": "/review/verdict"}}
 ```
 
-Both talk only to loopback, over no proxy and through no redirect, and keep
-their key out of every record. The unified critic sends no tools (through the
-router, Claude runs on Anthropic's API but web search runs elsewhere, so a
-body would leave Anthropic), refuses a model whose provider trains on its
-inputs (Ultra Spark, Muse) unless the frame names it under
-`battery.trainsOnInputs`, asks every other request to reach only endpoints
-that keep no data (`provider.data_collection: deny`; which endpoints serve a
-model is the OpenRouter account's provider setting, and DeepSeek's own
-endpoint may train on prompts), and refuses an OpenAI slug, which the router
-reaches only with the caller's Codex sign-in.
-A provider's own endpoint is a native battery, not this one.
-[`examples/refund_live.py`](examples/refund_live.py) runs the refund frame
-through either critic.
-
 ## Runs and records
 
-`run` makes every planned trial of every input `quorum` times, in a fixed
-order. It never starts a call the `Budget` cannot cover (calls, and output
-tokens capped per call), stops between calls when `cancelled()` says so, and
-hands each `Record` to `on_record` as soon as it exists, so what was spent is
-kept even when a run stops early. A battery that fails gives an opening, never
-a guessed label. `judge` reads only records the plan could have made: this
-frame's hash, its inputs and trials, each trial's own body hash, runs within
-the quorum, each run once.
+- `run` never starts a call the `Budget` cannot cover, stops between calls on `cancelled()`, and hands each `Record` to `on_record` as it is made.
+- A failed or unreadable answer is an opening, never a guessed label.
+- `judge` reads only records the plan could have made: this frame, its trials and bodies, runs within the quorum, each once.
 
 ## Development
 
