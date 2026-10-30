@@ -1,5 +1,5 @@
 site_name: Gadfly
-site_description: Counterfactual load-bearing tests over a declared frame.
+site_description: A fixed-rule, counterfactual test for premises that must survive a handoff.
 site_url: https://mirzahusadzic.github.io/gadfly/
 repo_url: https://github.com/mirzahusadzic/gadfly
 repo_name: mirzahusadzic/gadfly
@@ -7,30 +7,48 @@ copyright: Code Apache-2.0; the text of When meaning is load-bearing CC BY 4.0
 
 theme:
   name: material
+  language: en
+  font: false
   features:
     - navigation.sections
     - navigation.top
+    - navigation.footer
     - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+    - toc.follow
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: custom
       accent: custom
-      toggle: {icon: material/weather-night, name: Dark}
+      toggle: {icon: material/weather-night, name: Switch to dark}
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
       accent: custom
-      toggle: {icon: material/weather-sunny, name: Light}
+      toggle: {icon: material/weather-sunny, name: Switch to light}
 
 nav:
   - Home: index.md
-  - When meaning is load-bearing: load-bearing.md
-  - Architecture: architecture.md
-  - Framework: framework.md
-  - Batteries: batteries.md
-  - Examples: examples.md
+  - Start here:
+      - Your first frame: first-frame.md
+      - Framework: framework.md
+      - Write a frame: write-a-frame.md
+      - Interventions: interventions.md
+      - Reading a verdict: reading-a-verdict.md
+  - Practice:
+      - Batteries: batteries.md
+      - Examples: examples.md
+      - Architecture and limits: architecture.md
+      - Extending Gadfly:
+          - Overview: roadmap.md
+          - Placement intervention: breadth/placement-intervention.md
+          - Local JSON battery: breadth/local-json-battery.md
+          - Example report: breadth/report-example.md
   - Reference: reference.md
+  - When meaning is load-bearing: load-bearing.md
 
 markdown_extensions:
   - tables
@@ -44,14 +62,12 @@ markdown_extensions:
   - pymdownx.snippets: {base_path: ["."], check_paths: true}
   - pymdownx.superfences:
       custom_fences:
-        # Not "mermaid": Material would draw it without the elk layout.
         - name: mermaid
           class: mermaid-house
           format: !!python/name:pymdownx.superfences.fence_code_format
 
 hooks:
   - hooks/github_math.py
-  - hooks/schema.py
 
 plugins:
   - search
@@ -67,8 +83,10 @@ plugins:
 
 extra_css:
   - stylesheets/house.css
+
 extra_javascript:
   - javascripts/mathjax.js
   - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
   - path: javascripts/mermaid-house.mjs
     type: module
+

@@ -1,0 +1,69 @@
+# Interventions
+
+An intervention changes or removes the declared relation while preserving the
+frame, input and encounter. The plan is derived from the frame alone, before a
+call is made.
+
+--8<-- "README.md:trials"
+
+## What each trial can establish
+
+| Trial | A move means | No move means | What it cannot establish |
+|---|---|---|---|
+| `baseline` | the starting level | — | that the relation matters |
+| `repeat` | a split level is unstable at this quorum | the observed level recurred | that the input is representative |
+| `ablation` | the anchors influenced the outcome | no operative influence here | that another span is not a fallback |
+| `cumulative` | support moved elsewhere | the initial cut removed the effect | carriage on its own |
+| `sham` | the scorer responds to irrelevant same-kind text | the ablation's change is more specific | that every possible irrelevant change is controlled |
+| `presentation` | wording drives the observation | the tested wording change is invariant | that all paraphrases are |
+| `bypass` | a hidden connection still carries the relation | no tested fallback is visible | receiving-system materialization |
+| `control` | the scorer can move under a required removal | the scorer or task is insensitive | that it moves for the right reason |
+
+## Bypass and control are different
+
+A **bypass** cuts the connection that makes the relation operative. It asks
+whether some fallback still produces the required outcome. When the frame says
+`allowed.bypass`, the bypass must land on that designated opening to clear the
+check. Without `allowed.bypass`, any move from baseline clears the current
+implementation's check; that is a weaker claim and should be stated as such.
+
+A **control** cuts material that any competent reader of the task should need.
+It is a discrimination check: if ablation leaves the observation but the control
+also leaves it, an all-constant scorer and an idle relation are not distinguishable.
+
+## Presentation is one pass
+
+`presentation` maps words to replacements. The mapping is applied once, longest
+phrase first, consistently to body spans and the input. This prevents swaps from
+collapsing and chains from compounding. A mapping that reaches no input and no
+body span is refused as a trial identical to baseline.
+
+## SAM and cost
+
+For one input, the call count is the number of planned trials times `quorum`.
+For the whole frame it is inputs times trials times quorum. A sham with
+`{"draws": n}` adds up to `n` trials; an unmatched draw is left out and the
+finding says so.
+
+```python
+from gadfly.pipeline import calls_needed, plan
+
+for trial in plan(frame):
+    print(trial.id, len(trial.removed), trial.body_hash)
+print("full run:", calls_needed(frame), "calls")
+```
+
+Run a subset with `run(..., only={"baseline", "ablation"})`. Missing planned trials
+make the finding unresolved unless they are not part of the plan at all; use a
+partial run for diagnosis, not for a final carried verdict.
+
+## Choosing a useful first set
+
+For a deterministic scorer, start with `repeat`, `ablation`, one `sham`, and
+`presentation`. Add `bypass` when the relation has a separate connection or
+binding line whose removal should expose an opening. Add `control` when a cooled
+result is plausible. Add `cumulative` only when support could shift rather than disappear.
+
+For a sampled model, use a quorum of at least three and decide `agree` before the
+run. Do not increase the quorum after seeing labels; that changes the frame hash.
+

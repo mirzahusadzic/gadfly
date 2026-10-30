@@ -2,7 +2,7 @@
 hide: [toc]
 ---
 
-# Architecture
+# Architecture and limits
 
 ```mermaid
 ---
@@ -62,7 +62,7 @@ flowchart TB
             EB["<b>egemma</b><br/>Gemma 4"]
             OW["<b>your own</b><br/>an eval, an engine"]
         end
-        RT["<b>Unified router</b><br/>loopback, no tools,<br/>data collection denied"]
+    RT["<b>Unified router</b><br/>loopback, no tools,<br/>deny unless consented"]
         ES["<b>eGemma /judge</b><br/>loopback, no persona,<br/>paced to its budget"]
     end
     PV["<b>Providers</b><br/>Anthropic; OpenRouter,<br/>DeepSeek's models through it"]
@@ -72,7 +72,6 @@ flowchart TB
         K3["battery"]
         K4["service"]
         K5["kept"]
-        K6["outside"]
     end
 
     YOU -->|"frame"| SI --> PL --> RU
@@ -101,13 +100,42 @@ flowchart TB
     class K3 interface
     class K4 service
     class K5 kept
-    class K6 default
     style OW stroke-dasharray: 5 4
 ```
 
 <p align="center"><em>Gadfly keeps no state: each record goes to you as it is made, and judge reads them back.
-Batteries reach only this machine; providers only through the router.</em></p>
+The two shipped batteries use the loopback paths shown; your own battery is arbitrary code. One battery serves a run.</em></p>
 
 - `run` never starts a call the `Budget` cannot cover, stops between calls on `cancelled()`, and hands each `Record` to `on_record` as it is made.
 - A failed or unreadable answer is an opening, never a guessed label.
 - `judge` reads only records the plan could have made: this frame, its trials and bodies, runs within the quorum, each once.
+
+## Reading the chart
+
+The chart is about **boundaries**, which a table cannot show as directly:
+
+| Boundary | What crosses it | What the caller keeps |
+|---|---|---|
+| your code → `situate` | one JSON declaration | the frame and its hash |
+| `run` → batteries | one prompt and output cap | the battery is told neither trial id nor frame hash |
+| `run` → your records | one immutable `Record` at a time | the only durable state in the workflow |
+| records → `judge` | saved evidence, not a live service | verdicts can be recomputed without another call |
+| shipped batteries → local services | schema-constrained requests to loopback | tokens and credentials stay out of observations |
+
+The two shipped batteries honor no-proxy, no-redirect and loopback rules. The
+`Battery` protocol does not; a third-party battery may do anything its code does.
+
+## Current limits
+
+- The fixed-rule category and the essay's five required carriage checks do not
+  yet line up. This commit can return `carried` while fallback or materialization
+  checks are open, and can return `outside scope` from declaration alone.
+- `materialized: true` is an author declaration. It does not inspect the receiving
+  document, field, program or state.
+- Traceability rests on caller-kept records. Gadfly does not authenticate or sign
+  them and deliberately does not check a record's prompt digest against the
+  current prompt in all replay cases.
+- There is no command line, frame schema file or person-readable report in the
+  package yet. The [Extending Gadfly](roadmap.md) page proposes concrete interfaces for them.
+- Gadfly is a small research library. A result is about the declared frame, test
+  inputs, scorer and encounter; it is not a general quality score.

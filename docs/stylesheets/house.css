@@ -1,11 +1,143 @@
-/* The house colours: kept blue, engine green. */
+/* Gadfly's visual system: a system sans for prose, restrained blue/green roles. */
 :root {
-  --md-primary-fg-color: #4d6bfe;
-  --md-primary-fg-color--light: #7b91fe;
-  --md-primary-fg-color--dark: #3a52c4;
-  --md-accent-fg-color: #2e9e5b;
+  --gadfly-ink: #1d2733;
+  --gadfly-muted: #5f6b7a;
+  --gadfly-paper: #faf9f5;
+  --gadfly-panel: #f1f3f5;
+  --gadfly-rule: #d7dce2;
+  --gadfly-blue: #4057c7;
+  --gadfly-green: #257f4a;
+  --gadfly-amber: #a56b00;
+  --md-primary-fg-color: var(--gadfly-blue);
+  --md-primary-fg-color--light: #6c7fe0;
+  --md-primary-fg-color--dark: #2f43a3;
+  --md-accent-fg-color: var(--gadfly-green);
+  --md-text-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --md-code-font: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
-.mermaid-house { margin: 1.5em 0; text-align: center; }
+
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: var(--gadfly-paper);
+  --md-default-fg-color: var(--gadfly-ink);
+  --md-default-fg-color--light: var(--gadfly-muted);
+  --md-typeset-a-color: var(--gadfly-blue);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #151a21;
+  --md-default-fg-color: #e5e9ef;
+  --md-default-fg-color--light: #aab4c1;
+  --md-typeset-a-color: #91a1ff;
+  --md-code-bg-color: #202731;
+}
+
+.md-grid { max-width: 88rem; }
+.md-content__inner { max-width: 52rem; margin-inline: auto; }
+.md-sidebar { font-size: 0.72rem; }
+.md-nav__title { font-weight: 700; letter-spacing: 0.01em; }
+
+.md-typeset {
+  font-size: 0.78rem;
+  line-height: 1.72;
+  letter-spacing: 0.005em;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  color: var(--gadfly-ink);
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h1,
+[data-md-color-scheme="slate"] .md-typeset h2,
+[data-md-color-scheme="slate"] .md-typeset h3 { color: #f1f4f8; }
+
+.md-typeset h1 { font-weight: 760; margin-bottom: 0.45em; }
+.md-typeset h2 { border-top: 1px solid var(--gadfly-rule); padding-top: 1.15rem; margin-top: 2.2rem; }
+[data-md-color-scheme="slate"] .md-typeset h2 { border-color: #303946; }
+.md-typeset a { text-decoration-thickness: 0.06em; text-underline-offset: 0.15em; }
+
+.md-typeset table:not([class]) {
+  border: 1px solid var(--gadfly-rule);
+  border-radius: 0.45rem;
+  box-shadow: none;
+  font-size: 0.72rem;
+  overflow: hidden;
+}
+.md-typeset table:not([class]) th {
+  background: var(--gadfly-panel);
+  color: var(--gadfly-ink);
+  font-weight: 700;
+}
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) { border-color: #303946; }
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th { background: #202731; color: #f1f4f8; }
+
+.md-typeset code {
+  border-radius: 0.24rem;
+  padding: 0.1em 0.28em;
+}
+
+.md-typeset pre > code { line-height: 1.55; }
+.md-typeset .admonition,
+.md-typeset details {
+  border-width: 1px;
+  border-radius: 0.4rem;
+  box-shadow: none;
+}
+
+.gadfly-hero {
+  margin: 0 0 2rem;
+  padding: clamp(1.25rem, 4vw, 2.6rem);
+  border: 1px solid var(--gadfly-rule);
+  border-radius: 0.7rem;
+  background:
+    radial-gradient(circle at 90% 10%, rgb(64 87 199 / 14%), transparent 42%),
+    linear-gradient(135deg, rgb(37 127 74 / 7%), transparent 56%),
+    var(--md-default-bg-color);
+}
+[data-md-color-scheme="slate"] .gadfly-hero { border-color: #303946; }
+.gadfly-hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); max-width: 14ch; }
+.gadfly-hero p { max-width: 62ch; font-size: 0.9rem; }
+.gadfly-hero .md-button { margin: 0.6rem 0.55rem 0 0; }
+
+.md-typeset .grid.cards > ul > li {
+  border-color: var(--gadfly-rule);
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--md-default-bg-color) 88%, var(--gadfly-panel));
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--gadfly-blue);
+  transform: translateY(-1px);
+}
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li { border-color: #303946; }
+
+.mermaid-house {
+  margin: 1.5rem 0 0.7rem;
+  padding: 0.6rem;
+  overflow-x: auto;
+  border: 1px solid var(--gadfly-rule);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--md-default-bg-color) 94%, var(--gadfly-panel));
+}
 .mermaid-house svg { max-width: 100%; height: auto; }
-/* Room for the charts. */
-.md-grid { max-width: 1600px; }
+[data-md-color-scheme="slate"] .mermaid-house { border-color: #303946; }
+
+.md-typeset blockquote {
+  border-left: 0.2rem solid var(--gadfly-green);
+  color: var(--md-default-fg-color--light);
+}
+
+.md-footer { border-top: 1px solid var(--gadfly-rule); }
+
+@media screen and (max-width: 76.1875em) {
+  .md-content__inner { max-width: none; }
+}
+
+@media screen and (max-width: 44.9375em) {
+  .gadfly-hero { margin-inline: -0.4rem; padding: 1.15rem; }
+  .md-typeset table:not([class]) { font-size: 0.68rem; }
+}
+

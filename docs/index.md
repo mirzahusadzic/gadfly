@@ -1,15 +1,79 @@
-# Gadfly
+<div class="gadfly-hero" markdown>
 
-Is a premise **load-bearing**? Declare the relation, its grain and the promise
-a recipient needs; Gadfly removes or changes it under fixed interventions, has
-a scorer read each trial, and reads the verdict by fixed rules.
+# Is the premise load-bearing?
+
+**Gadfly removes or changes one declared relation, asks a scorer to read each
+trial, and returns one fixed-rule verdict.** It is a small Python library with
+no runtime dependencies and no hidden state.
+
+[Test your first frame](first-frame.md){ .md-button .md-button--primary }
+[Read the essay](load-bearing.md){ .md-button }
+
+</div>
+
+## Choose your path
+
+<div class="grid cards" markdown>
+
+-   **I have a rule to test**
+
+    ---
+
+    A policy clause, prompt line, citation, permission or code invariant.
+    Start with [Your first frame](first-frame.md).
+
+-   **I have read the essay**
+
+    ---
+
+    Translate $L$ and $\Gamma$ into frame keys, interventions and records.
+    Start with [Framework](framework.md).
+
+-   **I have two minutes**
+
+    ---
+
+    Gadfly returns one of five categories, not a score. Read [Reading a verdict](reading-a-verdict.md),
+    then decide from the examples whether that vocabulary fits your question.
+
+</div>
+
+## What a result looks like
+
+This is the deterministic refund example: two batteries read the same relation.
+
+```text
+phrase-matcher: coupled but misaligned
+  presentation moved it decline -> grant
+rule-reader: carried
+  ablation moved it decline -> grant; held under presentation, 2 shams
+  no hidden fallback: bypass left it at decline
+```
+
+The category answers a narrow question. The evidence says why. The obligation
+says what is still open: here, the rule reader keeps working without the
+connection removed by the bypass.
+
+--8<-- "README.md:verdicts"
 
 ## Install
 
-```
-git clone https://github.com/mirzahusadzic/gadfly.git && cd gadfly && uv sync
+```bash
+git clone https://github.com/mirzahusadzic/gadfly.git
+cd gadfly
+uv sync
+uv run python examples/refund.py tmp/refund-records.jsonl
 ```
 
-## Use
+## Where to go next
 
---8<-- "README.md:use"
+| If you want to... | Read |
+|---|---|
+| write and validate a frame | [Write a frame](write-a-frame.md) |
+| choose trials and estimate calls | [Interventions](interventions.md) |
+| understand evidence and obligations | [Reading a verdict](reading-a-verdict.md) |
+| use a model, local service or your own scorer | [Batteries](batteries.md) |
+| see the method on other relations | [Examples](examples.md) |
+| see the trust boundaries and current limits | [Architecture and limits](architecture.md) |
+| find a library name | [Reference](reference.md) |
+
