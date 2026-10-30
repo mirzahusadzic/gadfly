@@ -3,6 +3,10 @@ what it refuses, and how it reads the stream. No model is called."""
 
 import itertools
 import json
+import socket
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
@@ -283,3 +287,69 @@ def test_every_request_asks_for_endpoints_that_do_not_collect_data(raw):
         assert payload(situate(raw), "t", 8)["provider"] == {"data_collection": "deny"}
     raw["battery"].update(model="ultra-spark/x", trainsOnInputs=["ultra-spark/x"])
     assert "provider" not in payload(situate(raw), "t", 8)
+
+
+class Trickle:
+    """A loopback router that sends one byte at a time and never a newline,
+    so no line ever ends and no single read waits long."""
+
+    def __init__(self, seconds=3.0):
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers.get("content-length") or 0))
+                self.send_response(200)
+                self.end_headers()
+                stop = time.monotonic() + seconds
+                try:
+                    while time.monotonic() < stop:
+                        self.wfile.write(b"x")
+                        self.wfile.flush()
+                        time.sleep(0.02)
+                except OSError:  # the battery hung up: what the deadline is for
+                    pass
+
+            def log_message(self, *args):
+                pass
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.url = f"http://127.0.0.1:{self.server.server_port}/v1/responses"
+        threading.Thread(target=self.server.serve_forever, args=(0.05,), daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+def test_a_stream_that_never_ends_a_line_is_cut_at_the_deadline(raw, token):
+    trickle = Trickle()
+    try:
+        started = time.monotonic()
+        observation = Unified(trickle.url, timeout=0.3).observe(situate(raw), "p", 16)
+        elapsed = time.monotonic() - started
+    finally:
+        trickle.close()
+    assert observation.opening == "the call passed its timeout"
+    assert elapsed < 1.5, elapsed
+
+
+def test_an_event_longer_than_a_read_arrives_whole(raw, token, router):
+    # one 70 kB event used to be split, skipped, and read as an empty answer
+    long = json.dumps({"label": "decline", "note": "x" * 70_000})
+    fake = router((200, {}, answer(long)))
+    assert Unified(fake.url).observe(situate(raw), "p", 16).label == "decline"
+
+
+def test_a_router_that_cannot_be_reached_is_an_opening(raw, token):
+    closed = socket.socket()
+    closed.bind(("127.0.0.1", 0))
+    port = closed.getsockname()[1]
+    closed.close()  # nothing listens there now
+    observation = Unified(f"http://127.0.0.1:{port}/v1/responses").observe(situate(raw), "p", 16)
+    assert observation.label is None
+    assert observation.opening.startswith("the router could not be reached")
+
+
+def test_a_frame_without_a_model_is_a_battery_error_not_a_key_error(raw, token):
+    del raw["battery"]["model"]
+    with pytest.raises(ValueError, match="battery.model"):
+        Unified().observe(situate(raw), "p", 16)
