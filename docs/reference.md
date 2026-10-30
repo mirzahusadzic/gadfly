@@ -17,3 +17,7 @@
 ::: gadfly.batteries.egemma
 
 ::: gadfly.batteries.local_json
+
+::: gadfly.cli
+
+::: gadfly.portfolio

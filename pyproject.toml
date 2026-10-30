@@ -8,6 +8,9 @@ license = "Apache-2.0"
 license-files = ["LICENSE", "LICENSES/*"]
 dependencies = []
 
+[project.scripts]
+gadfly = "gadfly.cli:main"
+
 [project.urls]
 Repository = "https://github.com/mirzahusadzic/gadfly"
 
