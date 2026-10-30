@@ -13,7 +13,8 @@ def test_presentation_tells_a_phrase_from_a_rule(tmp_path):
     findings = refund.main(tmp_path / "records.jsonl")
     assert [(name, category) for name, category, _ in findings] == [
         ("phrase-matcher", "coupled but misaligned"),
-        ("rule-reader", "carried"),
+        # carried needs every carriage check passed, and its fallback is open
+        ("rule-reader", "unresolved"),
     ]
     assert findings[0][2] == [
         "presentation moved it decline -> grant",
@@ -22,6 +23,7 @@ def test_presentation_tells_a_phrase_from_a_rule(tmp_path):
     ]
     assert findings[1][2] == [
         "ablation moved it decline -> grant; held under presentation, 2 shams",
+        "not carried while 1 carriage check is open",
         # it reads the rule whether or not the rules bind: a fallback, left open
         "no hidden fallback: bypass left it at decline",
     ]
@@ -51,7 +53,8 @@ def test_the_live_example_runs_through_a_battery_without_a_model(tmp_path, monke
         fake.close()
     assert result.stopped is None and len(fake.requests) == 21
     assert {b["reasoning"]["effort"] for _, b in fake.requests} == {"low"}
-    assert finding.category == "cooled"  # a critic that always declines
+    # a critic that always declines: nothing shows it can tell, so not cooled
+    assert finding.category == "unresolved"
     assert len((tmp_path / "records.jsonl").read_text().splitlines()) == 21
 
 
@@ -59,8 +62,10 @@ def test_the_review_handoff_worked_example():
     from examples import review_handoff
 
     assert review_handoff.main() == [
-        ("state projection", "carried", "carried"),
-        ("summary: fix ready", "cooled", "cooled"),
-        ("drops its openings", "coupled but misaligned", "carried"),
+        # the authority frame declares no bypass and no sham, so carried waits
+        ("state projection", "carried", "unresolved"),
+        # nothing shows the summary's reading can move, so cooled waits
+        ("summary: fix ready", "unresolved", "unresolved"),
+        ("drops its openings", "coupled but misaligned", "unresolved"),
         ("projection, a record lost", "unresolved", "-"),
     ]

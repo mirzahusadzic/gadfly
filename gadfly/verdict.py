@@ -199,7 +199,25 @@ def _finding(
     # category never hides an open check.
     base = levels.get("baseline")
     finding.obligations[:0] = _open_checks(frame, levels, base)
+    if frame.raw.get("carriage", "all-checks") == "all-checks":
+        _hold(finding)
     return finding
+
+
+def _hold(finding: Finding) -> None:
+    """Under all-checks a category is named only when the checks it needs have
+    passed: every carriage check for carried, discrimination for cooled."""
+    if finding.category == CARRIED and finding.obligations:
+        n = len(finding.obligations)
+        finding.category = UNRESOLVED
+        finding.evidence.append(
+            f"not carried while {n} carriage check{' is' if n == 1 else 's are'} open"
+        )
+    elif finding.category == COOLED and any(
+        o.startswith("discrimination") for o in finding.obligations
+    ):
+        finding.category = UNRESOLVED
+        finding.evidence.append("not cooled until a control shows the scorer can move")
 
 
 def _read(

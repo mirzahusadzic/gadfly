@@ -293,3 +293,27 @@ def test_every_category_keeps_its_open_checks_visible(raw):
     unresolved = verdict(situate(raw), ablation=["grant", "decline", "unclear"])
     assert unresolved.category == UNRESOLVED
     assert any(o.startswith("materialization") for o in unresolved.obligations)
+
+
+def test_carried_and_cooled_need_their_checks_under_the_default_policy(raw):
+    # the essay: a candidate earns carriage only when every check establishes
+    # it, and cooled needs adequate discriminating trials
+    raw.pop("carriage")
+    raw["materialized"] = True
+    open_fallback = verdict(situate(raw), ablation="grant")
+    assert open_fallback.category == UNRESOLVED
+    assert open_fallback.evidence[-1] == "not carried while 1 carriage check is open"
+    assert open_fallback.obligations == ["no hidden fallback: bypass left it at decline"]
+    assert verdict(situate(raw), ablation="grant", bypass="grant").category == CARRIED
+    blind = verdict(situate(raw))
+    assert blind.category == UNRESOLVED
+    assert blind.evidence[-1] == "not cooled until a control shows the scorer can move"
+    raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
+    assert verdict(situate(raw), control="grant").category == COOLED
+
+
+def test_the_listed_policy_names_the_category_and_lists_what_is_open(raw):
+    # After the Poem's rule: the category stands, its open checks beside it
+    assert raw["carriage"] == "listed"
+    assert verdict(situate(raw), ablation="grant").category == CARRIED
+    assert verdict(situate(raw)).category == COOLED

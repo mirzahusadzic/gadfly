@@ -58,6 +58,7 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
         (lambda r: r["interventions"].update(cumulative=["r2"]), "adds no span"),
         (lambda r: r["interventions"].update(control=["r2"]), "the ablation again"),
         (lambda r: r["interventions"].update(control=["r9"]), "control names a span"),
+        (lambda r: r.update(carriage="lenient"), "carriage is all-checks or listed"),
     ],
 )
 def test_a_frame_that_cannot_be_assessed_is_refused(raw, change, message):

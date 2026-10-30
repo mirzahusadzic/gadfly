@@ -40,6 +40,9 @@ REFUND = {
     },
     "allowed": {"ablation": ["grant", "unclear"]},
     "standing": {"quorum": 3, "agree": 2},
+    # The rule-order tests read every category, so the fixture lists open
+    # checks beside them; the default, all-checks, has tests of its own.
+    "carriage": "listed",
     "battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5"},
 }
 

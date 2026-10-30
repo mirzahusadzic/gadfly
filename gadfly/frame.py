@@ -35,7 +35,12 @@ KEYS = {
     "battery",
     "materialized",
     "outsideScope",
+    "carriage",
 }
+# How a category treats the checks its trials left open: under all-checks
+# (the default) carried and cooled need theirs passed; under listed they are
+# listed beside the category, as After the Poem's study reads them.
+CARRIAGE = ("all-checks", "listed")
 
 
 class FrameError(ValueError):
@@ -144,6 +149,8 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("the baseline is a non-empty text or object")
     if not isinstance(raw.get("materialized", False), bool):
         raise FrameError("materialized is true or false")
+    if raw.get("carriage", CARRIAGE[0]) not in CARRIAGE:
+        raise FrameError("carriage is all-checks or listed")
     scope = raw.get("outsideScope")
     if scope is not None and not (isinstance(scope, str) and scope.strip()):
         raise FrameError("outsideScope is the receiving owner's exclusion, in words")

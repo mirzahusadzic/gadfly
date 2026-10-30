@@ -117,6 +117,8 @@ def frame_for(case: dict, study: dict) -> dict:
             "stable": study.get("rules", 1) >= 2,
         },
         "battery": {"kind": "after-the-poem-reader", "model": pinned["model"]},
+        # The study names the category and lists what is open beside it.
+        "carriage": "listed",
     }
 
 
