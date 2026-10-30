@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import sys
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 from gadfly.pipeline import judge, plan, situate
@@ -38,6 +39,20 @@ TRIALS = {
     "ablation": "ablation",
     "sham": "sham-1",
 }
+
+
+def agreement_count(sessions: int, threshold: float) -> int:
+    """The fewest agreeing sessions the study accepts: it rounds the agreeing
+    share half up to two decimals, the precision its thresholds are written
+    in, and compares (scripts/evaluation_contract.py, meets_agreement)."""
+
+    def meets(agreeing: int) -> bool:
+        share = (Decimal(agreeing) / Decimal(sessions)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        return share >= Decimal(str(threshold))
+
+    return min(k for k in range(1, sessions + 1) if meets(k))
 
 
 def frame_for(case: dict, study: dict) -> dict:
@@ -95,8 +110,7 @@ def frame_for(case: dict, study: dict) -> dict:
         "allowed": {"ablation": "lower"},
         "standing": {
             "quorum": pinned["sessions"],
-            # 0.67 of three sessions: the study's "two of three must agree".
-            "agree": round(pinned["sessions"] * pinned["minimum_agreement"]),
+            "agree": agreement_count(pinned["sessions"], pinned["minimum_agreement"]),
             "stable": study.get("rules", 1) >= 2,
         },
         "battery": {"kind": "after-the-poem-reader", "model": pinned["model"]},
