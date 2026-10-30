@@ -31,6 +31,8 @@ from gadfly.types import Record
 
 # The rubric's levels, lowest first.
 LEVELS = ["level-0", "level-1", "level-2", "level-3", "level-4"]
+# The world's own words, which the study's presentation trial masks.
+SEED = "seed vocabulary"
 # The study's trial names, and the trial ids Gadfly plans for them.
 TRIALS = {
     "baseline": "baseline",
@@ -58,7 +60,8 @@ def agreement_count(sessions: int, threshold: float) -> int:
 def frame_for(case: dict, study: dict) -> dict:
     """The study's frame, coordinate by coordinate, as its plan pins it. The
     body is described, not copied: the cited ranges and the sham's uncited
-    blocks of the same lengths."""
+    blocks of the same lengths, both in the seed vocabulary its presentation
+    trial masks."""
     pinned = study["frame"]
     lines = case.get("ablated_lines") or 0
     return {
@@ -84,12 +87,12 @@ def frame_for(case: dict, study: dict) -> dict:
             "spans": [
                 {
                     "id": "cited",
-                    "text": f"the {lines} lines the reference reading cited",
+                    "text": f"the {lines} lines the reference reading cited, in {SEED}",
                     "kind": "lines",
                 },
                 {
                     "id": "uncited",
-                    "text": f"{lines} uncited lines in blocks of the same lengths",
+                    "text": f"{lines} uncited lines in blocks of the same lengths, in {SEED}",
                     "kind": "lines",
                 },
             ]
@@ -104,7 +107,7 @@ def frame_for(case: dict, study: dict) -> dict:
         "interventions": {
             "repeat": True,
             "ablation": True,
-            "presentation": {"seed vocabulary": "neutral tokens"},
+            "presentation": {SEED: "neutral tokens"},
             "sham": {"draws": 1},
         },
         "allowed": {"ablation": "lower"},

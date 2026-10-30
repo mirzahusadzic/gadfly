@@ -23,4 +23,5 @@ phrase-matcher: coupled but misaligned
   presentation moved it decline -> grant
 rule-reader: carried
   ablation moved it decline -> grant; held under presentation, 2 shams
+  no hidden fallback: bypass left it at decline
 ```

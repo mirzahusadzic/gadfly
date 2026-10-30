@@ -42,11 +42,24 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
         (lambda r: r.update(allowed={"ablation": [{"a": 1}]}), "allowed lists"),
         (lambda r: r.update(allowed={"ablation": []}), "allowed lists"),
         (lambda r: r["observe"].update(order=5), "observe.order orders"),
+        # a trial that cannot change anything would clear its check unearned
+        (lambda r: r["interventions"].update(presentation={"reciept": "slip"}), "renames nothing"),
+        (lambda r: r["interventions"].update(presentation={"a": "x", "A": "y"}), "twice"),
+        (lambda r: r["interventions"].update(bypass=["r2"]), "the ablation again"),
+        (lambda r: r["interventions"].update(cumulative=["r2"]), "adds no span"),
     ],
 )
 def test_a_frame_that_cannot_be_assessed_is_refused(raw, change, message):
     change(raw)
     with pytest.raises(FrameError, match=message):
+        parse(raw)
+
+
+def test_presentation_must_reach_every_input(raw):
+    # "day" is only in x1's text; x2's presentation prompt would be its baseline's
+    raw["interventions"]["presentation"] = {"day": "date"}
+    raw["inputs"].append({"id": "x2", "text": "A customer asks for a refund."})
+    with pytest.raises(FrameError, match="renames nothing x2 reads"):
         parse(raw)
 
 

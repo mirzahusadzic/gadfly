@@ -14,7 +14,8 @@
       {"id": "days", "text": "Refunds are granted within 30 days of purchase.", "kind": "rule"},
       {"id": "receipt", "text": "A refund requires a receipt.", "kind": "rule"},
       {"id": "gift", "text": "Gift cards are never refunded.", "kind": "rule"},
-      {"id": "method", "text": "Refunds go back to the original payment.", "kind": "rule"}
+      {"id": "method", "text": "Refunds go back to the original payment.", "kind": "rule"},
+      {"id": "binding", "text": "These rules decide every request.", "kind": "note"}
     ]
   },
   "anchors": ["receipt"],
@@ -30,7 +31,7 @@
     "ablation": true,
     "sham": {"draws": 2},
     "presentation": {"receipt": "proof of purchase"},
-    "bypass": ["receipt"]
+    "bypass": ["binding"]
   },
   "allowed": {"ablation": ["grant", "unclear"]},
   "standing": {"quorum": 1, "agree": 1},

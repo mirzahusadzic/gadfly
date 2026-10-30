@@ -3,6 +3,7 @@
 import pytest
 
 from examples.after_the_poem import agreement_count, frame_for
+from gadfly.pipeline import situate
 
 
 @pytest.mark.parametrize(
@@ -27,3 +28,5 @@ def test_the_frame_takes_the_studys_count():
     pinned = {"model": "m", "reasoning": "x", "rubric_sha256": "h", "prompt_version": "p"}
     study = {"id": "s", "frame": {**pinned, "sessions": 5, "minimum_agreement": 0.67}}
     assert frame_for(case, study)["standing"]["agree"] == 4
+    # the replay's frame is a frame Gadfly accepts, data or no data
+    situate(frame_for(case, study))

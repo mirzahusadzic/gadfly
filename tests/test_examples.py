@@ -17,7 +17,9 @@ def test_presentation_tells_a_phrase_from_a_rule(tmp_path):
     ]
     assert findings[0][2] == ["presentation moved it decline -> grant"]
     assert findings[1][2] == [
-        "ablation moved it decline -> grant; held under presentation, 2 shams"
+        "ablation moved it decline -> grant; held under presentation, 2 shams",
+        # it reads the rule whether or not the rules bind: a fallback, left open
+        "no hidden fallback: bypass left it at decline",
     ]
 
 

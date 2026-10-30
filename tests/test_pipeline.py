@@ -36,10 +36,11 @@ def test_a_full_run_is_judged_from_its_records_alone(raw):
     assert result.stopped is None and len(result.records) == result.planned == 21
     assert list(result.records) == kept
     assert set(battery.caps) == {64}
-    # bypass removes the receipt rule too: the critic grants, so the fallback check passes
+    # bypass cuts "These rules decide every request."; a battery that reads the
+    # rule's words regardless still declines, so the fallback check stays open
     [finding] = judge(frame, [r.as_dict() for r in kept])
     assert finding.category == CARRIED
-    assert not any(o.startswith("no hidden fallback") for o in finding.obligations)
+    assert "no hidden fallback: bypass left it at decline" in finding.obligations
 
 
 def test_a_scorer_that_reads_a_word_not_the_rule_is_caught_by_presentation(raw):

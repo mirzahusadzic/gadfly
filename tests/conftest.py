@@ -22,6 +22,7 @@ REFUND = {
             {"id": "r2", "text": "A refund requires a receipt.", "kind": "rule"},
             {"id": "r3", "text": "Gift cards are never refunded.", "kind": "rule"},
             {"id": "r4", "text": "Refunds go back to the original payment.", "kind": "rule"},
+            {"id": "r5", "text": "These rules decide every request.", "kind": "note"},
         ]
     },
     "anchors": ["r2"],
@@ -35,7 +36,7 @@ REFUND = {
         "ablation": True,
         "sham": {"draws": 2},
         "presentation": {"receipt": "proof of purchase"},
-        "bypass": ["r2"],
+        "bypass": ["r5"],
     },
     "allowed": {"ablation": ["grant", "unclear"]},
     "standing": {"quorum": 3, "agree": 2},

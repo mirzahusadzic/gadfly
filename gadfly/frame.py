@@ -156,7 +156,7 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError(f"unknown interventions: {sorted(unknown)}")
     if interventions.get("ablation") is not True:
         raise FrameError("required influence is tested by ablation: declare it (ablation: true)")
-    _check_interventions(interventions, ids)
+    _check_interventions(interventions, spans, anchors, inputs)
 
     allowed = need("allowed", dict)
     if set(allowed) != {"ablation"}:
@@ -220,8 +220,18 @@ def _span(value: Any) -> Span:
     return Span(**value)
 
 
-def _check_interventions(interventions: dict[str, Any], ids: list[str]) -> None:
-    """Each intervention in the one shape the plan reads."""
+def _check_interventions(
+    interventions: dict[str, Any],
+    spans: tuple[Span, ...],
+    anchors: tuple[str, ...],
+    inputs: tuple[dict[str, str], ...],
+) -> None:
+    """Each intervention in the one shape the plan reads, and each able to
+    change what the scorer reads: a trial identical to another would settle
+    its check without testing it."""
+    from .interventions import rename
+
+    ids = [span.id for span in spans]
     if not isinstance(interventions.get("repeat", False), bool):
         raise FrameError("repeat is true or false")
     for key in ("cumulative", "bypass"):
@@ -233,6 +243,10 @@ def _check_interventions(interventions: dict[str, Any], ids: list[str]) -> None:
         for span_id in value:
             if span_id not in ids:
                 raise FrameError(f"{key} names a span not in the body: {span_id}")
+    if set(interventions.get("bypass") or []) == set(anchors):
+        raise FrameError("bypass removes exactly the anchors: it is the ablation again")
+    if "cumulative" in interventions and set(interventions["cumulative"]) <= set(anchors):
+        raise FrameError("cumulative adds no span to the anchors: it is the ablation again")
     sham = interventions.get("sham")
     if not (sham is None or isinstance(sham, bool)):
         draws = sham.get("draws") if isinstance(sham, dict) else None
@@ -249,3 +263,11 @@ def _check_interventions(interventions: dict[str, Any], ids: list[str]) -> None:
         )
     ):
         raise FrameError("presentation maps words to their replacements")
+    if presentation:
+        if len({word.lower() for word in presentation}) != len(presentation):
+            raise FrameError("presentation names a word twice (it renames without case)")
+        mapping = tuple(sorted(presentation.items()))
+        body_moves = any(rename(span.text, mapping) != span.text for span in spans)
+        for x in inputs:
+            if not body_moves and rename(x["text"], mapping) == x["text"]:
+                raise FrameError(f"presentation renames nothing {x['id']} reads")
