@@ -22,6 +22,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Architecture: architecture.md
   - Framework: framework.md
   - Batteries: batteries.md
   - Examples: examples.md

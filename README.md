@@ -5,89 +5,26 @@ a recipient needs; Gadfly removes or changes it under fixed interventions, has
 a scorer read each trial, and reads the verdict by fixed rules. The method:
 [When meaning is load-bearing](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing).
 
-<!-- --8<-- [start:arch] -->
-```mermaid
----
-config:
-    layout: elk
-    look: neo
-    themeVariables:
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
-    flowchart:
-        wrappingWidth: 220
-        padding: 20
-    themeCSS: >-
-        foreignObject { overflow: visible; }
-        .node foreignObject, .node foreignObject *, .edgeLabel, .edgeLabel * {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif !important; line-height: 1.5 !important; }
-        .node foreignObject, .node foreignObject * { white-space: nowrap !important; }
-        .edgeLabel, .edgeLabel p, .edgeLabel span {
-        background: transparent !important; }
-        .edgeLabel rect { fill: transparent !important; }
-        .labelBkg { --knock: var(--vscode-editor-background,
-        var(--bgColor-default, rgb(from currentColor
-        clamp(30, (128 - r) * 100, 255) clamp(30, (128 - r) * 100, 255)
-        clamp(30, (128 - r) * 100, 255)))); --ring: var(--knock);
-        --fill: color-mix(in srgb, var(--ring) 30%, var(--knock));
-        background: var(--fill) !important; border-radius: 4px;
-        box-shadow: 0 0 0 5px var(--fill), 0 0 0 7px var(--ring); }
-        .label[data-id^="L_RU_"] .labelBkg { --ring: #2e9e5b; }
-        .label[data-id^="L_YOU_"] .labelBkg { --ring: #8e5bd6; }
-        .edgeLabel p, .edgeLabel span, .edgeLabel text {
-        --halo: var(--fill, var(--vscode-editor-background,
-        var(--bgColor-default,
-        rgb(from currentColor clamp(0, (128 - r) * 100, 255)
-        clamp(0, (128 - r) * 100, 255) clamp(0, (128 - r) * 100, 255)))));
-        text-shadow: 1px 0 var(--halo), -1px 0 var(--halo),
-        0 1px var(--halo), 0 -1px var(--halo), 1px 1px var(--halo),
-        -1px -1px var(--halo), 1px -1px var(--halo), -1px 1px var(--halo),
-        0 0 3px var(--halo), 0 0 4px var(--halo); }
----
-flowchart TB
-    YOU["<b>Your code</b><br/>a frame, a battery,<br/>where records go"]
-    subgraph M["This machine"]
-        subgraph G["Gadfly: a library, no state"]
-            SI["<b>situate</b><br/>check, hash"]
-            PL["<b>plan</b><br/>trials from the frame"]
-            RU["<b>run</b><br/>the only call out"]
-            JU["<b>judge</b><br/>rules over records"]
-        end
-        ST["<b>Your records</b><br/>file, database, fixture"]
-        subgraph B["Batteries: one Protocol"]
-            UN["<b>unified</b><br/>an LLM critic"]
-            EB["<b>egemma</b><br/>Gemma 4"]
-            OW["<b>your own</b><br/>an eval, an engine"]
-        end
-        RT["<b>Unified router</b><br/>loopback, no tools,<br/>data collection denied"]
-        ES["<b>eGemma /judge</b><br/>loopback, no persona,<br/>paced to its budget"]
-    end
-    PV["<b>Providers</b><br/>Anthropic, OpenRouter, DeepSeek"]
+## Use
 
-    YOU -->|"frame"| SI --> PL --> RU
-    RU -->|"prompt, cap"| B
-    UN --> RT --> PV
-    EB --> ES
-    RU -->|"each record"| ST
-    ST --> JU
-    JU -->|"finding"| YOU
+<!-- --8<-- [start:use] -->
+```python
+import json
+from pathlib import Path
 
-    classDef default fill:#8a96a82e,stroke:#8a96a8,stroke-width:1px
-    classDef person fill:#8e5bd64d,stroke:#8e5bd6,stroke-width:2px
-    classDef interface fill:#ffffff40,stroke:#b5bcc6,stroke-width:2px
-    classDef service fill:#e3a0084d,stroke:#e3a008,stroke-width:2px
-    classDef kept fill:#4d6bfe4d,stroke:#4d6bfe,stroke-width:2px
-    classDef engine fill:#2e9e5b4d,stroke:#2e9e5b,stroke-width:2px
-    classDef group fill:#8a96a814,stroke:#8a96a8,stroke-width:2px,stroke-dasharray:6 4
-    class YOU person
-    class SI,PL,RU,JU engine
-    class UN,EB,OW interface
-    class RT,ES service
-    class ST kept
-    class M,G,B group
-    style OW stroke-dasharray: 5 4
+from examples.refund import RuleReader  # or your own battery
+from gadfly.pipeline import calls_needed, judge, run, situate
+from gadfly.types import Budget
+
+frame = situate(json.loads(Path("examples/refund.json").read_text()))
+kept = []  # your state, kept your way
+result = run(frame, RuleReader(), Budget(calls=calls_needed(frame)), on_record=kept.append)
+[finding] = judge(frame, kept)
+print(finding.category, finding.evidence)
 ```
-<!-- --8<-- [end:arch] -->
+<!-- --8<-- [end:use] -->
 
+## How a verdict is read
 
 <!-- --8<-- [start:framework] -->
 ```mermaid
@@ -127,25 +64,31 @@ config:
         -1px -1px var(--halo), 1px -1px var(--halo), -1px 1px var(--halo),
         0 0 3px var(--halo), 0 0 4px var(--halo); }
 ---
-flowchart TB
-    FR["<b>Frame</b><br/>relation, grain, promise,<br/>anchors, allowed, quorum; hashed"]
+flowchart LR
+    FR["<b>Frame</b><br/>declared,<br/>hashed whole"]
     subgraph T["Trials, each read quorum times"]
         BR["<b>baseline, repeat</b><br/>the level"]
         PS["<b>presentation</b><br/>words renamed"]
         AB["<b>ablation</b><br/>anchors removed"]
-        SH["<b>sham</b><br/>as much other text"]
+        SH["<b>sham</b><br/>as much<br/>other text"]
         BY["<b>bypass</b><br/>connection cut"]
     end
     Q1{{"agreed, stable?"}}
     Q2{{"wording held,<br/>direction allowed?"}}
-    Q3{{"ablation moved it?"}}
+    Q3{{"ablation<br/>moved it?"}}
     Q4{{"shams held?"}}
     R1["<b>unresolved</b>"]
-    R2["<b>coupled but misaligned</b>"]
+    R2["<b>coupled but<br/>misaligned</b>"]
     R3["<b>cooled</b>"]
     R4["<b>unresolved</b><br/>not specific"]
-    R5["<b>carried</b><br/>open checks listed"]
-    OS["<b>outside scope</b><br/>only when declared"]
+    R5["<b>carried</b><br/>open checks<br/>listed"]
+    OS["<b>outside scope</b><br/>when declared"]
+    subgraph K["Key"]
+        K1["yours"]
+        K2["trial"]
+        K3{{"check"}}
+        K4["verdict"]
+    end
 
     FR --> T
     FR -.-> OS
@@ -154,7 +97,7 @@ flowchart TB
     AB --> Q2
     AB --> Q3
     SH --> Q4
-    Q1 -->|"yes"| Q2 -->|"yes"| Q3 -->|"yes"| Q4 -->|"yes"| R5
+    Q1 --> Q2 --> Q3 --> Q4 --> R5
     Q1 -->|"no"| R1
     Q2 -->|"no"| R2
     Q3 -->|"no"| R3
@@ -172,10 +115,15 @@ flowchart TB
     class BR,AB,SH,PS,BY engine
     class Q1,Q2,Q3,Q4 interface
     class R1,R2,R3,R4,R5,OS default
-    class T group
+    class T,K group
+    class K1 person
+    class K2 engine
+    class K3 interface
+    class K4 default
 ```
-<!-- --8<-- [end:framework] -->
 
+<p align="center"><em>Each trial feeds the check it settles; the first “no” names the verdict. Dotted: left open, or only when declared.</em></p>
+<!-- --8<-- [end:framework] -->
 
 ## Frame
 
@@ -204,36 +152,6 @@ Hashed whole: change any coordinate, the grain included, and it is another frame
 | `presentation` | words renamed consistently | presentation invariance |
 | `bypass` | the connection cut | no hidden fallback |
 <!-- --8<-- [end:trials] -->
-
-## Use
-
-<!-- --8<-- [start:use] -->
-```python
-import json
-from pathlib import Path
-
-from examples.refund import RuleReader  # or your own battery
-from gadfly.pipeline import calls_needed, judge, run, situate
-from gadfly.types import Budget
-
-frame = situate(json.loads(Path("examples/refund.json").read_text()))
-kept = []  # your state, kept your way
-result = run(frame, RuleReader(), Budget(calls=calls_needed(frame)), on_record=kept.append)
-[finding] = judge(frame, kept)
-print(finding.category, finding.evidence)
-```
-<!-- --8<-- [end:use] -->
-
-<!-- --8<-- [start:examples] -->
-| Example | Shows | Calls |
-|---|---|---|
-| `examples/refund.py` | presentation tells a phrase matcher (misaligned) from a rule reader (carried) | none |
-| `examples/refund_live.py` | the same frame read by a live critic | 21 a model |
-| `examples/review_handoff.py` | the [worked example](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing), failed check to review handoff: one system carries the finding and the grant, a "fix ready" summary cools both, one that drops its openings is misaligned, a lost record is unresolved | none |
-| `examples/after_the_poem.py` | a study's retained sessions reach every published category ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)) | none |
-
-All run as tests.
-<!-- --8<-- [end:examples] -->
 
 ## Batteries
 
@@ -266,13 +184,22 @@ keeps its schema and points at the label:
 ```
 <!-- --8<-- [end:adapter] -->
 
-## Runs and records
+## Examples
 
-<!-- --8<-- [start:records] -->
-- `run` never starts a call the `Budget` cannot cover, stops between calls on `cancelled()`, and hands each `Record` to `on_record` as it is made.
-- A failed or unreadable answer is an opening, never a guessed label.
-- `judge` reads only records the plan could have made: this frame, its trials and bodies, runs within the quorum, each once.
-<!-- --8<-- [end:records] -->
+<!-- --8<-- [start:examples] -->
+| Example | Shows | Calls |
+|---|---|---|
+| `examples/refund.py` | presentation tells a phrase matcher (misaligned) from a rule reader (carried) | none |
+| `examples/refund_live.py` | the same frame read by a live critic | 21 a model |
+| `examples/review_handoff.py` | the [worked example](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing), failed check to review handoff: one system carries the finding and the grant, a "fix ready" summary cools both, one that drops its openings is misaligned, a lost record is unresolved | none |
+| `examples/after_the_poem.py` | a study's retained sessions reach every published category ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)) | none |
+
+All run as tests.
+<!-- --8<-- [end:examples] -->
+
+## Docs
+
+`uv run --group docs mkdocs serve`: architecture, framework, batteries, examples and the API reference.
 
 ## Development
 
@@ -280,5 +207,4 @@ keeps its schema and points at the label:
 uv sync
 uv run pytest            # the After the Poem replay runs when GADFLY_ATP_PLANS names its plans
 uv run ruff check . && uv run ruff format --check .
-uv run --group docs mkdocs serve   # the docs, with the API reference
 ```
