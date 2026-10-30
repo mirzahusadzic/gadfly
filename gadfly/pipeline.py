@@ -49,10 +49,13 @@ def run(
     cancelled: Callable[[], bool] = lambda: False,
     on_record: Callable[[Record], None] = lambda record: None,
     only: Iterable[str] | None = None,
+    kept: Iterable[Record | dict] = (),
 ) -> RunResult:
     """Every planned trial of every input, `quorum` times each, in a fixed
-    order. `only` limits the run to some trial ids (a resumed or partial run);
-    the verdict then reads what is there."""
+    order. `only` limits the run to some trial ids (a partial run); the
+    verdict then reads what is there. `kept` finishes a run that stopped:
+    the calls those records made are not made again (drop a record from it
+    to make its call again), and the verdict reads the two runs together."""
     battery.check(frame)
     trials = plan(frame)
     if only is not None:
@@ -61,38 +64,49 @@ def run(
         if unknown:
             raise ValueError(f"the plan has no trial {sorted(unknown)}")
         trials = [t for t in trials if t.id in wanted]
+    done = set()
+    for record in kept:
+        made = record.as_dict() if isinstance(record, Record) else record
+        if made["frame"] != frame.hash:
+            raise ValueError("a kept record belongs to another frame")
+        done.add((made["input"], made["trial"], made["run"]))
+    calls = [
+        (x, trial, index)
+        for x in frame.inputs
+        for trial in trials
+        for index in range(frame.quorum)
+        if (x["id"], trial.id, index) not in done
+    ]
     cap = budget.output_tokens_per_call
-    planned = len(frame.inputs) * len(trials) * frame.quorum
+    planned = len(calls)
     if planned > budget.calls:
         return RunResult(
             (), planned, f"the plan needs {planned} calls; the budget allows {budget.calls}"
         )
     records: list[Record] = []
     spent = 0
-    for x in frame.inputs:
-        for trial in trials:
-            text = prompt(frame, trial, x)
-            for index in range(frame.quorum):
-                if cancelled():
-                    return RunResult(tuple(records), planned, "cancelled")
-                if budget.tokens is not None and spent + cap > budget.tokens:
-                    return RunResult(
-                        tuple(records), planned, f"the token budget ({budget.tokens}) is spent"
-                    )
-                observation = _observe(battery, frame, text, cap)
-                # What the battery reports, or the cap when it reports nothing.
-                used = observation.usage.get("output_tokens")
-                used = cap if not isinstance(used, int) or isinstance(used, bool) else used
-                spent += used
-                record = _record(frame, battery, x["id"], trial, index, text, observation)
-                records.append(record)
-                on_record(record)
-                if used > cap:  # the budget holds only while every call keeps its cap
-                    return RunResult(
-                        tuple(records),
-                        planned,
-                        f"the battery reported {used} output tokens for a call capped at {cap}",
-                    )
+    for x, trial, index in calls:
+        if cancelled():
+            return RunResult(tuple(records), planned, "cancelled")
+        if budget.tokens is not None and spent + cap > budget.tokens:
+            return RunResult(
+                tuple(records), planned, f"the token budget ({budget.tokens}) is spent"
+            )
+        text = prompt(frame, trial, x)
+        observation = _observe(battery, frame, text, cap)
+        # What the battery reports, or the cap when it reports nothing.
+        used = observation.usage.get("output_tokens")
+        used = cap if not isinstance(used, int) or isinstance(used, bool) else used
+        spent += used
+        record = _record(frame, battery, x["id"], trial, index, text, observation)
+        records.append(record)
+        on_record(record)
+        if used > cap:  # the budget holds only while every call keeps its cap
+            return RunResult(
+                tuple(records),
+                planned,
+                f"the battery reported {used} output tokens for a call capped at {cap}",
+            )
     return RunResult(tuple(records), planned, None)
 
 

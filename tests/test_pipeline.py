@@ -77,6 +77,21 @@ def test_cancel_stops_between_calls_and_keeps_what_was_made(raw):
     assert result.stopped == "cancelled" and len(result.records) == 5
 
 
+def test_a_cancelled_run_is_finished_from_what_it_kept(raw):
+    raw["inputs"].append({"id": "x2", "text": "Another customer without a receipt asks."})
+    frame, battery = situate(raw), Rules()
+    first = run(frame, battery, Budget(calls=42), cancelled=lambda: len(battery.calls) == 30)
+    kept = [r.as_dict() for r in first.records]
+    rest = run(frame, battery, Budget(calls=12), kept=kept)
+    assert rest.stopped is None and rest.planned == len(rest.records) == 12
+    made = [(r.input, r.trial, r.run) for r in (*first.records, *rest.records)]
+    assert len(made) == len(set(made)) == calls_needed(frame)
+    [one, two] = judge(frame, [*first.records, *rest.records])
+    assert one.category == two.category == CARRIED
+    with pytest.raises(ValueError, match="another frame"):
+        run(frame, battery, Budget(calls=42), kept=[{**kept[0], "frame": "other"}])
+
+
 def test_a_failing_battery_gives_an_opening_never_a_label(raw):
     def fail(prompt):
         raise TimeoutError("slow")
