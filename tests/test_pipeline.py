@@ -209,3 +209,19 @@ def test_a_battery_cannot_change_the_frame_it_reads(raw):
     frame = situate(raw)
     [finding] = judge(frame, run(frame, Sneaky(), Budget(calls=21)).records)
     assert any(o.startswith("materialization") for o in finding.obligations)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"calls": True},
+        {"calls": 1.5},
+        {"calls": 1, "output_tokens_per_call": True},
+        {"calls": 1, "tokens": "10"},
+        {"calls": 1, "tokens": -1},
+    ],
+)
+def test_a_budget_is_whole_numbers_it_can_enforce(kwargs):
+    # refused when made, not when run compares a string to a number
+    with pytest.raises(ValueError):
+        Budget(**kwargs)

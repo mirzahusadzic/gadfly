@@ -80,5 +80,12 @@ class Budget:
     tokens: int | None = None
 
     def __post_init__(self) -> None:
+        def whole(value: Any) -> bool:
+            return isinstance(value, int) and not isinstance(value, bool)
+
+        if not (whole(self.calls) and whole(self.output_tokens_per_call)):
+            raise ValueError("a budget counts calls and tokens in whole numbers")
         if self.calls < 1 or self.output_tokens_per_call < 1:
             raise ValueError("a budget allows at least one call of at least one token")
+        if self.tokens is not None and not (whole(self.tokens) and self.tokens >= 0):
+            raise ValueError("a token budget is a whole number of tokens, or None")
