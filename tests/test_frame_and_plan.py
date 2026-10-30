@@ -19,13 +19,29 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
         (lambda r: r.update(anchors=[]), "at least one anchor"),
         (lambda r: r["interventions"].pop("ablation"), "ablation"),
         (lambda r: r["interventions"].update(teleport=True), "unknown interventions"),
-        (lambda r: r.update(allowed={"ablation": ["maybe"]}), "allowed lists labels"),
+        (lambda r: r.update(allowed={"ablation": ["maybe"]}), "allowed lists one or more"),
         (lambda r: r.update(allowed={"ablation": "lower"}), "needs observe.order"),
         (lambda r: r.update(standing={"quorum": 3, "agree": 4}), "agree is between"),
         (lambda r: r["body"]["spans"].append(dict(r["body"]["spans"][0])), "share an id"),
         (lambda r: r["interventions"].update(bypass=["r9"]), "bypass names a span"),
         (lambda r: r.update(inputs=[{"id": "x1"}]), "inputs are"),
         (lambda r: r["observe"].update(labels=["grant"]), "at least two labels"),
+        # a frame that would run, spend its calls, and only then be refused
+        (lambda r: r.update(inputs=[{"id": "x", "text": "a"}, {"id": "x", "text": "b"}]), "share"),
+        (lambda r: r.update(inputs=[{"id": 1, "text": "a"}]), "inputs are"),
+        # a declaration that would be read as something else, or not at all
+        (lambda r: (r["standing"].update(stable=True), r["interventions"].pop("repeat")), "repeat"),
+        (lambda r: r["standing"].update(stable="no"), "stable is true or false"),
+        (lambda r: r["standing"].update(stabel=True), "standing says"),
+        (lambda r: r.pop("baseline"), "baseline"),
+        (lambda r: r.update(materialised=True), "unknown keys"),
+        (lambda r: r.update(materialized="yes"), "materialized is true or false"),
+        (lambda r: r.update(outsideScope=True), "outsideScope"),
+        (lambda r: r["observe"].update(instruction=" "), "instruction"),
+        # a wrong type is a FrameError, not a TypeError
+        (lambda r: r.update(allowed={"ablation": [{"a": 1}]}), "allowed lists"),
+        (lambda r: r.update(allowed={"ablation": []}), "allowed lists"),
+        (lambda r: r["observe"].update(order=5), "observe.order orders"),
     ],
 )
 def test_a_frame_that_cannot_be_assessed_is_refused(raw, change, message):

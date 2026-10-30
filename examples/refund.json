@@ -8,6 +8,7 @@
   "trajectory": "policy and request, the agent's decision, the reply to the customer",
   "crossing": "the decision in the reply",
   "promise": "a request without a receipt is declined, however the rule is worded",
+  "baseline": "the policy as written and one request; no rule changed",
   "body": {
     "spans": [
       {"id": "days", "text": "Refunds are granted within 30 days of purchase.", "kind": "rule"},

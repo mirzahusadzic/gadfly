@@ -15,6 +15,7 @@ REFUND = {
     "trajectory": "policy, agent's decision, reply to the customer",
     "crossing": "the agent's reply",
     "promise": "a request without a receipt is declined",
+    "baseline": "the policy as written and one request; no rule changed",
     "body": {
         "spans": [
             {"id": "r1", "text": "Refunds are granted within 30 days of purchase.", "kind": "rule"},

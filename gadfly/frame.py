@@ -15,9 +15,26 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-# The situated relation L = (I, B, r, g, P, T, B0, C, p): each must be said.
+# The situated relation L = (I, B, r, g, P, T, B0, C, p): each must be said
+# (the body B and the baseline B0 are checked on their own).
 SITUATION = ("relation", "locus", "role", "grain", "purpose", "trajectory", "crossing", "promise")
 INTERVENTIONS = ("repeat", "ablation", "cumulative", "sham", "presentation", "bypass")
+# Every key a frame may have: one misspelt is refused, never silently ignored.
+KEYS = {
+    "name",
+    *SITUATION,
+    "baseline",
+    "body",
+    "anchors",
+    "inputs",
+    "observe",
+    "interventions",
+    "allowed",
+    "standing",
+    "battery",
+    "materialized",
+    "outsideScope",
+}
 
 
 class FrameError(ValueError):
@@ -82,10 +99,22 @@ def parse(raw: dict[str, Any]) -> Frame:
             raise FrameError(f"{key} must be a {kind.__name__}")
         return value
 
+    unknown = set(raw) - KEYS
+    if unknown:
+        raise FrameError(f"unknown keys: {sorted(unknown)}")
     need("name", str)
     for key in SITUATION:
-        if not str(need(key, str)).strip():
+        if not need(key, str).strip():
             raise FrameError(f"{key} is empty")
+    if "baseline" not in raw:
+        raise FrameError("the frame does not say its baseline (B0: what is pinned)")
+    if not (isinstance(raw["baseline"], str | dict) and raw["baseline"]):
+        raise FrameError("the baseline is a non-empty text or object")
+    if not isinstance(raw.get("materialized", False), bool):
+        raise FrameError("materialized is true or false")
+    scope = raw.get("outsideScope")
+    if scope is not None and not (isinstance(scope, str) and scope.strip()):
+        raise FrameError("outsideScope is the receiving owner's exclusion, in words")
 
     body = need("body", dict)
     spans = tuple(_span(span) for span in need("spans", list, body))
@@ -101,8 +130,13 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError(f"anchors not in the body: {missing}")
 
     inputs = tuple(need("inputs", list))
-    if not inputs or not all(isinstance(x, dict) and x.get("id") and x.get("text") for x in inputs):
-        raise FrameError("inputs are a non-empty list of {id, text}")
+    if not inputs or not all(
+        isinstance(x, dict) and all(isinstance(x.get(k), str) and x[k] for k in ("id", "text"))
+        for x in inputs
+    ):
+        raise FrameError("inputs are a non-empty list of {id, text}, both non-empty strings")
+    if len({x["id"] for x in inputs}) != len(inputs):
+        raise FrameError("two inputs share an id")
 
     observe = need("observe", dict)
     labels = tuple(need("labels", list, observe))
@@ -113,6 +147,8 @@ def parse(raw: dict[str, Any]) -> Frame:
     ):
         raise FrameError("labels are distinct, non-empty strings")
     instruction = need("instruction", str, observe)
+    if not instruction.strip():
+        raise FrameError("the instruction is empty")
 
     interventions = need("interventions", dict)
     unknown = set(interventions) - set(INTERVENTIONS)
@@ -126,21 +162,35 @@ def parse(raw: dict[str, Any]) -> Frame:
     if set(allowed) != {"ablation"}:
         raise FrameError("allowed says which observations ablation may produce, and only that")
     order = observe.get("order")
-    if order is not None and sorted(order) != sorted(labels):
+    if order is not None and not (
+        isinstance(order, list)
+        and all(isinstance(label, str) for label in order)
+        and sorted(order) == sorted(labels)
+    ):
         raise FrameError("observe.order orders exactly the labels")
     for value in allowed.values():
         if value in ("lower", "higher"):
             if order is None:
                 raise FrameError(f"allowed '{value}' needs observe.order")
-        elif not (isinstance(value, list) and set(value) <= set(labels)):
+        elif not (
+            isinstance(value, list)
+            and value
+            and all(isinstance(label, str) and label in labels for label in value)
+        ):
             raise FrameError(
-                "allowed lists labels the observation can take, or says lower or higher"
+                "allowed lists one or more of the frame's labels, or says lower or higher"
             )
 
     standing = need("standing", dict)
-    quorum, agree = int(need("quorum", int, standing)), int(need("agree", int, standing))
+    if not set(standing) <= {"quorum", "agree", "stable"}:
+        raise FrameError("standing says quorum, agree and, optionally, stable")
+    quorum, agree = need("quorum", int, standing), need("agree", int, standing)
     if not 1 <= agree <= quorum:
         raise FrameError("agree is between 1 and quorum")
+    if not isinstance(standing.get("stable", False), bool):
+        raise FrameError("stable is true or false")
+    if standing.get("stable") and not interventions.get("repeat"):
+        raise FrameError("stable reads the baseline and repeat sessions together: declare repeat")
 
     battery = need("battery", dict)
     need("kind", str, battery)
