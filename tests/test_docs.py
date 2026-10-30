@@ -2,6 +2,7 @@
 
 import importlib
 import inspect
+import json
 from pathlib import Path
 
 from hooks.github_math import on_page_markdown
@@ -54,3 +55,11 @@ def test_every_public_name_in_the_reference_has_a_docstring():
                     and not function.__doc__
                 ]
     assert missing == []
+
+
+def test_the_site_publishes_the_frame_schema_where_its_id_says(tmp_path):
+    from hooks.schema import on_post_build
+
+    on_post_build({"site_dir": str(tmp_path)})
+    published = json.loads((tmp_path / "frame.schema.json").read_text())
+    assert published["$id"] == "https://mirzahusadzic.github.io/gadfly/frame.schema.json"

@@ -1,9 +1,10 @@
-"""The command line: plan, run, report, portfolio.
+"""The command line: plan, run, report, check-frame, portfolio.
 
     gadfly plan examples/refund.json
     gadfly run examples/refund.json --battery examples.refund:RuleReader \
         --calls 7 --out records.jsonl
     gadfly report examples/refund.json records.jsonl
+    gadfly check-frame my-frame.json
     gadfly portfolio a.json b.json
 
 It uses only the public pipeline. `run` needs an explicit call budget,
@@ -23,6 +24,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .frame import FrameError, schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
 from .types import Budget, Record
@@ -155,6 +157,37 @@ def command_report(args) -> int:
     return 0
 
 
+def command_check_frame(args) -> int:
+    """`gadfly check-frame`: the frame's shape against the schema (when
+    jsonschema is installed), then the parser's authoritative refusal."""
+    raw = json.loads(Path(args.frame).read_text(encoding="utf-8"))
+    problems = []
+    try:
+        from jsonschema import Draft202012Validator
+    except ImportError:
+        checked = "parser"
+    else:
+        checked = "schema and parser"
+        for error in sorted(Draft202012Validator(schema()).iter_errors(raw), key=str):
+            where = "/" + "/".join(str(part) for part in error.absolute_path)
+            problems.append({"at": where, "problem": error.message})
+    try:
+        frame = situate(raw)
+    except FrameError as error:
+        frame, problems = None, [*problems, {"at": "/", "problem": str(error)}]
+    if args.json:
+        result = {"ok": not problems, "checked": checked, "problems": problems}
+        if frame and not problems:
+            result.update(frame=frame.name, hash=frame.hash, calls=calls_needed(frame))
+        print(json.dumps(result, indent=2))
+    elif problems:
+        for problem in problems:
+            print(f"{problem['at']}: {problem['problem']}")
+    else:
+        print(f"ok ({checked}): {frame.name} ({frame.hash}), {calls_needed(frame)} calls")
+    return 1 if problems else 0
+
+
 def command_portfolio(args) -> int:
     """`gadfly portfolio`: several reports counted side by side."""
     documents = [json.loads(Path(path).read_text(encoding="utf-8")) for path in args.reports]
@@ -189,6 +222,11 @@ def parser() -> argparse.ArgumentParser:
     report.add_argument("records")
     report.add_argument("--json", action="store_true")
     report.set_defaults(func=command_report)
+
+    check = commands.add_parser("check-frame", help="check a frame before any call")
+    check.add_argument("frame")
+    check.add_argument("--json", action="store_true")
+    check.set_defaults(func=command_check_frame)
 
     portfolio = commands.add_parser("portfolio", help="count verdicts across report files")
     portfolio.add_argument("reports", nargs="+", help="documents from `gadfly report --json`")

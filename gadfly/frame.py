@@ -13,6 +13,7 @@ import hashlib
 import json
 import math
 from dataclasses import dataclass
+from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
@@ -125,6 +126,13 @@ def canonical(value: Any) -> str:
 def digest(value: Any) -> str:
     """The SHA-256 of a value's canonical serialization."""
     return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
+
+
+def schema() -> dict[str, Any]:
+    """The frame's JSON Schema (draft 2020-12), for editors and authoring
+    checks. It describes the shape; `parse` stays the authority on what only
+    code can check (anchors in the body, trials that change something)."""
+    return json.loads(files(__package__).joinpath("frame.schema.json").read_text("utf-8"))
 
 
 def load(path: str | Path) -> Frame:

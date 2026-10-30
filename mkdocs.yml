@@ -51,6 +51,7 @@ markdown_extensions:
 
 hooks:
   - hooks/github_math.py
+  - hooks/schema.py
 
 plugins:
   - search
