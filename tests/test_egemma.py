@@ -307,3 +307,22 @@ def test_an_egemma_that_cannot_be_reached_is_an_opening(frame, key):
     closed.close()
     observation = EGemma(f"http://127.0.0.1:{port}/judge").observe(frame, "p", 32)
     assert observation.opening.startswith("eGemma could not be reached")
+
+
+@pytest.mark.parametrize("header", ["nan", "-5"])
+def test_a_wait_that_is_not_a_finite_number_falls_back_to_a_second(frame, key, server, header):
+    # sleep(nan) raises; a negative wait asks for nothing
+    waits = []
+    fake = server([(503, {"retry-after": header}, b"{}"), reply("decline")])
+    observation = EGemma(fake.base + "/judge", sleep=waits.append).observe(frame, "p", 32)
+    assert observation.label == "decline" and waits == [1.0]
+
+
+@pytest.mark.parametrize("seconds", [True, float("inf"), "60"])
+def test_a_budget_in_seconds_that_are_not_seconds_is_no_budget(raw, key, server, seconds):
+    limits = json.dumps({"judge": {"calls": 2, "seconds": seconds}}).encode()
+    fake = server(reply("decline"), routes={"/rate-limits": (200, {}, limits)})
+    raw["battery"] = {"kind": "egemma"}
+    battery = EGemma(fake.base + "/judge")
+    battery.check(situate(raw))
+    assert battery.budget is None

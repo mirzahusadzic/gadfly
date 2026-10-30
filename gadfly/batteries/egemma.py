@@ -28,6 +28,7 @@ What this battery promises, whatever the frame says:
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import time
@@ -64,13 +65,16 @@ def _key() -> str:
 
 def _wait(error: urllib.error.HTTPError) -> float:
     """How long eGemma asks a busy caller to wait: its Retry-After header, or
-    the seconds its rate limiter names in the detail; at most MAX_WAIT."""
+    the seconds its rate limiter names in the detail, or a second; at most
+    MAX_WAIT. A wait that is not a finite, non-negative number is not one."""
     header = error.headers.get("retry-after") if error.headers else None
     seconds = None
     if header is not None:
         try:
             seconds = float(header)
         except ValueError:
+            seconds = None
+        if seconds is not None and not (math.isfinite(seconds) and seconds >= 0):
             seconds = None
     if seconds is None:
         try:
@@ -139,7 +143,8 @@ class EGemma:
             self.budget = None
             return
         valid = isinstance(calls, int) and not isinstance(calls, bool) and calls >= 1
-        valid = valid and isinstance(seconds, int | float) and seconds > 0
+        valid = valid and isinstance(seconds, int | float) and not isinstance(seconds, bool)
+        valid = valid and math.isfinite(seconds) and seconds > 0
         self.budget = (calls, float(seconds)) if valid else None
 
     def pace(self) -> None:
