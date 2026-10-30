@@ -285,7 +285,7 @@ def _check_interventions(
     """Each intervention in the one shape the plan reads, and each able to
     change what the scorer reads: a trial identical to another would settle
     its check without testing it."""
-    from .interventions import rename
+    from .interventions import renamer
 
     ids = [span.id for span in spans]
     if not isinstance(interventions.get("repeat", False), bool):
@@ -323,8 +323,8 @@ def _check_interventions(
     if presentation:
         if len({word.lower() for word in presentation}) != len(presentation):
             raise FrameError("presentation names a word twice (it renames without case)")
-        mapping = tuple(sorted(presentation.items()))
-        body_moves = any(rename(span.text, mapping) != span.text for span in spans)
+        renaming = renamer(tuple(sorted(presentation.items())))  # built once
+        body_moves = any(renaming(span.text) != span.text for span in spans)
         for x in inputs:
-            if not body_moves and rename(x["text"], mapping) == x["text"]:
+            if not body_moves and renaming(x["text"]) == x["text"]:
                 raise FrameError(f"presentation renames nothing {x['id']} reads")

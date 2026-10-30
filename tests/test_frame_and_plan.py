@@ -173,3 +173,32 @@ def draws_to_plan(raw, anchors):
 def test_sham_draws_grow_with_the_spans_not_their_square(raw):
     small, large = draws_to_plan(copy.deepcopy(raw), 5), draws_to_plan(copy.deepcopy(raw), 10)
     assert large <= 2.5 * max(small, 1), (small, large)
+
+
+def mapping_bytes_to_parse(raw, words):
+    # a map that renames only the input still had to be rebuilt for every span
+    raw["body"] = {
+        "spans": [
+            *[{"id": f"s{i}", "text": f"policy line {i}", "kind": "rule"} for i in range(words)],
+            {"id": "anchor", "text": "the rule under test", "kind": "rule"},
+        ]
+    }
+    raw["anchors"] = ["anchor"]
+    mapping = {f"absent{i}": f"replacement{i}" for i in range(words)}
+    raw["interventions"] = {"ablation": True, "presentation": mapping}
+    raw["inputs"] = [{"id": "x", "text": " ".join(mapping)}]
+    touched = [0]
+
+    def counting(text, pairs):
+        touched[0] += len(text) + sum(len(a) + len(b) for a, b in pairs)
+        return rename(text, pairs)
+
+    with patch("gadfly.interventions.rename", counting):
+        parse(raw)
+    return touched[0]
+
+
+def test_the_presentation_map_is_built_once_per_frame(raw):
+    small = mapping_bytes_to_parse(copy.deepcopy(raw), 20)
+    large = mapping_bytes_to_parse(copy.deepcopy(raw), 40)
+    assert large <= 2.5 * max(small, 1), (small, large)

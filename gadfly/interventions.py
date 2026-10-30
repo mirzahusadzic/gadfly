@@ -12,7 +12,9 @@ import random
 import re
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
+from functools import lru_cache
 
 from .frame import Frame, Span, digest
 
@@ -45,10 +47,16 @@ def rename(text: str, mapping: tuple[tuple[str, str], ...]) -> str:
     """Rename each word consistently, whole words only, in one pass: a word is
     renamed once (a swap stays a swap), and a phrase wins over a word inside
     it. A capital is kept, and so is a word written in capitals."""
-    if not mapping:
-        return text
+    return renamer(mapping)(text) if mapping else text
+
+
+@lru_cache(maxsize=64)
+def renamer(mapping: tuple[tuple[str, str], ...]) -> Callable[[str], str]:
+    """`rename` with its map built once: the table and the pattern are made
+    here, and the function returned applies them to any text."""
     table = {old.lower(): new for old, new in mapping}
     words = "|".join(re.escape(old) for old in sorted(table, key=len, reverse=True))
+    pattern = re.compile(rf"\b(?:{words})\b", flags=re.IGNORECASE)
 
     def swap(match: re.Match[str]) -> str:
         word = match.group(0)
@@ -57,7 +65,7 @@ def rename(text: str, mapping: tuple[tuple[str, str], ...]) -> str:
             return new.upper()
         return new[:1].upper() + new[1:] if word[:1].isupper() else new
 
-    return re.sub(rf"\b(?:{words})\b", swap, text, flags=re.IGNORECASE)
+    return lambda text: pattern.sub(swap, text)
 
 
 def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
@@ -118,7 +126,8 @@ def plan(frame: Frame) -> list[Trial]:
             trials.append(Trial(f"sham-{index}", "sham", draw, (), without(spans, set(draw))))
     if iv.get("presentation"):
         mapping = tuple(sorted(iv["presentation"].items()))
-        renamed = tuple(Span(span.id, rename(span.text, mapping), span.kind) for span in spans)
+        renaming = renamer(mapping)
+        renamed = tuple(Span(span.id, renaming(span.text), span.kind) for span in spans)
         trials.append(Trial("presentation", "presentation", (), mapping, renamed))
     if iv.get("bypass"):
         cut = tuple(iv["bypass"])
