@@ -118,6 +118,12 @@ def run(
                 planned,
                 f"the battery reported {used} output tokens for a call capped at {cap}",
             )
+        if used < 0:  # a negative report would buy back budget it never had
+            return RunResult(
+                tuple(records),
+                planned,
+                f"the battery reported {used} output tokens, which no call spends",
+            )
     return RunResult(tuple(records), planned, None)
 
 

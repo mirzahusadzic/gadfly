@@ -225,3 +225,12 @@ def test_a_budget_is_whole_numbers_it_can_enforce(kwargs):
     # refused when made, not when run compares a string to a number
     with pytest.raises(ValueError):
         Budget(**kwargs)
+
+
+def test_a_battery_that_reports_negative_spend_stops_the_run(raw):
+    # -1000 tokens would make any token budget unreachable
+    negative = Observation(label="decline", usage={"output_tokens": -1000})
+    budget = Budget(calls=21, output_tokens_per_call=4, tokens=10)
+    result = run(situate(raw), Rules(answer=lambda p: negative), budget)
+    assert len(result.records) == 1 and result.records[0].usage == {"output_tokens": -1000}
+    assert result.stopped == "the battery reported -1000 output tokens, which no call spends"
