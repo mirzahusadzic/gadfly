@@ -182,6 +182,15 @@ def test_deepseek_is_sent_with_deny_unless_the_frame_consents(raw, token):
         assert "provider" not in payload(situate(raw), "t", 8)
 
 
+def test_consent_to_training_is_a_list_of_slugs_never_a_substring(raw, token):
+    # "ultra-spark/deepseek" is a substring of the slug named: no consent
+    named = "ultra-spark/deepseek-v4.1-flash-1017"
+    raw["battery"].update(model="ultra-spark/deepseek", trainsOnInputs=named)
+    with pytest.raises(ValueError, match="trainsOnInputs lists"):
+        Unified().check(situate(raw))
+    assert payload(situate(raw), "t", 8)["provider"]["data_collection"] == "deny"
+
+
 def test_no_endpoint_without_data_is_an_opening_that_says_why(raw, token, router):
     fake = router((200, {"x-codex-router-diagnostic": "openrouter-data-policy"}, b""))
     observation = Unified(fake.url).observe(situate(raw), "p", 16)

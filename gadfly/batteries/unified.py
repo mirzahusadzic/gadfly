@@ -74,6 +74,13 @@ def _token() -> str:
     return token
 
 
+def consented(battery: dict) -> bool:
+    """Whether the frame lets this model go where inputs train: its slug,
+    exactly, in the list under trainsOnInputs (a string is no list)."""
+    named = battery.get("trainsOnInputs")
+    return isinstance(named, list) and battery["model"] in named
+
+
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     """The request body. No `tools` key, ever."""
     battery = frame.battery
@@ -96,7 +103,7 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     }
     if battery.get("reasoning"):
         body["reasoning"] = {"effort": battery["reasoning"]}
-    if battery["model"] not in (battery.get("trainsOnInputs") or []):
+    if not consented(battery):
         # OpenRouter then reaches only endpoints that keep no data to train on.
         body["provider"] = {"data_collection": "deny"}
     return body
@@ -174,9 +181,10 @@ class Unified:
         if battery.get("reasoning") not in (None, *EFFORTS):
             raise ValueError(f"battery.reasoning is one of {', '.join(EFFORTS)}")
         check_output(battery)
-        if model.startswith(TRAINS_ON_INPUTS) and model not in (
-            battery.get("trainsOnInputs") or []
-        ):
+        named = battery.get("trainsOnInputs", [])
+        if not (isinstance(named, list) and all(isinstance(m, str) and m for m in named)):
+            raise ValueError("battery.trainsOnInputs lists the model slugs that may train")
+        if model.startswith(TRAINS_ON_INPUTS) and not consented(battery):
             raise ValueError(
                 f"{model}'s provider trains on its inputs; "
                 "name it under battery.trainsOnInputs to send the body there"
