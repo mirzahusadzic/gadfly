@@ -94,8 +94,9 @@ rule-reader: carried
 ```
 
 [`examples/after_the_poem.py`](examples/after_the_poem.py) replays a study's
-retained load-bearing sessions through Gadfly with no new calls, and checks
-that each case reaches the category the study published. Both examples run as
+retained load-bearing sessions ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)'s
+`scripts/load_bearing.py`) through Gadfly with no new calls, and checks that
+each case reaches the category the study published. Both examples run as
 tests.
 
 ## Batteries (scorers)

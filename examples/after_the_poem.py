@@ -1,8 +1,9 @@
-"""After the Poem's load-bearing readings, replayed through Gadfly.
+"""After the Poem's load-bearing test, replayed through Gadfly.
 
 After the Poem asks whether the level a reader gives a world on one question
-rests on the evidence the reading cites. Its load-bearing plans kept every
-trial's sessions. This is what a user of Gadfly does with such a study:
+rests on the evidence the reading cites (docs/study.md, "The load-bearing
+test"). Its scripts/load_bearing.py keeps every trial's sessions in a plan's
+findings.json. This is what a user of Gadfly does with such a study:
 
 1. situate the frame, in the study's own coordinates;
 2. turn each retained session into a record;
@@ -10,9 +11,12 @@ trial's sessions. This is what a user of Gadfly does with such a study:
 
 No model is called: the records already exist. Gadfly must reach the category
 the study published, case by case. The study's data stays where it is; pass
-the directory of one plan's findings:
+the directory of one plan that load_bearing.py has run (plan.json and
+findings.json):
 
     python examples/after_the_poem.py <plan directory>
+
+After the Poem: https://github.com/mirzahusadzic/after-the-poem
 """
 
 from __future__ import annotations
@@ -37,9 +41,9 @@ TRIALS = {
 
 
 def frame_for(case: dict, study: dict) -> dict:
-    """The study's frame, coordinate by coordinate (its load-bearing readings,
-    "The frame"). The body is described, not copied: the cited ranges and the
-    sham's blocks of the same lengths."""
+    """The study's frame, coordinate by coordinate, as its plan pins it. The
+    body is described, not copied: the cited ranges and the sham's uncited
+    blocks of the same lengths."""
     pinned = study["frame"]
     lines = case.get("ablated_lines") or 0
     return {

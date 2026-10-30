@@ -2,7 +2,8 @@
 
 For each input, each trial's observations are reduced to one level when the
 frame's quorum agrees, or to none. The rules, in this order (the order of the
-reference implementation, After the Poem's load-bearing readings, rules 2):
+reference implementation, After the Poem's `finding` with `rules: 2`, in
+scripts/load_bearing.py, https://github.com/mirzahusadzic/after-the-poem):
 
 1. unresolved: a planned trial has no agreed level; with `standing.stable`,
    the baseline and repeat sessions do not all agree (a split level cannot show
