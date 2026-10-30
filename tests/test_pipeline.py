@@ -1,5 +1,7 @@
 """The run: what it spends, when it stops, and what a failing battery leaves."""
 
+import tracemalloc
+
 import pytest
 
 from gadfly.pipeline import calls_needed, judge, plan, run, situate
@@ -253,3 +255,19 @@ def test_kept_records_are_checked_before_they_stand_for_calls(raw):
     with pytest.raises(ValueError, match="not one of this frame's labels"):
         run(frame, battery, Budget(calls=21), kept=wrong)
     assert battery.calls == []
+
+
+def test_a_plan_over_budget_is_refused_without_being_built(raw):
+    # 40,000 planned calls against a budget of one: count them, do not list them
+    raw["interventions"] = {"ablation": True}
+    raw["standing"] = {"quorum": 20_000, "agree": 1}
+    frame, battery = situate(raw), Rules()
+    tracemalloc.start()
+    try:
+        tracemalloc.reset_peak()
+        result = run(frame, battery, Budget(calls=1))
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert result.planned == 40_000 and result.records == () and battery.calls == []
+    assert peak < 200_000, peak

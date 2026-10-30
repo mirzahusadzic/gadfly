@@ -79,15 +79,17 @@ def run(
     made = [record.as_dict() if isinstance(record, Record) else record for record in kept]
     check_records(frame, made)
     done = {(record["input"], record["trial"], record["run"]) for record in made}
-    calls = [
+    inputs, wanted = frame.inputs, {trial.id for trial in trials}
+    # Counted, not listed: a plan the budget refuses is never built.
+    planned = len(inputs) * len(trials) * frame.quorum - sum(t in wanted for _, t, _ in done)
+    calls = (
         (x, trial, index)
-        for x in frame.inputs
+        for x in inputs
         for trial in trials
         for index in range(frame.quorum)
         if (x["id"], trial.id, index) not in done
-    ]
+    )
     cap = budget.output_tokens_per_call
-    planned = len(calls)
     if planned > budget.calls:
         return RunResult(
             (), planned, f"the plan needs {planned} calls; the budget allows {budget.calls}"
