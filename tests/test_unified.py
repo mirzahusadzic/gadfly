@@ -1,6 +1,7 @@
 """The unified battery, against a fake router on loopback: what it sends,
 what it refuses, and how it reads the stream. No model is called."""
 
+import itertools
 import json
 
 import pytest
@@ -242,6 +243,22 @@ def test_the_stream_is_read_to_completion_or_says_how_it_ended():
         }
     )
     assert parse_stream(final.splitlines())[0] == "decline"
+
+
+def test_a_call_past_its_deadline_is_an_opening(raw, token, router):
+    # the socket's timeout waits per read; a stream that keeps coming needs a deadline
+    fake = router((200, {}, answer("decline")))
+    clock = itertools.chain([0.0, 1.0], itertools.repeat(999.0)).__next__
+    observation = Unified(fake.url, timeout=10, clock=clock).observe(situate(raw), "p", 16)
+    assert observation.opening == "the call passed its timeout"
+
+
+def test_an_event_that_is_not_an_object_is_skipped():
+    odd = [b"data: 5\n", b"data: [1]\n"]
+    odd += sse(
+        {"type": "response.completed", "response": {"output": [5, {"content": [7]}]}}
+    ).split()
+    assert parse_stream([*odd, *answer("grant").splitlines()])[:3:2] == ('{"label": "grant"}', None)
 
 
 def test_the_stream_stops_at_its_size_cap(monkeypatch):

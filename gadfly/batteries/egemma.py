@@ -12,8 +12,8 @@ samples; at `temperature: 0` the battery is close to deterministic.
 What this battery promises, whatever the frame says:
 - it talks only to an eGemma on this machine (loopback), through no proxy
   and no redirect;
-- each call has a timeout, the budget's cap on output tokens, and a cap on
-  what it reads back;
+- each call has a deadline (`timeout` seconds for the whole reply), the
+  budget's cap on output tokens, and a cap on what it reads back;
 - it calls one at a time and paces itself to the judge budget eGemma
   publishes at GET /rate-limits (read once, before the first call); when
   eGemma is busy anyway (429 or 503) it waits as long as eGemma asks, at most
@@ -80,6 +80,19 @@ def _wait(error: urllib.error.HTTPError) -> float:
         found = re.search(r"Try again in (\d+(?:\.\d+)?) seconds?", detail)
         seconds = float(found.group(1)) if found else 1.0
     return min(max(seconds, 0.0), MAX_WAIT)
+
+
+def _read(response, deadline: float, clock: Callable[[], float]) -> bytes | None:
+    """The reply as it comes, until it ends or passes the size cap; None if it
+    is still coming at the deadline (the socket's timeout waits per read)."""
+    body = b""
+    while chunk := response.read1(65_536):
+        body += chunk
+        if len(body) > MAX_RESPONSE_BYTES:
+            break
+        if clock() > deadline:
+            return None
+    return body
 
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
@@ -173,15 +186,18 @@ class EGemma:
         )
         for attempt in range(RETRIES + 1):
             self.pace()  # a retry is a call too: eGemma's limiter counts it
+            deadline = self.clock() + self.timeout  # waits for eGemma's pace are not the call's
             try:
                 with opener().open(request, timeout=self.timeout) as response:
-                    body = response.read(MAX_RESPONSE_BYTES + 1)
+                    body = _read(response, deadline, self.clock)
                 break
             except urllib.error.HTTPError as error:
                 if error.code not in BUSY or attempt == RETRIES:
                     tried = f" after {attempt} retries" if attempt else ""
                     return Observation(label=None, opening=f"eGemma answered {error.code}{tried}")
                 self.sleep(_wait(error))
+        if body is None:
+            return Observation(label=None, opening="the call passed its timeout")
         if len(body) > MAX_RESPONSE_BYTES:
             return Observation(label=None, opening="the answer exceeded the size cap")
         try:

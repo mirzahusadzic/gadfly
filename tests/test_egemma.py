@@ -1,5 +1,6 @@
 """The eGemma battery, against a fake eGemma on loopback. No model is called."""
 
+import itertools
 import json
 
 import pytest
@@ -81,6 +82,13 @@ def test_a_call_sends_the_key_and_reads_the_label(frame, key, server):
 def test_what_eGemma_cannot_answer_is_an_opening(frame, key, server, answer, opening):
     fake = server(answer)
     assert EGemma(fake.base + "/judge").observe(frame, "p", 32).opening == opening
+
+
+def test_a_call_past_its_deadline_is_an_opening(frame, key, server):
+    fake = server(reply("decline"))
+    clock = itertools.chain([0.0], itertools.repeat(999.0)).__next__
+    battery = EGemma(fake.base + "/judge", timeout=10, clock=clock)
+    assert battery.observe(frame, "p", 32).opening == "the call passed its timeout"
 
 
 def test_a_reply_past_the_size_cap_is_an_opening(frame, key, server, monkeypatch):

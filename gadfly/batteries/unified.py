@@ -2,8 +2,8 @@
 
 The router (github.com/mirzahusadzic/codex-unified-model-router) serves the
 Responses API on loopback and maps a model slug to its provider:
-`anthropic/...` runs on Anthropic's API, `openrouter/...` on OpenRouter,
-`deepseek/...` on DeepSeek, each with the router's own key. One battery covers
+`anthropic/...` runs on Anthropic's API, `openrouter/...` and `deepseek/...`
+on OpenRouter (DeepSeek's models through it), each with the router's own key. One battery covers
 them all; calling a provider's own endpoint is a different battery (a native
 one). An unprefixed slug is OpenAI's, which the router reaches only with the
 caller's Codex sign-in: this battery refuses it.
@@ -27,8 +27,8 @@ What this battery promises, whatever the frame says:
   and DeepSeek's own endpoint may train on prompts);
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
-- each call has a timeout, the budget's cap on output tokens, and a cap on
-  what it reads back;
+- each call has a deadline (`timeout` seconds for the whole answer), the
+  budget's cap on output tokens, and a cap on what it reads back;
 - each record names what served it: the model the response names and the
   endpoint the router reports; `endpoints` pins OpenRouter endpoints, in
   order and without fallbacks, so one endpoint reads a quorum;
@@ -41,8 +41,10 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
 
 from ..frame import Frame
@@ -125,9 +127,12 @@ def _lines(response):
         yield line
 
 
-def parse_stream(lines) -> tuple[str, dict[str, int], str | None, str]:
+def parse_stream(
+    lines, deadline: float | None = None, clock=time.monotonic
+) -> tuple[str, dict[str, int], str | None, str]:
     """The answer's text, its usage, an opening if the call did not complete,
-    and the model the response names, from the router's server-sent events."""
+    and the model the response names, from the router's server-sent events.
+    A stream still coming at `deadline` (on `clock`) is cut there."""
     deltas: list[str] = []
     usage: dict[str, int] = {}
     final_text = ""
@@ -138,6 +143,8 @@ def parse_stream(lines) -> tuple[str, dict[str, int], str | None, str]:
         read += len(raw)
         if read > MAX_RESPONSE_BYTES:
             return "".join(deltas), usage, "the answer exceeded the size cap", model
+        if deadline is not None and clock() > deadline:
+            return "".join(deltas), usage, "the call passed its timeout", model
         line = raw.decode("utf-8", "replace").strip() if isinstance(raw, bytes) else raw.strip()
         if not line.startswith("data:"):
             continue
@@ -145,21 +152,25 @@ def parse_stream(lines) -> tuple[str, dict[str, int], str | None, str]:
             event = json.loads(line[5:].strip())
         except json.JSONDecodeError:
             continue
+        if not isinstance(event, dict):
+            continue
         kind = event.get("type")
         if kind == "response.output_text.delta":
             deltas.append(str(event.get("delta", "")))
         elif kind in ("response.completed", "response.failed", "response.incomplete"):
-            response = event.get("response") or {}
+            response = event.get("response")
+            response = response if isinstance(response, dict) else {}
             status = kind.rsplit(".", 1)[1]
             if isinstance(response.get("model"), str):
                 model = response["model"]
-            for key, value in (response.get("usage") or {}).items():
+            reported = response.get("usage")
+            for key, value in (reported if isinstance(reported, dict) else {}).items():
                 if isinstance(value, int):
                     usage[key] = value
             for item in response.get("output") or []:
-                for part in item.get("content") or []:
-                    if part.get("type") == "output_text":
-                        final_text += part.get("text", "")
+                for part in item.get("content") or [] if isinstance(item, dict) else []:
+                    if isinstance(part, dict) and part.get("type") == "output_text":
+                        final_text += str(part.get("text", ""))
     text = "".join(deltas) or final_text
     if status != "completed":
         return text, usage, f"the call ended {status or 'without completing'}", model
@@ -171,8 +182,13 @@ class Unified:
 
     name = "unified"
 
-    def __init__(self, url: str = DEFAULT_URL, timeout: float = 120.0):
-        self.url, self.timeout = loopback(url, "the router"), timeout
+    def __init__(
+        self,
+        url: str = DEFAULT_URL,
+        timeout: float = 120.0,
+        clock: Callable[[], float] = time.monotonic,
+    ):
+        self.url, self.timeout, self.clock = loopback(url, "the router"), timeout, clock
 
     def check(self, frame: Frame) -> None:
         battery = frame.battery
@@ -219,6 +235,7 @@ class Unified:
             method="POST",
             headers={"content-type": "application/json", "x-codex-router-token": _token()},
         )
+        deadline = self.clock() + self.timeout
         try:
             with opener().open(request, timeout=self.timeout) as response:
                 if response.headers.get("x-codex-router-diagnostic"):
@@ -231,7 +248,7 @@ class Unified:
                             "trainsOnInputs allows one that may train",
                         )
                     return Observation(label=None, opening=f"router diagnostic: {diagnostic}")
-                text, usage, opening, model = parse_stream(_lines(response))
+                text, usage, opening, model = parse_stream(_lines(response), deadline, self.clock)
                 endpoint = response.headers.get("x-provider-name", "")[:200]
         except urllib.error.HTTPError as error:
             return Observation(label=None, opening=f"the router answered {error.code}")
