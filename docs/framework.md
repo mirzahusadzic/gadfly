@@ -4,7 +4,7 @@ hide: [toc]
 
 # Framework
 
-From [When meaning is load-bearing](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing).
+From [When meaning is load-bearing](load-bearing.md).
 
 --8<-- "README.md:framework"
 

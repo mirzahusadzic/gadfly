@@ -22,6 +22,7 @@ theme:
 
 nav:
   - Home: index.md
+  - When meaning is load-bearing: load-bearing.md
   - Architecture: architecture.md
   - Framework: framework.md
   - Batteries: batteries.md
@@ -32,6 +33,7 @@ markdown_extensions:
   - tables
   - admonition
   - attr_list
+  - md_in_html
   - toc: {permalink: true}
   - pymdownx.highlight
   - pymdownx.inlinehilite
@@ -43,6 +45,9 @@ markdown_extensions:
         - name: mermaid
           class: mermaid-house
           format: !!python/name:pymdownx.superfences.fence_code_format
+
+hooks:
+  - hooks/github_math.py
 
 plugins:
   - search

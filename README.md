@@ -3,7 +3,7 @@
 Is a premise **load-bearing**? Declare the relation, its grain and the promise
 a recipient needs; Gadfly removes or changes it under fixed interventions, has
 a scorer read each trial, and reads the verdict by fixed rules. The method:
-[When meaning is load-bearing](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing).
+[When meaning is load-bearing](docs/load-bearing.md).
 
 ## Use
 
@@ -191,7 +191,7 @@ keeps its schema and points at the label:
 |---|---|---|
 | `examples/refund.py` | presentation tells a phrase matcher (misaligned) from a rule reader (carried) | none |
 | `examples/refund_live.py` | the same frame read by a live critic | 21 a model |
-| `examples/review_handoff.py` | the [worked example](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing), failed check to review handoff: one system carries the finding and the grant, a "fix ready" summary cools both, one that drops its openings is misaligned, a lost record is unresolved | none |
+| `examples/review_handoff.py` | the worked example of *When meaning is load-bearing*, failed check to review handoff: one system carries the finding and the grant, a "fix ready" summary cools both, one that drops its openings is misaligned, a lost record is unresolved | none |
 | `examples/after_the_poem.py` | a study's retained sessions reach every published category ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)) | none |
 
 All run as tests.
@@ -200,6 +200,11 @@ All run as tests.
 ## Docs
 
 `uv run --group docs mkdocs serve`: architecture, framework, batteries, examples and the API reference.
+
+## License
+
+Code: Apache-2.0. The text of `docs/load-bearing.md`: © 2026 Mirza Husadzic,
+[CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 
 ## Development
 

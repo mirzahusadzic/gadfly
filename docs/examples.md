@@ -4,6 +4,8 @@
 
 ## Review handoff
 
+The [worked example](load-bearing.md#worked-example-from-failed-check-to-review-handoff) of *When meaning is load-bearing*.
+
 ```
 $ python examples/review_handoff.py
 system                       finding                  authority

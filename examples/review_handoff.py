@@ -1,5 +1,5 @@
 """The worked example of "When meaning is load-bearing": from failed check to
-review handoff (github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing).
+review handoff (docs/load-bearing.md, "Worked example").
 
 A failed test challenges one claim; a reviewer may inspect and propose, not
 apply. Three review systems turn the same material into a handoff; two
