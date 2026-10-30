@@ -19,6 +19,9 @@ from gadfly.pipeline import calls_needed, judge, run, situate
 from gadfly.types import Budget
 
 FRAME = Path(__file__).with_name("refund.json")
+# Models whose provider may train on what it reads, named here because this
+# frame is public. A frame with private text names none.
+TRAINING_CONSENT = {"deepseek/deepseek-v4.1-flash-1017"}
 
 
 def frame_for(kind: str, model: str):
@@ -26,6 +29,8 @@ def frame_for(kind: str, model: str):
     battery = (
         {"kind": kind, "model": model, "reasoning": "low"} if kind == "unified" else {"kind": kind}
     )
+    if model in TRAINING_CONSENT:  # the frame is public: it may go where inputs train
+        battery["trainsOnInputs"] = [model]
     # A sampled critic: three runs a trial, two must agree.
     return situate({**raw, "battery": battery, "standing": {"quorum": 3, "agree": 2}})
 

@@ -132,9 +132,12 @@ observation map $o_p$ made explicit:
 Both talk only to loopback, over no proxy and through no redirect, and keep
 their key out of every record. The unified critic sends no tools (through the
 router, Claude runs on Anthropic's API but web search runs elsewhere, so a
-body would leave Anthropic), refuses a model whose provider trains on its
-inputs unless the frame names it under `battery.trainsOnInputs`, and refuses
-an OpenAI slug, which the router reaches only with the caller's Codex sign-in.
+body would leave Anthropic), refuses a model whose provider trains (or may
+train) on its inputs unless the frame names it under `battery.trainsOnInputs`
+(Ultra Spark, Muse, and DeepSeek, whose own endpoint is the only one serving
+it), asks every other request to reach only endpoints that keep no data
+(`provider.data_collection: deny`), and refuses an OpenAI slug, which the
+router reaches only with the caller's Codex sign-in.
 A provider's own endpoint is a native battery, not this one.
 [`examples/refund_live.py`](examples/refund_live.py) runs the refund frame
 through either critic.

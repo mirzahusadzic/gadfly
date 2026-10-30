@@ -21,7 +21,9 @@ What this battery promises, whatever the frame says:
 - it sends no tools: the router's web search runs on another provider, and a
   body would leave the model's own provider with it;
 - it refuses a model whose provider trains on its inputs unless the frame
-  names that model under `battery.trainsOnInputs`;
+  names that model under `battery.trainsOnInputs`, and asks every other
+  request to reach only endpoints that keep no data (`data_collection: deny`;
+  through OpenRouter, DeepSeek's own endpoint may train on prompts);
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
 - each call has a timeout, the budget's cap on output tokens, and a cap on
@@ -45,8 +47,10 @@ from .critic import MAX_RESPONSE_BYTES, check_output, loopback, opener, output_s
 
 DEFAULT_URL = "http://127.0.0.1:18766/v1/responses"
 ENV_FILE = Path.home() / ".codex" / "unified-router" / "openrouter.env"
-# Slugs whose provider trains on what it receives (the router's own warning).
-TRAINS_ON_INPUTS = ("ultra-spark/", "openrouter/meta/")
+# Slugs whose provider trains on what it receives (the router's own warning),
+# or may: DeepSeek's own endpoint, the only one serving its models through
+# OpenRouter, may train on prompts (asked to deny it, OpenRouter finds none).
+TRAINS_ON_INPUTS = ("ultra-spark/", "openrouter/meta/", "deepseek/", "openrouter/deepseek/")
 EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 # Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
 # which the router reaches only with the caller's Codex sign-in.
@@ -89,6 +93,9 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     }
     if battery.get("reasoning"):
         body["reasoning"] = {"effort": battery["reasoning"]}
+    if battery["model"] not in (battery.get("trainsOnInputs") or []):
+        # OpenRouter then reaches only endpoints that keep no data to train on.
+        body["provider"] = {"data_collection": "deny"}
     return body
 
 

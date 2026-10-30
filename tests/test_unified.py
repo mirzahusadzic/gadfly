@@ -164,9 +164,21 @@ def test_an_openai_slug_is_refused_before_any_call(raw, token):
     raw["battery"]["model"] = "gpt-6.1-sol"
     with pytest.raises(ValueError, match="OpenAI slug"):
         Unified().check(situate(raw))
-    for routed in ("openrouter/anthropic/claude-sonnet-5.5", "deepseek/deepseek-v4.1-flash-1017"):
-        raw["battery"]["model"] = routed
+    raw["battery"]["model"] = "openrouter/anthropic/claude-sonnet-5.5"
+    Unified().check(situate(raw))
+
+
+def test_deepseek_may_train_on_prompts_and_needs_the_frames_consent(raw, token):
+    for model in (
+        "deepseek/deepseek-v4.1-flash-1017",
+        "openrouter/deepseek/deepseek-v4.1-flash-1017",
+    ):
+        raw["battery"].update(model=model, trainsOnInputs=[])
+        with pytest.raises(ValueError, match="trains on its inputs"):
+            Unified().check(situate(raw))
+        raw["battery"]["trainsOnInputs"] = [model]
         Unified().check(situate(raw))
+        assert "provider" not in payload(situate(raw), "t", 8)
 
 
 def test_a_json_pointer_reads_objects_lists_and_escapes():
@@ -198,3 +210,18 @@ def test_the_stream_stops_at_its_size_cap(monkeypatch):
         b"data: " + json.dumps({"type": "response.output_text.delta", "delta": "x" * 40}).encode()
     ] * 5
     assert parse_stream(lines)[2] == "the answer exceeded the size cap"
+
+
+def test_every_request_asks_for_endpoints_that_do_not_collect_data(raw):
+    # Through OpenRouter, DeepSeek's own endpoint may train on prompts; Claude
+    # falls back to OpenRouter when Anthropic refuses. Only a model the frame
+    # names as training on its inputs is sent without the request.
+    for model in (
+        "anthropic/claude-sonnet-5-5",
+        "openrouter/anthropic/claude-sonnet-5.5",
+        "openrouter/vendor/model",
+    ):
+        raw["battery"]["model"] = model
+        assert payload(situate(raw), "t", 8)["provider"] == {"data_collection": "deny"}
+    raw["battery"].update(model="ultra-spark/x", trainsOnInputs=["ultra-spark/x"])
+    assert "provider" not in payload(situate(raw), "t", 8)
