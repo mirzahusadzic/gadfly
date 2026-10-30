@@ -23,7 +23,7 @@ jobs:
         python: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3: no moving major tag
         with:
           python-version: ${{ matrix.python }}
       - name: Lint
@@ -37,6 +37,6 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3: no moving major tag
       - name: Build the site
         run: uv run --frozen --group docs mkdocs build --strict
