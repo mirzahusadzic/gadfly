@@ -1,5 +1,7 @@
 """Each verdict path, from records alone, in the order the rules are read."""
 
+import copy
+
 import pytest
 
 from gadfly.pipeline import judge, plan, situate
@@ -243,3 +245,29 @@ def test_one_category_over_the_frames_inputs(raw):
     raw["inputs"].append({"id": "x2", "text": "Another customer without a receipt asks."})
     frame = situate(raw)
     assert overall(judge(frame, records(frame, {"ablation": "grant"}))).category == CARRIED
+
+
+class CountingRecord(dict):
+    """A stored record that counts how often judge reads it."""
+
+    reads = 0
+
+    def __getitem__(self, key):
+        type(self).reads += 1
+        return super().__getitem__(key)
+
+
+def reads_to_judge(raw, inputs):
+    raw["inputs"] = [{"id": f"x{i}", "text": f"request {i}"} for i in range(inputs)]
+    raw["interventions"] = {"ablation": True}
+    frame = situate(raw)
+    stored = [CountingRecord(r.as_dict()) for r in records(frame, {"ablation": "grant"})]
+    CountingRecord.reads = 0
+    judge(frame, stored)
+    return CountingRecord.reads
+
+
+def test_judge_reads_each_record_a_fixed_number_of_times(raw):
+    # twice the inputs and records: twice the reads, not four times
+    small, large = reads_to_judge(copy.deepcopy(raw), 20), reads_to_judge(copy.deepcopy(raw), 40)
+    assert large <= 2.2 * small, (small, large)

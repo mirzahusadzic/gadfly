@@ -30,7 +30,7 @@ names its frame, battery, body, prompt and what served it.
 
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -115,10 +115,12 @@ def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:
     trials = plan(frame)
     check_records(frame, records, {trial.id: trial.body_hash for trial in trials})
     planned = [trial.id for trial in trials]
+    seen: dict[tuple[str, str], list[str | None]] = defaultdict(list)
+    for record in records:  # one pass, in record order
+        seen[record["input"], record["trial"]].append(record["observation"])
     findings = []
     for x in frame.inputs:
-        mine = [r for r in records if r["input"] == x["id"]]
-        samples = {t: [r["observation"] for r in mine if r["trial"] == t] for t in planned}
+        samples = {t: seen.get((x["id"], t), []) for t in planned}
         levels = {t: level(s, frame.agree) for t, s in samples.items()}
         findings.append(_finding(frame, x["id"], levels, samples))
     return findings
