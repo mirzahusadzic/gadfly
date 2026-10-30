@@ -168,17 +168,24 @@ def test_an_openai_slug_is_refused_before_any_call(raw, token):
     Unified().check(situate(raw))
 
 
-def test_deepseek_may_train_on_prompts_and_needs_the_frames_consent(raw, token):
+def test_deepseek_is_sent_with_deny_unless_the_frame_consents(raw, token):
+    # Whether an endpoint keeps no data is the OpenRouter account's setting
+    # (DeepSeek's own endpoint may train; another provider may not).
     for model in (
         "deepseek/deepseek-v4.1-flash-1017",
         "openrouter/deepseek/deepseek-v4.1-flash-1017",
     ):
         raw["battery"].update(model=model, trainsOnInputs=[])
-        with pytest.raises(ValueError, match="trains on its inputs"):
-            Unified().check(situate(raw))
-        raw["battery"]["trainsOnInputs"] = [model]
         Unified().check(situate(raw))
+        assert payload(situate(raw), "t", 8)["provider"] == {"data_collection": "deny"}
+        raw["battery"]["trainsOnInputs"] = [model]
         assert "provider" not in payload(situate(raw), "t", 8)
+
+
+def test_no_endpoint_without_data_is_an_opening_that_says_why(raw, token, router):
+    fake = router((200, {"x-codex-router-diagnostic": "openrouter-data-policy"}, b""))
+    observation = Unified(fake.url).observe(situate(raw), "p", 16)
+    assert observation.opening.startswith("no endpoint that keeps no data serves this model")
 
 
 def test_a_json_pointer_reads_objects_lists_and_escapes():
@@ -219,6 +226,7 @@ def test_every_request_asks_for_endpoints_that_do_not_collect_data(raw):
     for model in (
         "anthropic/claude-sonnet-5-5",
         "openrouter/anthropic/claude-sonnet-5.5",
+        "deepseek/deepseek-v4.1-flash-1017",
         "openrouter/vendor/model",
     ):
         raw["battery"]["model"] = model

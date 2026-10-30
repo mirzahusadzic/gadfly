@@ -19,7 +19,8 @@ from gadfly.pipeline import calls_needed, judge, run, situate
 from gadfly.types import Budget
 
 FRAME = Path(__file__).with_name("refund.json")
-# Models whose provider may train on what it reads, named here because this
+# Models allowed an endpoint that may train on what it reads (DeepSeek's own,
+# when the OpenRouter account routes DeepSeek there), named here because this
 # frame is public. A frame with private text names none.
 TRAINING_CONSENT = {"deepseek/deepseek-v4.1-flash-1017"}
 

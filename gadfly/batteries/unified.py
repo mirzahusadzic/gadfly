@@ -23,7 +23,8 @@ What this battery promises, whatever the frame says:
 - it refuses a model whose provider trains on its inputs unless the frame
   names that model under `battery.trainsOnInputs`, and asks every other
   request to reach only endpoints that keep no data (`data_collection: deny`;
-  through OpenRouter, DeepSeek's own endpoint may train on prompts);
+  which endpoints serve a model is the OpenRouter account's provider setting,
+  and DeepSeek's own endpoint may train on prompts);
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
 - each call has a timeout, the budget's cap on output tokens, and a cap on
@@ -47,10 +48,12 @@ from .critic import MAX_RESPONSE_BYTES, check_output, loopback, opener, output_s
 
 DEFAULT_URL = "http://127.0.0.1:18766/v1/responses"
 ENV_FILE = Path.home() / ".codex" / "unified-router" / "openrouter.env"
-# Slugs whose provider trains on what it receives (the router's own warning),
-# or may: DeepSeek's own endpoint, the only one serving its models through
-# OpenRouter, may train on prompts (asked to deny it, OpenRouter finds none).
-TRAINS_ON_INPUTS = ("ultra-spark/", "openrouter/meta/", "deepseek/", "openrouter/deepseek/")
+# Slugs whose provider trains on what it receives (the router's own warning).
+TRAINS_ON_INPUTS = ("ultra-spark/", "openrouter/meta/")
+# The router's diagnostic when OpenRouter has no endpoint for the model that
+# keeps no data: which endpoints serve a model is the OpenRouter account's
+# provider setting (DeepSeek's own endpoint may train on prompts).
+NO_ENDPOINT_WITHOUT_DATA = "openrouter-data-policy"
 EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 # Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
 # which the router reaches only with the caller's Codex sign-in.
@@ -192,6 +195,13 @@ class Unified:
             with opener().open(request, timeout=self.timeout) as response:
                 if response.headers.get("x-codex-router-diagnostic"):
                     diagnostic = response.headers["x-codex-router-diagnostic"][:200]
+                    if diagnostic == NO_ENDPOINT_WITHOUT_DATA:
+                        return Observation(
+                            label=None,
+                            opening="no endpoint that keeps no data serves this model (the "
+                            "OpenRouter account's provider setting); naming it under "
+                            "trainsOnInputs allows one that may train",
+                        )
                     return Observation(label=None, opening=f"router diagnostic: {diagnostic}")
                 text, usage, opening = parse_stream(_lines(response))
         except urllib.error.HTTPError as error:
