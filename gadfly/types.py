@@ -14,12 +14,15 @@ from .frame import Frame
 @dataclass(frozen=True)
 class Observation:
     """What a battery saw: one of the frame's labels, or a typed opening when
-    there is no outcome to read (a refusal, an unreadable answer, a failure)."""
+    there is no outcome to read (a refusal, an unreadable answer, a failure).
+    `served` names the scorer that answered, as the service reports it (a
+    model, its revision, the endpoint), so a record says who read."""
 
     label: str | None
     opening: str | None = None
     raw: str = ""
     usage: dict[str, int] = field(default_factory=dict)
+    served: str = ""
 
     def __post_init__(self) -> None:
         if (self.label is None) == (self.opening is None):
@@ -42,6 +45,7 @@ class Record:
     opening: str | None
     raw: str
     usage: dict[str, int]
+    served: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)

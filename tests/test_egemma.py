@@ -104,7 +104,8 @@ def test_eGemma_must_be_on_this_machine():
 
 def test_check_refuses_unknown_keys_bad_temperatures_and_no_key(raw, monkeypatch, key):
     for battery, message in [
-        ({"kind": "egemma", "model": "x"}, "reads no"),
+        ({"kind": "egemma", "persona": "x"}, "reads no"),
+        ({"kind": "egemma", "model": ""}, "model and revision"),
         ({"kind": "egemma", "temperature": 3}, "between 0 and 2"),
         ({"kind": "egemma", "temperature": True}, "between 0 and 2"),
         ({"kind": "egemma", "output": {"schema": {}, "label": "x"}}, "JSON pointer"),
@@ -211,6 +212,21 @@ def test_an_answer_that_breaks_its_schema_is_an_opening(frame, key, server):
     observation = EGemma(fake.base + "/judge").observe(frame, "p", 32)
     assert observation.label is None
     assert observation.opening == "the answer breaks its schema: /score 0 is less than 10"
+
+
+def test_a_call_records_the_model_that_served(frame, key, server):
+    fake = server(reply("decline"))
+    assert EGemma(fake.base + "/judge").observe(frame, "p", 32).served == "gemma@r"
+
+
+def test_a_pinned_model_that_does_not_serve_is_an_opening(raw, key, server):
+    raw["battery"] = {"kind": "egemma", "model": "gemma", "revision": "other"}
+    fake = server(reply("decline"))
+    observation = EGemma(fake.base + "/judge").observe(situate(raw), "p", 32)
+    assert observation.label is None and observation.served == "gemma@r"
+    assert observation.opening == "eGemma served revision 'r'; the frame pins 'other'"
+    raw["battery"]["revision"] = "r"
+    assert EGemma(fake.base + "/judge").observe(situate(raw), "p", 32).label == "decline"
 
 
 def test_a_reply_without_the_valid_field_is_read_as_before(frame, key, server):

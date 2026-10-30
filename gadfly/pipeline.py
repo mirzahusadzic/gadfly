@@ -148,4 +148,5 @@ def _record(
         opening=o.opening,
         raw=o.raw[:RAW_LIMIT],
         usage=dict(o.usage),
+        served=o.served,
     )

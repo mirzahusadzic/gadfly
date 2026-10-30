@@ -29,6 +29,9 @@ What this battery promises, whatever the frame says:
   the loopback address named and nowhere else;
 - each call has a timeout, the budget's cap on output tokens, and a cap on
   what it reads back;
+- each record names what served it: the model the response names and the
+  endpoint the router reports; `endpoints` pins OpenRouter endpoints, in
+  order and without fallbacks, so one endpoint reads a quorum;
 - the router's token comes from the environment or the router's own env file
   and is never logged, returned or recorded.
 """
@@ -58,7 +61,7 @@ EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 # Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
 # which the router reaches only with the caller's Codex sign-in.
 ROUTED_PREFIXES = ("anthropic/", "openrouter/", "deepseek/", "ultra-spark/")
-BATTERY_KEYS = {"kind", "model", "reasoning", "output", "trainsOnInputs", "tools"}
+BATTERY_KEYS = {"kind", "model", "reasoning", "output", "trainsOnInputs", "tools", "endpoints"}
 LINE_LIMIT = 65_536
 
 
@@ -103,9 +106,16 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     }
     if battery.get("reasoning"):
         body["reasoning"] = {"effort": battery["reasoning"]}
+    provider = {}
+    if battery.get("endpoints"):
+        # One endpoint reads every run, or the call fails: the router's own
+        # endpoint preference applies only to a request that names none.
+        provider.update(order=list(battery["endpoints"]), allow_fallbacks=False)
     if not consented(battery):
         # OpenRouter then reaches only endpoints that keep no data to train on.
-        body["provider"] = {"data_collection": "deny"}
+        provider["data_collection"] = "deny"
+    if provider:
+        body["provider"] = provider
     return body
 
 
@@ -115,18 +125,19 @@ def _lines(response):
         yield line
 
 
-def parse_stream(lines) -> tuple[str, dict[str, int], str | None]:
-    """The answer's text, its usage, and an opening if the call did not
-    complete, from the router's server-sent events."""
+def parse_stream(lines) -> tuple[str, dict[str, int], str | None, str]:
+    """The answer's text, its usage, an opening if the call did not complete,
+    and the model the response names, from the router's server-sent events."""
     deltas: list[str] = []
     usage: dict[str, int] = {}
     final_text = ""
     status = None
+    model = ""
     read = 0
     for raw in lines:
         read += len(raw)
         if read > MAX_RESPONSE_BYTES:
-            return "".join(deltas), usage, "the answer exceeded the size cap"
+            return "".join(deltas), usage, "the answer exceeded the size cap", model
         line = raw.decode("utf-8", "replace").strip() if isinstance(raw, bytes) else raw.strip()
         if not line.startswith("data:"):
             continue
@@ -140,6 +151,8 @@ def parse_stream(lines) -> tuple[str, dict[str, int], str | None]:
         elif kind in ("response.completed", "response.failed", "response.incomplete"):
             response = event.get("response") or {}
             status = kind.rsplit(".", 1)[1]
+            if isinstance(response.get("model"), str):
+                model = response["model"]
             for key, value in (response.get("usage") or {}).items():
                 if isinstance(value, int):
                     usage[key] = value
@@ -149,8 +162,8 @@ def parse_stream(lines) -> tuple[str, dict[str, int], str | None]:
                         final_text += part.get("text", "")
     text = "".join(deltas) or final_text
     if status != "completed":
-        return text, usage, f"the call ended {status or 'without completing'}"
-    return text, usage, None
+        return text, usage, f"the call ended {status or 'without completing'}", model
+    return text, usage, None, model
 
 
 class Unified:
@@ -178,6 +191,13 @@ class Unified:
             )
         if battery.get("tools"):
             raise ValueError("the critic sends no tools")
+        endpoints = battery.get("endpoints", ["any"])
+        if not (
+            isinstance(endpoints, list)
+            and endpoints
+            and all(isinstance(e, str) and e for e in endpoints)
+        ):
+            raise ValueError("battery.endpoints lists OpenRouter endpoint tags, in order")
         if battery.get("reasoning") not in (None, *EFFORTS):
             raise ValueError(f"battery.reasoning is one of {', '.join(EFFORTS)}")
         check_output(battery)
@@ -211,12 +231,14 @@ class Unified:
                             "trainsOnInputs allows one that may train",
                         )
                     return Observation(label=None, opening=f"router diagnostic: {diagnostic}")
-                text, usage, opening = parse_stream(_lines(response))
+                text, usage, opening, model = parse_stream(_lines(response))
+                endpoint = response.headers.get("x-provider-name", "")[:200]
         except urllib.error.HTTPError as error:
             return Observation(label=None, opening=f"the router answered {error.code}")
+        served = " via ".join(part for part in (model, endpoint) if part)
         if opening:
-            return Observation(label=None, opening=opening, raw=text, usage=usage)
+            return Observation(label=None, opening=opening, raw=text, usage=usage, served=served)
         label, opening = read_label(text, frame)
         if label is None:
-            return Observation(label=None, opening=opening, raw=text, usage=usage)
-        return Observation(label=label, raw=text, usage=usage)
+            return Observation(label=None, opening=opening, raw=text, usage=usage, served=served)
+        return Observation(label=label, raw=text, usage=usage, served=served)

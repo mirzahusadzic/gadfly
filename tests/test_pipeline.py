@@ -135,6 +135,12 @@ def test_a_battery_that_breaks_its_cap_stops_the_run(raw):
     assert result.stopped == "the battery reported 40 output tokens for a call capped at 4"
 
 
+def test_a_record_says_what_served(raw):
+    served = Observation(label="decline", served="rules@2")
+    result = run(situate(raw), Rules(answer=lambda p: served), Budget(calls=21))
+    assert {r.served for r in result.records} == {"rules@2"}
+
+
 def test_the_raw_answer_is_kept_only_up_to_its_limit(raw):
     long = Observation(label="decline", raw="x" * 5000)
     result = run(situate(raw), Rules(answer=lambda p: long), Budget(calls=21))

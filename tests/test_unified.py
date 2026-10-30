@@ -182,6 +182,30 @@ def test_deepseek_is_sent_with_deny_unless_the_frame_consents(raw, token):
         assert "provider" not in payload(situate(raw), "t", 8)
 
 
+def test_a_call_records_the_model_and_endpoint_that_served(raw, token, router):
+    body = sse(
+        {"type": "response.output_text.delta", "delta": json.dumps({"label": "decline"})},
+        {"type": "response.completed", "response": {"model": "deepseek/deepseek-v4.1-flash"}},
+    )
+    fake = router((200, {"x-provider-name": "DeepInfra"}, body))
+    observation = Unified(fake.url).observe(situate(raw), "p", 16)
+    assert observation.served == "deepseek/deepseek-v4.1-flash via DeepInfra"
+
+
+def test_named_endpoints_are_pinned_without_fallbacks(raw, token):
+    # a quorum read by one endpoint, not spread over whichever OpenRouter picks
+    raw["battery"].update(model="deepseek/deepseek-v4.1-flash-1017", endpoints=["deepinfra/fp8"])
+    Unified().check(situate(raw))
+    assert payload(situate(raw), "t", 8)["provider"] == {
+        "order": ["deepinfra/fp8"],
+        "allow_fallbacks": False,
+        "data_collection": "deny",
+    }
+    raw["battery"]["endpoints"] = "deepinfra/fp8"
+    with pytest.raises(ValueError, match="endpoints lists"):
+        Unified().check(situate(raw))
+
+
 def test_consent_to_training_is_a_list_of_slugs_never_a_substring(raw, token):
     # "ultra-spark/deepseek" is a substring of the slug named: no consent
     named = "ultra-spark/deepseek-v4.1-flash-1017"

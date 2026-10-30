@@ -19,6 +19,8 @@ What this battery promises, whatever the frame says:
   eGemma is busy anyway (429 or 503) it waits as long as eGemma asks, at most
   a minute, and tries at most three more times before the call becomes an
   opening;
+- each record names the model and revision eGemma reports; a frame that
+  pins them (`model`, `revision`) gets an opening from any other;
 - the key comes from the file named by EGEMMA_API_KEY_FILE, else from
   EGEMMA_API_KEY or WORKBENCH_API_KEY, and is never logged or recorded.
 """
@@ -41,7 +43,7 @@ from ..types import Observation
 from .critic import MAX_RESPONSE_BYTES, check_output, label_at, loopback, opener, output_schema
 
 DEFAULT_URL = os.environ.get("EGEMMA_URL", "http://127.0.0.1:8000").rstrip("/") + "/judge"
-BATTERY_KEYS = {"kind", "temperature", "output"}
+BATTERY_KEYS = {"kind", "temperature", "output", "model", "revision"}
 BUSY = (429, 503)  # eGemma's rate limit, and its queue when full
 RETRIES = 3
 MAX_WAIT = 60.0
@@ -156,6 +158,9 @@ class EGemma:
         if not 0 <= temperature <= 2:
             raise ValueError("battery.temperature is a number between 0 and 2")
         check_output(battery)
+        for pin in ("model", "revision"):
+            if pin in battery and not (isinstance(battery[pin], str) and battery[pin]):
+                raise ValueError("battery.model and revision name what eGemma must serve")
         _key()  # no key, no run: refuse before the first call, not at each
         self.read_budget()
 
@@ -185,23 +190,24 @@ class EGemma:
             return Observation(label=None, opening="eGemma's reply is not JSON")
         text = str(reply.get("text", ""))
         usage = {k: v for k, v in (reply.get("usage") or {}).items() if isinstance(v, int)}
+        served = f"{reply.get('model', '')}@{reply.get('revision', '')}".strip("@")[:200]
+        seen = {"raw": text, "usage": usage, "served": served}
+        battery = frame.battery
+        for pin in ("model", "revision"):
+            if pin in battery and reply.get(pin) != battery[pin]:
+                opening = f"eGemma served {pin} {reply.get(pin)!r}; the frame pins {battery[pin]!r}"
+                return Observation(label=None, opening=opening, **seen)
         if reply.get("truncated"):
-            return Observation(
-                label=None, opening="the answer was cut at its token cap", raw=text, usage=usage
-            )
+            return Observation(label=None, opening="the answer was cut at its token cap", **seen)
         if reply.get("answer") is None:
-            return Observation(label=None, opening="the answer is not JSON", raw=text, usage=usage)
+            return Observation(label=None, opening="the answer is not JSON", **seen)
         if reply.get("valid") is False:
             # eGemma checks the whole schema; its grammar cannot hold every keyword.
             first = (reply.get("violations") or [{}])[0]
             where = f"{first.get('path', '')} {first.get('message', '')}".strip()
-            return Observation(
-                label=None,
-                opening=f"the answer breaks its schema: {where}"[:300],
-                raw=text,
-                usage=usage,
-            )
+            opening = f"the answer breaks its schema: {where}"[:300]
+            return Observation(label=None, opening=opening, **seen)
         label, opening = label_at(reply["answer"], frame)
         if label is None:
-            return Observation(label=None, opening=opening, raw=text, usage=usage)
-        return Observation(label=label, raw=text, usage=usage)
+            return Observation(label=None, opening=opening, **seen)
+        return Observation(label=label, **seen)
