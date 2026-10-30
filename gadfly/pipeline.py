@@ -1,9 +1,10 @@
-"""The pipeline: situate → plan → run → judge.
+"""The pipeline: situate → plan → run → judge (→ overall, over the inputs).
 
     frame = situate(json.load(file))
     trials = plan(frame)
     result = run(frame, battery, Budget(calls=60))
     findings = judge(frame, result.records)
+    verdict = overall(findings)  # one category over all the inputs
 
 `run` is the only stage that calls out. It never starts a call the budget
 cannot cover, stops between calls when the caller says so, and hands each
@@ -22,9 +23,11 @@ from .interventions import plan as plan_trials
 from .types import Battery, Budget, Observation, Record
 from .verdict import Finding
 from .verdict import judge as judge_records
+from .verdict import overall as overall_of
 
 situate = parse
 plan = plan_trials
+overall = overall_of
 
 # A raw answer is kept for audit, but only this much of it.
 RAW_LIMIT = 2_000

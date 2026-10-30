@@ -11,14 +11,14 @@ def records(frame, levels, runs=None):
     """Records giving each trial the level named (default: the baseline's
     `decline`); a list gives each run its own observation."""
     out = []
-    for trial in plan(frame):
+    for x, trial in ((x, trial) for x in frame.inputs for trial in plan(frame)):
         given = levels.get(trial.id, levels.get("*", "decline"))
         for run in range(frame.quorum if runs is None else runs):
             label = given[run] if isinstance(given, list) else given
             out.append(
                 Record(
                     frame=frame.hash,
-                    input="x1",
+                    input=x["id"],
                     trial=trial.id,
                     run=run,
                     body=trial.body_hash,
@@ -206,3 +206,40 @@ def test_a_record_copied_twice_cannot_make_a_quorum(raw):
     ablation = next(r for r in made if r.trial == "ablation")
     with pytest.raises(ValueError, match="two records"):
         judge(frame, [*made, ablation])
+
+
+def test_one_category_over_the_frames_inputs(raw):
+    from gadfly.pipeline import overall
+    from gadfly.verdict import Finding
+
+    def found(x, category, obligations=()):
+        return Finding(x, category, {}, [f"{x} read {category}"], list(obligations))
+
+    assert overall([found("x1", CARRIED), found("x2", CARRIED)]).category == CARRIED
+    assert overall([found("x1", COOLED), found("x2", COOLED)]).category == COOLED
+    assert overall([found("x1", UNRESOLVED), found("x2", MISALIGNED)]).category == MISALIGNED
+    assert overall([found("x1", CARRIED), found("x2", UNRESOLVED)]).category == UNRESOLVED
+    split = overall([found("x1", CARRIED), found("x2", COOLED)])
+    assert split.category == UNRESOLVED and split.inputs == {"x1": CARRIED, "x2": COOLED}
+    assert (
+        split.as_dict()["inputs"] == split.inputs and found("x", COOLED).as_dict()["input"] == "x"
+    )
+    with pytest.raises(ValueError, match="no finding"):
+        overall([])
+    assert split.evidence == [
+        "carried on x1, cooled on x2: the relation holds on some inputs only",
+        "x1: x1 read carried",
+        "x2: x2 read cooled",
+    ]
+    # what every input leaves open is said once; the rest names its input
+    both = overall(
+        [
+            found("x1", CARRIED, ["materialization: m", "no hidden fallback: f"]),
+            found("x2", CARRIED, ["materialization: m"]),
+        ]
+    )
+    assert both.obligations == ["materialization: m", "x1: no hidden fallback: f"]
+    # from a run: two inputs, one frame
+    raw["inputs"].append({"id": "x2", "text": "Another customer without a receipt asks."})
+    frame = situate(raw)
+    assert overall(judge(frame, records(frame, {"ablation": "grant"}))).category == CARRIED

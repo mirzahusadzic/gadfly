@@ -52,6 +52,46 @@ class Finding:
         return self.__dict__.copy()
 
 
+@dataclass
+class Overall:
+    """The frame's one category over its test domain: every input's."""
+
+    category: str
+    inputs: dict[str, str]
+    evidence: list[str] = field(default_factory=list)
+    obligations: list[str] = field(default_factory=list)
+
+    def as_dict(self) -> dict[str, Any]:
+        return self.__dict__.copy()
+
+
+def overall(findings: list[Finding]) -> Overall:
+    """One category over the frame's inputs: outside scope when declared;
+    otherwise coupled but misaligned if any input is; unresolved if any is,
+    or if the relation carried on some inputs and cooled on others; carried
+    or cooled only when every input is. Each input's evidence is kept; what
+    every input leaves open is said once, the rest names its input."""
+    if not findings:
+        raise ValueError("there is no finding to read")
+    inputs = {f.input: f.category for f in findings}
+    found = set(inputs.values())
+    evidence = [f"{f.input}: {line}" for f in findings for line in f.evidence]
+    if found == {CARRIED, COOLED}:
+        carried = ", ".join(x for x, c in inputs.items() if c == CARRIED)
+        cooled = ", ".join(x for x, c in inputs.items() if c == COOLED)
+        evidence.insert(
+            0, f"carried on {carried}, cooled on {cooled}: the relation holds on some inputs only"
+        )
+    category = next(
+        (c for c in (OUTSIDE, MISALIGNED, UNRESOLVED) if c in found),
+        UNRESOLVED if len(found) > 1 else found.pop(),
+    )
+    shared = set.intersection(*(set(f.obligations) for f in findings))
+    obligations = [o for o in findings[0].obligations if o in shared]
+    obligations += [f"{f.input}: {o}" for f in findings for o in f.obligations if o not in shared]
+    return Overall(category, inputs, evidence, obligations)
+
+
 def level(observations: list[str | None], agree: int) -> str | None:
     """The observation at least `agree` runs gave, if exactly one did."""
     counts = Counter(o for o in observations if o is not None)
