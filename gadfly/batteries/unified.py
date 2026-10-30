@@ -1,8 +1,20 @@
-"""An LLM critic through the unified model router.
+"""The unified battery: an LLM critic through the unified model router.
 
 The router (github.com/mirzahusadzic/codex-unified-model-router) serves the
-Responses API on loopback and picks the upstream from the model slug: Claude
-runs on Anthropic's API, other slugs on DeepSeek, OpenRouter or OpenAI.
+Responses API on loopback and maps a model slug to its provider:
+`anthropic/...` runs on Anthropic's API, `openrouter/...` on OpenRouter,
+`deepseek/...` on DeepSeek, each with the router's own key. One battery covers
+them all; calling a provider's own endpoint is a different battery (a native
+one). An unprefixed slug is OpenAI's, which the router reaches only with the
+caller's Codex sign-in: this battery refuses it.
+
+The critic answers in JSON to a schema, by default `{"label": <one of the
+frame's labels>}`. A critic of your own (its output schema, as your project
+already has it) is adapted by saying where in its answer the label is:
+
+    "battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5",
+                "reasoning": "low",
+                "output": {"schema": {...}, "label": "/verdict"}}
 
 What this battery promises, whatever the frame says:
 - it talks only to a router on this machine (loopback);
@@ -26,29 +38,21 @@ import re
 import urllib.error
 import urllib.request
 from pathlib import Path
-from urllib.parse import urlparse
 
 from ..frame import Frame
 from ..types import Observation
+from .critic import MAX_RESPONSE_BYTES, check_output, loopback, opener, output_schema, read_label
 
 DEFAULT_URL = "http://127.0.0.1:18766/v1/responses"
 ENV_FILE = Path.home() / ".codex" / "unified-router" / "openrouter.env"
-LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 # Slugs whose provider trains on what it receives (the router's own warning).
 TRAINS_ON_INPUTS = ("ultra-spark/", "openrouter/meta/")
-MAX_RESPONSE_BYTES = 1_000_000
+EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
+# Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
+# which the router reaches only with the caller's Codex sign-in.
+ROUTED_PREFIXES = ("anthropic/", "openrouter/", "deepseek/", "ultra-spark/")
+BATTERY_KEYS = {"kind", "model", "reasoning", "output", "trainsOnInputs", "tools"}
 LINE_LIMIT = 65_536
-
-
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, *args, **kwargs):  # a redirect becomes an HTTPError
-        return None
-
-
-def _opener() -> urllib.request.OpenerDirector:
-    """No proxy from the environment, no redirect: only the address named is
-    called. Built per call, so no environment read at import can linger."""
-    return urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
 
 def _token() -> str:
@@ -63,28 +67,29 @@ def _token() -> str:
     return token
 
 
-def read_label(text: str, labels: tuple[str, ...]) -> str | None:
-    """The one label the answer names as a whole word, or None (none, or more
-    than one: an answer that hedges between labels is no reading)."""
-    found = {
-        label
-        for label in labels
-        if re.search(rf"(?<![\w-]){re.escape(label)}(?![\w-])", text, re.IGNORECASE)
-    }
-    return found.pop() if len(found) == 1 else None
-
-
-def payload(frame: Frame, model: str, text: str, max_output_tokens: int) -> dict:
+def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     """The request body. No `tools` key, ever."""
-    instruction = f"{frame.instruction}\n\nAnswer with exactly one of: {', '.join(frame.labels)}."
-    return {
-        "model": model,
-        "instructions": instruction,
+    battery = frame.battery
+    schema, _ = output_schema(frame)
+    body = {
+        "model": battery["model"],
+        "instructions": frame.instruction,
         "input": [{"role": "user", "content": [{"type": "input_text", "text": text}]}],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "observation",
+                "schema": schema,
+                "strict": True,
+            }
+        },
         "max_output_tokens": max_output_tokens,
         "store": False,
         "stream": True,
     }
+    if battery.get("reasoning"):
+        body["reasoning"] = {"effort": battery["reasoning"]}
+    return body
 
 
 def _lines(response):
@@ -131,26 +136,34 @@ def parse_stream(lines) -> tuple[str, dict[str, int], str | None]:
     return text, usage, None
 
 
-class RouterCritic:
-    """`battery: {"kind": "router-critic", "model": "anthropic/claude-sonnet-5-5"}`"""
+class Unified:
+    """`battery: {"kind": "unified", "model": "anthropic/claude-sonnet-5-5"}`"""
 
-    name = "router-critic"
+    name = "unified"
 
     def __init__(self, url: str = DEFAULT_URL, timeout: float = 120.0):
-        parsed = urlparse(url)
-        if parsed.scheme != "http" or parsed.hostname not in LOOPBACK:
-            raise ValueError(f"the router must be on this machine over http, not {url}")
-        self.url, self.timeout = url, timeout
+        self.url, self.timeout = loopback(url, "the router"), timeout
 
     def check(self, frame: Frame) -> None:
         battery = frame.battery
         if battery.get("kind") != self.name:
             raise ValueError(f"this frame asks for the {battery.get('kind')} battery")
+        unknown = set(battery) - BATTERY_KEYS
+        if unknown:
+            raise ValueError(f"the unified battery reads no {sorted(unknown)}")
         model = battery.get("model")
-        if not isinstance(model, str) or "/" not in model:
-            raise ValueError("battery.model is a routed slug such as anthropic/claude-sonnet-5-5")
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError("battery.model is a slug the router serves (GET /v1/models)")
+        if not model.startswith(ROUTED_PREFIXES):
+            raise ValueError(
+                f"{model} is an OpenAI slug: the router reaches OpenAI only with the "
+                "caller's Codex sign-in, which this battery does not send"
+            )
         if battery.get("tools"):
             raise ValueError("the critic sends no tools")
+        if battery.get("reasoning") not in (None, *EFFORTS):
+            raise ValueError(f"battery.reasoning is one of {', '.join(EFFORTS)}")
+        check_output(battery)
         if model.startswith(TRAINS_ON_INPUTS) and model not in (
             battery.get("trainsOnInputs") or []
         ):
@@ -161,9 +174,7 @@ class RouterCritic:
         _token()  # no token, no run: refuse before the first call, not at each
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
-        body = json.dumps(
-            payload(frame, frame.battery["model"], prompt, max_output_tokens)
-        ).encode()
+        body = json.dumps(payload(frame, prompt, max_output_tokens)).encode()
         request = urllib.request.Request(
             self.url,
             data=body,
@@ -171,7 +182,7 @@ class RouterCritic:
             headers={"content-type": "application/json", "x-codex-router-token": _token()},
         )
         try:
-            with _opener().open(request, timeout=self.timeout) as response:
+            with opener().open(request, timeout=self.timeout) as response:
                 if response.headers.get("x-codex-router-diagnostic"):
                     diagnostic = response.headers["x-codex-router-diagnostic"][:200]
                     return Observation(label=None, opening=f"router diagnostic: {diagnostic}")
@@ -180,9 +191,7 @@ class RouterCritic:
             return Observation(label=None, opening=f"the router answered {error.code}")
         if opening:
             return Observation(label=None, opening=opening, raw=text, usage=usage)
-        label = read_label(text, frame.labels)
+        label, opening = read_label(text, frame)
         if label is None:
-            return Observation(
-                label=None, opening="no single label in the answer", raw=text, usage=usage
-            )
+            return Observation(label=None, opening=opening, raw=text, usage=usage)
         return Observation(label=label, raw=text, usage=usage)

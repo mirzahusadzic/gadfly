@@ -115,15 +115,29 @@ class Battery(Protocol):
 
 | Battery | Scorer | Kind |
 |---|---|---|
-| `router-critic` | an LLM critic through the [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router) (`POST /v1/responses` on loopback; any routed slug, Claude on Anthropic's API included) | stochastic: `quorum` runs per trial |
+| `unified` | an LLM critic through the [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router): `anthropic/...` on Anthropic's API, `openrouter/...` on OpenRouter, `deepseek/...` on DeepSeek, each with the router's key | sampled: `quorum` runs a trial |
+| `egemma` | Gemma 4 on this machine through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge`: the frame's instruction alone, no persona, no cache | sampled, or close to deterministic at `temperature: 0` |
 | your own | a project's evaluation (a rubric reader, a prompt pack's eval gate), or a deterministic engine | deterministic: `quorum: 1`; repeat is its determinism check |
 
-The router critic talks only to loopback, over no proxy and through no
-redirect; it sends no tools (through the router, Claude runs on Anthropic's
-API but web search runs elsewhere, so a body would leave Anthropic); and it
-refuses a model whose provider trains on its inputs unless the frame names
-that model under `battery.trainsOnInputs`. Its token comes from the
-environment or the router's env file and is never logged or recorded.
+Both critics answer in JSON to a schema, `{"label": ...}` by default. A
+critic of your own keeps its schema and names where the label is, the
+observation map $o_p$ made explicit:
+
+```json
+"battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5", "reasoning": "low",
+            "output": {"schema": {"type": "object", "properties": {"review": {"type": "object"}}},
+                       "label": "/review/verdict"}}
+```
+
+Both talk only to loopback, over no proxy and through no redirect, and keep
+their key out of every record. The unified critic sends no tools (through the
+router, Claude runs on Anthropic's API but web search runs elsewhere, so a
+body would leave Anthropic), refuses a model whose provider trains on its
+inputs unless the frame names it under `battery.trainsOnInputs`, and refuses
+an OpenAI slug, which the router reaches only with the caller's Codex sign-in.
+A provider's own endpoint is a native battery, not this one.
+[`examples/refund_live.py`](examples/refund_live.py) runs the refund frame
+through either critic.
 
 ## Runs and records
 

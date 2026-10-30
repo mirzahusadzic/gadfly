@@ -17,7 +17,7 @@ class Rules:
         self.calls, self.caps, self.answer, self.words = [], [], answer, words
 
     def check(self, frame):
-        if frame.battery["kind"] != "router-critic":
+        if frame.battery["kind"] != "unified":
             raise ValueError("wrong battery")
 
     def observe(self, frame, prompt, max_output_tokens):

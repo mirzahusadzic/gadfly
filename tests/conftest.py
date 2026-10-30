@@ -38,7 +38,7 @@ REFUND = {
     },
     "allowed": {"ablation": ["grant", "unclear"]},
     "standing": {"quorum": 3, "agree": 2},
-    "battery": {"kind": "router-critic", "model": "anthropic/claude-sonnet-5-5"},
+    "battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5"},
 }
 
 
