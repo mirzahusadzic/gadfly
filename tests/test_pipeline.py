@@ -130,3 +130,24 @@ def test_the_frame_keeps_its_own_copy(raw):
     raw["anchors"].append("r1")
     raw["promise"] = "changed"
     assert frame.anchors == ("r2",) and frame.raw["promise"] != "changed"
+
+
+def test_nothing_read_from_a_frame_changes_it(raw):
+    frame = situate(raw)
+    frame.raw["materialized"] = True
+    frame.battery["model"] = "other"
+    frame.inputs[0]["text"] = "changed"
+    frame.interventions.pop("presentation")
+    assert frame == situate(raw) and frame.hash == situate(raw).hash
+    assert "materialized" not in frame.raw and frame.battery == raw["battery"]
+
+
+def test_a_battery_cannot_change_the_frame_it_reads(raw):
+    class Sneaky(Rules):
+        def observe(self, frame, prompt, max_output_tokens):
+            frame.raw["materialized"] = True  # would clear materialization unearned
+            return super().observe(frame, prompt, max_output_tokens)
+
+    frame = situate(raw)
+    [finding] = judge(frame, run(frame, Sneaky(), Budget(calls=21)).records)
+    assert any(o.startswith("materialization") for o in finding.obligations)

@@ -11,7 +11,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -52,23 +52,49 @@ class Span:
 
 @dataclass(frozen=True)
 class Frame:
-    raw: dict[str, Any]
+    """A checked frame. It keeps the canonical JSON its hash is taken of, and
+    every coordinate read from it is a fresh copy: nothing a battery or the
+    caller does with what it reads can change what the hash names."""
+
+    source: str
+    hash: str
     spans: tuple[Span, ...]
     anchors: tuple[str, ...]
-    inputs: tuple[dict[str, str], ...]
     labels: tuple[str, ...]
-    instruction: str
-    interventions: dict[str, Any]
-    allowed: dict[str, Any]
     quorum: int
     agree: int
-    battery: dict[str, Any]
-    outside_scope: str | None = None
-    hash: str = field(default="")
+
+    @property
+    def raw(self) -> dict[str, Any]:
+        return json.loads(self.source)
 
     @property
     def name(self) -> str:
         return self.raw["name"]
+
+    @property
+    def inputs(self) -> tuple[dict[str, str], ...]:
+        return tuple(self.raw["inputs"])
+
+    @property
+    def instruction(self) -> str:
+        return self.raw["observe"]["instruction"]
+
+    @property
+    def interventions(self) -> dict[str, Any]:
+        return self.raw["interventions"]
+
+    @property
+    def allowed(self) -> dict[str, Any]:
+        return self.raw["allowed"]
+
+    @property
+    def battery(self) -> dict[str, Any]:
+        return self.raw["battery"]
+
+    @property
+    def outside_scope(self) -> str | None:
+        return self.raw.get("outsideScope")
 
 
 def canonical(value: Any) -> str:
@@ -195,21 +221,16 @@ def parse(raw: dict[str, Any]) -> Frame:
     battery = need("battery", dict)
     need("kind", str, battery)
 
-    frame = Frame(
-        raw=raw,
+    source = canonical(raw)
+    return Frame(
+        source=source,
+        hash=hashlib.sha256(source.encode("utf-8")).hexdigest(),
         spans=spans,
         anchors=anchors,
-        inputs=inputs,
         labels=labels,
-        instruction=instruction,
-        interventions=interventions,
-        allowed=allowed,
         quorum=quorum,
         agree=agree,
-        battery=battery,
-        outside_scope=raw.get("outsideScope"),
     )
-    return Frame(**{**frame.__dict__, "hash": digest(raw)})
 
 
 def _span(value: Any) -> Span:
