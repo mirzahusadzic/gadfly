@@ -216,9 +216,10 @@ print(finding.category, finding.evidence)
 |---|---|---|
 | [`refund.py`](examples/refund.py) | presentation tells a phrase matcher (misaligned) from a rule reader (carried) | none |
 | [`refund_live.py`](examples/refund_live.py) | the same frame read by a live critic | 21 a model |
+| [`review_handoff.py`](examples/review_handoff.py) | the [worked example](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing), failed check to review handoff: one system carries the finding and the grant, a "fix ready" summary cools both, one that drops its openings is misaligned, a lost record is unresolved | none |
 | [`after_the_poem.py`](examples/after_the_poem.py) | a study's retained sessions reach every published category ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)) | none |
 
-All three run as tests.
+All run as tests.
 
 ## Batteries
 

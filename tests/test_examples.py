@@ -47,3 +47,14 @@ def test_the_live_example_runs_through_a_battery_without_a_model(tmp_path, monke
     assert {b["reasoning"]["effort"] for _, b in fake.requests} == {"low"}
     assert finding.category == "cooled"  # a critic that always declines
     assert len((tmp_path / "records.jsonl").read_text().splitlines()) == 21
+
+
+def test_the_review_handoff_worked_example():
+    from examples import review_handoff
+
+    assert review_handoff.main() == [
+        ("state projection", "carried", "carried"),
+        ("summary: fix ready", "cooled", "cooled"),
+        ("drops its openings", "coupled but misaligned", "carried"),
+        ("projection, a record lost", "unresolved", "-"),
+    ]
