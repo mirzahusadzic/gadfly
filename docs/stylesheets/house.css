@@ -1,0 +1,11 @@
+/* The house colours: kept blue, engine green. */
+:root {
+  --md-primary-fg-color: #4d6bfe;
+  --md-primary-fg-color--light: #7b91fe;
+  --md-primary-fg-color--dark: #3a52c4;
+  --md-accent-fg-color: #2e9e5b;
+}
+.mermaid-house { margin: 1.5em 0; text-align: center; }
+.mermaid-house svg { max-width: 100%; height: auto; }
+/* Room for the charts. */
+.md-grid { max-width: 1400px; }

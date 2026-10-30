@@ -21,6 +21,7 @@ from gadfly.types import Budget, Observation
 FRAME = Path(__file__).with_name("refund.json")
 
 
+# --8<-- [start:battery]
 class PhraseMatcher:
     """Declines when the policy contains one of its phrases."""
 
@@ -34,6 +35,9 @@ class PhraseMatcher:
     def observe(self, frame, prompt, max_output_tokens):
         policy, _, _request = prompt.partition("\n\n---\n\n")
         return Observation(label="decline" if any(p in policy for p in self.phrases) else "grant")
+
+
+# --8<-- [end:battery]
 
 
 class RuleReader(PhraseMatcher):

@@ -5,6 +5,7 @@ a recipient needs; Gadfly removes or changes it under fixed interventions, has
 a scorer read each trial, and reads the verdict by fixed rules. The method:
 [When meaning is load-bearing](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing).
 
+<!-- --8<-- [start:arch] -->
 ```mermaid
 ---
 config:
@@ -85,7 +86,10 @@ flowchart TB
     class M,G,B group
     style OW stroke-dasharray: 5 4
 ```
+<!-- --8<-- [end:arch] -->
 
+
+<!-- --8<-- [start:framework] -->
 ```mermaid
 ---
 config:
@@ -170,9 +174,12 @@ flowchart TB
     class R1,R2,R3,R4,R5,OS default
     class T group
 ```
+<!-- --8<-- [end:framework] -->
+
 
 ## Frame
 
+<!-- --8<-- [start:frame] -->
 | Formalization | Field | What you write |
 |---|---|---|
 | relation $I$, locus $v$, body $B$ | `relation`, `locus`, `body` | the premise, where it acts, the spans it lives in |
@@ -183,9 +190,11 @@ flowchart TB
 | test domain $X$, interventions $\Delta_I$ | `inputs`, `interventions` | the inputs; the trials below |
 | $\simeq_p$, $E_{p,\delta}$ | `observe.labels`, `allowed` | same label, same observation; what ablation may produce |
 | standing $\sigma$ | `standing` | `quorum` runs a trial, `agree` for a level, `stable` |
+<!-- --8<-- [end:frame] -->
 
 Hashed whole: change any coordinate, the grain included, and it is another frame.
 
+<!-- --8<-- [start:trials] -->
 | Trial | Changes | Settles |
 |---|---|---|
 | `baseline`, `repeat` | nothing | the level, and whether it holds |
@@ -194,9 +203,11 @@ Hashed whole: change any coordinate, the grain included, and it is another frame
 | `sham` | as much unanchored text, same kind | specificity |
 | `presentation` | words renamed consistently | presentation invariance |
 | `bypass` | the connection cut | no hidden fallback |
+<!-- --8<-- [end:trials] -->
 
 ## Use
 
+<!-- --8<-- [start:use] -->
 ```python
 import json
 from pathlib import Path
@@ -211,18 +222,22 @@ result = run(frame, RuleReader(), Budget(calls=calls_needed(frame)), on_record=k
 [finding] = judge(frame, kept)
 print(finding.category, finding.evidence)
 ```
+<!-- --8<-- [end:use] -->
 
+<!-- --8<-- [start:examples] -->
 | Example | Shows | Calls |
 |---|---|---|
-| [`refund.py`](examples/refund.py) | presentation tells a phrase matcher (misaligned) from a rule reader (carried) | none |
-| [`refund_live.py`](examples/refund_live.py) | the same frame read by a live critic | 21 a model |
-| [`review_handoff.py`](examples/review_handoff.py) | the [worked example](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing), failed check to review handoff: one system carries the finding and the grant, a "fix ready" summary cools both, one that drops its openings is misaligned, a lost record is unresolved | none |
-| [`after_the_poem.py`](examples/after_the_poem.py) | a study's retained sessions reach every published category ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)) | none |
+| `examples/refund.py` | presentation tells a phrase matcher (misaligned) from a rule reader (carried) | none |
+| `examples/refund_live.py` | the same frame read by a live critic | 21 a model |
+| `examples/review_handoff.py` | the [worked example](https://github.com/mirzahusadzic/mirzahusadzic#when-meaning-is-load-bearing), failed check to review handoff: one system carries the finding and the grant, a "fix ready" summary cools both, one that drops its openings is misaligned, a lost record is unresolved | none |
+| `examples/after_the_poem.py` | a study's retained sessions reach every published category ([After the Poem](https://github.com/mirzahusadzic/after-the-poem)) | none |
 
 All run as tests.
+<!-- --8<-- [end:examples] -->
 
 ## Batteries
 
+<!-- --8<-- [start:protocol] -->
 ```python
 class Battery(Protocol):
     name: str
@@ -230,13 +245,17 @@ class Battery(Protocol):
     def check(self, frame: Frame) -> None: ...  # refuse before any call
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation: ...
 ```
+<!-- --8<-- [end:protocol] -->
 
+<!-- --8<-- [start:batteries] -->
 | Battery | Reads with | Guarantees |
 |---|---|---|
 | `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router): `anthropic/`, `openrouter/`, `deepseek/` | loopback, no tools, `data_collection: deny` unless the frame names the model under `trainsOnInputs`; OpenAI slugs refused (need Codex sign-in) |
 | `egemma` | Gemma 4 through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits` |
 | your own | an evaluation, or a deterministic engine (`quorum: 1`) | yours |
+<!-- --8<-- [end:batteries] -->
 
+<!-- --8<-- [start:adapter] -->
 Critics answer JSON to a schema, `{"label": ...}` by default. Your own critic
 keeps its schema and points at the label:
 
@@ -245,12 +264,15 @@ keeps its schema and points at the label:
             "output": {"schema": {"type": "object", "properties": {"review": {"type": "object"}}},
                        "label": "/review/verdict"}}
 ```
+<!-- --8<-- [end:adapter] -->
 
 ## Runs and records
 
+<!-- --8<-- [start:records] -->
 - `run` never starts a call the `Budget` cannot cover, stops between calls on `cancelled()`, and hands each `Record` to `on_record` as it is made.
 - A failed or unreadable answer is an opening, never a guessed label.
 - `judge` reads only records the plan could have made: this frame, its trials and bodies, runs within the quorum, each once.
+<!-- --8<-- [end:records] -->
 
 ## Development
 
@@ -258,4 +280,5 @@ keeps its schema and points at the label:
 uv sync
 uv run pytest            # the After the Poem replay runs when GADFLY_ATP_PLANS names its plans
 uv run ruff check . && uv run ruff format --check .
+uv run --group docs mkdocs serve   # the docs, with the API reference
 ```
