@@ -189,38 +189,54 @@ def _finding(
     frame: Frame, x: str, levels: dict[str, str | None], samples: dict[str, list[str | None]]
 ) -> Finding:
     finding = Finding(input=x, category=UNRESOLVED, levels=levels)
-    say = finding.evidence.append
     if frame.outside_scope:
         finding.category = OUTSIDE
-        say(f"declared outside scope: {frame.outside_scope}")
+        finding.evidence.append(f"declared outside scope: {frame.outside_scope}")
         finding.obligations.append("independent scope check: the exclusion is declared, not tested")
         return finding
+    _read(frame, finding, levels, samples)
+    # What the trials did not settle is listed whatever the category: a
+    # category never hides an open check.
+    base = levels.get("baseline")
+    finding.obligations[:0] = _open_checks(frame, levels, base)
+    return finding
+
+
+def _read(
+    frame: Frame,
+    finding: Finding,
+    levels: dict[str, str | None],
+    samples: dict[str, list[str | None]],
+) -> None:
+    """The rules, in order: the first that matches names the category."""
+    say = finding.evidence.append
     missing = [t for t, v in levels.items() if v is None]
     if missing:
         say(f"no agreed level in: {', '.join(missing)}")
-        return finding
+        return
     base = levels["baseline"]
     if frame.raw["standing"].get("stable") and "repeat" in samples:
         pooled = samples["baseline"] + samples["repeat"]
         if len(set(pooled)) > 1:
             say(f"the baseline and repeat sessions split ({', '.join(map(str, pooled))})")
-            return finding
+            return
     if "repeat" in levels and levels["repeat"] != base:
         say(f"repeat gave {levels['repeat']}, baseline {base}: this grain cannot tell")
-        return finding
+        return
     if "presentation" in levels and levels["presentation"] != base:
         finding.category = MISALIGNED
         say(f"presentation moved it {base} -> {levels['presentation']}")
-        return finding
+        return
     ablated = levels["ablation"]
     if ablated != base and ablated not in allowed_for(frame, base):
         finding.category = MISALIGNED
         say(f"ablation moved it {base} -> {ablated}, which the frame does not allow")
-        return finding
+        return
     if ablated == base:
         if levels.get("control") == base:
             say(f"ablation left it at {base}, and so did the control: the scorer cannot tell")
-            return finding
+            finding.obligations.append(f"discrimination: the control left it at {base} too")
+            return
         finding.category = COOLED
         say(f"ablation left it at {base}")
         if "control" in levels:
@@ -231,11 +247,11 @@ def _finding(
             say(
                 f"the cumulative ablation moved it to {levels['cumulative']}: carried elsewhere too"
             )
-        return finding
+        return
     moved = [t for t, v in levels.items() if t.startswith("sham-") and v != base]
     if moved:
         say(f"a sham moved it too ({', '.join(moved)}); the change is not specific")
-        return finding
+        return
     finding.category = CARRIED
     shams = sum(t.startswith("sham-") for t in levels)
     held = (["presentation"] if "presentation" in levels else []) + (
@@ -245,29 +261,33 @@ def _finding(
         f"ablation moved it {base} -> {ablated}"
         + (f"; held under {', '.join(held)}" if held else "")
     )
-    _obligations(frame, finding, levels, base)
-    return finding
 
 
-def _obligations(frame: Frame, finding: Finding, levels: dict[str, str | None], base: str) -> None:
+def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) -> list[str]:
+    """The carriage checks the trials did not settle: no hidden fallback,
+    presentation invariance, specificity and materialization."""
+    open_ = []
+    bypass = levels.get("bypass")
     if "bypass" not in levels:
-        finding.obligations.append("no hidden fallback: no bypass trial was declared")
+        open_.append("no hidden fallback: no bypass trial was declared")
+    elif bypass is None or base is None:
+        open_.append("no hidden fallback: the bypass has no agreed level to read against baseline")
     elif "bypass" in frame.allowed:
         opening = allowed_for(frame, base, "bypass")
-        if levels["bypass"] not in opening:
-            finding.obligations.append(
-                f"no hidden fallback: bypass gave {levels['bypass']}, "
+        if bypass not in opening:
+            open_.append(
+                f"no hidden fallback: bypass gave {bypass}, "
                 f"not the designated opening ({', '.join(opening)})"
             )
-    elif levels["bypass"] == base:
-        finding.obligations.append(f"no hidden fallback: bypass left it at {base}")
+    elif bypass == base:
+        open_.append(f"no hidden fallback: bypass left it at {base}")
     if "presentation" not in levels:
-        finding.obligations.append("presentation invariance: no presentation trial was declared")
+        open_.append("presentation invariance: no presentation trial was declared")
     shams = sum(t.startswith("sham-") for t in levels)
     declared = frame.interventions.get("sham")
     wanted = 0 if not declared else 1 if declared is True else declared["draws"]
     if shams < max(wanted, 1):
-        finding.obligations.append(
+        open_.append(
             f"specificity: {shams} sham trial(s), {wanted} declared"
             + (
                 "; the body has no unanchored span of the anchors' kind left"
@@ -276,7 +296,8 @@ def _obligations(frame: Frame, finding: Finding, levels: dict[str, str | None], 
             )
         )
     if not frame.raw.get("materialized"):
-        finding.obligations.append(
+        open_.append(
             "materialization: the frame does not say the observation is "
             "the form the recipient receives"
         )
+    return open_

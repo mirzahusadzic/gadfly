@@ -75,7 +75,7 @@ def test_cooled_needs_a_scorer_that_can_move(raw):
     # every trial declines: a blind scorer and an idle relation look the same
     blind = verdict(situate(raw))
     assert blind.category == COOLED
-    assert blind.obligations == ["discrimination: no control trial shows the scorer can move"]
+    assert blind.obligations[-1] == "discrimination: no control trial shows the scorer can move"
     raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
     blind = verdict(situate(raw))
     assert blind.category == UNRESOLVED
@@ -83,7 +83,8 @@ def test_cooled_needs_a_scorer_that_can_move(raw):
         "ablation left it at decline, and so did the control: the scorer cannot tell"
     ]
     seeing = verdict(situate(raw), control="grant")
-    assert seeing.category == COOLED and seeing.obligations == []
+    assert seeing.category == COOLED
+    assert not any(o.startswith("discrimination") for o in seeing.obligations)
     assert seeing.evidence == [
         "ablation left it at decline",
         "the control moved it decline -> grant: the scorer can tell",
@@ -271,3 +272,24 @@ def test_judge_reads_each_record_a_fixed_number_of_times(raw):
     # twice the inputs and records: twice the reads, not four times
     small, large = reads_to_judge(copy.deepcopy(raw), 20), reads_to_judge(copy.deepcopy(raw), 40)
     assert large <= 2.2 * small, (small, large)
+
+
+def test_every_category_keeps_its_open_checks_visible(raw):
+    # misaligned by direction, with no bypass, presentation, sham or
+    # materialization: the open checks are listed, not dropped by the category
+    raw["allowed"] = {"ablation": ["unclear"]}
+    for key in ("repeat", "sham", "presentation", "bypass"):
+        raw["interventions"].pop(key)
+    misaligned = verdict(situate(raw), ablation="grant")
+    assert misaligned.category == MISALIGNED
+    assert [o.split(":")[0] for o in misaligned.obligations] == [
+        "no hidden fallback",
+        "presentation invariance",
+        "specificity",
+        "materialization",
+    ]
+    # cooled and unresolved list theirs too
+    assert any(o.startswith("no hidden fallback") for o in verdict(situate(raw)).obligations)
+    unresolved = verdict(situate(raw), ablation=["grant", "decline", "unclear"])
+    assert unresolved.category == UNRESOLVED
+    assert any(o.startswith("materialization") for o in unresolved.obligations)

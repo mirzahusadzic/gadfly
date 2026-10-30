@@ -21,6 +21,7 @@ projection, a record lost    unresolved               -
 $ python examples/refund.py records.jsonl
 phrase-matcher: coupled but misaligned
   presentation moved it decline -> grant
+  no hidden fallback: bypass left it at decline
 rule-reader: carried
   ablation moved it decline -> grant; held under presentation, 2 shams
   no hidden fallback: bypass left it at decline
