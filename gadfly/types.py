@@ -67,7 +67,8 @@ class Budget:
     """The most a run may spend: `calls` scorer calls, each answer capped at
     `output_tokens_per_call`, and, if `tokens` is set, that many output tokens
     in all. Because every call is capped, a call is never started that could
-    pass the budget."""
+    pass the budget; a battery that reports more than the cap has broken that
+    promise, and the run stops after its call."""
 
     calls: int
     output_tokens_per_call: int = 64

@@ -93,6 +93,27 @@ def test_a_label_outside_the_frame_is_an_opening(raw):
     assert {r.opening for r in result.records} == {"the battery returned no label of this frame"}
 
 
+def test_an_answer_outside_the_frame_keeps_what_the_battery_said(raw):
+    said = Observation(label="refund", raw='{"label": "refund"}', usage={"output_tokens": 3})
+    [record, *_] = run(situate(raw), Rules(answer=lambda p: said), Budget(calls=21)).records
+    assert record.opening == "the battery returned no label of this frame"
+    assert record.raw == '{"label": "refund"}' and record.usage == {"output_tokens": 3}
+
+
+def test_a_battery_that_returns_no_observation_gives_an_opening(raw):
+    result = run(situate(raw), Rules(answer=lambda p: None), Budget(calls=21))
+    assert {r.opening for r in result.records} == {"the battery returned no observation"}
+
+
+def test_a_battery_that_breaks_its_cap_stops_the_run(raw):
+    # the budget's promise rests on each call keeping to its cap
+    over = Observation(label="decline", usage={"output_tokens": 40})
+    budget = Budget(calls=21, output_tokens_per_call=4)
+    result = run(situate(raw), Rules(answer=lambda p: over), budget)
+    assert len(result.records) == 1
+    assert result.stopped == "the battery reported 40 output tokens for a call capped at 4"
+
+
 def test_the_raw_answer_is_kept_only_up_to_its_limit(raw):
     long = Observation(label="decline", raw="x" * 5000)
     result = run(situate(raw), Rules(answer=lambda p: long), Budget(calls=21))
