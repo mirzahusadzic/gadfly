@@ -69,3 +69,47 @@ def test_the_review_handoff_worked_example():
         ("drops its openings", "coupled but misaligned", "unresolved"),
         ("projection, a record lost", "unresolved", "-"),
     ]
+
+
+def categories(module):
+    return [(name, category) for name, category, _ in module.main()]
+
+
+def test_a_cited_source_tells_a_reader_from_a_word_matcher():
+    from examples import citation
+
+    assert categories(citation) == [
+        ("word-matcher", "coupled but misaligned"),
+        ("citation-reader", "unresolved"),  # its fallback is open
+    ]
+
+
+def test_a_system_prompt_line_is_cooled_only_by_a_scorer_that_can_move():
+    from examples import system_prompt
+
+    rows = system_prompt.main()
+    assert [(name, category) for name, category, _ in rows] == [
+        ("request-alarm", "cooled"),
+        ("always-refuse", "unresolved"),
+    ]
+    assert "the control moved it refuse -> comply: the scorer can tell" in rows[0][2]
+
+
+def test_a_tool_permission_moved_the_wrong_way_is_misaligned():
+    from examples import tool_permission
+
+    assert categories(tool_permission) == [
+        ("eager-tool", "coupled but misaligned"),
+        ("scope-reader", "unresolved"),
+    ]
+
+
+def test_a_code_invariant_its_lost_records_and_its_owners_exclusion():
+    from examples import code_invariant
+
+    assert categories(code_invariant) == [
+        ("full run", "unresolved"),
+        ("records lost", "unresolved"),
+        ("declared out of scope", "unresolved"),
+        ("declared and checked", "outside scope"),
+    ]
