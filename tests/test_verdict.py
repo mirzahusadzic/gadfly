@@ -51,6 +51,20 @@ def test_carried_when_ablation_moves_it_as_allowed_and_nothing_else_does(raw):
     assert any(o.startswith("materialization") for o in finding.obligations)
 
 
+def test_bypass_clears_the_fallback_check_only_at_its_designated_opening(raw):
+    # the method: removing the connection exposes the designated opening
+    raw["observe"]["labels"].append("opening")
+    raw["allowed"]["bypass"] = ["opening"]
+    missed = verdict(situate(raw), ablation="grant", bypass="unclear")
+    assert missed.category == CARRIED
+    assert (
+        "no hidden fallback: bypass gave unclear, not the designated opening (opening)"
+        in missed.obligations
+    )
+    reached = verdict(situate(raw), ablation="grant", bypass="opening")
+    assert not any(o.startswith("no hidden fallback") for o in reached.obligations)
+
+
 def test_cooled_when_ablation_leaves_it(raw):
     assert verdict(situate(raw)).category == COOLED
 

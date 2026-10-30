@@ -185,8 +185,12 @@ def parse(raw: dict[str, Any]) -> Frame:
     _check_interventions(interventions, spans, anchors, inputs)
 
     allowed = need("allowed", dict)
-    if set(allowed) != {"ablation"}:
-        raise FrameError("allowed says which observations ablation may produce, and only that")
+    if "ablation" not in allowed or not set(allowed) <= {"ablation", "bypass"}:
+        raise FrameError(
+            "allowed says what ablation may produce and, optionally, the opening bypass exposes"
+        )
+    if "bypass" in allowed and not interventions.get("bypass"):
+        raise FrameError("allowed.bypass needs a bypass trial")
     order = observe.get("order")
     if order is not None and not (
         isinstance(order, list)

@@ -42,6 +42,12 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
         (lambda r: r.update(allowed={"ablation": [{"a": 1}]}), "allowed lists"),
         (lambda r: r.update(allowed={"ablation": []}), "allowed lists"),
         (lambda r: r["observe"].update(order=5), "observe.order orders"),
+        (lambda r: r["allowed"].update(bypass=["maybe"]), "allowed lists one or more"),
+        (lambda r: r["allowed"].update(sham=["grant"]), "allowed says"),
+        (
+            lambda r: (r["allowed"].update(bypass=["grant"]), r["interventions"].pop("bypass")),
+            "allowed.bypass needs a bypass trial",
+        ),
         # a trial that cannot change anything would clear its check unearned
         (lambda r: r["interventions"].update(presentation={"reciept": "slip"}), "renames nothing"),
         (lambda r: r["interventions"].update(presentation={"a": "x", "A": "y"}), "twice"),

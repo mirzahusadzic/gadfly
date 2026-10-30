@@ -113,10 +113,11 @@ def _check_records(frame: Frame, records: list[dict[str, Any]], bodies: dict[str
         seen.add(key)
 
 
-def allowed_for(frame: Frame, base: str) -> list[str]:
-    """What ablation may produce: the labels listed, or, for ordered labels,
-    those below (or above) the baseline."""
-    rule = frame.allowed["ablation"]
+def allowed_for(frame: Frame, base: str, trial: str = "ablation") -> list[str]:
+    """What a trial may produce (ablation; bypass, its designated opening):
+    the labels listed, or, for ordered labels, those below (or above) the
+    baseline."""
+    rule = frame.allowed[trial]
     if isinstance(rule, list):
         return rule
     order = list(frame.raw["observe"]["order"])
@@ -191,8 +192,15 @@ def _finding(
 def _obligations(frame: Frame, finding: Finding, levels: dict[str, str | None], base: str) -> None:
     if "bypass" not in levels:
         finding.obligations.append("no hidden fallback: no bypass trial was declared")
-    elif levels["bypass"] in (None, base):
-        finding.obligations.append(f"no hidden fallback: bypass left it at {levels['bypass']}")
+    elif "bypass" in frame.allowed:
+        opening = allowed_for(frame, base, "bypass")
+        if levels["bypass"] not in opening:
+            finding.obligations.append(
+                f"no hidden fallback: bypass gave {levels['bypass']}, "
+                f"not the designated opening ({', '.join(opening)})"
+            )
+    elif levels["bypass"] == base:
+        finding.obligations.append(f"no hidden fallback: bypass left it at {base}")
     if "presentation" not in levels:
         finding.obligations.append("presentation invariance: no presentation trial was declared")
     shams = sum(t.startswith("sham-") for t in levels)
