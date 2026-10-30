@@ -85,14 +85,14 @@ def _wait(error: urllib.error.HTTPError) -> float:
 def _read(response, deadline: float, clock: Callable[[], float]) -> bytes | None:
     """The reply as it comes, until it ends or passes the size cap; None if it
     is still coming at the deadline (the socket's timeout waits per read)."""
-    body = b""
+    body = bytearray()  # grown in place: an earlier chunk is never copied again
     while chunk := response.read1(65_536):
-        body += chunk
+        body.extend(chunk)
         if len(body) > MAX_RESPONSE_BYTES:
             break
         if clock() > deadline:
             return None
-    return body
+    return bytes(body)
 
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
@@ -204,6 +204,13 @@ class EGemma:
                     tried = f" after {attempt} retries" if attempt else ""
                     return Observation(label=None, opening=f"eGemma answered {error.code}{tried}")
                 self.sleep(_wait(error))
+            except (TimeoutError, urllib.error.URLError, OSError) as error:
+                reason = getattr(error, "reason", error)
+                if isinstance(reason, TimeoutError):
+                    return Observation(label=None, opening="the call passed its timeout")
+                return Observation(
+                    label=None, opening=f"eGemma could not be reached: {type(reason).__name__}"
+                )
         if body is None:
             return Observation(label=None, opening="the call passed its timeout")
         if len(body) > MAX_RESPONSE_BYTES:
@@ -212,8 +219,15 @@ class EGemma:
             reply = json.loads(body)
         except json.JSONDecodeError:
             return Observation(label=None, opening="eGemma's reply is not JSON")
+        if not isinstance(reply, dict):
+            return Observation(label=None, opening="eGemma's reply is not a JSON object")
         text = str(reply.get("text", ""))
-        usage = {k: v for k, v in (reply.get("usage") or {}).items() if isinstance(v, int)}
+        reported = reply.get("usage")
+        usage = {
+            k: v
+            for k, v in (reported if isinstance(reported, dict) else {}).items()
+            if isinstance(v, int) and not isinstance(v, bool)
+        }
         served = f"{reply.get('model', '')}@{reply.get('revision', '')}".strip("@")[:200]
         seen = {"raw": text, "usage": usage, "served": served}
         battery = frame.battery
@@ -227,9 +241,11 @@ class EGemma:
             return Observation(label=None, opening="the answer is not JSON", **seen)
         if reply.get("valid") is False:
             # eGemma checks the whole schema; its grammar cannot hold every keyword.
-            first = (reply.get("violations") or [{}])[0]
+            violations = reply.get("violations")
+            first = violations[0] if isinstance(violations, list) and violations else {}
+            first = first if isinstance(first, dict) else {}
             where = f"{first.get('path', '')} {first.get('message', '')}".strip()
-            opening = f"the answer breaks its schema: {where}"[:300]
+            opening = f"the answer breaks its schema: {where}"[:300].rstrip(": ")
             return Observation(label=None, opening=opening, **seen)
         label, opening = label_at(reply["answer"], frame)
         if label is None:

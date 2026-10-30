@@ -2,6 +2,8 @@
 
 import itertools
 import json
+import socket
+from unittest.mock import patch
 
 import pytest
 
@@ -240,3 +242,68 @@ def test_a_pinned_model_that_does_not_serve_is_an_opening(raw, key, server):
 def test_a_reply_without_the_valid_field_is_read_as_before(frame, key, server):
     fake = server(reply("decline"))
     assert EGemma(fake.base + "/judge").observe(frame, "p", 32).label == "decline"
+
+
+class Counted(bytes):
+    """A chunk that counts the bytes copied whenever something is added to it."""
+
+    copied = 0
+
+    def __radd__(self, left):
+        type(self).copied += len(left) + len(self)
+        return bytes(left) + bytes(self)
+
+
+class Replay:
+    """An opener whose response hands back the chunks it was given."""
+
+    def __init__(self, chunks):
+        self.chunks = iter(chunks)
+        self.headers = {}
+
+    def open(self, request, timeout=None):
+        return self
+
+    def read1(self, size):
+        return next(self.chunks, b"")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def copied_to_read(frame, chunks):
+    piece = Counted(b'{"answer": null, "text": "", "truncated": false}')
+    Counted.copied = 0
+    with patch.object(egemma, "opener", lambda: Replay([piece] * chunks)):
+        EGemma().observe(frame, "p", 8)
+    return Counted.copied
+
+
+def test_a_reply_is_read_without_copying_what_came_before(frame, key):
+    small, large = copied_to_read(frame, 100), copied_to_read(frame, 200)
+    assert large <= 2.5 * max(small, 1), (small, large)
+
+
+@pytest.mark.parametrize("body", [b"[]", b'"text"', b"5"])
+def test_a_reply_that_is_not_an_object_is_an_opening(frame, key, server, body):
+    fake = server((200, {}, body))
+    observation = EGemma(fake.base + "/judge").observe(frame, "p", 32)
+    assert observation.opening == "eGemma's reply is not a JSON object"
+
+
+def test_a_reply_of_the_wrong_shape_inside_is_still_read(frame, key, server):
+    odd = reply("decline", usage=["not", "a", "dict"], valid=False, violations="none listed")
+    observation = EGemma(server(odd).base + "/judge").observe(frame, "p", 32)
+    assert observation.opening == "the answer breaks its schema" and observation.usage == {}
+
+
+def test_an_egemma_that_cannot_be_reached_is_an_opening(frame, key):
+    closed = socket.socket()
+    closed.bind(("127.0.0.1", 0))
+    port = closed.getsockname()[1]
+    closed.close()
+    observation = EGemma(f"http://127.0.0.1:{port}/judge").observe(frame, "p", 32)
+    assert observation.opening.startswith("eGemma could not be reached")
