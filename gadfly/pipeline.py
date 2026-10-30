@@ -35,12 +35,17 @@ RAW_LIMIT = 2_000
 
 @dataclass(frozen=True)
 class RunResult:
+    """What a run made: its records, the calls it planned, and why it stopped
+    early (None when every planned call was made)."""
+
     records: tuple[Record, ...]
     planned: int
     stopped: str | None  # None when every planned call was made
 
 
 def calls_needed(frame: Frame) -> int:
+    """The calls a whole run makes: every trial of every input, `quorum`
+    times each. A budget of this many calls covers it."""
     return len(frame.inputs) * len(plan(frame)) * frame.quorum
 
 
@@ -117,6 +122,9 @@ def run(
 
 
 def judge(frame: Frame, records: Iterable[Record | dict]) -> list[Finding]:
+    """One finding per input, read from the records alone: the Records of a
+    run, or the dicts a caller kept of them. A record the plan and the
+    frame's battery could not have made is refused."""
     return judge_records(frame, [r.as_dict() if isinstance(r, Record) else r for r in records])
 
 

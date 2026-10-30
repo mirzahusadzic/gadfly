@@ -103,10 +103,12 @@ def canonical(value: Any) -> str:
 
 
 def digest(value: Any) -> str:
+    """The SHA-256 of a value's canonical serialization."""
     return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
 
 
 def load(path: str | Path) -> Frame:
+    """Read a frame from a JSON file, then check and hash it as `parse` does."""
     return parse(json.loads(Path(path).read_text(encoding="utf-8")))
 
 

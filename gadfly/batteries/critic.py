@@ -15,6 +15,7 @@ MAX_RESPONSE_BYTES = 1_000_000
 
 
 def loopback(url: str, what: str) -> str:
+    """The URL, if it names this machine over plain http; else ValueError."""
     parsed = urlparse(url)
     if parsed.scheme != "http" or parsed.hostname not in LOOPBACK:
         raise ValueError(f"{what} must be on this machine over http, not {url}")
@@ -33,6 +34,8 @@ def opener() -> urllib.request.OpenerDirector:
 
 
 def check_output(battery: dict) -> None:
+    """Refuse a battery.output that is not {schema, label}, the label a JSON
+    pointer into the answer."""
     output = battery.get("output")
     if output is not None and not (
         isinstance(output, dict)

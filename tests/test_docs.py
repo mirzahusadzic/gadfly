@@ -1,5 +1,7 @@
 """The moved text keeps its license, and the docs site can render its math."""
 
+import importlib
+import inspect
 from pathlib import Path
 
 from hooks.github_math import on_page_markdown
@@ -26,3 +28,29 @@ def test_github_math_becomes_arithmatex_math():
     rendered = on_page_markdown(source, None, None, None)
     assert "$X=\\{x\\}$" in rendered and "$$\n\\displaystyle L=(I,B),\n$$" in rendered
     assert "$`" not in rendered and "<div" not in rendered
+
+
+def test_every_public_name_in_the_reference_has_a_docstring():
+    # mkdocstrings leaves out what has none, so the reference would not show it
+    page = (ROOT / "docs/reference.md").read_text().splitlines()
+    modules = [line.removeprefix("::: ").strip() for line in page if line.startswith("::: ")]
+    missing = []
+    for name in modules:
+        module = importlib.import_module(name)
+        for attr, obj in vars(module).items():
+            if attr.startswith("_") or getattr(obj, "__module__", None) != name:
+                continue
+            if not (inspect.isfunction(obj) or inspect.isclass(obj)):
+                continue
+            doc = (obj.__doc__ or "").strip()
+            if not doc or doc.startswith(f"{attr}("):  # a dataclass's generated signature
+                missing.append(f"{name}.{attr}")
+            if inspect.isclass(obj):
+                missing += [
+                    f"{name}.{attr}.{method}"
+                    for method, function in vars(obj).items()
+                    if not method.startswith("_")
+                    and inspect.isfunction(function)
+                    and not function.__doc__
+                ]
+    assert missing == []

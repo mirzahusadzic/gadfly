@@ -191,6 +191,10 @@ class Unified:
         self.url, self.timeout, self.clock = loopback(url, "the router"), timeout, clock
 
     def check(self, frame: Frame) -> None:
+        """Refuse, before any call, a frame this battery must not serve: another
+        battery's, an unknown key, an OpenAI slug, tools, a model whose
+        provider trains on its inputs without the frame's consent, or no
+        router token."""
         battery = frame.battery
         if battery.get("kind") != self.name:
             raise ValueError(f"this frame asks for the {battery.get('kind')} battery")
@@ -228,6 +232,9 @@ class Unified:
         _token()  # no token, no run: refuse before the first call, not at each
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
+        """One call through the router: the prompt under the frame's
+        instruction, answered to its schema; the label at the frame's
+        pointer, or an opening that says why there is none."""
         body = json.dumps(payload(frame, prompt, max_output_tokens)).encode()
         request = urllib.request.Request(
             self.url,

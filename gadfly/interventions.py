@@ -35,6 +35,7 @@ class Trial:
 
 
 def without(spans: tuple[Span, ...], removed: set[str]) -> tuple[Span, ...]:
+    """The spans, in their order, less those named."""
     return tuple(span for span in spans if span.id not in removed)
 
 

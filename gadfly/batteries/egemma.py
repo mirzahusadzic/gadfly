@@ -96,6 +96,8 @@ def _read(response, deadline: float, clock: Callable[[], float]) -> bytes | None
 
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
+    """The /judge request: the instruction, the text, the schema, the answer's
+    cap, and the frame's temperature if it names one."""
     schema, _ = output_schema(frame)
     body = {
         "instructions": frame.instruction,
@@ -159,6 +161,9 @@ class EGemma:
         self.starts.append(now)
 
     def check(self, frame: Frame) -> None:
+        """Refuse, before any call, a frame this battery must not serve:
+        another battery's, an unknown key, a temperature outside 0 to 2, an
+        empty pin, or no key; then read the budget eGemma publishes."""
         battery = frame.battery
         if battery.get("kind") != self.name:
             raise ValueError(f"this frame asks for the {battery.get('kind')} battery")
@@ -178,6 +183,9 @@ class EGemma:
         self.read_budget()
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
+        """One /judge call, paced to eGemma's budget and retried while it is
+        busy: the label at the frame's pointer, or an opening that says why
+        there is none."""
         request = urllib.request.Request(
             self.url,
             data=json.dumps(payload(frame, prompt, max_output_tokens)).encode(),

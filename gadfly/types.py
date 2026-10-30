@@ -48,6 +48,7 @@ class Record:
     served: str = ""
 
     def as_dict(self) -> dict[str, Any]:
+        """The record as a plain dict, as a caller keeps it (JSON Lines, say)."""
         return asdict(self)
 
 

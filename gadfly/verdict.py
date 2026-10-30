@@ -42,6 +42,10 @@ MISALIGNED, UNRESOLVED, OUTSIDE = "coupled but misaligned", "unresolved", "outsi
 
 @dataclass
 class Finding:
+    """One input's verdict: its category, each trial's agreed level (None
+    where the quorum did not agree), the evidence for the category, and the
+    obligations it leaves open."""
+
     input: str
     category: str
     levels: dict[str, str | None]
@@ -49,6 +53,7 @@ class Finding:
     obligations: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
+        """The finding as a plain dict."""
         return self.__dict__.copy()
 
 
@@ -62,6 +67,7 @@ class Overall:
     obligations: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
+        """The verdict as a plain dict."""
         return self.__dict__.copy()
 
 
