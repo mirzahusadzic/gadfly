@@ -120,6 +120,19 @@ def test_carried_without_a_sham_keeps_specificity_open(raw):
     finding = verdict(situate(raw), ablation="grant")
     assert finding.category == CARRIED
     assert any(o.startswith("specificity: 0 sham") for o in finding.obligations)
+    # the evidence names only the trials that ran
+    assert "sham" not in finding.evidence[0] and "presentation" in finding.evidence[0]
+
+
+def test_carried_evidence_counts_the_shams_that_held(raw):
+    finding = verdict(situate(raw), ablation="grant")
+    assert finding.evidence == [
+        "ablation moved it decline -> grant; held under presentation, 2 shams"
+    ]
+    del raw["interventions"]["presentation"]
+    raw["interventions"]["sham"] = {"draws": 1}
+    finding = verdict(situate(raw), ablation="grant")
+    assert finding.evidence == ["ablation moved it decline -> grant; held under 1 sham"]
 
 
 @pytest.mark.parametrize(

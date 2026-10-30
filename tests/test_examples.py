@@ -17,7 +17,7 @@ def test_presentation_tells_a_phrase_from_a_rule(tmp_path):
     ]
     assert findings[0][2] == ["presentation moved it decline -> grant"]
     assert findings[1][2] == [
-        "ablation moved it decline -> grant, and it held under presentation and the sham"
+        "ablation moved it decline -> grant; held under presentation, 2 shams"
     ]
 
 

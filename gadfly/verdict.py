@@ -149,7 +149,14 @@ def _finding(
         say(f"a sham moved it too ({', '.join(moved)}); the change is not specific")
         return finding
     finding.category = CARRIED
-    say(f"ablation moved it {base} -> {ablated}, and it held under presentation and the sham")
+    shams = sum(t.startswith("sham-") for t in levels)
+    held = (["presentation"] if "presentation" in levels else []) + (
+        [f"{shams} sham{'s' if shams > 1 else ''}"] if shams else []
+    )
+    say(
+        f"ablation moved it {base} -> {ablated}"
+        + (f"; held under {', '.join(held)}" if held else "")
+    )
     _obligations(frame, finding, levels, base)
     return finding
 
