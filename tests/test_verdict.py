@@ -23,7 +23,7 @@ def records(frame, levels, runs=None):
                     run=run,
                     body=trial.body_hash,
                     prompt="p",
-                    battery="test",
+                    battery=frame.battery["kind"],
                     observation=label,
                     opening=None if label else "no reading",
                     raw="",
@@ -143,6 +143,13 @@ def test_carried_evidence_counts_the_shams_that_held(raw):
         (lambda r: r.__class__(**{**r.as_dict(), "input": "x9"}), "does not have"),
         (lambda r: r.__class__(**{**r.as_dict(), "body": "other"}), "another body"),
         (lambda r: r.__class__(**{**r.as_dict(), "run": 3}), "outside the quorum"),
+        (lambda r: r.__class__(**{**r.as_dict(), "battery": "other"}), "made by other"),
+        (lambda r: r.__class__(**{**r.as_dict(), "observation": "approved"}), "not one of"),
+        (lambda r: r.__class__(**{**r.as_dict(), "opening": "also"}), "a label or an opening"),
+        (
+            lambda r: r.__class__(**{**r.as_dict(), "observation": None, "opening": None}),
+            "a label or an opening",
+        ),
     ],
 )
 def test_records_the_plan_did_not_make_are_refused(raw, tamper, message):

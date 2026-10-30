@@ -56,6 +56,9 @@ def run(
     verdict then reads what is there. `kept` finishes a run that stopped:
     the calls those records made are not made again (drop a record from it
     to make its call again), and the verdict reads the two runs together."""
+    named = frame.battery["kind"]
+    if battery.name != named:  # the hash names the battery: no other reads under it
+        raise ValueError(f"this frame asks for the {named} battery, not {battery.name}")
     battery.check(frame)
     trials = plan(frame)
     if only is not None:

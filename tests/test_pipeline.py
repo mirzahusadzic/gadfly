@@ -7,6 +7,12 @@ from gadfly.types import Budget, Observation
 from gadfly.verdict import CARRIED, MISALIGNED
 
 
+@pytest.fixture
+def raw(raw):
+    raw["battery"] = {"kind": "rules"}
+    return raw
+
+
 class Rules:
     """A deterministic battery: declines while the receipt rule is in the
     prompt, grants otherwise. It is what a frame's promise says should happen."""
@@ -17,8 +23,8 @@ class Rules:
         self.calls, self.caps, self.answer, self.words = [], [], answer, words
 
     def check(self, frame):
-        if frame.battery["kind"] != "unified":
-            raise ValueError("wrong battery")
+        if frame.battery.get("refuse"):
+            raise ValueError("this battery refuses the frame")
 
     def observe(self, frame, prompt, max_output_tokens):
         self.calls.append(prompt)
@@ -145,9 +151,19 @@ def test_a_partial_run_names_trials_the_plan_has(raw):
 
 
 def test_the_battery_refuses_before_any_call(raw):
-    raw["battery"]["kind"] = "other"
+    raw["battery"]["refuse"] = True
     battery = Rules()
-    with pytest.raises(ValueError, match="wrong battery"):
+    with pytest.raises(ValueError, match="refuses the frame"):
+        run(situate(raw), battery, Budget(calls=21))
+    assert battery.calls == []
+
+
+def test_only_the_battery_the_frame_names_reads_it(raw):
+    # the frame's hash names its battery: another one reading it would be
+    # recorded under a frame that says something else read it
+    raw["battery"] = {"kind": "unified", "model": "anthropic/claude-sonnet-5-5"}
+    battery = Rules()
+    with pytest.raises(ValueError, match="asks for the unified battery, not rules"):
         run(situate(raw), battery, Budget(calls=21))
     assert battery.calls == []
 

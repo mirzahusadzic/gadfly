@@ -70,14 +70,26 @@ def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:
 
 
 def _check_records(frame: Frame, records: list[dict[str, Any]], bodies: dict[str, str]) -> None:
-    """Records are read only as the plan made them: this frame, its inputs and
-    trials, each trial's own body, runs within the quorum, each run once. A
-    record copied twice can never make a quorum."""
+    """Records are read only as the plan and the frame's battery made them:
+    this frame, its battery, its inputs and trials, each trial's own body,
+    runs within the quorum, each run once, and each a label of the frame or
+    an opening. A record copied twice can never make a quorum."""
     inputs = {x["id"] for x in frame.inputs}
+    battery = frame.battery["kind"]
     seen: set[tuple[str, str, int]] = set()
     for record in records:
         if record["frame"] != frame.hash:
             raise ValueError("a record belongs to another frame")
+        if record["battery"] != battery:
+            raise ValueError(
+                f"a record was made by {record['battery']}, not the {battery} battery "
+                "the frame names"
+            )
+        observation, opening = record["observation"], record["opening"]
+        if (observation is None) == (opening is None):
+            raise ValueError("a record holds a label or an opening: not both, not neither")
+        if observation is not None and observation not in frame.labels:
+            raise ValueError(f"{observation!r} is not one of this frame's labels")
         if record["input"] not in inputs or record["trial"] not in bodies:
             raise ValueError(
                 f"a record names an input or trial the plan does not have: "
