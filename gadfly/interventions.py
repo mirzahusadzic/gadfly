@@ -39,15 +39,22 @@ def without(spans: tuple[Span, ...], removed: set[str]) -> tuple[Span, ...]:
 
 
 def rename(text: str, mapping: tuple[tuple[str, str], ...]) -> str:
-    """Rename each word consistently, whole words only, keeping a capital."""
-    for old, new in mapping:
+    """Rename each word consistently, whole words only, in one pass: a word is
+    renamed once (a swap stays a swap), and a phrase wins over a word inside
+    it. A capital is kept, and so is a word written in capitals."""
+    if not mapping:
+        return text
+    table = {old.lower(): new for old, new in mapping}
+    words = "|".join(re.escape(old) for old in sorted(table, key=len, reverse=True))
 
-        def swap(match: re.Match[str], new: str = new) -> str:
-            word = match.group(0)
-            return new[:1].upper() + new[1:] if word[:1].isupper() else new
+    def swap(match: re.Match[str]) -> str:
+        word = match.group(0)
+        new = table[word.lower()]
+        if word.isupper() and sum(c.isalpha() for c in word) > 1:
+            return new.upper()
+        return new[:1].upper() + new[1:] if word[:1].isupper() else new
 
-        text = re.sub(rf"\b{re.escape(old)}\b", swap, text, flags=re.IGNORECASE)
-    return text
+    return re.sub(rf"\b(?:{words})\b", swap, text, flags=re.IGNORECASE)
 
 
 def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:

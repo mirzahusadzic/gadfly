@@ -77,3 +77,12 @@ def test_presentation_renames_whole_words_in_body_and_input(raw):
     assert "proof of purchase" in presentation.text
     assert "proof of purchase" in prompt(frame, presentation, frame.inputs[0])
     assert rename("Receipts and a Receipt", (("receipt", "slip"),)) == "Receipts and a Slip"
+
+
+def test_presentation_renames_each_word_once_and_the_longest_phrase_first():
+    swap = (("cat", "dog"), ("dog", "cat"))
+    assert rename("The cat chased the dog", swap) == "The dog chased the cat"
+    assert rename("a then b", (("a", "b"), ("b", "c"))) == "b then c"
+    longer = (("refund", "credit"), ("refund policy", "terms"))
+    assert rename("the refund policy, a refund", longer) == "the terms, a credit"
+    assert rename("RECEIPT, Receipt, receipt", (("receipt", "slip"),)) == "SLIP, Slip, slip"
