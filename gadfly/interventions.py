@@ -23,7 +23,7 @@ from .frame import Frame, Span, digest
 class Trial:
     """One intervention, applied: the body the scorer will read."""
 
-    id: str  # baseline, repeat, ablation, cumulative, sham-1, presentation, bypass, control
+    id: str  # baseline, repeat, ablation, cumulative, sham-1, presentation, placement, ...
     kind: str
     removed: tuple[str, ...]
     renamed: tuple[tuple[str, str], ...]
@@ -36,6 +36,14 @@ class Trial:
     @property
     def body_hash(self) -> str:
         return digest([[span.id, span.text] for span in self.spans])
+
+
+def place(spans: tuple[Span, ...], span_id: str, after: str) -> tuple[Span, ...]:
+    """The spans with one moved to follow another; every text unchanged."""
+    moving = next(span for span in spans if span.id == span_id)
+    rest = [span for span in spans if span.id != span_id]
+    at = next(i for i, span in enumerate(rest) if span.id == after) + 1
+    return (*rest[:at], moving, *rest[at:])
 
 
 def without(spans: tuple[Span, ...], removed: set[str]) -> tuple[Span, ...]:
@@ -129,6 +137,9 @@ def plan(frame: Frame) -> list[Trial]:
         renaming = renamer(mapping)
         renamed = tuple(Span(span.id, renaming(span.text), span.kind) for span in spans)
         trials.append(Trial("presentation", "presentation", (), mapping, renamed))
+    if iv.get("placement"):
+        moved = place(spans, iv["placement"]["span"], iv["placement"]["after"])
+        trials.append(Trial("placement", "placement", (), (), moved))
     if iv.get("bypass"):
         cut = tuple(iv["bypass"])
         trials.append(Trial("bypass", "bypass", cut, (), without(spans, set(cut))))

@@ -19,7 +19,16 @@ from typing import Any
 # The situated relation L = (I, B, r, g, P, T, B0, C, p): each must be said
 # (the body B and the baseline B0 are checked on their own).
 SITUATION = ("relation", "locus", "role", "grain", "purpose", "trajectory", "crossing", "promise")
-INTERVENTIONS = ("repeat", "ablation", "cumulative", "sham", "presentation", "bypass", "control")
+INTERVENTIONS = (
+    "repeat",
+    "ablation",
+    "cumulative",
+    "sham",
+    "presentation",
+    "placement",
+    "bypass",
+    "control",
+)
 # Every key a frame may have: one misspelt is refused, never silently ignored.
 KEYS = {
     "name",
@@ -343,6 +352,22 @@ def _check_interventions(
         )
     ):
         raise FrameError("presentation maps words to their replacements")
+    placement = interventions.get("placement")
+    if placement is not None:
+        from .interventions import place
+
+        if not (isinstance(placement, dict) and set(placement) == {"span", "after"}):
+            raise FrameError('placement moves one span after another: {"span": id, "after": id}')
+        for span_id in placement.values():
+            if span_id not in ids:
+                raise FrameError(f"placement names a span not in the body: {span_id}")
+        if placement["span"] == placement["after"]:
+            raise FrameError("placement moves a span after another span, not itself")
+        if place(spans, placement["span"], placement["after"]) == spans:
+            raise FrameError(
+                f"placement leaves the order as it is: {placement['span']} already follows "
+                f"{placement['after']}"
+            )
     if presentation:
         if len({word.lower() for word in presentation}) != len(presentation):
             raise FrameError("presentation names a word twice (it renames without case)")

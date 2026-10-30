@@ -343,3 +343,15 @@ def test_outside_scope_needs_the_owners_scope_check(raw):
         "the refunds team checked the scope at the March policy review: "
         "replies never quote the refund rule (scope review SR-4)"
     )
+
+
+def test_a_move_under_placement_is_misaligned(raw):
+    # structure, not wording, drove the observation
+    raw["interventions"]["placement"] = {"span": "r2", "after": "r4"}
+    finding = verdict(situate(raw), ablation="grant", placement="grant")
+    assert finding.category == MISALIGNED
+    assert finding.evidence == ["placement moved it decline -> grant"]
+    held = verdict(situate(raw), ablation="grant")
+    assert held.evidence == [
+        "ablation moved it decline -> grant; held under presentation, placement, 2 shams"
+    ]

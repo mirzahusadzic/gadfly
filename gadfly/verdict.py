@@ -8,7 +8,8 @@ scripts/load_bearing.py, https://github.com/mirzahusadzic/after-the-poem):
 1. unresolved: a planned trial has no agreed level; with `standing.stable`,
    the baseline and repeat sessions do not all agree (a split level cannot show
    a one-level change); or repeat differs from baseline;
-2. coupled but misaligned: presentation moves it;
+2. coupled but misaligned: presentation moves it, or placement does (the
+   structure, not the wording, drove it);
 3. coupled but misaligned: ablation moves it to an observation the frame does
    not allow (for ordered labels, the wrong way);
 4. cooled: ablation leaves it as it was, unless a control trial (spans whose
@@ -260,6 +261,10 @@ def _read(
         finding.category = MISALIGNED
         say(f"presentation moved it {base} -> {levels['presentation']}")
         return
+    if "placement" in levels and levels["placement"] != base:
+        finding.category = MISALIGNED
+        say(f"placement moved it {base} -> {levels['placement']}")
+        return
     ablated = levels["ablation"]
     if ablated != base and ablated not in allowed_for(frame, base):
         finding.category = MISALIGNED
@@ -287,7 +292,7 @@ def _read(
         return
     finding.category = CARRIED
     shams = sum(t.startswith("sham-") for t in levels)
-    held = (["presentation"] if "presentation" in levels else []) + (
+    held = [t for t in ("presentation", "placement") if t in levels] + (
         [f"{shams} sham{'s' if shams > 1 else ''}"] if shams else []
     )
     say(

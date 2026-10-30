@@ -1,4 +1,6 @@
 import copy
+import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -208,3 +210,37 @@ def test_the_presentation_map_is_built_once_per_frame(raw):
     small = mapping_bytes_to_parse(copy.deepcopy(raw), 20)
     large = mapping_bytes_to_parse(copy.deepcopy(raw), 40)
     assert large <= 2.5 * max(small, 1), (small, large)
+
+
+def test_placement_moves_one_span_after_another_and_nothing_else(raw):
+    raw["interventions"]["placement"] = {"span": "r2", "after": "r4"}
+    frame = parse(raw)
+    trials = {t.id: t for t in plan(frame)}
+    ids = [t.id for t in plan(frame)]
+    assert ids.index("presentation") < ids.index("placement") < ids.index("bypass")
+    assert [s.id for s in trials["placement"].spans] == ["r1", "r3", "r4", "r2", "r5"]
+    assert sorted(trials["placement"].text.split("\n")) == sorted(
+        trials["baseline"].text.split("\n")
+    )
+    assert trials["placement"].body_hash != trials["baseline"].body_hash
+
+
+@pytest.mark.parametrize(
+    "placement, message",
+    [
+        ({"span": "r2", "after": "r1"}, "leaves the order as it is"),  # r2 already follows r1
+        ({"span": "r2", "after": "r2"}, "after another span"),
+        ({"span": "r9", "after": "r1"}, "placement names a span not in the body"),
+        ({"span": "r2"}, "placement moves one span"),
+    ],
+)
+def test_a_placement_that_cannot_move_anything_is_refused(raw, placement, message):
+    raw["interventions"]["placement"] = placement
+    with pytest.raises(FrameError, match=message):
+        parse(raw)
+
+
+def test_a_frame_without_placement_keeps_its_hash():
+    # placement is additive: a frame that does not use it is the frame it was
+    refund = json.loads((Path(__file__).parent.parent / "examples/refund.json").read_text())
+    assert parse(refund).hash == "6a788e8843504c0828dc1dc8c236c349e8f9750c0cd2d52b2d124d2bb9580e9e"
