@@ -1,6 +1,8 @@
 site_name: Gadfly
 site_description: Counterfactual load-bearing tests over a declared frame.
-copyright: Apache-2.0
+repo_url: https://github.com/mirzahusadzic/gadfly
+repo_name: mirzahusadzic/gadfly
+copyright: Code Apache-2.0; the text of When meaning is load-bearing CC BY 4.0
 
 theme:
   name: material

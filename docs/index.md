@@ -7,7 +7,7 @@ a scorer read each trial, and reads the verdict by fixed rules.
 ## Install
 
 ```
-git clone <gadfly> && cd gadfly && uv sync
+git clone https://github.com/mirzahusadzic/gadfly.git && cd gadfly && uv sync
 ```
 
 ## Use

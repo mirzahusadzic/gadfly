@@ -19,6 +19,12 @@ config:
         .node foreignObject, .node foreignObject *, .edgeLabel, .edgeLabel * {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif !important; line-height: 1.5 !important; }
         .node foreignObject, .node foreignObject * { white-space: nowrap !important; }
+        code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+        Consolas, monospace; font-size: 0.9em; line-height: inherit;
+        color: inherit !important; text-shadow: none !important;
+        padding: 0 4px; border-radius: 4px;
+        background: color-mix(in srgb, currentColor 14%, transparent)
+        !important; }
         .edgeLabel, .edgeLabel p, .edgeLabel span {
         background: transparent !important; }
         .edgeLabel rect { fill: transparent !important; }
@@ -59,7 +65,7 @@ flowchart TB
         RT["<b>Unified router</b><br/>loopback, no tools,<br/>data collection denied"]
         ES["<b>eGemma /judge</b><br/>loopback, no persona,<br/>paced to its budget"]
     end
-    PV["<b>Providers</b><br/>Anthropic, OpenRouter, DeepSeek"]
+    PV["<b>Providers</b><br/>Anthropic; OpenRouter,<br/>DeepSeek's models through it"]
     subgraph K["Key"]
         K1["yours"]
         K2["Gadfly"]
