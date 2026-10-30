@@ -1,3 +1,6 @@
+import copy
+from unittest.mock import patch
+
 import pytest
 
 from gadfly.frame import FrameError, parse
@@ -139,3 +142,34 @@ def test_a_frame_is_plain_json_or_refused(raw, value):
     raw["baseline"] = {"pinned": value}
     with pytest.raises(FrameError, match="plain JSON"):
         parse(raw)
+
+
+class CountingRandom:
+    """A seeded random source that counts its draws (and always ties)."""
+
+    calls = 0
+
+    def __init__(self, seed):
+        self.seed = seed
+
+    def random(self):
+        type(self).calls += 1
+        return 0.5
+
+
+def draws_to_plan(raw, anchors):
+    spans = [{"id": f"a{i}", "text": "anchor " + "x" * i, "kind": "rule"} for i in range(anchors)]
+    free = range(4 * anchors)
+    spans += [{"id": f"f{i}", "text": "free " + "y" * i, "kind": "rule"} for i in free]
+    raw.update(body={"spans": spans}, anchors=[f"a{i}" for i in range(anchors)])
+    raw["interventions"] = {"ablation": True, "sham": {"draws": 4}}
+    raw["inputs"] = [{"id": "x", "text": "a request"}]
+    CountingRandom.calls = 0
+    with patch("gadfly.interventions.random.Random", CountingRandom):
+        assert len([t for t in plan(parse(raw)) if t.kind == "sham"]) == 4
+    return CountingRandom.calls
+
+
+def test_sham_draws_grow_with_the_spans_not_their_square(raw):
+    small, large = draws_to_plan(copy.deepcopy(raw), 5), draws_to_plan(copy.deepcopy(raw), 10)
+    assert large <= 2.5 * max(small, 1), (small, large)

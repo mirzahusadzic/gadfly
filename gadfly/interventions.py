@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import random
 import re
+from bisect import bisect_left, bisect_right
+from collections import defaultdict
 from dataclasses import dataclass
 
 from .frame import Frame, Span, digest
@@ -61,26 +63,41 @@ def rename(text: str, mapping: tuple[tuple[str, str], ...]) -> str:
 def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
     """Spans to remove instead of the anchors: as many as the anchors, of the
     same kinds, none cited, none bypassed, and no span in two draws. Each is
-    the closest in length still free, ties broken by the frame's own seed. A
-    draw that cannot be matched is left out; the verdict says so."""
-    anchors = [span for span in frame.spans if span.id in frame.anchors]
+    the closest in length still free; spans equally close are drawn among by
+    the frame's own seed. A draw that cannot be matched is left out; the
+    verdict says so."""
     bypassed = set(frame.interventions.get("bypass") or [])
-    free = [
-        span for span in frame.spans if span.id not in frame.anchors and span.id not in bypassed
-    ]
+    # Free spans by kind, each pool sorted by length then body order, once.
+    pools: dict[str, list[tuple[int, int, Span]]] = defaultdict(list)
+    for at, span in enumerate(frame.spans):
+        if span.id not in frame.anchors and span.id not in bypassed:
+            pools[span.kind].append((len(span.text), at, span))
+    for pool in pools.values():
+        pool.sort(key=lambda entry: entry[:2])
+    anchors = [span for span in frame.spans if span.id in frame.anchors]
     rng = random.Random(int(frame.hash[:16], 16))
     draws: list[tuple[str, ...]] = []
     for _ in range(count):
         chosen: list[str] = []
         for anchor in anchors:
-            options = [span for span in free if span.kind == anchor.kind and span.id not in chosen]
-            if not options:
+            pool = pools.get(anchor.kind)
+            if not pool:
                 return draws
-            options.sort(key=lambda span: (abs(len(span.text) - len(anchor.text)), rng.random()))
-            chosen.append(options[0].id)
-        free = [span for span in free if span.id not in chosen]
+            chosen.append(pool.pop(_nearest(pool, len(anchor.text), rng))[2].id)
         draws.append(tuple(sorted(chosen)))
     return draws
+
+
+def _nearest(pool: list[tuple[int, int, Span]], length: int, rng: random.Random) -> int:
+    """The index of the span in `pool` closest to `length`. The equally close
+    lie side by side in the sorted pool; the seed chooses among them."""
+    lengths = [entry[0] for entry in pool]
+    at = bisect_left(lengths, length)
+    best = min(abs(lengths[i] - length) for i in (at - 1, at) if 0 <= i < len(pool))
+    lo, hi = bisect_left(lengths, length - best), bisect_right(lengths, length + best)
+    if hi - lo == 1:
+        return lo
+    return min(range(lo, hi), key=lambda i: (rng.random(), pool[i][1]))
 
 
 def plan(frame: Frame) -> list[Trial]:
