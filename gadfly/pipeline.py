@@ -21,7 +21,7 @@ from .frame import Frame, digest, parse
 from .interventions import Trial, prompt
 from .interventions import plan as plan_trials
 from .types import Battery, Budget, Observation, Record
-from .verdict import Finding
+from .verdict import Finding, check_records
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
 
@@ -75,12 +75,10 @@ def run(
         if unknown:
             raise ValueError(f"the plan has no trial {sorted(unknown)}")
         trials = [t for t in trials if t.id in wanted]
-    done = set()
-    for record in kept:
-        made = record.as_dict() if isinstance(record, Record) else record
-        if made["frame"] != frame.hash:
-            raise ValueError("a kept record belongs to another frame")
-        done.add((made["input"], made["trial"], made["run"]))
+    # Kept records stand for calls, so they are read as judge will read them.
+    made = [record.as_dict() if isinstance(record, Record) else record for record in kept]
+    check_records(frame, made)
+    done = {(record["input"], record["trial"], record["run"]) for record in made}
     calls = [
         (x, trial, index)
         for x in frame.inputs

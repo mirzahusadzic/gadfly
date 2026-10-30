@@ -2,7 +2,7 @@
 
 import pytest
 
-from gadfly.pipeline import calls_needed, judge, run, situate
+from gadfly.pipeline import calls_needed, judge, plan, run, situate
 from gadfly.types import Budget, Observation
 from gadfly.verdict import CARRIED, MISALIGNED
 
@@ -234,3 +234,22 @@ def test_a_battery_that_reports_negative_spend_stops_the_run(raw):
     result = run(situate(raw), Rules(answer=lambda p: negative), budget)
     assert len(result.records) == 1 and result.records[0].usage == {"output_tokens": -1000}
     assert result.stopped == "the battery reported -1000 output tokens, which no call spends"
+
+
+def test_kept_records_are_checked_before_they_stand_for_calls(raw):
+    # a row with the right frame and call coordinates would suppress every
+    # call, and judge would refuse it only after run claimed to be finished
+    frame, battery = situate(raw), Rules()
+    forged = [
+        {"frame": frame.hash, "input": x["id"], "trial": trial.id, "run": index}
+        for x in frame.inputs
+        for trial in plan(frame)
+        for index in range(frame.quorum)
+    ]
+    with pytest.raises(ValueError, match="lacks"):
+        run(frame, battery, Budget(calls=21), kept=forged)
+    made = run(frame, Rules(), Budget(calls=21)).records
+    wrong = [{**r.as_dict(), "observation": "maybe"} for r in made]
+    with pytest.raises(ValueError, match="not one of this frame's labels"):
+        run(frame, battery, Budget(calls=21), kept=wrong)
+    assert battery.calls == []

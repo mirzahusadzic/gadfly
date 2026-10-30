@@ -37,6 +37,8 @@ from typing import Any
 from .frame import Frame
 
 CARRIED, COOLED = "carried", "cooled"
+# What a record must say to be read: the call it was, and what it saw.
+RECORD_KEYS = {"frame", "input", "trial", "run", "body", "battery", "observation", "opening"}
 MISALIGNED, UNRESOLVED, OUTSIDE = "coupled but misaligned", "unresolved", "outside scope"
 
 
@@ -111,7 +113,7 @@ def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:
     from .interventions import plan
 
     trials = plan(frame)
-    _check_records(frame, records, {trial.id: trial.body_hash for trial in trials})
+    check_records(frame, records, {trial.id: trial.body_hash for trial in trials})
     planned = [trial.id for trial in trials]
     findings = []
     for x in frame.inputs:
@@ -122,15 +124,25 @@ def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:
     return findings
 
 
-def _check_records(frame: Frame, records: list[dict[str, Any]], bodies: dict[str, str]) -> None:
+def check_records(
+    frame: Frame, records: list[dict[str, Any]], bodies: dict[str, str] | None = None
+) -> None:
     """Records are read only as the plan and the frame's battery made them:
     this frame, its battery, its inputs and trials, each trial's own body,
     runs within the quorum, each run once, and each a label of the frame or
-    an opening. A record copied twice can never make a quorum."""
+    an opening. A record copied twice can never make a quorum. `run` reads the
+    records it is given to keep by the same checks."""
+    if bodies is None:
+        from .interventions import plan
+
+        bodies = {trial.id: trial.body_hash for trial in plan(frame)}
     inputs = {x["id"] for x in frame.inputs}
     battery = frame.battery["kind"]
     seen: set[tuple[str, str, int]] = set()
     for record in records:
+        lacking = RECORD_KEYS - set(record)
+        if lacking:
+            raise ValueError(f"a record lacks {sorted(lacking)}")
         if record["frame"] != frame.hash:
             raise ValueError("a record belongs to another frame")
         if record["battery"] != battery:
