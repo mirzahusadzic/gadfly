@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -99,7 +100,9 @@ class Frame:
 
 def canonical(value: Any) -> str:
     """The one serialization a hash is taken of."""
-    return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return json.dumps(
+        value, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+    )
 
 
 def digest(value: Any) -> str:
@@ -117,6 +120,7 @@ def parse(raw: dict[str, Any]) -> Frame:
     caller's dict afterwards cannot change what the hash names."""
     if not isinstance(raw, dict):
         raise FrameError("a frame is a JSON object")
+    _plain_json(raw, "the frame")
     raw = copy.deepcopy(raw)
 
     def need(key: str, kind: type, where: dict[str, Any] = raw) -> Any:
@@ -237,6 +241,31 @@ def parse(raw: dict[str, Any]) -> Frame:
         quorum=quorum,
         agree=agree,
     )
+
+
+def _plain_json(value: Any, where: str) -> None:
+    """Refuse what JSON cannot carry: a hash must name a frame any strict JSON
+    reader can read back (no NaN or infinity, no sets, no lone surrogates, only
+    string keys)."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise FrameError(f"{where} is plain JSON: the key {key!r} is not a string")
+            _plain_json(key, where)
+            _plain_json(item, f"{where}.{key}")
+    elif isinstance(value, list):
+        for item in value:
+            _plain_json(item, where)
+    elif isinstance(value, str):
+        try:
+            value.encode("utf-8")
+        except UnicodeEncodeError:
+            raise FrameError(f"{where} is plain JSON: a string is not valid Unicode") from None
+    elif isinstance(value, float):
+        if not math.isfinite(value):
+            raise FrameError(f"{where} is plain JSON: {value} is not a JSON number")
+    elif not (value is None or isinstance(value, bool | int)):
+        raise FrameError(f"{where} is plain JSON: a {type(value).__name__} is not a JSON value")
 
 
 def _span(value: Any) -> Span:

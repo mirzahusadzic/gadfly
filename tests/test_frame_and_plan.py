@@ -130,3 +130,12 @@ def test_presentation_renames_each_word_once_and_the_longest_phrase_first():
     longer = (("refund", "credit"), ("refund policy", "terms"))
     assert rename("the refund policy, a refund", longer) == "the terms, a credit"
     assert rename("RECEIPT, Receipt, receipt", (("receipt", "slip"),)) == "SLIP, Slip, slip"
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), {1, 2}, "\ud800", {1: "a"}])
+def test_a_frame_is_plain_json_or_refused(raw, value):
+    # NaN would be hashed and could not be read back by a strict JSON reader;
+    # the rest escaped as TypeError or UnicodeEncodeError
+    raw["baseline"] = {"pinned": value}
+    with pytest.raises(FrameError, match="plain JSON"):
+        parse(raw)
