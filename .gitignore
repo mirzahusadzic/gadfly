@@ -5,3 +5,6 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 site/
+node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/

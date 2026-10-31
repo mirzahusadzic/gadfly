@@ -1,0 +1,612 @@
+/* Gadfly's docs: a lab notebook for a precise instrument. VitePress's layout
+ * and spacing, in Gadfly's faces and colours: quiet chrome, so the transcripts
+ * and verdicts, which are the evidence, come forward. Colour only for links,
+ * actions and answers, and every meaning also in a word or a shape. Body ink
+ * is at least 7:1 on its page, every other text at least 4.5:1. */
+
+/* The faces, served with the site (SIL OFL 1.1, beside the files). */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/albert-sans-latin-wght-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/albert-sans-latin-wght-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/fraunces-latin-opsz-normal.woff2') format('woff2');
+}
+
+/* The themes: Light, and After the Poem's three studies as they are, with
+ * its colours in their roles. Its page background frames the sidebar; its
+ * panel is the page you read, lighter; panel2 the cards in a menu; its title
+ * colour the headings; its action colour the links, controls and the current
+ * selection, with the action fill and ink on buttons; its assessment colour
+ * the callouts; its console the code, and its source-code colour inline code.
+ * --gf-mark-* are the swatch in the top bar, --gf-dot-* a study's own swatch
+ * in the menu, and --shiki-* the code's colours on the console, from the
+ * study's own hexes (Light keeps GitHub's), each at least 5:1. */
+
+/* Dusk & apricot, the default: plum, lilac, a little butter yellow. */
+:root,
+[data-theme='dusk'] {
+  color-scheme: dark;
+  --gf-bg: #282235;
+  --gf-panel: #352d44;
+  --gf-panel2: #3f354f;
+  --gf-line: #655475;
+  --gf-text: #f7edf8;
+  --gf-muted: #d0c1da;
+  --gf-title: #f2bf9d;
+  --gf-assessment: #d4b9ff;
+  --gf-action: #f3d780;
+  --gf-action-fill: #f3d780;
+  --gf-action-ink: #392a32;
+  --gf-action-wash: #514333;
+  --gf-source-code: #604152;
+  --gf-console-bg: #292332;
+  --gf-console-text: #e4d2c7;
+  --gf-scroll: #846d98;
+  --gf-mark-1: #493347;
+  --gf-mark-2: #d4b9ff;
+  --gf-mark-3: #f3d780;
+  --gf-dot-1: #deb9b6;
+  --gf-dot-2: #d4b9ff;
+  --gf-dot-3: #f3d780;
+  --shiki-foreground: #e4d2c7;
+  --shiki-background: var(--gf-console-bg);
+  --shiki-token-keyword: #d4b9ff;
+  --shiki-token-string: #ffd0a4;
+  --shiki-token-string-expression: #ffd0a4;
+  --shiki-token-constant: #7fd6c2;
+  --shiki-token-function: #8fbcf2;
+  --shiki-token-parameter: #f29b9b;
+  --shiki-token-comment: #bdadc9;
+  --shiki-token-punctuation: #d0c1da;
+  --shiki-token-link: #ffd0a4;
+}
+
+/* Light: white paper and blue links, the blue at 5.2:1 on the page. */
+[data-theme='light'] {
+  color-scheme: light;
+  --gf-bg: #f5f7f9;
+  --gf-panel: #ffffff;
+  --gf-panel2: #eff2f5;
+  --gf-line: #d8dee4;
+  --gf-text: #1f2328;
+  --gf-muted: #59636e;
+  --gf-title: #1f2328;
+  --gf-assessment: #0072b5;
+  --gf-action: #0072b5;
+  --gf-action-fill: #0072b5;
+  --gf-action-ink: #ffffff;
+  --gf-action-wash: #e0eef7;
+  --gf-source-code: #f5f7f9;
+  --gf-console-bg: #f5f7f9;
+  --gf-console-text: #1f2328;
+  --gf-scroll: #a3abb4;
+  --gf-mark-1: #ffffff;
+  --gf-mark-2: #1f2328;
+  --gf-mark-3: #0072b5;
+  --gf-dot-1: #ffffff;
+  --gf-dot-2: #1f2328;
+  --gf-dot-3: #0072b5;
+  --shiki-foreground: #1f2328;
+  --shiki-background: var(--gf-console-bg);
+  --shiki-token-keyword: #cf222e;
+  --shiki-token-string: #0a3069;
+  --shiki-token-string-expression: #0a3069;
+  --shiki-token-constant: #0550ae;
+  --shiki-token-function: #6639ba;
+  --shiki-token-parameter: #953800;
+  --shiki-token-comment: #59636e;
+  --shiki-token-punctuation: #1f2328;
+  --shiki-token-link: #0a3069;
+}
+
+/* Paper & iris: airy lavender and warm peach. */
+[data-theme='daylight'] {
+  color-scheme: light;
+  --gf-bg: #ded6ea;
+  --gf-panel: #fbf8fc;
+  --gf-panel2: #e0d4ed;
+  --gf-line: #b9a8ca;
+  --gf-text: #332141;
+  --gf-muted: #584168;
+  --gf-title: #492c61;
+  --gf-assessment: #603980;
+  --gf-action: #7c3b24;
+  --gf-action-fill: #efb08a;
+  --gf-action-ink: #3e2b30;
+  --gf-action-wash: #f4dbc6;
+  --gf-source-code: #dfcbe1;
+  --gf-console-bg: #352c41;
+  --gf-console-text: #e4d2c7;
+  --gf-scroll: #9c81b1;
+  --gf-mark-1: #eee4ee;
+  --gf-mark-2: #603980;
+  --gf-mark-3: #efb08a;
+  --gf-dot-1: #dfcbe1;
+  --gf-dot-2: #704895;
+  --gf-dot-3: #efb08a;
+  --shiki-foreground: #e4d2c7;
+  --shiki-background: var(--gf-console-bg);
+  --shiki-token-keyword: #cdb9df;
+  --shiki-token-string: #efb08a;
+  --shiki-token-string-expression: #efb08a;
+  --shiki-token-constant: #f4dbc6;
+  --shiki-token-function: #e0d4ed;
+  --shiki-token-parameter: #efb08a;
+  --shiki-token-comment: #b9a8ca;
+  --shiki-token-punctuation: #dfcbe1;
+  --shiki-token-link: #efb08a;
+}
+
+/* Watermelon & mint: ripe berry, fresh mint, coral. */
+[data-theme='play'] {
+  color-scheme: dark;
+  --gf-bg: #3f1c2b;
+  --gf-panel: #512539;
+  --gf-panel2: #71364d;
+  --gf-line: #a36b7b;
+  --gf-text: #fff2ed;
+  --gf-muted: #eec6d2;
+  --gf-title: #ffcfbf;
+  --gf-assessment: #b2f3cc;
+  --gf-action: #ffaca7;
+  --gf-action-fill: #ffa19c;
+  --gf-action-ink: #481e2e;
+  --gf-action-wash: #7c3549;
+  --gf-source-code: #7a3b51;
+  --gf-console-bg: #352330;
+  --gf-console-text: #f0d9cf;
+  --gf-scroll: #b5768e;
+  --gf-mark-1: #642b44;
+  --gf-mark-2: #b2f3cc;
+  --gf-mark-3: #ffa19c;
+  --gf-dot-1: #71364d;
+  --gf-dot-2: #b2f3cc;
+  --gf-dot-3: #ffa19c;
+  --shiki-foreground: #f0d9cf;
+  --shiki-background: var(--gf-console-bg);
+  --shiki-token-keyword: #b2f3cc;
+  --shiki-token-string: #ffb4b0;
+  --shiki-token-string-expression: #ffb4b0;
+  --shiki-token-constant: #ffd36b;
+  --shiki-token-function: #8fd3ff;
+  --shiki-token-parameter: #c3a6ff;
+  --shiki-token-comment: #dfb2c2;
+  --shiki-token-punctuation: #eec6d2;
+  --shiki-token-link: #ffb4b0;
+}
+
+:root {
+  --gf-serif: 'Fraunces', Georgia, serif;
+  --vp-font-family-base: 'Albert Sans', 'Helvetica Neue', system-ui, sans-serif;
+  --vp-font-family-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --vp-code-font-size: 14px;
+}
+
+:root,
+.dark,
+[data-theme] {
+  --vp-c-bg: var(--gf-panel);
+  --vp-c-bg-alt: var(--gf-bg);
+  --vp-c-bg-soft: var(--gf-panel2);
+  --vp-c-bg-elv: var(--gf-panel);
+  --vp-c-text-1: var(--gf-text);
+  --vp-c-text-2: var(--gf-muted);
+  --vp-c-text-3: var(--gf-muted);
+  --vp-c-divider: var(--gf-line);
+  --vp-c-border: var(--gf-line);
+  --vp-c-gutter: var(--gf-line);
+  --vp-c-brand-1: var(--gf-action);
+  --vp-c-brand-2: var(--gf-action);
+  --vp-c-brand-3: var(--gf-action);
+  --vp-c-brand-soft: var(--gf-action-wash);
+  --vp-button-brand-text: var(--gf-action-ink);
+  --vp-button-brand-bg: var(--gf-action-fill);
+  --vp-button-brand-hover-text: var(--gf-action-ink);
+  --vp-button-brand-hover-bg: var(--gf-action-fill);
+  --vp-code-color: var(--gf-text);
+  --vp-code-bg: var(--gf-source-code);
+  --vp-code-block-bg: var(--gf-console-bg);
+  --vp-code-block-color: var(--gf-console-text);
+  --vp-sidebar-bg-color: var(--gf-bg);
+  --vp-nav-bg-color: var(--gf-panel);
+  --vp-local-nav-bg-color: var(--gf-panel);
+}
+
+
+/* The layout fills the window: the sidebar and the outline sit at its
+ * edges, and the page between them takes the rest. Text, code, tables and
+ * the watch view all use the page's whole width, so they share one right
+ * edge. */
+:root { --vp-layout-max-width: 100vw; }
+/* VitePress's own rule is scoped to its component, so this one is weightier. */
+:root .VPDoc .content-container.content-container { max-width: none; }
+
+/* The gadfly before the site's name (GadflyMark.vue). */
+.gf-mark { display: inline-flex; width: 28px; height: 28px; margin-right: 10px; color: var(--gf-title); }
+.gf-mark svg { width: 100%; height: 100%; }
+
+/* The foot of every page (SiteFooter.vue): one quiet line under a rule,
+ * its parts set apart by space, not by marks. */
+.gf-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--vp-c-divider);
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--vp-c-text-2);
+}
+.gf-footer a {
+  color: var(--vp-c-text-2);
+  text-decoration: underline;
+  text-decoration-color: var(--vp-c-divider);
+  text-underline-offset: 0.2em;
+}
+.gf-footer a:hover { color: var(--vp-c-brand-1); text-decoration-color: currentColor; }
+
+/* The theme menu (ThemeMenu.vue), After the Poem's: the top bar shows the
+ * study's swatch; the sheet, "Find the mood.", holds a card for each study
+ * with its own swatch, the current one outlined. */
+.gf-theme { position: relative; display: flex; align-items: center; }
+.VPNavBar .gf-theme { margin-left: 16px; }
+@media (max-width: 767px) {
+  .VPNavBar .gf-theme { display: none; }
+}
+.gf-dots { display: inline-flex; flex: none; align-items: center; gap: 3px; }
+.gf-dots i {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--vp-c-divider);
+}
+.gf-dots i:nth-child(1) { background: var(--gf-dot-1); }
+.gf-dots i:nth-child(2) { background: var(--gf-dot-2); }
+.gf-dots i:nth-child(3) { background: var(--gf-dot-3); }
+.gf-theme-button .gf-dots i:nth-child(1) { background: var(--gf-mark-1); }
+.gf-theme-button .gf-dots i:nth-child(2) { background: var(--gf-mark-2); }
+.gf-theme-button .gf-dots i:nth-child(3) { background: var(--gf-mark-3); }
+.gf-theme-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 4px;
+  font-size: 15px;
+  color: var(--vp-c-text-2);
+}
+.gf-theme-button .gf-dots { gap: 0; padding-left: 4px; }
+.gf-theme-button .gf-dots i { margin-left: -4px; }
+.gf-theme-button:hover,
+.gf-theme-button[aria-expanded='true'] { color: var(--vp-c-brand-1); }
+.gf-theme-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 30;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  padding: 18px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-elv);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.25);
+}
+.gf-theme.inline .gf-theme-menu {
+  position: static;
+  width: auto;
+  max-width: none;
+  margin-top: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.gf-theme-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--gf-title);
+}
+.gf-theme-intro { margin: 0 0 14px; font-size: 15px; line-height: 22px; color: var(--vp-c-text-2); }
+.gf-theme-cards { display: grid; gap: 7px; }
+.gf-theme-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: var(--gf-panel2);
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--vp-c-text-1);
+  cursor: pointer;
+}
+.gf-theme-card:hover { box-shadow: inset 0 0 0 1.5px var(--vp-c-brand-1); }
+.gf-theme-card:has(input:checked) { outline: 2px solid var(--vp-c-brand-1); outline-offset: 1px; }
+.gf-theme-card:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--vp-c-brand-1); }
+.gf-theme-card input { position: absolute; width: 0; height: 0; opacity: 0; }
+.gf-theme-card .gf-dots { width: 45px; }
+.gf-theme-name { min-width: 0; white-space: normal; }
+.gf-theme-name small { display: block; font-size: 15px; line-height: 22px; color: var(--vp-c-text-2); }
+
+/* Scrollbars, all of them (the page, the sidebar, code, menus): thin, in the
+ * theme's muted ink on a clear track. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gf-scroll) transparent;
+}
+
+/* Type: the body in Albert Sans at 17px on 28px lines, headings in
+ * Fraunces's display cut (optical size 72) at 44, 32 and 22px and 400, never
+ * bold; weights 400 and 600 only; and the Mac's own font smoothing, which
+ * gives the strokes their weight (VitePress's thin smoothing takes about a
+ * fifth of the ink). A page is its title (#), then sections (###) each under
+ * a rule (---), then their parts (####); the API's methods (#####) are in
+ * the body's face. */
+:root body {
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+.vp-doc {
+  font-size: 17px;
+  line-height: 28px;
+}
+.vp-doc :is(h1, h2, h3, h4),
+.VPNavBarTitle .title,
+.VPSidebar .VPSidebarItem.level-0 > .item > h2.text,
+.gf-theme-title,
+.gadfly-watch :is(.w-does, .w-category) {
+  font-family: var(--gf-serif);
+  font-weight: 400;
+  font-variation-settings: 'opsz' 72;
+}
+.vp-doc :is(h1, h2, h3, h4) {
+  color: var(--gf-title);
+  letter-spacing: -0.01em;
+}
+.vp-doc h1 { font-size: 44px; line-height: 1.1; margin: 8px 0 16px; }
+.vp-doc hr { margin: 72px 0 0; }
+.vp-doc :is(h2, h3) {
+  margin: 72px 0 12px;
+  padding-top: 0;
+  border-top: 0;
+  font-size: 32px;
+  line-height: 1.15;
+}
+.vp-doc hr + :is(h2, h3) { margin-top: 32px; }
+.vp-doc h4 { margin: 40px 0 8px; font-size: 22px; line-height: 1.25; }
+.vp-doc :is(h5, h6) { margin: 32px 0 4px; font-size: 17px; font-weight: 600; }
+.vp-doc :is(strong, b, th) { font-weight: 600; }
+.VPNavBarTitle .title {
+  color: var(--gf-title);
+  font-family: var(--gf-serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+/* The sidebar's sections are categories, not links: set as headings, in the
+ * heading face and larger than the links beneath them. */
+.VPSidebar .VPSidebarItem.level-0 > .item > h2.text {
+  font-family: var(--gf-serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--gf-title);
+}
+/* VitePress's own chrome in the same two weights, and no text under 15px
+ * but code.
+ * Its component styles are scoped, so these rules start at :root to weigh
+ * more. */
+:root .VPSidebar .VPSidebarItem .item > :is(p, h3).text,
+:root .VPSidebar .VPSidebarItem .item > .link > .text,
+:root .VPNavBarMenuLink.VPNavBarMenuLink,
+:root .VPNavScreenMenuLink.VPNavScreenMenuLink,
+:root .VPNavScreenMenuGroup .title,
+:root .VPDocAsideOutline .outline-link,
+:root .VPDocFooter .edit-link-button,
+:root .VPDocFooter .pager-link .title,
+:root .DocSearch-Button .DocSearch-Button-Placeholder { font-weight: 400; }
+:root .VPDocAsideOutline .outline-title { font-size: 15px; font-weight: 600; }
+:root .VPLocalNav .menu-text,
+:root .VPLocalNavOutlineDropdown .top-link,
+:root .VPDocFooter .pager-link .desc,
+:root .DocSearch-Button :is(.DocSearch-Button-Key, .DocSearch-Button-Placeholder) { font-size: 15px; font-weight: 400; }
+:root .VPSkipLink.VPSkipLink { font-size: 15px; font-weight: 600; }
+:root .VPLocalNavOutlineDropdown button { font-size: 15px; font-weight: 400; }
+/* A code block's language (text, bash) is not shown, as on GitHub. */
+:root .vp-doc [class*='language-'] > span.lang { display: none; }
+/* Everything you click to move around (the sidebar, the outline, the top
+ * bar, the page footer) at the interface size, 15px, not VitePress's 14. */
+:root .VPSidebar .VPSidebarItem .text,
+:root .VPDocAsideOutline .outline-link,
+:root .VPLocalNavOutlineDropdown .outline-link,
+:root .VPNavBarMenuLink.VPNavBarMenuLink,
+:root .VPNavScreenMenuLink.VPNavScreenMenuLink,
+:root .VPNavScreenMenuGroup .title,
+:root .VPDocFooter .edit-link-button,
+:root .VPDocFooter .pager-link .title { font-size: 15px; }
+.vp-doc blockquote > p { font-size: inherit; }
+
+/* Links: the accent and a thin underline, so they never rest on colour. */
+.vp-doc a {
+  font-weight: inherit;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--gf-action) 45%, transparent);
+}
+.vp-doc a:hover { text-decoration-color: currentColor; }
+
+/* Code: one mono size, inline and in blocks. A long line wraps under its own
+ * text instead of scrolling (markdown.mjs sets --hang and --indent); on a
+ * phone, under its indent. GitHub scrolls them as written. */
+.vp-doc :not(pre) > code { padding: 0.1em 0.35em; border-radius: 4px; }
+.vp-doc div[class*='language-'] code {
+  width: auto;
+  min-width: 0;
+}
+.vp-doc div[class*='language-'] .line {
+  display: inline-block;
+  width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-left: calc(var(--hang, 2) * 1ch);
+  text-indent: calc(var(--hang, 2) * -1ch);
+}
+@media (max-width: 640px) {
+  .vp-doc div[class*='language-'] .line {
+    padding-left: calc(var(--indent, 2) * 1ch);
+    text-indent: calc(var(--indent, 2) * -1ch);
+  }
+}
+
+/* Tables: rules across, none down, the header row in the caption voice. */
+.vp-doc table,
+.vp-doc :is(th, td) { font-size: 15px; line-height: 24px; }
+.vp-doc :is(th, td) {
+  padding: 8px 16px 8px 0;
+  border: 0;
+  border-top: 1px solid var(--vp-c-divider);
+  vertical-align: top;
+}
+.vp-doc tr { border: 0; }
+.vp-doc tr:nth-child(2n),
+.vp-doc th { background: none; }
+.vp-doc th {
+  border-top: 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+  vertical-align: bottom;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+}
+.vp-doc tbody tr:first-child td { border-top: 0; }
+
+/* Callouts (GitHub alerts): no box; a rule at the left. A bold first line is
+ * the title, as on GitHub, in place of the kind's name. */
+.vp-doc .custom-block.github-alert {
+  margin: 20px 0;
+  padding: 0 0 0 16px;
+  border: 0;
+  border-left: 2px solid var(--vp-c-divider);
+  border-radius: 0;
+  background: none;
+  color: var(--vp-c-text-1);
+  font-size: 17px;
+  line-height: 28px;
+}
+.vp-doc .custom-block.github-alert.important { border-left-color: var(--gf-assessment); }
+.vp-doc .custom-block.github-alert :is(p, li) { font-size: inherit; line-height: inherit; color: inherit; }
+.vp-doc .custom-block.github-alert .custom-block-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+}
+.vp-doc .github-alert:has(> .custom-block-title + p > strong:only-child) > .custom-block-title { display: none; }
+.vp-doc .github-alert > .custom-block-title + p:has(> strong:only-child) {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.vp-doc .custom-block.github-alert a { color: var(--vp-c-brand-1); }
+.vp-doc .custom-block.github-alert :not(pre) > code { font-size: 14px; color: var(--vp-c-text-1); background-color: var(--vp-code-bg); }
+
+/* Math: MathJax draws its glyphs as hairline-thin outlines; a stroke in
+ * their own colour gives them the text's weight. */
+.vp-doc mjx-container svg > g { stroke-width: 28; }
+
+/* A paragraph of small print, written as <sub> to read small on GitHub. */
+.vp-doc p:has(> sub:only-child) { font-size: 15px; line-height: 24px; }
+.vp-doc p > sub:only-child { font-size: inherit; vertical-align: baseline; }
+
+/* Charts (MermaidDiagram.vue): on the page, fitted to their box (never
+ * enlarged) and opened whole on a click; in the dialog, at their own size.
+ * The charts' own styles knock their edge labels out of the background they
+ * sit on, which GitHub names --bgColor-default. */
+.vp-doc .diagram {
+  --bgColor-default: var(--vp-c-bg);
+  position: relative;
+  overflow: hidden;
+  margin: 24px 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background-color: var(--vp-c-bg);
+}
+.vp-doc .diagram-preview { padding: 20px 16px; cursor: zoom-in; }
+.vp-doc .diagram-expand,
+.vp-doc .diagram-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  background-color: var(--vp-c-bg);
+  color: var(--vp-c-text-2);
+}
+.vp-doc .diagram-expand:focus-visible,
+.vp-doc .diagram-close:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+.vp-doc .diagram-expand:hover,
+.vp-doc .diagram-close:hover { border-color: var(--vp-c-brand-1); color: var(--vp-c-brand-1); }
+.vp-doc .diagram-expand svg,
+.vp-doc .diagram-close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.vp-doc .diagram-dialog {
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background-color: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+}
+.vp-doc .diagram-dialog::backdrop { background-color: rgba(0, 0, 0, 0.55); }
+.vp-doc .diagram-dialog .diagram-close { position: fixed; top: 24px; right: 24px; }
+.vp-doc .diagram-whole { padding: 32px; }
+.vp-doc .diagram-preview svg,
+.vp-doc .diagram-whole svg { display: block; margin: 0 auto; height: auto; }
+.vp-doc .diagram-preview svg { max-width: 100%; }
+.vp-doc .diagram-whole svg { max-width: none; }
+/* Mermaid sizes its labels as drawn; the page's paragraph spacing is not theirs. */
+.vp-doc .diagram p { margin: 0; line-height: inherit; }
+.vp-doc .diagram-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.vp-doc .diagram-pending { min-height: 160px; background: var(--vp-c-bg-soft); }
+.vp-doc .diagram-error { padding: 16px; color: var(--vp-c-danger-1); }
+.vp-doc .diagram-error pre { overflow-x: auto; font-size: 14px; color: var(--vp-c-text-2); }

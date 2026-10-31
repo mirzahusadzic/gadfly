@@ -298,19 +298,24 @@ Start with [Your first frame](docs/first-frame.md), then read [Reading a verdict
 The [reference](docs/reference.md) is the API lookup. The essay remains the
 normative account of the method and the five carriage checks.
 
-Build the site offline with:
+The site is built with VitePress from `docs/`, on Node 24 or later:
 
 ```bash
-uv run --group docs mkdocs build --strict
+npm ci
+npm run docs:dev
+npm run docs:build
 ```
+
+`docs:dev` serves a site that follows your edits, and `docs:build` writes it
+to `docs/.vitepress/dist`, failing on a dead link.
 
 ## Development
 
 ```bash
 uv sync
 uv run pytest
-uv run ruff check gadfly examples tests hooks
-uv run ruff format --check gadfly examples tests hooks
+uv run ruff check gadfly examples tests tools
+uv run ruff format --check gadfly examples tests tools
 ```
 
 The After the Poem replay runs when `GADFLY_ATP_PLANS` names its plans.
@@ -318,4 +323,6 @@ The After the Poem replay runs when `GADFLY_ATP_PLANS` names its plans.
 ## License
 
 Code: Apache-2.0. The text of `docs/load-bearing.md`: © 2026 Mirza Husadzic,
-[CC BY 4.0](LICENSES/CC-BY-4.0.txt).
+[CC BY 4.0](LICENSES/CC-BY-4.0.txt). The docs site's fonts, Albert Sans and
+Fraunces, are under the SIL Open Font License 1.1, with their licences beside
+them in `docs/.vitepress/theme/fonts/`.

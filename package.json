@@ -1,0 +1,18 @@
+{
+  "name": "gadfly-docs",
+  "private": true,
+  "description": "Gadfly's documentation site, built with VitePress from the pages in docs/.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "@mermaid-js/layout-elk": "0.2.3",
+    "markdown-it-mathjax3": "4.3.2",
+    "mermaid": "11.17.2",
+    "vitepress": "1.6.4"
+  }
+}

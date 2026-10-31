@@ -1,0 +1,175 @@
+/* The watch view (docs/public/javascripts/watch.js). It keeps the site's type: 15px
+   captions and interface text, 17px content, Fraunces at 400 for the trial (22px)
+   and the verdict (32px), mono only for the prompt as the reader got it; weights 400
+   and 600. Answers take categorical slots validated against both page
+   surfaces; "unclear" is a neutral grey. */
+.gadfly-watch {
+  --w-a: #2a78d6;
+  --w-b: #eb6834;
+  --w-c: #1baf7a;
+  --w-u: #7c7b76;
+  --w-ink: var(--vp-c-text-1);
+  --w-muted: var(--vp-c-text-2);
+  /* the study's own colours: its card colour for panels, its line for rules */
+  --w-panel: var(--vp-c-bg-soft);
+  --w-rule: var(--vp-c-divider);
+  --w-accent: var(--vp-c-brand-1);
+  --w-small: 0.9375rem;
+  --w-ui: 0.9375rem;
+  --w-text: 1.0625rem;
+  margin: 1.875rem 0 2.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--w-rule);
+  border-radius: 0.75rem;
+  font-size: var(--w-ui);
+  line-height: 1.5;
+  color: var(--w-ink);
+}
+.dark .gadfly-watch {
+  --w-a: #3987e5;
+  --w-b: #d95926;
+  --w-c: #199e70;
+  --w-u: #8b8f96;
+}
+.gadfly-watch :is(ol, ul) { margin-left: 0 !important; padding-left: 0 !important; list-style: none; }
+.gadfly-watch :is(ol, ul) > li { margin-left: 0 !important; }
+.gadfly-watch button { font: inherit; color: inherit; cursor: pointer; }
+.gadfly-watch button:disabled { opacity: 0.4; cursor: default; }
+.gadfly-watch.is-loading { opacity: 0.6; }
+.gadfly-watch .w-caption { margin: 0 0 0.3125rem; color: var(--w-muted); font-size: var(--w-small); font-weight: 600; }
+
+/* pickers and the player */
+.w-bar { display: flex; flex-wrap: wrap; gap: 0.625rem 1.5rem; align-items: center; }
+.w-field { display: inline-flex; gap: 0.5625rem; align-items: center; }
+.w-field[hidden] { display: none; }
+.w-field-name { color: var(--w-muted); }
+.w-select {
+  appearance: auto;
+  font: inherit; color: var(--w-ink); background: var(--w-panel);
+  border: 1px solid var(--w-rule); border-radius: 0.4375rem; padding: 0.25rem 0.5rem;
+}
+.w-runs { display: inline-flex; gap: 0.3125rem; }
+.w-run { min-width: 2.25rem; padding: 0.1875rem 0.5rem; border-radius: 0.4375rem; border: 1px solid var(--w-rule); background: var(--w-panel); }
+.w-run[aria-pressed="true"] { border-color: var(--w-accent); color: var(--w-accent); }
+.w-player { display: flex; gap: 0.375rem; margin-left: auto; }
+.w-btn { padding: 0.375rem 0.9375rem; border-radius: 0.5rem; border: 1px solid var(--w-rule); background: var(--vp-c-bg); }
+.w-play { border-color: var(--w-accent); background: var(--w-accent); color: var(--vp-c-bg) !important; font-weight: 600; min-width: 6.25rem; }
+
+/* the question and the answer key */
+.w-ask { margin: 1.25rem 0 1rem; }
+.gadfly-watch .w-question { margin: 0; font-size: var(--w-text); }
+.gadfly-watch .w-role { margin: 0.5rem 0 0; color: var(--w-muted); }
+.gadfly-watch .w-key { margin: 0.25rem 0 0; color: var(--w-muted); }
+.w-word { font-weight: 600; color: var(--w-ink); white-space: nowrap; }
+.w-word::before {
+  content: ""; display: inline-block; width: 0.6em; height: 0.6em; margin-right: 0.3em;
+  border-radius: 50%; background: var(--w-u); vertical-align: 0.05em;
+}
+.w-word.is-a::before { background: var(--w-a); }
+.w-word.is-b::before { background: var(--w-b); }
+.w-word.is-c::before { background: var(--w-c); }
+.w-word.is-none::before { background: none; box-shadow: inset 0 0 0 1.5px var(--w-u); }
+
+/* the strip of trials */
+.w-top { margin: 0 0 1rem; padding: 0.5rem; border-radius: 0.625rem; background: var(--w-panel); }
+.w-strip { display: flex; gap: 0.375rem; overflow-x: auto; scrollbar-width: thin; }
+.w-step {
+  flex: none; display: grid; gap: 0.125rem; justify-items: start; min-width: 5.75rem;
+  padding: 0.375rem 0.6875rem; border-radius: 0.5rem; border: 1px solid transparent; background: none; text-align: left;
+}
+.w-step:hover { background: var(--vp-c-bg); }
+.w-step[aria-current="step"] { border-color: var(--w-accent); background: var(--vp-c-bg); }
+.w-step-name { font-size: var(--w-small); color: var(--w-muted); }
+.w-step[aria-current="step"] .w-step-name { color: var(--w-accent); }
+.w-step-answer { font-weight: 600; display: inline-flex; align-items: center; gap: 0.375rem; }
+.w-step-answer::before { content: ""; width: 0.625rem; height: 0.625rem; border-radius: 50%; background: var(--w-u); }
+.w-step-answer.is-a::before { background: var(--w-a); }
+.w-step-answer.is-b::before { background: var(--w-b); }
+.w-step-answer.is-c::before { background: var(--w-c); }
+.w-step-answer.is-none::before { background: none; box-shadow: inset 0 0 0 1px var(--w-u); }
+.w-step-answer.is-pending { color: var(--w-muted); font-weight: 400; }
+.w-step-answer.is-pending::before { display: none; }
+.w-step-verdict { border-left: 1px solid var(--w-rule); border-radius: 0 0.5rem 0.5rem 0; }
+
+/* the two panels */
+.w-stage { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+
+/* left: the prompt as the reader got it, in mono */
+.w-doc { padding: 0.9375rem 1.0625rem; border-radius: 0.625rem; background: var(--w-panel); }
+.gadfly-watch .w-lines { margin: 0.25rem 0 0; display: grid; gap: 0.125rem; }
+.gadfly-watch .w-line {
+  display: flex; flex-wrap: wrap; gap: 0.1875rem 0.625rem; align-items: baseline;
+  margin: 0; padding: 0.3125rem 0.625rem; border-radius: 0.375rem; border-left: 3px solid transparent;
+}
+.w-line-text, .gadfly-watch .w-asked { font-family: var(--vp-font-family-mono); font-size: 0.875rem; line-height: 1.6; }
+.w-line-text { flex: 1 1 17.5rem; }
+.w-line.is-anchor { border-left-color: var(--w-accent); background: var(--vp-c-brand-soft); }
+.w-line.is-hidden .w-line-text {
+  color: var(--w-muted); text-decoration: line-through 1.5px; text-decoration-color: currentColor;
+  animation: w-strike 600ms ease 300ms both;
+}
+.w-line.is-moved { animation: w-arrive 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 200ms both; outline: 1.5px dashed var(--w-accent); outline-offset: -1.5px; }
+.gadfly-watch mark.w-renamed {
+  color: inherit; background: color-mix(in srgb, var(--w-accent) 28%, transparent);
+  border-radius: 0.25rem; padding: 0 0.1em; animation: w-flash 900ms ease 200ms both;
+}
+.w-tags { display: inline-flex; gap: 0.375rem; flex-wrap: wrap; }
+.w-tag { font-size: var(--w-small); padding: 0 0.5625rem; border-radius: 1.25rem; border: 1px solid var(--w-rule); color: var(--w-muted); white-space: nowrap; }
+.w-tag.is-anchor, .w-tag.is-moved { border-color: var(--w-accent); color: var(--w-ink); }
+.w-tag.is-hidden, .w-tag.is-moved { border-style: dashed; }
+.gadfly-watch .w-asked { margin: 0.75rem 0 0; padding: 0.625rem 0.625rem 0; border-top: 1px dashed var(--w-rule); }
+
+/* right: what the trial does, what came back, and the checks */
+.w-side { display: grid; gap: 1.125rem; }
+.gadfly-watch .w-does {
+  margin: 0; font-family: var(--gf-serif); font-weight: 400;
+  font-size: 1.375rem; line-height: 1.25; letter-spacing: -0.01em;
+}
+.gadfly-watch .w-asks { margin: 0.1875rem 0 0; color: var(--w-muted); }
+.gadfly-watch .w-agree { margin: 0; font-size: var(--w-text); }
+.gadfly-watch .w-compare { margin: 0; padding: 0.6875rem 0.9375rem; border-radius: 0.5625rem; border-left: 3px solid var(--w-accent); background: var(--w-panel); }
+
+.gadfly-watch .w-checks ul { display: grid; gap: 0.1875rem; }
+.gadfly-watch .w-checks li { display: flex; justify-content: space-between; gap: 0.75rem; align-items: baseline; margin: 0; padding: 0.1875rem 0.4375rem; border-radius: 0.375rem; }
+.gadfly-watch .w-checks li.is-now { background: var(--w-panel); }
+.w-answer { flex: none; font-size: var(--w-small); padding: 0 0.625rem; border-radius: 1.25rem; border: 1px solid var(--w-rule); color: var(--w-muted); white-space: nowrap; }
+.w-answer.is-yes { border-color: var(--w-accent); background: var(--w-accent); color: var(--vp-c-bg); font-weight: 600; }
+.w-answer.is-no { border-color: var(--w-ink); color: var(--w-ink); font-weight: 600; }
+.w-answer.is-cant-tell, .w-answer.is-not-tested { border-style: dashed; }
+
+.w-verdict { padding: 1rem 1.125rem; border-radius: 0.625rem; border: 1.5px solid var(--w-accent); }
+.gadfly-watch .w-category {
+  margin: 0; font-family: var(--gf-serif); font-weight: 400;
+  font-size: 2rem; line-height: 1.15; letter-spacing: -0.01em;
+}
+.gadfly-watch .w-say { margin: 0.3125rem 0 0; font-size: var(--w-text); }
+.gadfly-watch .w-reason { margin: 0.375rem 0 0; color: var(--w-muted); }
+/* a plain disclosure line, not Material's boxed note */
+.gadfly-watch details.w-words {
+  margin: 0.75rem 0 0; padding: 0; border: 0; box-shadow: none; background: none; font-size: var(--w-small);
+}
+.gadfly-watch details.w-words > summary {
+  padding: 0; background: none; border: 0; color: var(--w-muted); cursor: pointer; font-weight: 600;
+}
+.gadfly-watch details.w-words > summary::before { display: none; }
+.gadfly-watch details.w-words > summary::after { position: static; display: inline-block; margin-left: 0.25rem; vertical-align: -0.15em; background-color: currentColor; }
+.gadfly-watch .w-words ul { list-style: disc; padding-left: 1.25rem !important; margin-top: 0.375rem; }
+.gadfly-watch .w-words li { margin: 0.125rem 0; }
+.w-open { color: var(--w-muted); font-weight: 600; }
+.w-cases { display: flex; flex-wrap: wrap; gap: 0.4375rem; align-items: center; margin-top: 0.875rem; padding-top: 0.75rem; border-top: 1px solid var(--w-rule); }
+.w-cases .w-caption { flex-basis: 100%; }
+.w-case { padding: 0.15rem 0.6875rem; border-radius: 1.25rem; border: 1px solid var(--w-rule); background: none; }
+.w-case[aria-pressed="true"] { border-color: var(--w-accent); color: var(--w-accent); }
+.w-error { color: var(--w-b); }
+
+/* motion only where it carries something: a line hidden, words renamed, a line moved */
+@keyframes w-strike { from { text-decoration-color: transparent; } to { text-decoration-color: currentColor; } }
+@keyframes w-arrive { from { transform: translateY(-1.2rem); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes w-flash { 0% { background: transparent; } 40% { background: color-mix(in srgb, var(--w-accent) 60%, transparent); } }
+.gadfly-watch.no-motion *, .gadfly-watch.no-motion *::after { animation: none !important; }
+
+@media screen and (max-width: 44.9375em) {
+  .w-stage { grid-template-columns: 1fr; }
+  .w-side { order: -1; }
+  .w-player { width: 100%; justify-content: flex-end; }
+}

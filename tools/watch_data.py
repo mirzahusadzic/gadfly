@@ -1,6 +1,6 @@
 """The kept runs the docs play, as the data the watch view draws.
 
-For each frame named below, one JSON file under docs/assets/watch/: the
+For each frame named below, one JSON file under docs/public/assets/watch/: the
 evidence, the questions, each trial as Gadfly plans it, the exact prompt of
 every input and trial, and every kept run's calls and verdict, in the words
 `gadfly report` uses. Each prompt is checked against the digest its records
@@ -24,7 +24,7 @@ from gadfly.pipeline import judge, situate
 from gadfly.verdict import overall
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "docs/assets/watch"
+OUT = ROOT / "docs/public/assets/watch"
 FRAMES = [
     "upgrade",
     "07-sql-rule",
