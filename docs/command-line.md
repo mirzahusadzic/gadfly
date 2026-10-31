@@ -90,7 +90,7 @@ how many and the most common reason, such as `eGemma could not be reached`:
 | `--output-tokens` | a whole number, 64 by default | Each answer's cap. |
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |
 | `--only` | a trial id, repeatable | Runs only those trials: a partial run, for diagnosis. |
-| `--kept` | a records file | Records already made, whose calls are not made again, so a stopped run finishes. |
+| `--kept` | a records file | Records already made, whose calls are not made again, so a stopped run finishes. The new file holds them first, so it is the whole run. |
 | `--json` | flag | Prints the calls planned and made, the openings by reason, and why it stopped, as JSON. |
 
 ---

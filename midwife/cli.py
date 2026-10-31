@@ -118,6 +118,8 @@ def command_run(args) -> int:
     def keep(record: Record) -> None:
         if not files:
             files.append(out.open("x", encoding="utf-8"))
+            for old in kept:  # the kept records first, so the new file is the whole run
+                files[0].write(json.dumps(old, ensure_ascii=False) + "\n")
         files[0].write(json.dumps(record.as_dict(), ensure_ascii=False) + "\n")
         files[0].flush()
 
@@ -143,12 +145,16 @@ def command_run(args) -> int:
             "out": str(out),
             "planned": result.planned,
             "made": len(result.records),
+            "kept": len(kept) if files else 0,
             "stopped": result.stopped,
             "openings": dict(openings.most_common()),
         }
         print(json.dumps(payload, indent=2))
     else:
-        print(f"wrote {len(result.records)}/{result.planned} calls to {out}")
+        before = (
+            f", after {len(kept)} kept record{'s' * (len(kept) != 1)}" if kept and files else ""
+        )
+        print(f"wrote {len(result.records)}/{result.planned} calls to {out}{before}")
         if openings:
             reason, count = openings.most_common(1)[0]
             total = sum(openings.values())

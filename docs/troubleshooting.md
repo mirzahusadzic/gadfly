@@ -31,7 +31,7 @@ without an answer is an opening, which `run` counts and names.
 | `gadfly: this frame asks for the egemma battery, not unified` | A frame names its battery in `battery.kind`, and another battery is another frame. Pass the one it names. |
 | `stopped: the plan needs 40 calls; the budget allows 10` | `--calls` is below what the plan needs, and nothing was spent. `gadfly plan` shows the count. |
 | `gadfly: records.jsonl exists: kept records are never written over` | Choose a new `--out`. To finish a stopped run, pass its file as `--kept` with a new `--out`. |
-| A run stopped partway, by Ctrl-C or a crash | Every record made so far is in its file. Run again with that file as `--kept` and a new `--out`, and only the missing calls are made. |
+| A run stopped partway, by Ctrl-C or a crash | Every record made so far is in its file. Run again with that file as `--kept` and a new `--out`: only the missing calls are made, and the new file holds the whole run, to report as one. |
 
 ---
 
