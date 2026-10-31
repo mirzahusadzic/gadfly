@@ -66,3 +66,13 @@ class Garbled(RuleReader):
     def observe(self, frame, prompt, max_output_tokens):
         observation = super().observe(frame, prompt, max_output_tokens)
         return Observation(label=observation.label, raw="ok \ud800", served="reader \udfff")
+
+
+class Counted(RuleReader):
+    """The rule reader, counting the calls made to it."""
+
+    calls = 0
+
+    def observe(self, frame, prompt, max_output_tokens):
+        type(self).calls += 1
+        return super().observe(frame, prompt, max_output_tokens)

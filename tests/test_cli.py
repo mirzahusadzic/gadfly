@@ -216,3 +216,33 @@ def test_a_garbled_reply_still_writes_every_record(tmp_path):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Garbled", "--calls", "8"]
     assert main([*argv, "--out", str(out)]) == 0
     assert len(out.read_text(encoding="utf-8").splitlines()) == 8
+
+
+def test_a_resume_with_nothing_left_still_writes_the_whole_run(tmp_path, capsys):
+    status, first = run_refund(tmp_path)
+    rest = tmp_path / "rest.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    assert main([*argv, "--out", str(rest), "--kept", str(first)]) == 0
+    assert "after 8 kept records" in capsys.readouterr().out
+    assert rest.read_text() == first.read_text()
+
+
+def test_an_unwritable_folder_is_refused_before_any_call(tmp_path, capsys):
+    from tests.fixtures.refund import Counted
+
+    folder = tmp_path / "read-only"
+    folder.mkdir()
+    folder.chmod(0o555)
+    try:
+        Counted.calls = 0
+        argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Counted", "--calls", "8"]
+        assert main([*argv, "--out", str(folder / "records.jsonl")]) == 2
+    finally:
+        folder.chmod(0o755)
+    assert Counted.calls == 0 and "read-only" in capsys.readouterr().err
+
+
+def test_a_battery_that_is_not_one_is_refused(tmp_path, capsys):
+    argv = ["run", REFUND, "--battery", "midwife.frame:parse", "--calls", "8"]
+    assert main([*argv, "--out", str(tmp_path / "r.jsonl")]) == 2
+    assert "is not a battery" in capsys.readouterr().err

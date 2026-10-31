@@ -30,10 +30,12 @@ without an answer is an opening, which `run` counts and names.
 | You see | What it means, and what to do |
 | --- | --- |
 | `gadfly: --battery is module:Class (for example midwife.batteries.egemma:EGemma)` | Name the class after a colon. |
+| `gadfly: midwife.frame:parse is not a battery: it needs a name, check() and observe()` | The name after the colon is found, but it is not a battery class or object. Name the battery's class. |
 | `gadfly: tests.fixtures.refund has no NoSuchReader` | The module was found, but not the class named after the colon. Check its spelling and case. |
 | `gadfly: No module named '...'` | The battery's module is imported from the current directory. Run from the folder that holds it, or check its name. |
 | `gadfly: this frame asks for the egemma battery, not unified` | A frame names its battery in `battery.kind`, and another battery is another frame. Pass the one it names. |
 | `gadfly: the plan needs 40 calls; the budget allows 10` | `--calls` is below what the plan needs, so nothing was spent and no file made. `gadfly plan` shows the count. |
+| `gadfly: runs cannot be written: choose another --out` | The folder `--out` names is not yours to write, and nothing was spent. |
 | `gadfly: runs is not a folder: make it, or choose another --out` | The folder `--out` names does not exist, and nothing was spent. Make it first. |
 | `gadfly: records.jsonl exists: kept records are never written over` | Choose a new `--out`. To finish a stopped run, pass its file as `--kept` with a new `--out`. |
 | `gadfly: stopped by Ctrl-C after 12 calls; they are in records.jsonl; finish with --kept records.jsonl and a new --out` | Every record made so far is in its file. Run again with that file as `--kept` and a new `--out`: only the missing calls are made, and the new file holds the whole run, to report as one. A crash leaves the file the same way. |

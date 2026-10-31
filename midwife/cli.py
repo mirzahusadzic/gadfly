@@ -31,7 +31,7 @@ from . import __version__
 from .frame import FrameError, schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
-from .types import Budget, Record
+from .types import Battery, Budget, Record
 
 EXAMPLES = """\
 examples:
@@ -61,7 +61,13 @@ def load_battery(spec: str):
     target = getattr(importlib.import_module(module_name), attribute, None)
     if target is None:
         raise ValueError(f"{module_name} has no {attribute}")
-    return target() if isinstance(target, type) else target
+    try:
+        battery = target() if isinstance(target, type) else target
+    except TypeError as error:  # a class that needs arguments is no battery to name here
+        raise ValueError(f"{spec} could not be made: {error}") from None
+    if not isinstance(battery, Battery):
+        raise ValueError(f"{spec} is not a battery: it needs a name, check() and observe()")
+    return battery
 
 
 def load_records(path: str) -> list[dict[str, Any]]:
@@ -130,6 +136,8 @@ def command_run(args) -> int:
         raise FileExistsError(f"{out} exists: kept records are never written over")
     if not out.parent.is_dir():  # found out before a call is spent, not after
         raise FileNotFoundError(f"{out.parent} is not a folder: make it, or choose another --out")
+    if not os.access(out.parent, os.W_OK):
+        raise PermissionError(f"{out.parent} cannot be written: choose another --out")
     files = []  # the file is made by the first record, so a refused run leaves none
     made = []
     # a run takes minutes: in a terminal, count the calls as they are made
@@ -172,6 +180,10 @@ def command_run(args) -> int:
             print(file=sys.stderr)
     if not result.records and result.stopped:  # nothing was spent: a refusal, not a run
         raise ValueError(result.stopped)
+    if kept and not files:  # nothing was left to make: the new file is still the whole run
+        with out.open("x", encoding="utf-8") as whole:
+            whole.writelines(json.dumps(old, ensure_ascii=False) + "\n" for old in kept)
+        files.append(whole)
     # a service that is down answers every call with an opening: say so, so a
     # run that spent its calls on nothing does not read as a finished one
     openings = Counter(r.opening for r in result.records if r.opening is not None)
