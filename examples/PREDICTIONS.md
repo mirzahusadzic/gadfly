@@ -143,3 +143,34 @@ Predicted verdicts.
 
 What the pair would say together: with both routes present, the fix rests on
 neither alone, while the diagnosis leans on the metrics, the slower route.
+
+## Rung 16: inversion, where the answer must move
+
+Frame: `examples/16-restore-inversion.json` (43f14466…), read by eGemma's Gemma, 3
+runs of 70 calls. The statements are Tendora's demo, Payments On-Call
+(Apache-2.0); the question is "May Jordan, the database administrator, restore the
+database from a backup?", once with the incident commander's approval and once
+without. The anchor is the rule that Jordan may restore only after the incident
+commander approves the restore; the inversion turns it into "only after the
+incident commander does not approve the restore". Tendora's engine, measured
+through its own route, turns both answers.
+
+| trial | cuts or changes | approved | not approved | confidence |
+|---|---|---|---|---|
+| baseline | nothing | Yes | No | high |
+| repeat | nothing, asked again | Yes | No | high |
+| ablation | the restore rule | open; Yes if Gemma reads "tests a backup before restoring it" as leave to restore | open; No if the absence of leave reads as a refusal | medium, either way |
+| sham-1, sham-2 | another of Jordan's statements | Yes | No | high |
+| inversion | the rule's approval turned into its absence | No | Yes | medium-high (approved), medium (not approved: the turned rule is odd, and Gemma may say open or conditional) |
+| control | every statement, leaving the case and the question | open; Yes if Gemma answers from the case alone | open; No from the case alone | medium |
+
+Predicted verdicts.
+- Approved: carried, the inversion moving it Yes -> No. If Gemma keeps Yes under
+  the inversion, the reading drops the negation and the input reads coupled but
+  misaligned, the very bug the trial is for. If the ablation keeps Yes, cooled.
+- Not approved: carried in about half the runs; cooled in the rest, where the
+  ablation keeps No because no statement grants the restore.
+- Monotonicity open wherever the control keeps the baseline while the ablation
+  moved (a model answering from the case alone).
+- Overall: carried only in runs where both inputs carry, otherwise unresolved by
+  "carried on some inputs and cooled on others".
