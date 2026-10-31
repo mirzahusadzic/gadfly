@@ -29,6 +29,11 @@ span may carry the relation, so cutting it would test nothing. This is a
 change to how shams are planned; no kept example's plan changes, as none
 drew one.
 
+A sham matches the anchors by length in characters, within their kind, so
+`kind` is how a frame chooses the unit a sham matches. To cut as many lines
+as the anchors, give each block a kind that names its line count, such as
+`lines-8`.
+
 ---
 
 ### What each trial can establish
