@@ -255,3 +255,13 @@ def test_trial_ids_are_the_plans_own_on_every_shipped_frame():
     for path in sorted(Path(__file__).parent.parent.glob("examples/*.json")):
         frame = situate(json.loads(path.read_text(encoding="utf-8")))
         assert trial_ids(frame) == [trial.id for trial in plan(frame)], path.name
+
+
+def test_a_frame_nested_too_deep_is_refused_as_a_frame(raw):
+    # a deep nest is a refusal like any other, not a RecursionError
+    deep = "pinned"
+    for _ in range(5000):
+        deep = [deep]
+    raw["baseline"] = deep
+    with pytest.raises(FrameError, match="nests"):
+        parse(raw)

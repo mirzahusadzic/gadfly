@@ -156,7 +156,10 @@ def parse(raw: dict[str, Any]) -> Frame:
     caller's dict afterwards cannot change what the hash names."""
     if not isinstance(raw, dict):
         raise FrameError("a frame is a JSON object")
-    _plain_json(raw, "the frame")
+    try:
+        _plain_json(raw, "the frame")
+    except RecursionError:  # deeper than any frame needs, and than Python reads
+        raise FrameError("the frame nests deeper than a frame can") from None
     raw = copy.deepcopy(raw)
 
     def need(key: str, kind: type, where: dict[str, Any] = raw) -> Any:
