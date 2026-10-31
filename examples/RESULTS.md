@@ -46,7 +46,7 @@ comes later, with ambiguous evidence (rungs 9 and 10).
 
 | trial | calls (3 runs) |
 |---|---|
-| baseline, repeat, shams, presentation | revise, all 90 |
+| baseline, repeat, shams, presentation | revise, all 75 |
 | ablation (the 300 ms requirement cut) | revise 14, unclear 1 |
 | bypass (the provider's 400-900 ms cut) | revise 10, unclear 5 |
 | control (the design and the provider cut) | unclear 15 |
@@ -72,17 +72,17 @@ same timeline: debug, fix, optimize, alert.
 | 10a | fast | the rollback | unresolved, misaligned, misaligned |
 | 10b | slow | the two metrics | misaligned ×3 |
 | 10c | both | the rollback | unresolved ×3: its control could not move (built wrong) |
-| 10c2 | both | the rollback | unresolved ×3: cooled on 9 of 12 task-runs, each other one a trial without an agreed level |
+| 10c2 | both | the rollback | unresolved ×3: cooled on 8 of 12 task-runs, each other one a trial without an agreed level |
 | 10d | both | the two metrics | unresolved, unresolved, misaligned |
 
 Calls at baseline, all runs:
 
 | task | fast route only (10a) | slow route only (10b) | both (10c, 10c2, 10d) |
 |---|---|---|---|
-| debug | unclear 10, database 4, api 1 | database 15 | database 135 |
-| fix | database 15 | database 15 | database 135 |
-| optimize | database 12, api 2, unclear 1 | database 15 | database 135 |
-| alert | api 8, database 7 | database 15 | database 135 |
+| debug | unclear 10, database 4, api 1 | database 15 | database 45 |
+| fix | database 15 | database 15 | database 45 |
+| optimize | database 12, api 2, unclear 1 | database 15 | database 45 |
+| alert | api 8, database 7 | database 15 | database 45 |
 
 **Two valid routes are not equal to this reader.** The metrics (direct evidence)
 decide every task on every call. The rollback (an elimination: it was not the
@@ -106,10 +106,10 @@ two
 alert 8 to 7 both ways). So at the grain of the two metrics, the diagnosis rests
 on them (unclear without them, carried but for the undeclared bypass); the fix
 and the optimizing do not (cooled: the rollback carries them alone). 10d's
-predictions held task by task: fix cooled (two runs; the third had no agreed
+predictions held task by task: fix cooled (two runs; the first had no agreed
 cumulative), optimize cooled (three), debug unresolved with only the bypass open
 where its ablation agreed (two), and alert unresolved or misaligned (one each),
-though its third run agreed on database and read cooled, which was not
+though its first run agreed on database and read cooled, which was not
 predicted.
 
 **The control that could not move.** 10c's control cut the deploy and the

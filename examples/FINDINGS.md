@@ -134,7 +134,7 @@ denied, which is what the promise describes. Recommended: an optional expected
 category per input; `overall` then reports whether each input met its own,
 and keeps today's reading when none is given. The same reading also grows
 stricter with every input: one trial without an agreed level anywhere makes the
-whole frame unresolved, so no run of 10c2 read cooled overall although 9 of its
+whole frame unresolved, so no run of 10c2 read cooled overall although 8 of its
 12 task-runs did. A per-input expectation would let the report say how many
 inputs met theirs, not only whether all did.
 

@@ -3,6 +3,8 @@ the verdict the docs report. No model is called; the records are the ones
 Gemma gave through eGemma, kept under examples/runs/."""
 
 import json
+import re
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -80,3 +82,38 @@ def test_reading_one_input_back_refuses_an_input_the_frame_lacks():
     with pytest.raises(SystemExit, match="has no input 'nobody'"):
         verdict(EXAMPLES / "12-payroll-access.json", 1, "nobody")
     assert verdict(EXAMPLES / "12-payroll-access.json", 1, "sam").startswith("sam: unresolved")
+
+
+def _calls(stem, trials, task=None):
+    # every answer given in those trials over all of a frame's kept runs
+    counts = Counter()
+    for path in sorted((EXAMPLES / "runs" / stem).glob("*.jsonl")):
+        for record in load_records(str(path)):
+            if record["trial"] in trials and task in (None, record["input"]):
+                counts[record["observation"]] += 1
+    return counts
+
+
+def test_the_counts_the_results_quote_are_the_kept_runs():
+    # RESULTS and FINDINGS are hand-written claims about kept evidence:
+    # each count here is recounted from the records it describes
+    results = (EXAMPLES / "RESULTS.md").read_text(encoding="utf-8")
+    prose = " ".join(results.split())
+    findings = " ".join((EXAMPLES / "FINDINGS.md").read_text(encoding="utf-8").split())
+    steady = _calls("09-sync-sms", {"baseline", "repeat", "sham-1", "sham-2", "presentation"})
+    assert list(steady) == ["revise"]
+    assert f"| baseline, repeat, shams, presentation | revise, all {steady['revise']} |" in results
+    both = ("10c-incident-both", "10c2-incident-both", "10d-incident-metrics")
+    for task in ("debug", "fix", "optimize", "alert"):
+        baseline = sum((_calls(stem, {"baseline"}, task) for stem in both), Counter())
+        assert list(baseline) == ["database"]
+        assert re.search(rf"^\| {task} \|.*\| database {baseline['database']} \|$", results, re.M)
+    cooled = sum(row.count(COO) for row in REPORTED["10c2-incident-both"])
+    assert f"cooled on {cooled} of 12 task-runs" in results
+    assert f"{cooled} of its 12 task-runs did" in findings
+    ordinal = ["first", "second", "third"]
+    runs = REPORTED["10d-incident-metrics"]
+    fix_odd = next(i for i, run in enumerate(runs) if run[1] != COO)
+    alert_cooled = next(i for i, run in enumerate(runs) if run[3] == COO)
+    assert f"fix cooled (two runs; the {ordinal[fix_odd]} had no agreed cumulative)" in prose
+    assert f"though its {ordinal[alert_cooled]} run agreed on database and read cooled" in prose
