@@ -44,6 +44,41 @@ between calls when the caller says so, and hands each record to `on_record`
 as soon as it exists, so the caller keeps what was spent even if the run
 stops early.
 
+#### situate
+
+Another name for `parse` in `midwife.frame`:
+
+Check a frame and hash it. The frame keeps its own copy: changing the
+caller's dict afterwards cannot change what the hash names.
+
+```python
+situate = midwife.frame.parse
+```
+
+#### plan
+
+Another name for `plan` in `midwife.interventions`:
+
+The trials of one input, in a fixed order.
+
+```python
+plan = midwife.interventions.plan
+```
+
+#### overall
+
+Another name for `overall` in `midwife.verdict`:
+
+One category over the frame's inputs: outside scope when declared;
+otherwise coupled but misaligned if any input is; unresolved if any is,
+or if the relation carried on some inputs and cooled on others; carried
+or cooled only when every input is. Each input's evidence is kept; what
+every input leaves open is said once, the rest names its input.
+
+```python
+overall = midwife.verdict.overall
+```
+
 #### RunResult
 
 What a run made: its records, the calls it planned, and why it stopped

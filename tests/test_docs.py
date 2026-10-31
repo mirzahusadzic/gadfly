@@ -1,6 +1,7 @@
 """The moved text keeps its license, the pages read on GitHub, and what they
 quote, copy and document is what the code prints, copies and declares."""
 
+import ast
 import importlib
 import inspect
 import itertools
@@ -499,3 +500,30 @@ def test_the_watch_view_tells_every_answer_apart_for_every_eye():
                 if math.dist(_seen(dots[one], cvd), _seen(dots[other], cvd)) < 8:
                     alike.append(f"{scheme}: {one} and {other} under {cvd}")
     assert alike == []
+
+
+def test_every_name_a_module_defines_has_its_entry_in_the_reference():
+    # a function, a class, or a name given to a function it imports (the
+    # pipeline's situate, plan and overall): each has its own entry
+    page = (ROOT / "docs/reference.md").read_text(encoding="utf-8")
+    missing = []
+    for module in re.findall(r"^<!-- api (\S+) -->$", page, re.M):
+        section = page.split(f"### {module}\n", 1)[1].split("\n### ", 1)[0]
+        tree = ast.parse((ROOT / (module.replace(".", "/") + ".py")).read_text())
+        names = [
+            getattr(node, "name", None) or node.targets[0].id
+            for node in tree.body
+            if isinstance(node, ast.FunctionDef | ast.ClassDef)
+            or (
+                isinstance(node, ast.Assign)
+                and isinstance(node.targets[0], ast.Name)
+                and isinstance(node.value, ast.Name)
+                and callable(getattr(importlib.import_module(module), node.targets[0].id))
+            )
+        ]
+        missing += [
+            f"{module}.{name}"
+            for name in names
+            if not name.startswith("_") and f"#### {name}\n" not in section
+        ]
+    assert missing == []

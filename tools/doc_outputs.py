@@ -228,13 +228,58 @@ def _entry(heading: str, code: str, doc: str | None) -> list[str]:
     return [heading, _prose(lead), _fenced(code), _prose(rest)]
 
 
+def _source(module: str) -> str:
+    return (ROOT / (module.replace(".", "/") + ".py")).read_text(encoding="utf-8")
+
+
+def _aliases(tree: ast.Module, module: str) -> dict[ast.stmt, tuple[str, str]]:
+    # a public name bound to a function the module imports, as the pipeline
+    # names its stages: situate = parse
+    package = module.rpartition(".")[0]
+    imported = {
+        name.asname or name.name: (f"{package}.{node.module}", name.name)
+        for node in tree.body
+        if isinstance(node, ast.ImportFrom) and node.level == 1
+        for name in node.names
+    }
+    return {
+        node: imported[node.value.id]
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.targets[0], ast.Name)
+        and not node.targets[0].id.startswith("_")
+        and isinstance(node.value, ast.Name)
+        and node.value.id in imported
+    }
+
+
+def _alias_entry(name: str, home: str, original: str) -> list[str]:
+    # the original's lead, and where it lives
+    defined = next(
+        node
+        for node in ast.parse(_source(home)).body
+        if isinstance(node, FUNCTION) and node.name == original
+    )
+    lead = (ast.get_docstring(defined) or "").partition("\n\n")[0]
+    said = f"Another name for `{original}` in `{home}`:"
+    return [f"#### {name}\n", _prose(said), _prose(lead), _fenced(f"{name} = {home}.{original}")]
+
+
 def documented(module: str) -> str:
     """The reference text for `module`, from its source: a section under a
-    rule, an entry for each public function and class, its methods beneath."""
-    source = (ROOT / (module.replace(".", "/") + ".py")).read_text(encoding="utf-8")
+    rule, an entry for each public function and class, its methods beneath,
+    and one for each public name it gives a function it imports."""
+    source = _source(module)
     tree = ast.parse(source)
+    aliases = _aliases(tree, module)
     parts = ["---\n", f"### {module}\n", _prose(ast.get_docstring(tree))]
-    for node in filter(_public, tree.body):
+    for node in tree.body:
+        if node in aliases:
+            parts += _alias_entry(node.targets[0].id, *aliases[node])
+            continue
+        if not _public(node):
+            continue
         if isinstance(node, FUNCTION):
             signature = _signature(node, source, method=False)
             parts += _entry(f"#### {node.name}\n", signature, ast.get_docstring(node))
