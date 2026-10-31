@@ -242,3 +242,16 @@ def test_a_frame_without_placement_keeps_its_hash(raw):
     # placement is additive: a frame that does not use it is the frame it was
     # (the fixture's hash, pinned when placement came in)
     assert parse(raw).hash == "2c31b067f4037cef9e6e4f277ea382db65604ebd170f3b900357c9b7ce0ed2e6"
+
+
+def test_trial_ids_are_the_plans_own_on_every_shipped_frame():
+    # a budget is counted from trial_ids, so it must name exactly what plan builds
+    import json
+    from pathlib import Path
+
+    from midwife.interventions import trial_ids
+    from midwife.pipeline import situate
+
+    for path in sorted(Path(__file__).parent.parent.glob("examples/*.json")):
+        frame = situate(json.loads(path.read_text(encoding="utf-8")))
+        assert trial_ids(frame) == [trial.id for trial in plan(frame)], path.name

@@ -476,6 +476,15 @@ verdict says so.
 sham_draws(frame, count)
 ```
 
+#### trial_ids
+
+The ids `plan` gives its trials, in its order, without building any
+trial's body: what a budget is counted from.
+
+```python
+trial_ids(frame)
+```
+
 #### plan
 
 The trials of one input, in a fixed order.

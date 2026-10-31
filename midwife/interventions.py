@@ -116,6 +116,21 @@ def _nearest(pool: list[tuple[int, int, Span]], length: int, rng: random.Random)
     return min(range(lo, hi), key=lambda i: (rng.random(), pool[i][1]))
 
 
+def trial_ids(frame: Frame) -> list[str]:
+    """The ids `plan` gives its trials, in its order, without building any
+    trial's body: what a budget is counted from."""
+    iv = frame.interventions
+    ids = ["baseline", *(["repeat"] if iv.get("repeat") else []), "ablation"]
+    if iv.get("cumulative"):
+        ids.append("cumulative")
+    sham = iv.get("sham")
+    if sham:
+        count = 1 if sham is True else sham["draws"]
+        ids += [f"sham-{index}" for index in range(1, len(sham_draws(frame, count)) + 1)]
+    ids += [kind for kind in ("presentation", "placement", "bypass", "control") if iv.get(kind)]
+    return ids
+
+
 def plan(frame: Frame) -> list[Trial]:
     """The trials of one input, in a fixed order."""
     spans, iv = frame.spans, frame.interventions

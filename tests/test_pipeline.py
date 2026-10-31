@@ -286,6 +286,18 @@ def test_a_malformed_record_is_refused_not_raised(raw, change, message):
         judge(frame, [change(made[0]), *made[1:]])
 
 
+def test_a_budget_refusal_builds_no_trial(raw, monkeypatch):
+    # many sham draws: the refusal counts the trials, it never builds their bodies
+    raw["body"]["spans"] += [{"id": f"f{i}", "text": "free", "kind": "rule"} for i in range(100)]
+    raw["interventions"] = {"ablation": True, "sham": {"draws": 100}}
+    frame, battery = situate(raw), Rules()
+    built = []
+    monkeypatch.setattr("midwife.pipeline.plan", lambda frame: built.append(1) or [])
+    result = run(frame, battery, Budget(calls=1))
+    assert result.records == () and battery.calls == [] and built == []
+    assert result.stopped == f"the plan needs {calls_needed(frame)} calls; the budget allows 1"
+
+
 def test_a_plan_over_budget_is_refused_without_being_built(raw):
     # 40,000 planned calls against a budget of one: count them, do not list them
     raw["interventions"] = {"ablation": True}

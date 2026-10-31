@@ -19,7 +19,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 
 from .frame import Frame, digest, parse
-from .interventions import Trial, prompt
+from .interventions import Trial, prompt, trial_ids
 from .interventions import plan as plan_trials
 from .types import Battery, Budget, Observation, Record
 from .verdict import Finding, check_records
@@ -47,7 +47,7 @@ class RunResult:
 def calls_needed(frame: Frame) -> int:
     """The calls a whole run makes: every trial of every input, `quorum`
     times each. A budget of this many calls covers it."""
-    return len(frame.inputs) * len(plan(frame)) * frame.quorum
+    return len(frame.inputs) * len(trial_ids(frame)) * frame.quorum
 
 
 def run(
@@ -69,17 +69,29 @@ def run(
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise ValueError(f"this frame asks for the {named} battery, not {battery.name}")
     battery.check(frame)
+    ids = trial_ids(frame)
+    wanted = set(ids) if only is None else set(only)
+    unknown = wanted - set(ids)
+    if unknown:
+        raise ValueError(f"the plan has no trial {sorted(unknown)}")
+    made = [record.as_dict() if isinstance(record, Record) else record for record in kept]
+    # Counted, not built: a plan the budget refuses is never made.
+    done = {
+        (r["input"], r["trial"], r["run"])
+        for r in made
+        if isinstance(r, dict)
+        and all(isinstance(r.get(k), str) for k in ("input", "trial"))
+        and isinstance(r.get("run"), int)
+    }  # a malformed row counts for nothing here; check_records refuses it below
+    planned = len(frame.inputs) * len(wanted) * frame.quorum - sum(t in wanted for _, t, _ in done)
+    if planned > budget.calls:
+        return RunResult(
+            (), planned, f"the plan needs {planned} calls; the budget allows {budget.calls}"
+        )
     everything = plan(frame)
-    trials = everything
-    if only is not None:
-        wanted = set(only)
-        unknown = wanted - {t.id for t in trials}
-        if unknown:
-            raise ValueError(f"the plan has no trial {sorted(unknown)}")
-        trials = [t for t in trials if t.id in wanted]
+    trials = [trial for trial in everything if trial.id in wanted]
     # Kept records stand for calls, so they are read as judge will read them,
     # and, being this run's own, each must name the prompt its call was planned with.
-    made = [record.as_dict() if isinstance(record, Record) else record for record in kept]
     check_records(frame, made, {trial.id: trial.body_hash for trial in everything})
     by_trial = {trial.id: trial for trial in everything}
     by_input = {x["id"]: x for x in frame.inputs}
@@ -87,10 +99,7 @@ def run(
         planned_prompt = prompt(frame, by_trial[record["trial"]], by_input[record["input"]])
         if record["prompt"] != digest(planned_prompt):
             raise ValueError(f"a kept {record['trial']} record was made from another prompt")
-    done = {(record["input"], record["trial"], record["run"]) for record in made}
-    inputs, wanted = frame.inputs, {trial.id for trial in trials}
-    # Counted, not listed: a plan the budget refuses is never built.
-    planned = len(inputs) * len(trials) * frame.quorum - sum(t in wanted for _, t, _ in done)
+    inputs = frame.inputs
     calls = (
         (x, trial, index)
         for x in inputs
@@ -99,10 +108,6 @@ def run(
         if (x["id"], trial.id, index) not in done
     )
     cap = budget.output_tokens_per_call
-    if planned > budget.calls:
-        return RunResult(
-            (), planned, f"the plan needs {planned} calls; the budget allows {budget.calls}"
-        )
     records: list[Record] = []
     spent = 0
     for x, trial, index in calls:
