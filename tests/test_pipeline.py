@@ -298,6 +298,25 @@ def test_a_budget_refusal_builds_no_trial(raw, monkeypatch):
     assert result.stopped == f"the plan needs {calls_needed(frame)} calls; the budget allows 1"
 
 
+@pytest.mark.parametrize(
+    "fields, named",
+    [({"usage": "4"}, "usage"), ({"raw": 4}, "raw"), ({"served": None}, "served")],
+)
+def test_a_malformed_observation_is_an_opening_with_a_record(raw, fields, named):
+    # a battery of your own that fills a field with the wrong type: the call
+    # was spent, so it is kept, as an opening that names the field
+    class Sloppy(Rules):
+        def observe(self, frame, prompt, max_output_tokens):
+            return Observation(label="decline", **fields)
+
+    frame = situate(raw)
+    result = run(frame, Sloppy(), Budget(calls=21))
+    assert len(result.records) == 21
+    assert {r.opening for r in result.records} == {
+        f"the battery returned a malformed observation ({named})"
+    }
+
+
 def test_a_plan_over_budget_is_refused_without_being_built(raw):
     # 40,000 planned calls against a budget of one: count them, do not list them
     raw["interventions"] = {"ablation": True}

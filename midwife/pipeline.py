@@ -157,6 +157,15 @@ def _observe(battery: Battery, frame: Frame, text: str, cap: int) -> Observation
         return Observation(label=None, opening=f"battery failed: {type(error).__name__}")
     if not isinstance(observation, Observation):
         return Observation(label=None, opening="the battery returned no observation")
+    kinds = {"label": (str, type(None)), "opening": (str, type(None)), "raw": str,
+             "usage": dict, "served": str}  # fmt: skip
+    wrong = [
+        name for name, kind in kinds.items() if not isinstance(getattr(observation, name), kind)
+    ]
+    if wrong:  # the call was spent: keep it, as an opening that names what was wrong
+        raw = observation.raw if isinstance(observation.raw, str) else ""
+        opening = f"the battery returned a malformed observation ({', '.join(wrong)})"
+        return Observation(label=None, opening=opening, raw=raw)
     if observation.label is not None and observation.label not in frame.labels:
         return replace(
             observation, label=None, opening="the battery returned no label of this frame"
