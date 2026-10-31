@@ -82,3 +82,36 @@ def test_a_frame_shown_in_words_finds_its_span_lines_in_one_pass(tmp_path):
 
     small, large = shown(100), shown(200)
     assert large < 2.6 * small, (small, large)
+
+
+class _CountedId(str):
+    # a span id that counts how often it is compared
+    comparisons = 0
+
+    def __eq__(self, other):
+        type(self).comparisons += 1
+        return str.__eq__(self, other)
+
+    __hash__ = str.__hash__
+
+
+def test_anchor_lookups_grow_with_the_anchors_not_their_square():
+    # parsing a frame and drawing its shams look anchors up, never scan for them
+    from midwife.frame import parse
+
+    def compared(n):
+        raw = copy.deepcopy(REFUND)
+        ids = [_CountedId(f"s{i}") for i in range(2 * n)]
+        raw["body"]["spans"] = [
+            {"id": ids[i], "text": "x" * (i + 1), "kind": "rule"} for i in range(2 * n)
+        ]
+        raw["anchors"] = ids[:n]
+        raw["interventions"] = {"ablation": True, "sham": True}
+        raw["allowed"] = {"ablation": ["grant", "unclear"]}
+        _CountedId.comparisons = 0
+        frame = parse(raw)
+        sham_draws(frame, 1)
+        return _CountedId.comparisons
+
+    small, large = compared(100), compared(200)
+    assert large <= 2.6 * small, (small, large)  # a lookup may need no comparison at all

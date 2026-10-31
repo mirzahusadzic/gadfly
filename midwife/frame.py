@@ -232,13 +232,14 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("the body holds its spans and nothing else")
     spans = tuple(_span(span) for span in need("spans", list, body))
     ids = [span.id for span in spans]
+    known = set(ids)  # looked up, not scanned
     if len(set(ids)) != len(ids):
         raise FrameError("two spans share an id")
 
     anchors = tuple(need("anchors", list))
     if not anchors:
         raise FrameError("a relation rests on at least one anchor")
-    missing = [anchor for anchor in anchors if anchor not in ids]
+    missing = [anchor for anchor in anchors if anchor not in known]
     if missing:
         raise FrameError(f"anchors not in the body: {missing}")
     if len(set(anchors)) != len(anchors):
@@ -376,6 +377,7 @@ def _check_interventions(
     from .interventions import renamer
 
     ids = [span.id for span in spans]
+    known = set(ids)  # looked up, not scanned
     if not isinstance(interventions.get("repeat", False), bool):
         raise FrameError("repeat is true or false")
     for key in ("cumulative", "bypass", "control"):
@@ -385,7 +387,7 @@ def _check_interventions(
         if not isinstance(value, list) or not value:
             raise FrameError(f"{key} lists the spans it removes")
         for span_id in value:
-            if span_id not in ids:
+            if span_id not in known:
                 raise FrameError(f"{key} names a span not in the body: {span_id}")
         if len(set(value)) != len(value):
             raise FrameError(f"{key} names a span twice")
@@ -417,7 +419,7 @@ def _check_interventions(
         if not (isinstance(placement, dict) and set(placement) == {"span", "after"}):
             raise FrameError('placement moves one span after another: {"span": id, "after": id}')
         for span_id in placement.values():
-            if span_id not in ids:
+            if span_id not in known:
                 raise FrameError(f"placement names a span not in the body: {span_id}")
         if placement["span"] == placement["after"]:
             raise FrameError("placement moves a span after another span, not itself")

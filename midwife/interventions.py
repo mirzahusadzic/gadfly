@@ -83,16 +83,17 @@ def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
     the frame's own seed. A draw that cannot be matched is left out; the
     verdict says so."""
     bypassed = set(frame.interventions.get("bypass") or [])
+    anchored = set(frame.anchors)  # looked up, not scanned
     # Free spans by kind, each pool sorted by length then body order, once.
     pools: dict[str, list[tuple[int, int, Span]]] = defaultdict(list)
     for at, span in enumerate(frame.spans):
-        if span.id not in frame.anchors and span.id not in bypassed:
+        if span.id not in anchored and span.id not in bypassed:
             pools[span.kind].append((len(span.text), at, span))
     for pool in pools.values():
         pool.sort(key=lambda entry: entry[:2])
     # each pool's lengths, kept beside it, so a draw never rebuilds them
     lengths = {kind: [entry[0] for entry in pool] for kind, pool in pools.items()}
-    anchors = [span for span in frame.spans if span.id in frame.anchors]
+    anchors = [span for span in frame.spans if span.id in anchored]
     rng = random.Random(int(frame.hash[:16], 16))
     draws: list[tuple[str, ...]] = []
     for _ in range(count):
