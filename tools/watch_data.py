@@ -38,6 +38,7 @@ FRAMES = [
 def watched(stem: str) -> dict:
     path = ROOT / "examples" / f"{stem}.json"
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
+    texts = {span.id: span.text for span in frame.spans}  # each span's own words, by id
     trials = plan(frame)
     prompts = {(x["id"], t.id): prompt(frame, t, x) for x in frame.inputs for t in trials}
     digests = {key: digest(text) for key, text in prompts.items()}  # each prompt's, once
@@ -86,7 +87,7 @@ def watched(stem: str) -> dict:
                 "does": cut(frame, t),
                 "removed": list(t.removed),
                 "order": [s.id for s in t.spans],
-                "renamed": [s.id for s in t.spans if t.renamed and s.text != _text(frame, s.id)],
+                "renamed": [s.id for s in t.spans if t.renamed and s.text != texts[s.id]],
                 "renames": [list(pair) for pair in t.renamed],
                 "moved": _placed(frame, t, "span"),
                 "after": _placed(frame, t, "after"),
@@ -100,10 +101,6 @@ def watched(stem: str) -> dict:
 
 def _placed(frame, trial, key: str) -> str | None:
     return frame.interventions["placement"][key] if trial.kind == "placement" else None
-
-
-def _text(frame, span_id: str) -> str:
-    return next(s.text for s in frame.spans if s.id == span_id)
 
 
 def encoded(stem: str) -> str:

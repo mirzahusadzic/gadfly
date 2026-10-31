@@ -143,3 +143,50 @@ def test_a_frames_sham_draws_are_made_once(monkeypatch):
     made = len(draws)
     assert made and trial_ids(frame) == first and calls_needed(frame) and plan(frame)
     assert len(draws) == made  # counted and planned again, drawn once
+
+
+def test_the_watch_data_finds_each_span_once(tmp_path, monkeypatch):
+    # renamed spans are told from the plan's own text by lookup, not a scan
+    from tools import watch_data
+
+    def work(n):
+        raw = copy.deepcopy(REFUND)
+        raw["body"]["spans"] = [
+            {"id": f"s{i}", "text": "same wording", "kind": "rule"} for i in range(n)
+        ]
+        raw["anchors"] = ["s0"]
+        raw["inputs"] = [{"id": "x", "text": "same wording"}]
+        raw["interventions"] = {"ablation": True, "presentation": {"same": "changed"}}
+        root = tmp_path / str(n)
+        (root / "examples").mkdir(parents=True)
+        (root / "examples/x.json").write_text(json.dumps(raw), encoding="utf-8")
+        monkeypatch.setattr(watch_data, "ROOT", root)
+        monkeypatch.setattr(watch_data, "runs_of", lambda path: [])
+        return instructions(lambda: watch_data.watched("x"))
+
+    small, large = work(400), work(800)
+    assert large < 2.6 * small, (small, large)
+
+
+def test_the_examples_table_reads_each_record_once(tmp_path, monkeypatch):
+    # each cell's answers come from one grouping of the records, not a scan per cell
+    from examples import read
+
+    def work(n):
+        raw = copy.deepcopy(REFUND)
+        raw["inputs"] = [{"id": f"x{i}", "text": f"case {i}"} for i in range(n)]
+        root = tmp_path / str(n)
+        (root / "runs/x").mkdir(parents=True)
+        (root / "runs/x/1.jsonl").write_text("")
+        (root / "x.json").write_text(json.dumps(raw), encoding="utf-8")
+        records = [
+            {"input": f"x{i}", "trial": f"t{t}", "observation": "decline", "served": "s"}
+            for i in range(n) for t in range(8)
+        ]  # fmt: skip
+        monkeypatch.setattr(read, "HERE", root)
+        monkeypatch.setattr(read, "load_records", lambda path: records)
+        monkeypatch.setattr(read, "reading", lambda frame, run: "carried")
+        return instructions(lambda: read.table(root / "x.json"))
+
+    small, large = work(30), work(60)
+    assert large < 2.6 * small, (small, large)

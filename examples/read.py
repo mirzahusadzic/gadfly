@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from midwife.cli import load_records
@@ -28,9 +28,15 @@ def runs_of(path: Path) -> list[Path]:
 
 def answers(records: list[dict], x: str, trial: str) -> str:
     """How the calls of one trial answered, most common first."""
-    counts = Counter(
-        r["observation"] or "opening" for r in records if (r["input"], r["trial"]) == (x, trial)
+    return said(
+        Counter(
+            r["observation"] or "opening" for r in records if (r["input"], r["trial"]) == (x, trial)
+        )
     )
+
+
+def said(counts: Counter) -> str:
+    """The answers counted, most common first."""
     return ", ".join(f"{label} {n}" for label, n in counts.most_common())
 
 
@@ -53,7 +59,10 @@ def table(path: Path) -> str:
     inputs = [x["id"] for x in frame.raw["inputs"]]
     trials = list(dict.fromkeys(r["trial"] for r in records))
     lines = [f"{frame.name}: {len(kept)} kept runs, read by {', '.join(served) or 'no record'}"]
-    rows = [["trial", *inputs]] + [[t, *(answers(records, x, t) for x in inputs)] for t in trials]
+    cells: dict[tuple[str, str], Counter] = defaultdict(Counter)  # one pass over the records
+    for r in records:
+        cells[r["input"], r["trial"]][r["observation"] or "opening"] += 1
+    rows = [["trial", *inputs]] + [[t, *(said(cells[x, t]) for x in inputs)] for t in trials]
     widths = [max(len(row[i]) for row in rows) for i in range(len(rows[0]))]
     lines += [
         "  ".join(cell.ljust(w) for cell, w in zip(row, widths, strict=True)).rstrip()
