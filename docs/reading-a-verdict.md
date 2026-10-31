@@ -63,8 +63,13 @@ category:
 #### Open checks
 
 Whatever the category, the checks still open are listed after it: no hidden
-fallback, presentation invariance, specificity and materialization, and
-discrimination for cooled.
+fallback, presentation invariance, specificity, monotonicity and
+materialization, and discrimination for cooled.
+
+Monotonicity is open when the control removes the anchors and more, yet left
+the level where the ablation moved it from: cutting more moved it less, so
+the ablation's move may be the scorer's spread. This check is a change to
+the rules, and no kept example raises it.
 
 - **Under the default `carriage: all-checks`:** a category is named only when
   the checks it needs have passed, every carriage check for carried and a

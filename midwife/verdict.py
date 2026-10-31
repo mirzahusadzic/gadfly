@@ -364,7 +364,7 @@ def _fallback(frame: Frame, levels: dict[str, str | None], base: str | None) -> 
 
 def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) -> list[str]:
     """The carriage checks the trials did not settle: no hidden fallback,
-    presentation invariance, specificity and materialization."""
+    presentation invariance, specificity, monotonicity and materialization."""
     open_ = []
     fallback = _fallback(frame, levels, base)
     if fallback:
@@ -387,6 +387,18 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
     moved = [t for t, v in levels.items() if t.startswith("sham-") and v not in (None, base)]
     if moved and base is not None:
         open_.append(f"specificity: {', '.join(moved)} moved it too; the change is not specific")
+    # Cutting more should not move it less: a control that cuts the anchors and
+    # more, yet holds where the ablation moved, leaves the ablation's move in doubt.
+    control = set(_read_once(frame)["interventions"].get("control") or [])
+    if (
+        control >= set(frame.anchors)
+        and base is not None
+        and levels.get("ablation") not in (None, base)
+        and levels.get("control") == base
+    ):
+        open_.append(
+            f"monotonicity: the control removes the anchors and more, yet left it at {base}"
+        )
     if not _read_once(frame).get("materialized"):
         open_.append(
             "materialization: the frame does not say the observation is "

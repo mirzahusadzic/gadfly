@@ -7,6 +7,7 @@ import pytest
 from midwife.pipeline import judge, plan, situate
 from midwife.types import Record
 from midwife.verdict import CARRIED, COOLED, MISALIGNED, OUTSIDE, UNRESOLVED, level
+from tests.conftest import REFUND
 
 
 def records(frame, levels, runs=None):
@@ -414,3 +415,46 @@ def test_a_move_under_placement_is_misaligned(raw):
     assert held.evidence == [
         "ablation moved it decline -> grant; held under presentation, placement, 2 shams"
     ]
+
+
+def superset_control(carriage="all-checks", control=("r1", "r2", "r3", "r4")):
+    # the anchor r2 and more; every other check settled
+    raw = copy.deepcopy(REFUND)
+    raw["interventions"]["sham"] = {"draws": 1}
+    raw["interventions"]["control"] = list(control)
+    raw["standing"] = {"quorum": 3, "agree": 2, "stable": True}
+    raw["materialized"] = True
+    raw["carriage"] = carriage
+    return situate(raw)
+
+
+MONOTONE = "monotonicity: the control removes the anchors and more, yet left it at decline"
+MOVED = {"*": "decline", "ablation": "grant", "bypass": "unclear"}
+
+
+def test_a_control_that_cuts_more_yet_holds_keeps_carried_from_being_named():
+    finding = verdict(superset_control(), **MOVED)
+    assert finding.category == UNRESOLVED and finding.obligations == [MONOTONE]
+    assert "not carried while 1 carriage check is open" in finding.evidence
+
+
+def test_listed_names_carried_with_the_monotonicity_check_beside_it():
+    finding = verdict(superset_control("listed"), **MOVED)
+    assert finding.category == CARRIED and finding.obligations == [MONOTONE]
+
+
+def test_a_misaligned_finding_lists_it_too():
+    finding = verdict(superset_control(), **{**MOVED, "presentation": "grant"})
+    assert finding.category == MISALIGNED and MONOTONE in finding.obligations
+
+
+@pytest.mark.parametrize(
+    "control, levels",
+    [
+        (("r1", "r2", "r3", "r4"), {**MOVED, "control": "grant"}),  # the control moved too
+        (("r1", "r3", "r4"), MOVED),  # it does not cut the anchor
+    ],
+)
+def test_no_monotonicity_check_when_the_control_moved_or_spares_the_anchors(control, levels):
+    finding = verdict(superset_control(control=control), **levels)
+    assert finding.category == CARRIED and finding.obligations == []
