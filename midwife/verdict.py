@@ -137,6 +137,24 @@ def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:
     return findings
 
 
+def _check_shape(record: Any) -> None:
+    """A record's shape, before anything is read from it: an object with every
+    key, each of its kind."""
+    if not isinstance(record, dict):
+        raise ValueError("a record is a JSON object")
+    lacking = RECORD_KEYS - set(record)
+    if lacking:
+        raise ValueError(f"a record lacks {sorted(lacking)}")
+    for key, kind in (("input", str), ("trial", str), ("prompt", str), ("raw", str)):
+        if not isinstance(record[key], kind):
+            raise ValueError(f"a record's {key} is not a str")
+    if not isinstance(record["usage"], dict):
+        raise ValueError("a record's usage is not a dict")
+    for key in ("observation", "opening"):
+        if record[key] is not None and not isinstance(record[key], str):
+            raise ValueError(f"a record's {key} is not a str")
+
+
 def check_records(
     frame: Frame, records: list[dict[str, Any]], bodies: dict[str, str] | None = None
 ) -> None:
@@ -153,19 +171,7 @@ def check_records(
     battery = frame.battery["kind"]
     seen: set[tuple[str, str, int]] = set()
     for record in records:
-        if not isinstance(record, dict):
-            raise ValueError("a record is a JSON object")
-        lacking = RECORD_KEYS - set(record)
-        if lacking:
-            raise ValueError(f"a record lacks {sorted(lacking)}")
-        for key, kind in (("input", str), ("trial", str), ("prompt", str), ("raw", str)):
-            if not isinstance(record[key], kind):
-                raise ValueError(f"a record's {key} is not a str")
-        if not isinstance(record["usage"], dict):
-            raise ValueError("a record's usage is not a dict")
-        for key in ("observation", "opening"):
-            if record[key] is not None and not isinstance(record[key], str):
-                raise ValueError(f"a record's {key} is not a str")
+        _check_shape(record)
         if record["frame"] != frame.hash:
             raise ValueError("a record belongs to another frame")
         if record["battery"] != battery:

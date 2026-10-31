@@ -23,7 +23,7 @@ from .frame import Frame, digest, parse
 from .interventions import Trial, prompt, trial_ids
 from .interventions import plan as plan_trials
 from .types import Battery, Budget, Observation, Record
-from .verdict import Finding, check_records
+from .verdict import Finding, _check_shape, check_records
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
 
@@ -76,6 +76,8 @@ def run(
     if unknown:
         raise ValueError(f"the plan has no trial {sorted(unknown)}")
     made = [record.as_dict() if isinstance(record, Record) else record for record in kept]
+    for record in made:  # a row that is no record is refused before anything is counted
+        _check_shape(record)
     # Counted, not built: a plan the budget refuses is never made.
     done = {
         (r["input"], r["trial"], r["run"])

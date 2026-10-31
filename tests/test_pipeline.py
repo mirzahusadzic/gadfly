@@ -349,3 +349,10 @@ def test_a_reply_with_a_lone_surrogate_is_kept_as_text_a_file_holds(raw):
     [record, *_] = run(frame, Garbled(), Budget(calls=21)).records
     assert record.raw == "ok \ufffd" and record.served == "reader \ufffd"
     json.dumps(record.as_dict(), ensure_ascii=False).encode("utf-8")
+
+
+def test_a_malformed_kept_record_is_refused_before_a_budget_refusal(raw):
+    # a kept row that is no record is refused first, whatever the budget
+    frame = situate(raw)
+    with pytest.raises(ValueError, match="a record is a JSON object"):
+        run(frame, Rules(), Budget(calls=1), kept=[None])
