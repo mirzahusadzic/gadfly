@@ -135,6 +135,34 @@ def test_every_link_lands(page):
     assert broken == []
 
 
+CONFIG = (ROOT / "docs/.vitepress/config.mjs").read_text(encoding="utf-8")
+
+
+def test_every_page_is_in_the_sidebar_or_kept_off_the_site():
+    # an unlisted page is still built and searchable, so a draft is excluded
+    listed = set(re.findall(r"link: '/([^']*)'", CONFIG))
+    excluded = set(
+        re.findall(r"'([^']+\.md)'", "".join(re.findall(r"srcExclude: \[(.*?)\]", CONFIG)))
+    )
+    unreachable = []
+    for path in sorted((ROOT / "docs").glob("**/*.md")):
+        page = str(path.relative_to(ROOT / "docs"))
+        route = re.sub(r"(^|/)index\.md$", r"\1", page).removesuffix(".md")
+        if route not in listed and page not in excluded:
+            unreachable.append(page)
+    assert unreachable == []
+
+
+def test_each_top_bar_link_opens_its_sidebar_group():
+    # the top bar's "Start here" lands on the first page under "Start here"
+    first = dict(
+        re.findall(r"text: '([^']+)',\s*items: \[\s*\{ text: '[^']+', link: '([^']+)'", CONFIG)
+    )
+    nav = re.findall(r"\{ text: '([^']+)', link: '([^']+)', activeMatch", CONFIG)
+    assert nav and all(name in first for name, _ in nav)
+    assert [(name, link) for name, link in nav if first[name] != link] == []
+
+
 def _copies():
     from tools.doc_outputs import PAGES, copies
 

@@ -17,8 +17,8 @@ const description =
 
 // The sidebar, sorted by who reads it: a first look, the examples (a ladder,
 // each step building on the ones before it), guides for writing and reading
-// frames, the reference, and the background. docs/in-plain-words.md is a
-// draft, built but not listed.
+// frames, the reference, and the background. Every other page is a draft,
+// kept in the repository but off the site and out of its search (srcExclude).
 const guides = ['write-a-frame', 'interventions', 'reading-a-verdict', 'batteries'];
 const reference = ['command-line', 'reference', 'glossary', 'roadmap', 'breadth/'];
 const sidebar = [
@@ -26,6 +26,7 @@ const sidebar = [
   {
     text: 'Start here',
     items: [
+      { text: 'In plain words', link: '/in-plain-words' },
       { text: 'Your first frame', link: '/first-frame' },
       { text: 'Framework', link: '/framework' },
     ],
@@ -89,6 +90,7 @@ export default defineConfig({
   lang: 'en',
   base: '/gadfly/',
   cleanUrls: true,
+  srcExclude: ['plain-words-notes.md'],
   // The theme menu (theme/ThemeMenu.vue) applies the theme, from the page head
   // before the first paint; VitePress's own switch is off.
   appearance: false,
@@ -118,7 +120,7 @@ export default defineConfig({
   },
   themeConfig: {
     nav: [
-      { text: 'Start here', link: '/first-frame', activeMatch: '^/(first-frame|framework)' },
+      { text: 'Start here', link: '/in-plain-words', activeMatch: '^/(in-plain-words|first-frame|framework)' },
       { text: 'Examples', link: '/examples/', activeMatch: '^/examples/' },
       { text: 'Guides', link: '/write-a-frame', activeMatch: `^/(${guides.join('|')})` },
       { text: 'Reference', link: '/command-line', activeMatch: `^/(${reference.join('|')})` },

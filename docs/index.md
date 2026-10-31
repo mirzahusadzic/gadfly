@@ -1,9 +1,11 @@
 # Is the premise load-bearing?
 
-Gadfly tests whether a decision rests on the evidence you think it rests on.
-It removes or changes one declared line in fixed ways, asks the reader again
-each time, and reads one verdict from the answers by fixed rules. It is a
-small Python library with no runtime dependencies and no hidden state.
+Your friend says it's raining because they saw wet umbrellas by the door.
+Hide the umbrellas and ask again: if they now say "I don't know", the
+umbrellas were the reason; if they still say "raining", something else told
+them. Gadfly plays that game with whatever reads your evidence, to test
+whether a decision rests on the line you think it does: it changes that line
+in fixed ways, asks again each time, and reads one verdict by fixed rules.
 
 ---
 
@@ -11,6 +13,8 @@ small Python library with no runtime dependencies and no hidden state.
 
 Start where your question is; every path ends in the same few pages.
 
+- **I'm new to this:** [Gadfly in plain words](in-plain-words.md) tells the
+  whole game, once for a kid and once for their father.
 - **I have a rule to test:** a changelog line, a contributing rule, a
   requirement, a contract clause or an access grant. Start with
   [Your first frame](first-frame.md).
@@ -89,8 +93,9 @@ carried, cooled and outside scope unresolved; a frame with
 
 ### Install
 
-Gadfly needs Python 3.11 or later and uv. These commands install it and read a
-kept example back:
+Gadfly is a small Python library with no runtime dependencies and no hidden
+state. It needs Python 3.11 or later and uv, and these commands install it and
+read a kept example back:
 
 ```bash
 git clone https://github.com/mirzahusadzic/gadfly.git
