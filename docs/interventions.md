@@ -98,8 +98,10 @@ baseline, so it is refused. This moves the grant after the audit line:
 
 For one input the call count is the planned trials times `quorum`, and a sham
 with `{"draws": n}` adds up to `n` trials; a draw with no match is left out,
-and the finding says so. This lists the plan and its cost without spending
-anything:
+and the finding says so. Among spans of the same kind and length, the frame's
+own seed picks each draw, one span at a time, so a frame with hundreds of such
+spans takes noticeably longer to plan; varying their lengths or kinds avoids
+it. This lists the plan and its cost without spending anything:
 
 ```python
 from midwife.pipeline import calls_needed, plan

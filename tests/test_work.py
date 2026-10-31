@@ -115,3 +115,31 @@ def test_anchor_lookups_grow_with_the_anchors_not_their_square():
 
     small, large = compared(100), compared(200)
     assert large <= 2.6 * small, (small, large)  # a lookup may need no comparison at all
+
+
+def test_a_frames_sham_draws_are_made_once(monkeypatch):
+    # the seeded draw among equally near spans is part of what a frame means, so
+    # it is kept as it is; but a frame's draws are made once, not for every count
+    import midwife.interventions as interventions
+    from midwife.interventions import trial_ids
+    from midwife.pipeline import calls_needed
+
+    raw = copy.deepcopy(REFUND)
+    raw["body"]["spans"] = [{"id": f"s{i}", "text": "same", "kind": "rule"} for i in range(60)]
+    raw["anchors"] = [f"s{i}" for i in range(20)]
+    raw["interventions"] = {"ablation": True, "sham": {"draws": 2}}
+    raw["allowed"] = {"ablation": ["grant", "unclear"]}
+    frame = situate(raw)
+    draws = []
+    original = interventions.random.Random
+
+    class Counted(original):
+        def random(self):
+            draws.append(1)
+            return super().random()
+
+    monkeypatch.setattr(interventions.random, "Random", Counted)
+    first = trial_ids(frame)
+    made = len(draws)
+    assert made and trial_ids(frame) == first and calls_needed(frame) and plan(frame)
+    assert len(draws) == made  # counted and planned again, drawn once

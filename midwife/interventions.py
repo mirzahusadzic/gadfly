@@ -8,6 +8,7 @@ the frame's hash, never by the clock.
 
 from __future__ import annotations
 
+import functools
 import random
 import re
 from bisect import bisect_left, bisect_right
@@ -109,6 +110,13 @@ def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
     return draws
 
 
+@functools.lru_cache(maxsize=64)
+def _drawn(frame: Frame, count: int) -> tuple[tuple[str, ...], ...]:
+    """A frame's sham draws, made once: counting, planning and running a frame
+    each need them, and among many equally near spans each draw is costly."""
+    return tuple(sham_draws(frame, count))
+
+
 def _nearest(
     pool: list[tuple[int, int, Span]], lengths: list[int], length: int, rng: random.Random
 ) -> int:
@@ -133,7 +141,7 @@ def trial_ids(frame: Frame) -> list[str]:
     sham = iv.get("sham")
     if sham:
         count = 1 if sham is True else sham["draws"]
-        ids += [f"sham-{index}" for index in range(1, len(sham_draws(frame, count)) + 1)]
+        ids += [f"sham-{index}" for index in range(1, len(_drawn(frame, count)) + 1)]
     ids += [kind for kind in ("presentation", "placement", "bypass", "control") if iv.get(kind)]
     return ids
 
@@ -152,7 +160,7 @@ def plan(frame: Frame) -> list[Trial]:
     sham = iv.get("sham")
     if sham:
         count = 1 if sham is True else sham["draws"]
-        for index, draw in enumerate(sham_draws(frame, count), start=1):
+        for index, draw in enumerate(_drawn(frame, count), start=1):
             trials.append(Trial(f"sham-{index}", "sham", draw, (), without(spans, set(draw))))
     if iv.get("presentation"):
         mapping = tuple(sorted(iv["presentation"].items()))
