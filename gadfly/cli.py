@@ -1,11 +1,11 @@
 """The command line: plan, run, report, check-frame, portfolio.
 
-    gadfly plan examples/refund.json
-    gadfly run examples/refund.json --battery examples.refund:RuleReader \
-        --calls 7 --out records.jsonl
-    gadfly report examples/refund.json records.jsonl
-    gadfly check-frame my-frame.json
-    gadfly portfolio a.json b.json
+    uv run gadfly plan examples/refund.json
+    uv run gadfly run examples/refund.json --battery examples.refund:RuleReader \
+        --calls 8 --out records.jsonl
+    uv run gadfly report examples/refund.json records.jsonl
+    uv run gadfly check-frame my-frame.json
+    uv run gadfly portfolio a.json b.json
 
 It uses only the public pipeline. `run` needs an explicit call budget,
 writes each record as one JSON line the moment it exists, never writes over

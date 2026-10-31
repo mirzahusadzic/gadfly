@@ -9,7 +9,7 @@ kinds closest to your own question.
 ## Refund policy: two scorers, one frame
 
 ```text
-$ python examples/refund.py records.jsonl
+$ uv run python examples/refund.py records.jsonl
 phrase-matcher: coupled but misaligned
   presentation moved it decline -> grant
   no hidden fallback: bypass gave decline, not the designated opening (unclear)
@@ -30,7 +30,7 @@ live critics of `examples/refund_live.py`.
 ## Review handoff: the essay's worked example
 
 ```text
-$ python examples/review_handoff.py
+$ uv run python examples/review_handoff.py
 system                       finding                  authority
 state projection             carried                  carried
 summary: fix ready           unresolved               unresolved
@@ -52,7 +52,7 @@ cooled. A missing trial record is insufficient evidence.
 ## Cited source
 
 ```text
-$ python examples/citation.py
+$ uv run python examples/citation.py
 word-matcher: coupled but misaligned
   presentation moved it grounded -> ungrounded
   no hidden fallback: bypass gave grounded, not the designated opening (ungrounded)
@@ -69,7 +69,7 @@ the question, so cutting that line exposes the opening and it carries. See
 ## One line of a system prompt
 
 ```text
-$ python examples/system_prompt.py
+$ uv run python examples/system_prompt.py
 request-alarm: cooled
   ablation left it at refuse
   the control moved it refuse -> comply: the scorer can tell
@@ -88,7 +88,7 @@ both cuts and is unresolved: it cannot tell the relation from its own habit.
 ## Tool permission and contract clause
 
 ```text
-$ python examples/tool_permission.py
+$ uv run python examples/tool_permission.py
 eager-tool: coupled but misaligned
   ablation moved it read-only -> modify, which the frame does not allow
   no hidden fallback: bypass gave read-only, not the designated opening (deny)
@@ -104,7 +104,7 @@ both without the grant and without the contract's binding line, so it carries.
 ## Code invariant
 
 ```text
-$ python examples/code_invariant.py
+$ uv run python examples/code_invariant.py
 full run: carried
   ablation moved it sorted -> unsorted; held under presentation, 1 sham
 records lost: unresolved

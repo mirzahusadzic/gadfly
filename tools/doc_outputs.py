@@ -5,8 +5,8 @@ is run from the repository root, in order, and what the last one prints is
 what the block must show below it. A `.jsonl` argument is a records file in
 a fresh directory, so a transcript never writes into the repository.
 
-    python tools/doc_outputs.py          # report each transcript that differs
-    python tools/doc_outputs.py --write  # rewrite them from what the code prints
+    uv run python tools/doc_outputs.py          # report each transcript that differs
+    uv run python tools/doc_outputs.py --write  # rewrite them from what the code prints
 """
 
 from __future__ import annotations

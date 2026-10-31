@@ -6,7 +6,7 @@ apply. Three review systems turn the same material into a handoff; two
 frames ask whether the failure's relation to the claim, and the grant's
 scope, survive into it.
 
-    python examples/review_handoff.py
+    uv run python examples/review_handoff.py
 """
 
 from __future__ import annotations

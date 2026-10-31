@@ -3,8 +3,8 @@ or Gemma 4 through eGemma. Each call is a model call: the frame is public and
 small (8 trials, 3 runs each: 24 calls), but a routed model costs what its
 provider charges.
 
-    python examples/refund_live.py unified anthropic/claude-sonnet-5-5 records.jsonl
-    python examples/refund_live.py egemma records.jsonl
+    uv run python examples/refund_live.py unified anthropic/claude-sonnet-5-5 records.jsonl
+    uv run python examples/refund_live.py egemma records.jsonl
 
 What the answer says of the critic:
 - carried: it declines because of the receipt rule, whatever the rule's

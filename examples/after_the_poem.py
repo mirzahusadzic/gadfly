@@ -14,7 +14,7 @@ the study published, case by case. The study's data stays where it is; pass
 the directory of one plan that load_bearing.py has run (plan.json and
 findings.json):
 
-    python examples/after_the_poem.py <plan directory>
+    uv run python examples/after_the_poem.py <plan directory>
 
 After the Poem: https://github.com/mirzahusadzic/after-the-poem
 """

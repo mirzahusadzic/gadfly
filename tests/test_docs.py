@@ -75,7 +75,7 @@ def _transcripts():
 
 @pytest.mark.parametrize("transcript", _transcripts(), ids=lambda t: t.where())
 def test_every_quoted_output_is_what_the_code_prints(transcript):
-    # `python tools/doc_outputs.py --write` brings a page back in line
+    # `uv run python tools/doc_outputs.py --write` brings a page back in line
     from tools.doc_outputs import printed
 
     assert printed(transcript) == transcript.quoted

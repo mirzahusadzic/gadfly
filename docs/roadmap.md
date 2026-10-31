@@ -18,9 +18,9 @@ command line a reader writes Python to keep records, then joins
 `evidence + obligations` in an ad-hoc print loop.
 
 ```bash
-gadfly plan examples/refund.json
-gadfly run examples/refund.json --battery examples.refund:RuleReader --calls 8 --out records.jsonl
-gadfly report examples/refund.json records.jsonl
+uv run gadfly plan examples/refund.json
+uv run gadfly run examples/refund.json --battery examples.refund:RuleReader --calls 8 --out records.jsonl
+uv run gadfly report examples/refund.json records.jsonl
 ```
 
 `run` uses only the public pipeline, writes each `Record.as_dict()` as one JSON
@@ -29,7 +29,7 @@ requires an explicit call budget and says when it stopped early; `--kept`
 finishes a stopped run. The battery, `module:Class`, is imported from the
 current directory. `report` keeps a finding's levels, evidence and obligations on
 separate lines (see the [example report](breadth/report-example.md)), or prints
-them as JSON with `--json`. `python -m gadfly` is the same command.
+them as JSON with `--json`. `uv run python -m gadfly` is the same command.
 
 ## Frame schema and authoring check
 
@@ -42,7 +42,7 @@ something, stable requiring repeat) are not all expressible in JSON Schema.
 its `$id` points) describes every key and every trial's shape. Then:
 
 ```bash
-gadfly check-frame path/to/frame.json --json
+uv run gadfly check-frame path/to/frame.json --json
 ```
 
 runs the schema, when `jsonschema` is installed, then `situate()`, and names
@@ -56,9 +56,9 @@ combining different relations, promises and recipients, so a portfolio verdict
 would be a category error.
 
 ```bash
-gadfly report --json frame-a.json records-a.jsonl > a.json
-gadfly report --json frame-b.json records-b.jsonl > b.json
-gadfly portfolio a.json b.json
+uv run gadfly report --json frame-a.json records-a.jsonl > a.json
+uv run gadfly report --json frame-b.json records-b.jsonl > b.json
+uv run gadfly portfolio a.json b.json
 ```
 
 It counts frames by category, lists the obligations two or more frames share,

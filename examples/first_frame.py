@@ -1,7 +1,7 @@
 """The tutorial's frame (docs/first-frame.md), run: does an answer's crate
 count rest on cited source S-2?
 
-    python examples/first_frame.py
+    uv run python examples/first_frame.py
 """
 
 import json

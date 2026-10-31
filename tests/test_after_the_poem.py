@@ -4,7 +4,7 @@ replayed through Gadfly, must reach every category the study published.
 The study's data never enters this repository. Point the test at one or more
 plan directories (each with plan.json and findings.json):
 
-    GADFLY_ATP_PLANS=<plan>:<another plan> pytest
+    GADFLY_ATP_PLANS=<plan>:<another plan> uv run pytest
 """
 
 import os

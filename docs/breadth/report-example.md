@@ -5,8 +5,8 @@ keeps the category, each trial's level, the evidence and the open obligations
 apart, and says first what the frame's inputs add up to.
 
 ```text
-$ gadfly run examples/refund.json --battery examples.refund:RuleReader --calls 8 --out records.jsonl
-$ gadfly report examples/refund.json records.jsonl
+$ uv run gadfly run examples/refund.json --battery examples.refund:RuleReader --calls 8 --out records.jsonl
+$ uv run gadfly report examples/refund.json records.jsonl
 frame: refund-receipt (dd916080072539784691a5232645b4d9c5b00e9cfdddd51650d15b347b385f85)
 records: 8  planned calls: 8
 overall: carried

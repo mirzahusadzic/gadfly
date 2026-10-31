@@ -85,14 +85,14 @@ For several inputs, `overall(judge(frame, kept))` returns one category over all
 of them. A stopped run is continued with `run(..., kept=kept)`; records already
 in `kept` are not made again.
 
-The same from the command line (also `python -m gadfly`):
+The same from the command line (also `uv run python -m gadfly`):
 
 ```bash
-gadfly check-frame examples/refund.json   # the frame's shape, then the parser
-gadfly plan examples/refund.json          # the trials and the call count, no call
-gadfly run examples/refund.json --battery examples.refund:RuleReader \
-    --calls 8 --out records.jsonl         # each record kept as one JSON line
-gadfly report examples/refund.json records.jsonl
+uv run gadfly check-frame examples/refund.json  # the frame's shape, then the parser
+uv run gadfly plan examples/refund.json         # the trials and the call count, no call
+uv run gadfly run examples/refund.json --battery examples.refund:RuleReader \
+    --calls 8 --out records.jsonl               # each record kept as one JSON line
+uv run gadfly report examples/refund.json records.jsonl
 ```
 
 <!-- --8<-- [start:model] -->
@@ -143,8 +143,8 @@ The top-level keys are all checked before a call:
 
 The frame is hashed whole. Rewording the promise, changing the grain or swapping
 the battery makes a new frame, and records from the old hash will be refused.
-`gadfly/frame.schema.json` gives editors the shape; `gadfly check-frame` runs
-it and then the parser, which has the last word.
+`gadfly/frame.schema.json` gives editors the shape; `uv run gadfly check-frame`
+runs it and then the parser, which has the last word.
 <!-- --8<-- [end:frame] -->
 
 <!-- --8<-- [start:trials] -->

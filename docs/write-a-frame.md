@@ -74,8 +74,8 @@ outside scope with the check listed as open).
 ## Check before you run
 
 `gadfly/frame.schema.json` is the frame's JSON Schema (draft 2020-12): point
-your editor at it for completion and inline errors. `gadfly check-frame
-frame.json` runs the schema, when `jsonschema` is installed, and then the
+your editor at it for completion and inline errors.
+`uv run gadfly check-frame frame.json` runs the schema, when `jsonschema` is installed, and then the
 parser, which has the last word on what only code can check (anchors in the
 body, a presentation map that renames something, a placement that moves
 something).

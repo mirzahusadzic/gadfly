@@ -8,7 +8,7 @@ them apart. The rule reader also applies the rules only while the policy says
 they decide (its binding line): with that line cut, it cannot decide, which
 is the opening the frame's bypass must expose.
 
-    python examples/refund.py records.jsonl
+    uv run python examples/refund.py records.jsonl
 """
 
 from __future__ import annotations

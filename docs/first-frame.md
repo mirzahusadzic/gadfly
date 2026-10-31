@@ -131,7 +131,7 @@ The frame names `citation-reader`, so only a battery whose `name` is exactly
 ```
 
 ```text
-$ python examples/first_frame.py
+$ uv run python examples/first_frame.py
 carried
 ablation moved it grounded -> ungrounded; held under presentation, 2 shams
 ```
@@ -148,7 +148,7 @@ binding line cut.
 Run both scorers with:
 
 ```bash
-python examples/citation.py
+uv run python examples/citation.py
 ```
 
 ## 6. Read what is missing
@@ -179,7 +179,7 @@ answer different questions.
 | `scopeCheck checks an outsideScope exclusion` | record the owner's check only beside the exclusion it checks |
 | `placement leaves the order as it is` | move the span after one it does not already follow |
 
-`gadfly check-frame my-frame.json` shows these before any call, with the
+`uv run gadfly check-frame my-frame.json` shows these before any call, with the
 schema's findings first when `jsonschema` is installed.
 
 Next: [Write a frame](write-a-frame.md) for the complete field reference.

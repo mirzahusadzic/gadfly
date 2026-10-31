@@ -43,7 +43,7 @@ no runtime dependencies and no hidden state.
 This is the deterministic refund example: two batteries read the same relation.
 
 ```text
-$ python examples/refund.py records.jsonl
+$ uv run python examples/refund.py records.jsonl
 phrase-matcher: coupled but misaligned
   presentation moved it decline -> grant
   no hidden fallback: bypass gave decline, not the designated opening (unclear)
