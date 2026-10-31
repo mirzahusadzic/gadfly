@@ -85,3 +85,34 @@ def test_check_frame_says_ok_or_where_the_frame_is_wrong(tmp_path, capsys):
     assert result["ok"] is False and result["checked"] == "schema and parser"
     assert [p["at"] for p in result["problems"]] == ["/interventions/sham", "/"]
     assert result["problems"][1]["problem"] == "anchors not in the body: ['r9']"
+
+
+def _drift(change):
+    raw = copy.deepcopy(REFUND)
+    change(raw)
+    return raw
+
+
+@pytest.mark.parametrize(
+    "shape, raw",
+    [
+        ("an empty name", _drift(lambda r: r.update(name=""))),
+        ("an empty battery kind", _drift(lambda r: r["battery"].update(kind=""))),
+        ("a body key besides spans", _drift(lambda r: r["body"].update(notes="x"))),
+        ("an input key besides id and text", _drift(lambda r: r["inputs"][0].update(note="x"))),
+        ("an anchor named twice", _drift(lambda r: r.update(anchors=r["anchors"] * 2))),
+        (
+            "a bypass span named twice",
+            _drift(lambda r: r["interventions"].update(bypass=["r5", "r5"])),
+        ),
+        (
+            "an allowed label named twice",
+            _drift(lambda r: r["allowed"].update(ablation=["grant", "grant"])),
+        ),
+    ],
+)
+def test_the_parser_refuses_what_the_schema_refuses(shape, raw):
+    # a Python caller cannot run a frame the published schema calls invalid
+    assert list(VALIDATOR.iter_errors(raw)), shape
+    with pytest.raises(FrameError):
+        parse(raw)

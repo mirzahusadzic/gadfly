@@ -159,7 +159,8 @@ def parse(raw: dict[str, Any]) -> Frame:
     unknown = set(raw) - KEYS
     if unknown:
         raise FrameError(f"unknown keys: {sorted(unknown)}")
-    need("name", str)
+    if not need("name", str):
+        raise FrameError("the name is empty")
     for key in SITUATION:
         if not need(key, str).strip():
             raise FrameError(f"{key} is empty")
@@ -189,6 +190,8 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("outsideScope is the receiving owner's exclusion, in words")
 
     body = need("body", dict)
+    if set(body) - {"spans"}:
+        raise FrameError("the body holds its spans and nothing else")
     spans = tuple(_span(span) for span in need("spans", list, body))
     ids = [span.id for span in spans]
     if len(set(ids)) != len(ids):
@@ -200,6 +203,8 @@ def parse(raw: dict[str, Any]) -> Frame:
     missing = [anchor for anchor in anchors if anchor not in ids]
     if missing:
         raise FrameError(f"anchors not in the body: {missing}")
+    if len(set(anchors)) != len(anchors):
+        raise FrameError("anchors name a span twice")
 
     inputs = tuple(need("inputs", list))
     if not inputs or not all(
@@ -207,6 +212,8 @@ def parse(raw: dict[str, Any]) -> Frame:
         for x in inputs
     ):
         raise FrameError("inputs are a non-empty list of {id, text}, both non-empty strings")
+    if any(set(x) != {"id", "text"} for x in inputs):
+        raise FrameError("an input is its id and its text, and nothing else")
     if len({x["id"] for x in inputs}) != len(inputs):
         raise FrameError("two inputs share an id")
 
@@ -256,6 +263,8 @@ def parse(raw: dict[str, Any]) -> Frame:
             raise FrameError(
                 "allowed lists one or more of the frame's labels, or says lower or higher"
             )
+        elif isinstance(value, list) and len(set(value)) != len(value):
+            raise FrameError("allowed names a label twice")
 
     standing = need("standing", dict)
     if not set(standing) <= {"quorum", "agree", "stable"}:
@@ -269,7 +278,8 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("stable reads the baseline and repeat sessions together: declare repeat")
 
     battery = need("battery", dict)
-    need("kind", str, battery)
+    if not need("kind", str, battery):
+        raise FrameError("battery.kind is empty")
 
     source = canonical(raw)
     return Frame(
@@ -339,6 +349,8 @@ def _check_interventions(
         for span_id in value:
             if span_id not in ids:
                 raise FrameError(f"{key} names a span not in the body: {span_id}")
+        if len(set(value)) != len(value):
+            raise FrameError(f"{key} names a span twice")
     for key in ("bypass", "control"):
         if set(interventions.get(key) or []) == set(anchors):
             raise FrameError(f"{key} removes exactly the anchors: it is the ablation again")
