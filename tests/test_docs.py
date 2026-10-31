@@ -539,3 +539,11 @@ def test_the_site_splits_nothing_with_a_dot():
     site += sorted((ROOT / "docs/.vitepress/theme").glob("*.*"))
     dotted = [str(path.relative_to(ROOT)) for path in site if "·" in path.read_text()]
     assert dotted == []
+
+
+def test_the_version_badge_reads_the_release_tags():
+    # shields keeps a PyPI badge for six hours, a tag's for five minutes; the
+    # tag names the published version, as publish.yml checks before it uploads
+    first = (ROOT / "README.md").read_text(encoding="utf-8").split("\n")[2]
+    assert "img.shields.io/github/v/tag/mirzahusadzic/gadfly?sort=semver" in first
+    assert first.endswith("(https://pypi.org/project/midwife/)")

@@ -1,6 +1,6 @@
 # Gadfly
 
-[![PyPI](https://img.shields.io/pypi/v/midwife?logo=pypi&logoColor=white)](https://pypi.org/project/midwife/)
+[![midwife on PyPI](https://img.shields.io/github/v/tag/mirzahusadzic/gadfly?sort=semver&label=midwife&logo=pypi&logoColor=white)](https://pypi.org/project/midwife/)
 [![CI](https://github.com/mirzahusadzic/gadfly/actions/workflows/ci.yml/badge.svg)](https://github.com/mirzahusadzic/gadfly/actions/workflows/ci.yml)
 
 Gadfly tests whether a decision rests on the evidence you think it rests on.
