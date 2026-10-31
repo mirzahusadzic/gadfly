@@ -127,6 +127,29 @@ def _read_once(frame: Frame) -> dict[str, Any]:
     return decoded
 
 
+# The keys a frame may leave out; null is not leaving one out, since it hashes
+# differently, so the parser refuses it as the schema does.
+OPTIONAL = {
+    "": ("materialized", "carriage", "outsideScope", "scopeCheck"),
+    "observe": ("order",),
+    "standing": ("stable",),
+    "allowed": ("bypass",),
+    "interventions": ("repeat", "cumulative", "sham", "presentation", "placement", "bypass",
+                      "control"),
+}  # fmt: skip
+
+
+def _no_null_options(raw: dict[str, Any]) -> None:
+    for section, keys in OPTIONAL.items():
+        where = raw if not section else raw.get(section)
+        if not isinstance(where, dict):
+            continue
+        for key in keys:
+            if key in where and where[key] is None:
+                named = f"{section}.{key}" if section else key
+                raise FrameError(f"{named} is null: leave it out instead")
+
+
 def canonical(value: Any) -> str:
     """The one serialization a hash is taken of."""
     return json.dumps(
@@ -161,6 +184,7 @@ def parse(raw: dict[str, Any]) -> Frame:
     except RecursionError:  # deeper than any frame needs, and than Python reads
         raise FrameError("the frame nests deeper than a frame can") from None
     raw = copy.deepcopy(raw)
+    _no_null_options(raw)
 
     def need(key: str, kind: type, where: dict[str, Any] = raw) -> Any:
         if key not in where:

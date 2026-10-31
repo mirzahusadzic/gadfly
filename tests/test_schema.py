@@ -116,3 +116,21 @@ def test_the_parser_refuses_what_the_schema_refuses(shape, raw):
     assert list(VALIDATOR.iter_errors(raw)), shape
     with pytest.raises(FrameError):
         parse(raw)
+
+
+OPTIONAL = [
+    ("materialized",), ("carriage",), ("outsideScope",), ("scopeCheck",),
+    ("observe", "order"), ("standing", "stable"), ("allowed", "bypass"),
+    *(("interventions", key) for key in
+      ("repeat", "cumulative", "sham", "presentation", "placement", "bypass", "control")),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize("path", OPTIONAL, ids=".".join)
+def test_an_optional_key_set_to_null_is_refused_like_the_schema_does(path):
+    # null is not "left out": it hashes differently, so the parser refuses it
+    raw = copy.deepcopy(REFUND)
+    (raw if len(path) == 1 else raw[path[0]])[path[-1]] = None
+    assert list(VALIDATOR.iter_errors(raw)), path
+    with pytest.raises(FrameError, match="null"):
+        parse(raw)
