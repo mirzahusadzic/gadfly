@@ -37,3 +37,10 @@ class RuleReader(PhraseMatcher):
         if "These rules decide every request." not in policy:
             return Observation(label="unclear")  # no rule binds: nothing to decide by
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class Unreachable(RuleReader):
+    """The rule reader when its service is down: every call is an opening."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        return Observation(label=None, opening="the reader could not be reached: ConnectionRefused")

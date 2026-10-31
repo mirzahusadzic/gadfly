@@ -60,6 +60,25 @@ def test_run_never_writes_over_kept_records(tmp_path, capsys):
     assert status == 2 and "never written over" in capsys.readouterr().err
 
 
+def test_run_says_when_its_calls_came_back_as_openings(tmp_path, capsys):
+    # a service that is down answers every call with an opening; the run says
+    # so, instead of only counting the calls it wrote
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Unreachable", "--calls", "8"]
+    assert main([*argv, "--out", str(out)]) == 0
+    assert capsys.readouterr().out.splitlines()[1] == (
+        "openings: 8 of 8 calls, most often "
+        '"the reader could not be reached: ConnectionRefused" (8)'
+    )
+    assert main([*argv, "--out", str(tmp_path / "again.jsonl"), "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["openings"] == {
+        "the reader could not be reached: ConnectionRefused": 8
+    }
+    (tmp_path / "fine").mkdir()
+    status, _ = run_refund(tmp_path / "fine")
+    assert status == 0 and "openings" not in capsys.readouterr().out
+
+
 def test_run_says_when_the_budget_stopped_it(tmp_path, capsys):
     out = tmp_path / "records.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "3"]

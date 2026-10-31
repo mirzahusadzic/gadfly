@@ -23,6 +23,7 @@ import importlib
 import json
 import os
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -132,6 +133,9 @@ def command_run(args) -> int:
     finally:
         for file in files:
             file.close()
+    # a service that is down answers every call with an opening: say so, so a
+    # run that spent its calls on nothing does not read as a finished one
+    openings = Counter(r.opening for r in result.records if r.opening is not None)
     if args.json:
         payload = {
             "frame": frame.name,
@@ -140,10 +144,17 @@ def command_run(args) -> int:
             "planned": result.planned,
             "made": len(result.records),
             "stopped": result.stopped,
+            "openings": dict(openings.most_common()),
         }
         print(json.dumps(payload, indent=2))
     else:
         print(f"wrote {len(result.records)}/{result.planned} calls to {out}")
+        if openings:
+            reason, count = openings.most_common(1)[0]
+            total = sum(openings.values())
+            print(
+                f'openings: {total} of {len(result.records)} calls, most often "{reason}" ({count})'
+            )
         if result.stopped:
             print(f"stopped: {result.stopped}")
     return 0
