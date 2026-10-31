@@ -527,3 +527,13 @@ def test_every_name_a_module_defines_has_its_entry_in_the_reference():
             if not name.startswith("_") and f"#### {name}\n" not in section
         ]
     assert missing == []
+
+
+def test_the_site_splits_nothing_with_a_dot():
+    # site text has no "·" separators; the README's closing row of links,
+    # read on GitHub and PyPI, is outside the site
+    site = [ROOT / page for page in PAGES if page.startswith("docs/")]
+    site += sorted((ROOT / "docs/.vitepress").glob("*.mjs"))
+    site += sorted((ROOT / "docs/.vitepress/theme").glob("*.*"))
+    dotted = [str(path.relative_to(ROOT)) for path in site if "·" in path.read_text()]
+    assert dotted == []
