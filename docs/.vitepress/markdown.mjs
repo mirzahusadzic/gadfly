@@ -1,5 +1,27 @@
 /** Markdown rules that let the pages read on the site as they read on GitHub,
  * without changing them. */
+import { readFileSync } from 'node:fs';
+import { posix } from 'node:path';
+
+/** A link to a frame's file, `../examples/upgrade.json#L16`, opens that file
+ * on GitHub, with its lines numbered; on the site it opens the frame's source
+ * page (docs/frames/), the same line marked. */
+export function frameLinks(md) {
+  const index = JSON.parse(readFileSync(new URL('frames.json', import.meta.url), 'utf8'));
+  const pages = new Map(Object.entries(index).map(([stem, frame]) => [frame.path, stem]));
+  md.core.ruler.push('frame-links', (state) => {
+    const here = posix.dirname(posix.join('docs', state.env.relativePath ?? ''));
+    for (const block of state.tokens) {
+      for (const token of block.children ?? []) {
+        if (token.type !== 'link_open') continue;
+        const [path, line] = token.attrGet('href').split('#');
+        if (/^[a-z]+:|^\//.test(path) || !path.endsWith('.json')) continue;
+        const stem = pages.get(posix.normalize(posix.join(here, path)));
+        if (stem) token.attrSet('href', `/frames/${stem}${line ? `#${line}` : ''}`);
+      }
+    }
+  });
+}
 
 /** GitHub's anchor for a heading: lower case, punctuation dropped, spaces as
  * hyphens, so a link to a heading works in both places. */

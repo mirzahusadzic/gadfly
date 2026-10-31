@@ -41,6 +41,10 @@ BLOCK = re.compile(r"```text\n((?:\$ (?:[^\n]*\\\n[ \t]+)*[^\n]*\n)+)(.*?)```", 
 COMMAND = re.compile(r"\$ ((?:[^\n]*\\\n[ \t]+)*[^\n]*)\n")
 COPY = re.compile(r"<!-- copy (\S+) -->\n(.*?)<!-- end copy -->", re.S)
 API = re.compile(r"<!-- api (\S+) -->\n(.*?)<!-- end api -->", re.S)
+FRAME = re.compile(r"<!-- frame (\S+) -->\n(.*?)<!-- end frame -->", re.S)
+# Every frame the site publishes as its source page, with the hash its
+# records name; docs/.vitepress reads it to draw those pages.
+INDEX = ROOT / "docs/.vitepress/frames.json"
 
 
 @dataclass(frozen=True)
@@ -253,6 +257,131 @@ def documented(module: str) -> str:
     return "\n" + "\n".join(part for part in parts if part)
 
 
+def frames(page: str) -> list[Copy]:
+    """Every frame shown in a page, its JSON file as the source."""
+    text = (ROOT / page).read_text(encoding="utf-8")
+    return [
+        Copy(page, match.group(1), match.group(2), match.start(2), match.end(2))
+        for match in FRAME.finditer(text)
+    ]
+
+
+def _cell(text: str) -> str:
+    return _text(text).replace("|", "\\|")
+
+
+def _words(labels: list[str] | str) -> str:
+    if isinstance(labels, str):
+        return f"a {labels} label"
+    names = [f"`{label}`" for label in labels]
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " or " + names[-1]
+
+
+def _does(frame, trial) -> str:
+    """What one trial does to the evidence, in a few words."""
+    if trial.renamed:
+        return "renames " + ", ".join(f"`{a}` to `{b}`" for a, b in trial.renamed)
+    if trial.kind == "placement":
+        move = frame.interventions["placement"]
+        return f"moves `{move['span']}` after `{move['after']}`"
+    if trial.removed:
+        return "cuts " + ", ".join(f"`{span}`" for span in trial.removed)
+    return "asks the same again" if trial.kind == "repeat" else "asks the evidence as it is"
+
+
+def _line_of(lines: list[str], span: str) -> int:
+    # the line in the file where a span is declared, for a link to it
+    start = next(i for i, line in enumerate(lines) if '"spans"' in line)
+    return next(i for i in range(start, len(lines)) if f'"id": "{span}"' in lines[i]) + 1
+
+
+def readable(source: str, page: str) -> str:
+    """A frame as a reader takes it in: the relation in words, the evidence,
+    the question, the trials as Gadfly plans them and how they are read, with
+    the file as written one link away and each span linked to its line."""
+    import json
+
+    from gadfly.pipeline import calls_needed, plan, situate
+
+    path = ROOT / source
+    lines = path.read_text(encoding="utf-8").splitlines()
+    raw = json.loads("\n".join(lines))
+    frame = situate(raw)
+    href = Path(os.path.relpath(path, (ROOT / page).parent)).as_posix()
+    situation = [
+        "relation", "locus", "role", "grain", "purpose",
+        "trajectory", "crossing", "promise", "baseline",
+    ]  # fmt: skip
+    out = ["", "**The relation**", ""]
+    out += [f"- **{key.capitalize()}:** {_text(str(raw[key]))}" for key in situation]
+    out += ["", "**The evidence**, the anchor marked `*`:", ""]
+    out += ["| Span | Kind | Text |", "|---|---|---|"]
+    for span in frame.spans:
+        mark = " `*`" if span.id in frame.anchors else ""
+        link = f"[`{span.id}`]({href}#L{_line_of(lines, span.id)})"
+        out.append(f"| {link}{mark} | {span.kind} | {_cell(span.text)} |")
+    out += ["", "**The question**", ""]
+    out += [f"- **Asked, `{x['id']}`:** {_text(x['text'])}" for x in frame.inputs]
+    out += [
+        f"- **Answers:** {_words(list(frame.labels))}",
+        f"- **Instruction:** {_text(raw['observe']['instruction'])}",
+        "",
+    ]
+    trials = plan(frame)
+    out += [
+        f"**The trials**, each asked {frame.quorum} times, {calls_needed(frame)} calls in all:",
+        "",
+    ]
+    out += [f"- **`{trial.id}`:** {_does(frame, trial)}" for trial in trials]
+    out += ["", "**The reading**", ""]
+    out.append(f"- **Without the anchor:** {_words(raw['allowed']['ablation'])} may come back")
+    if "bypass" in raw["allowed"]:
+        out.append(f"- **Through the bypass:** {_words(raw['allowed']['bypass'])} must come back")
+    standing = raw["standing"]
+    stable = ", and the repeat must agree with the baseline" if standing.get("stable") else ""
+    out.append(f"- **A level:** {standing['agree']} of {standing['quorum']} answers alike{stable}")
+    carriage = raw.get("carriage", "all-checks")
+    held = (
+        "an open check holds the category back"
+        if carriage == "all-checks"
+        else ("the category is named with its open checks beside it")
+    )
+    out.append(f"- **Carriage:** `{carriage}`, so {held}")
+    materialized = "is" if raw.get("materialized") else "is not declared to be"
+    out.append(f"- **Materialized:** the answer {materialized} the form the recipient receives")
+    if "outsideScope" in raw:
+        out.append(f"- **Outside scope:** {_text(raw['outsideScope'])}")
+    battery = raw["battery"]
+    extra = [f"`{k}` {v}" if not isinstance(v, dict | list) else f"`{k}`" for k, v in
+             battery.items() if k != "kind"]  # fmt: skip
+    out.append(
+        f"- **Battery:** `{battery['kind']}`" + (f", with {', '.join(extra)}" if extra else "")
+    )
+    out += ["", f"[The frame as written ↗]({href})", ""]
+    return "\n".join(out)
+
+
+def frame_index() -> str:
+    """The frames the site publishes: every example, and every frame a page
+    shows, each with its hash and the page that shows it."""
+    import json
+
+    from gadfly.frame import digest
+
+    shown = {f.source: page.removesuffix(".md").removeprefix("docs/") for page in PAGES
+             for f in frames(page)}  # fmt: skip
+    sources = sorted({*(str(p.relative_to(ROOT)) for p in ROOT.glob("examples/*.json")), *shown})
+    index = {}
+    for source in sources:
+        raw = json.loads((ROOT / source).read_text(encoding="utf-8"))
+        entry = {"path": source, "name": raw["name"], "hash": digest(raw)}
+        if source in shown:
+            entry["shown"] = shown[source]
+        assert Path(source).stem not in index, f"two frames named {Path(source).stem}"
+        index[Path(source).stem] = entry
+    return json.dumps(index, indent=2, ensure_ascii=False) + "\n"
+
+
 def main(write: bool) -> int:
     differ = 0
     for page in PAGES:
@@ -261,6 +390,7 @@ def main(write: bool) -> int:
             *((t, printed, " && ".join(t.commands)) for t in transcripts(page)),
             *((c, lambda c: copied(c.source), f"copy of {c.source}") for c in copies(page)),
             *((a, lambda a: documented(a.source), f"reference of {a.source}") for a in apis(page)),
+            *((f, lambda f: readable(f.source, f.page), f"frame {f.source}") for f in frames(page)),
         ]
         # from the end, so offsets hold
         for block, now, what in sorted(found, key=lambda f: f[0].start, reverse=True):
@@ -271,6 +401,11 @@ def main(write: bool) -> int:
                 text = text[: block.start] + output + text[block.end :]
         if write and found:
             (ROOT / page).write_text(text, encoding="utf-8")
+    if INDEX.read_text(encoding="utf-8") != (index := frame_index()):
+        differ += 1
+        print(f"{INDEX.relative_to(ROOT)}: the frames the site publishes")
+        if write:
+            INDEX.write_text(index, encoding="utf-8")
     print(f"{differ} transcript(s), copies or references {'rewritten' if write else 'differ'}")
     return 0 if write or not differ else 1
 

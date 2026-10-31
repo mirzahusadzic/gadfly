@@ -1,10 +1,11 @@
 /** Gadfly's documentation site. The pages are docs/, written to read on
  * GitHub: this file gives each its place in the sidebar, and the Markdown
  * rules make them read on the site as they do there. */
-import { readFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createCssVariablesTheme } from 'shiki';
 import { defineConfig } from 'vitepress';
-import { githubMath, githubSlug, hangingLines, mermaidFences } from './markdown.mjs';
+import { frameLinks, githubMath, githubSlug, hangingLines, mermaidFences } from './markdown.mjs';
 import { HEAD } from './theme/theme.js';
 
 const github = 'https://github.com/mirzahusadzic/gadfly';
@@ -110,10 +111,19 @@ export default defineConfig({
     config(md) {
       md.use(githubMath);
       md.use(mermaidFences);
+      md.use(frameLinks);
     },
   },
   // A page without headings (Watch a run) has no outline, so its column
   // takes the outline's room.
+  // Each published frame's file, for its source page's download link.
+  buildEnd({ outDir }) {
+    const index = JSON.parse(readFileSync(new URL('frames.json', import.meta.url), 'utf8'));
+    mkdirSync(join(outDir, 'frames'), { recursive: true });
+    for (const [stem, { path }] of Object.entries(index)) {
+      copyFileSync(new URL(`../../${path}`, import.meta.url), join(outDir, 'frames', `${stem}.json`));
+    }
+  },
   transformPageData(pageData) {
     if (!pageData.headers?.length) pageData.frontmatter.aside ??= false;
   },

@@ -610,3 +610,28 @@
 .vp-doc .diagram-pending { min-height: 160px; background: var(--vp-c-bg-soft); }
 .vp-doc .diagram-error { padding: 16px; color: var(--vp-c-danger-1); }
 .vp-doc .diagram-error pre { overflow-x: auto; font-size: 14px; color: var(--vp-c-text-2); }
+
+/* A frame's source page (docs/frames/): the file as written, each line
+   numbered and linkable, the linked line marked. */
+.vp-doc pre.gf-source {
+  margin: 24px 0;
+  padding: 16px 0;
+  border-radius: 8px;
+  background: var(--vp-code-block-bg);
+  font: 14px/1.7 var(--vp-font-family-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.gf-source .line { display: block; padding: 0 16px 0 calc(5ch + 24px); text-indent: calc(-5ch - 8px); }
+.gf-source .line a {
+  display: inline-block;
+  width: 5ch;
+  margin-right: 8px;
+  text-align: right;
+  text-indent: 0;
+  color: var(--vp-c-text-3);
+  text-decoration: none;
+  user-select: none;
+}
+.gf-source .line:target { background: var(--vp-c-default-soft); }
+.gf-source .line:target a { color: var(--vp-c-brand-1); }

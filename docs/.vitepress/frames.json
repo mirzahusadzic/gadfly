@@ -1,0 +1,114 @@
+{
+  "07-sql-rule": {
+    "path": "examples/07-sql-rule.json",
+    "name": "sql-rule",
+    "hash": "0fe4f0d4994453fabdf647d5c8f1ad90978f4d2c3e6d6d9c1def1fd676e3b1c1"
+  },
+  "08-clock-rule": {
+    "path": "examples/08-clock-rule.json",
+    "name": "clock-rule",
+    "hash": "11ccc9a5808b0123e203ff57bf2ba57821816e70d17a4714db48f05144abeb7c"
+  },
+  "09-sync-sms": {
+    "path": "examples/09-sync-sms.json",
+    "name": "sync-sms-design",
+    "hash": "832cb4bdc42eb6196d645d0b85cc3014d2903fa0459f01e51d075ab16d5bc717"
+  },
+  "10a-incident-fast": {
+    "path": "examples/10a-incident-fast.json",
+    "name": "incident-fast",
+    "hash": "35ed49cc9bf1e1495050666fcdc3db839b97e69b189dc1f72a16e22a2bfe23e5"
+  },
+  "10b-incident-slow": {
+    "path": "examples/10b-incident-slow.json",
+    "name": "incident-slow",
+    "hash": "b68371afae55fcfc27235f93f18287d754125ddb0821f9921ae14d2ff3fe2804"
+  },
+  "10c-incident-both": {
+    "path": "examples/10c-incident-both.json",
+    "name": "incident-both",
+    "hash": "6ae0c64c23ee03e348c2833d2d6c07f8b7fcd8e9424c0d2b19b85235f47c5f7e"
+  },
+  "10c2-incident-both": {
+    "path": "examples/10c2-incident-both.json",
+    "name": "incident-both-v2",
+    "hash": "5fbfc157990b0213d75c9e08558c7276e485592e21d9c4999a4aec86ebc361bd"
+  },
+  "10d-incident-metrics": {
+    "path": "examples/10d-incident-metrics.json",
+    "name": "incident-both-metrics",
+    "hash": "13cc19f71da6c4c6ce6ba546fae4c70af5883ef5bb2fae25eb58fbe7da60f3ee"
+  },
+  "11-eu-clause": {
+    "path": "examples/11-eu-clause.json",
+    "name": "eu-clause",
+    "hash": "7eecfa8c8b8976746af2c390230d9e2bc99a3dd75abe8836c8d258461eaf7345"
+  },
+  "12-payroll-access": {
+    "path": "examples/12-payroll-access.json",
+    "name": "payroll-access",
+    "hash": "202930b299ef9e09c878a7bec08524032b364c6d2fb91d94f72d8e018bff7cf7"
+  },
+  "13-drop-table-section": {
+    "path": "examples/13-drop-table-section.json",
+    "name": "drop-table-section",
+    "hash": "26f3ff8bd382fed4bfede459afaca45b3cc05bfa1b343296719516d5a41a7be5"
+  },
+  "13b-drop-table-reads": {
+    "path": "examples/13b-drop-table-reads.json",
+    "name": "drop-table-reads",
+    "hash": "acdc1365620118e3a5c42d74f21362499b47be8c609f56c60a3cd97a9e7cdb58"
+  },
+  "14-orders-latency": {
+    "path": "examples/14-orders-latency.json",
+    "name": "orders-latency",
+    "hash": "c9764840315d8942f39546a34dffdb2382fd72e4dbf76b9fbd96a60e920e655c"
+  },
+  "15-invoice-export": {
+    "path": "examples/15-invoice-export.json",
+    "name": "invoice-export",
+    "hash": "183f425e452bcb3774a134eeb0238ce5e51ecc71f74a7bf5b6f4bced346f39f1"
+  },
+  "rung1": {
+    "path": "examples/rung1.json",
+    "name": "quill-upgrade-rung-1",
+    "hash": "0d416a5cf093cc8b9911e9810b268a60f5621161162f44e2cb3a60ae6d3f5e0b"
+  },
+  "rung2": {
+    "path": "examples/rung2.json",
+    "name": "quill-upgrade-rung-2",
+    "hash": "de3a625606d8a34fdab74df2efa1e04ad614e4e81155977ac845a68abaf8d5d4"
+  },
+  "rung3": {
+    "path": "examples/rung3.json",
+    "name": "quill-upgrade-rung-3",
+    "hash": "35955e56e82592fe7cc70df3775cdea94929ecf14a3c6b9d2c8034e3812147b1"
+  },
+  "rung4": {
+    "path": "examples/rung4.json",
+    "name": "quill-upgrade-rung-4",
+    "hash": "3eb98e2110e5bb862e9dfda4db3408b254cc35420a7b152ee4386547e294ecee"
+  },
+  "rung5": {
+    "path": "examples/rung5.json",
+    "name": "quill-upgrade-rung-5",
+    "hash": "ecec73bfc18d6bb9917d34cd0eaeac6883185e272286ae3745f18ef58c289b10"
+  },
+  "rung6": {
+    "path": "examples/rung6.json",
+    "name": "quill-upgrade-rung-6",
+    "hash": "5d4c96edbd2fbb49da4f152e48a107d3d3548e4f78c16effbbd5ff5eb9e65109"
+  },
+  "upgrade": {
+    "path": "examples/upgrade.json",
+    "name": "quill-upgrade",
+    "hash": "569c71692864ab0fcfbfcd41baaa0011ee213bc0b90ca9bcb95dd40b7f085679",
+    "shown": "first-frame"
+  },
+  "refund": {
+    "path": "tests/fixtures/refund.json",
+    "name": "refund-receipt",
+    "hash": "dd916080072539784691a5232645b4d9c5b00e9cfdddd51650d15b347b385f85",
+    "shown": "write-a-frame"
+  }
+}

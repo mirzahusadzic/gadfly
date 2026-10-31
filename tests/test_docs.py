@@ -119,6 +119,12 @@ def _anchors(path: Path) -> set[str]:
     return anchors
 
 
+def _a_line_of(path: Path, anchor: str) -> bool:
+    # a file's line, as GitHub numbers it: #L12
+    number = re.fullmatch(r"L(\d+)", anchor)
+    return bool(number) and 1 <= int(number[1]) <= len(path.read_text().splitlines())
+
+
 @pytest.mark.parametrize("page", PAGES)
 def test_every_link_lands(page):
     # a moved section or a renamed heading leaves no link behind: a relative
@@ -130,7 +136,11 @@ def test_every_link_lands(page):
             continue
         name, _, anchor = target.partition("#")
         landed = (path.parent / name).resolve() if name else path
-        if not landed.exists() or (anchor and anchor not in _anchors(landed)):
+        if not landed.exists():
+            broken.append(target)
+        elif landed.suffix == ".md" and anchor and anchor not in _anchors(landed):
+            broken.append(target)
+        elif landed.suffix != ".md" and anchor and not _a_line_of(landed, anchor):
             broken.append(target)
     assert broken == []
 
@@ -146,6 +156,8 @@ def test_every_page_is_in_the_sidebar_or_kept_off_the_site():
     )
     unreachable = []
     for path in sorted((ROOT / "docs").glob("**/*.md")):
+        if "[" in path.name:
+            continue  # a route's template: its pages are linked from the pages they serve
         page = str(path.relative_to(ROOT / "docs"))
         route = re.sub(r"(^|/)index\.md$", r"\1", page).removesuffix(".md")
         if route not in listed and page not in excluded:
@@ -197,3 +209,31 @@ def test_every_reference_is_its_docstrings(block):
     from tools.doc_outputs import documented
 
     assert documented(block.source) == block.quoted
+
+
+def _frames():
+    from tools.doc_outputs import PAGES, frames
+
+    return [f for page in PAGES for f in frames(page)]
+
+
+@pytest.mark.parametrize("block", _frames(), ids=lambda f: f.where())
+def test_every_frame_shown_in_words_is_its_frame(block):
+    # `uv run python tools/doc_outputs.py --write` brings a page back in line
+    from tools.doc_outputs import readable
+
+    assert readable(block.source, block.page) == block.quoted
+
+
+def test_the_site_publishes_each_frame_with_the_hash_its_records_name():
+    from tools.doc_outputs import INDEX, frame_index
+
+    assert INDEX.read_text(encoding="utf-8") == frame_index()
+
+
+@pytest.mark.parametrize("page", PAGES)
+def test_no_page_shows_a_whole_frame_as_json(page):
+    # a reader meets a frame in words; its JSON is the source, one link away
+    text = (ROOT / page).read_text(encoding="utf-8")
+    blocks = re.findall(r"```json\n(.*?)```", text, flags=re.S)
+    assert [b for b in blocks if '"relation"' in b and '"body"' in b] == []

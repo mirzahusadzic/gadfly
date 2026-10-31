@@ -21,67 +21,75 @@ back from those records, and reading it needs no model.
 
 ### 1. The evidence and the question
 
-The frame is the whole experiment, written down before any call:
+The frame is the whole experiment, written down before any call. Here it is in
+words, each span linked to its line in the file:
 
-<!-- copy examples/upgrade.json -->
-```json
-{
-  "name": "quill-upgrade",
-  "relation": "the decision to hold the upgrade rests on the changelog line that removes retry_after()",
-  "locus": "the evidence a reviewer has on the pull request: our code, the library's changelog, the CI result",
-  "role": "the reviewer of dependency upgrades",
-  "grain": "one changelog line",
-  "purpose": "merge an upgrade only when our code needs no change for it",
-  "trajectory": "pull request, evidence, the reviewer's decision, the merge button",
-  "crossing": "the decision posted on the pull request",
-  "promise": "the reviewer holds the upgrade while the changelog removes a function our code calls; without that line they merge or say unclear, never hold for another reason",
-  "baseline": "the pull request's evidence as it stands; nothing changed",
-  "body": {
-    "spans": [
-      {"id": "use", "kind": "code", "text": "src/billing/retry.py calls quill.retry_after(response) to wait before retrying a 429 response."},
-      {"id": "get", "kind": "code", "text": "src/billing/client.py calls quill.get(url, timeout=10) for every request."},
-      {"id": "removed", "kind": "changelog", "text": "quill 3.0.0 changelog, Breaking: retry_after() is removed; use Response.backoff() instead."},
-      {"id": "http3", "kind": "changelog", "text": "quill 3.0.0 changelog, Added: HTTP/3 support."},
-      {"id": "leak", "kind": "changelog", "text": "quill 3.0.0 changelog, Fixed: a memory leak in the connection pool."},
-      {"id": "typos", "kind": "changelog", "text": "quill 3.0.0 changelog, Docs: corrected typos in the README."},
-      {"id": "ci", "kind": "ci", "text": "CI on this pull request: all 214 tests passed; no test exercises the retry path."}
-    ]
-  },
-  "anchors": ["removed"],
-  "inputs": [
-    {"id": "pr", "text": "Dependabot opened pull request #212: bump quill from 2.4.1 to 3.0.0 in requirements.txt. Can it be merged as is?"}
-  ],
-  "observe": {
-    "labels": ["merge", "hold", "unclear"],
-    "instruction": "You review dependency upgrade pull requests for this repository. Use only the evidence given. Answer merge if the upgrade can be merged without changing our code, hold if our code must change before it can be merged, unclear if the evidence does not decide."
-  },
-  "interventions": {
-    "repeat": true,
-    "ablation": true,
-    "sham": {"draws": 2},
-    "presentation": {"quill": "heron", "retry_after": "wait_hint", "backoff": "pause"},
-    "bypass": ["use"],
-    "control": ["removed", "use"]
-  },
-  "allowed": {"ablation": ["merge", "unclear"]},
-  "standing": {"quorum": 5, "agree": 4},
-  "materialized": true,
-  "battery": {"kind": "egemma"}
-}
-```
-<!-- end copy -->
+<!-- frame examples/upgrade.json -->
 
-- **`body.spans`** is the evidence, one sentence per span. The `kind` groups
+**The relation**
+
+- **Relation:** the decision to hold the upgrade rests on the changelog line that removes retry_after()
+- **Locus:** the evidence a reviewer has on the pull request: our code, the library's changelog, the CI result
+- **Role:** the reviewer of dependency upgrades
+- **Grain:** one changelog line
+- **Purpose:** merge an upgrade only when our code needs no change for it
+- **Trajectory:** pull request, evidence, the reviewer's decision, the merge button
+- **Crossing:** the decision posted on the pull request
+- **Promise:** the reviewer holds the upgrade while the changelog removes a function our code calls; without that line they merge or say unclear, never hold for another reason
+- **Baseline:** the pull request's evidence as it stands; nothing changed
+
+**The evidence**, the anchor marked `*`:
+
+| Span | Kind | Text |
+|---|---|---|
+| [`use`](../examples/upgrade.json#L14) | code | src/billing/retry.py calls quill.retry_after(response) to wait before retrying a 429 response. |
+| [`get`](../examples/upgrade.json#L15) | code | src/billing/client.py calls quill.get(url, timeout=10) for every request. |
+| [`removed`](../examples/upgrade.json#L16) `*` | changelog | quill 3.0.0 changelog, Breaking: retry_after() is removed; use Response.backoff() instead. |
+| [`http3`](../examples/upgrade.json#L17) | changelog | quill 3.0.0 changelog, Added: HTTP/3 support. |
+| [`leak`](../examples/upgrade.json#L18) | changelog | quill 3.0.0 changelog, Fixed: a memory leak in the connection pool. |
+| [`typos`](../examples/upgrade.json#L19) | changelog | quill 3.0.0 changelog, Docs: corrected typos in the README. |
+| [`ci`](../examples/upgrade.json#L20) | ci | CI on this pull request: all 214 tests passed; no test exercises the retry path. |
+
+**The question**
+
+- **Asked, `pr`:** Dependabot opened pull request #212: bump quill from 2.4.1 to 3.0.0 in requirements.txt. Can it be merged as is?
+- **Answers:** `merge`, `hold` or `unclear`
+- **Instruction:** You review dependency upgrade pull requests for this repository. Use only the evidence given. Answer merge if the upgrade can be merged without changing our code, hold if our code must change before it can be merged, unclear if the evidence does not decide.
+
+**The trials**, each asked 5 times, 40 calls in all:
+
+- **`baseline`:** asks the evidence as it is
+- **`repeat`:** asks the same again
+- **`ablation`:** cuts `removed`
+- **`sham-1`:** cuts `leak`
+- **`sham-2`:** cuts `typos`
+- **`presentation`:** renames `backoff` to `pause`, `quill` to `heron`, `retry_after` to `wait_hint`
+- **`bypass`:** cuts `use`
+- **`control`:** cuts `removed`, `use`
+
+**The reading**
+
+- **Without the anchor:** `merge` or `unclear` may come back
+- **A level:** 4 of 5 answers alike
+- **Carriage:** `all-checks`, so an open check holds the category back
+- **Materialized:** the answer is the form the recipient receives
+- **Battery:** `egemma`
+
+[The frame as written ↗](../examples/upgrade.json)
+<!-- end frame -->
+
+- **The evidence** (`body.spans`) is one sentence per span. Its `kind` groups
   spans for the sham trial (section 4).
-- **`anchors`** names the span the decision is supposed to rest on: the changelog
-  line that removes `retry_after()`.
-- **`inputs`** is the question. **`observe`** is what the reader may answer and
-  what each answer means. Define every label in the instruction. A reader left to
-  guess what a label means answers a different question.
-- **`relation`**, **`grain`**, **`promise`** and the rest say what is being
-  claimed, at which unit, and for whom. They are hashed with the rest, so a
-  frame cannot be reworded after its runs: records from another wording are
-  refused.
+- **The anchor** (`anchors`), marked `*`, is the span the decision is supposed
+  to rest on: the changelog line that removes `retry_after()`.
+- **The question** (`inputs`) is what the reader is asked, and the answers and
+  the instruction (`observe`) say what each answer means. Define every label in
+  the instruction. A reader left to guess what a label means answers a
+  different question.
+- **The relation** and the words under it (`relation`, `grain`, `promise` and
+  the rest) say what is being claimed, at which unit, and for whom. They are
+  hashed with the rest, so a frame cannot be reworded after its runs: records
+  from another wording are refused.
 
 What Gemma receives per call is the instruction, then the spans one per line, a
 line `---`, and the question. It must answer with one label. Each trial is asked

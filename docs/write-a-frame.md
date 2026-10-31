@@ -10,53 +10,62 @@ that works, and change one part at a time.
 ### A complete small frame
 
 This frame is the test suite's own: one policy rule, one request, every
-carriage trial, and a battery that needs no model:
+carriage trial, and a battery that needs no model. Here it is in words, each
+span linked to its line in the file; the tables below say what to write for
+each key:
 
-<!-- copy tests/fixtures/refund.json -->
-```json
-{
-  "name": "refund-receipt",
-  "relation": "a refund requires a receipt",
-  "locus": "the refund policy, its receipt rule",
-  "role": "a support agent deciding a request",
-  "grain": "one rule of the policy",
-  "purpose": "decide a refund request under the policy",
-  "trajectory": "policy and request, the agent's decision, the reply to the customer",
-  "crossing": "the decision in the reply",
-  "promise": "a request without a receipt is declined, however the rule is worded",
-  "baseline": "the policy as written and one request; no rule changed",
-  "body": {
-    "spans": [
-      {"id": "days", "text": "Refunds are granted within 30 days of purchase.", "kind": "rule"},
-      {"id": "receipt", "text": "A refund requires a receipt.", "kind": "rule"},
-      {"id": "gift", "text": "Gift cards are never refunded.", "kind": "rule"},
-      {"id": "method", "text": "Refunds go back to the original payment.", "kind": "rule"},
-      {"id": "binding", "text": "These rules decide every request.", "kind": "note"}
-    ]
-  },
-  "anchors": ["receipt"],
-  "inputs": [
-    {"id": "no-receipt", "text": "A customer without a receipt asks for a refund on day 3."}
-  ],
-  "observe": {
-    "labels": ["grant", "decline", "unclear"],
-    "instruction": "Decide the request under the policy."
-  },
-  "interventions": {
-    "repeat": true,
-    "ablation": true,
-    "sham": {"draws": 2},
-    "presentation": {"receipt": "proof of purchase"},
-    "bypass": ["binding"],
-    "control": ["days", "receipt", "gift", "method"]
-  },
-  "allowed": {"ablation": ["grant", "unclear"], "bypass": ["unclear"]},
-  "standing": {"quorum": 1, "agree": 1},
-  "materialized": true,
-  "battery": {"kind": "rule-reader"}
-}
-```
-<!-- end copy -->
+<!-- frame tests/fixtures/refund.json -->
+
+**The relation**
+
+- **Relation:** a refund requires a receipt
+- **Locus:** the refund policy, its receipt rule
+- **Role:** a support agent deciding a request
+- **Grain:** one rule of the policy
+- **Purpose:** decide a refund request under the policy
+- **Trajectory:** policy and request, the agent's decision, the reply to the customer
+- **Crossing:** the decision in the reply
+- **Promise:** a request without a receipt is declined, however the rule is worded
+- **Baseline:** the policy as written and one request; no rule changed
+
+**The evidence**, the anchor marked `*`:
+
+| Span | Kind | Text |
+|---|---|---|
+| [`days`](../tests/fixtures/refund.json#L14) | rule | Refunds are granted within 30 days of purchase. |
+| [`receipt`](../tests/fixtures/refund.json#L15) `*` | rule | A refund requires a receipt. |
+| [`gift`](../tests/fixtures/refund.json#L16) | rule | Gift cards are never refunded. |
+| [`method`](../tests/fixtures/refund.json#L17) | rule | Refunds go back to the original payment. |
+| [`binding`](../tests/fixtures/refund.json#L18) | note | These rules decide every request. |
+
+**The question**
+
+- **Asked, `no-receipt`:** A customer without a receipt asks for a refund on day 3.
+- **Answers:** `grant`, `decline` or `unclear`
+- **Instruction:** Decide the request under the policy.
+
+**The trials**, each asked 1 times, 8 calls in all:
+
+- **`baseline`:** asks the evidence as it is
+- **`repeat`:** asks the same again
+- **`ablation`:** cuts `receipt`
+- **`sham-1`:** cuts `gift`
+- **`sham-2`:** cuts `method`
+- **`presentation`:** renames `receipt` to `proof of purchase`
+- **`bypass`:** cuts `binding`
+- **`control`:** cuts `days`, `receipt`, `gift`, `method`
+
+**The reading**
+
+- **Without the anchor:** `grant` or `unclear` may come back
+- **Through the bypass:** `unclear` must come back
+- **A level:** 1 of 1 answers alike
+- **Carriage:** `all-checks`, so an open check holds the category back
+- **Materialized:** the answer is the form the recipient receives
+- **Battery:** `rule-reader`
+
+[The frame as written ↗](../tests/fixtures/refund.json)
+<!-- end frame -->
 
 #### Run it without a model
 
