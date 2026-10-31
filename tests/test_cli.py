@@ -100,6 +100,31 @@ def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     assert report[1:3] == ["records: 8  planned calls: 8", "overall: carried"]
 
 
+@pytest.mark.parametrize(
+    "argv, message",
+    [
+        (["--battery", "tests.fixtures.refund:NoSuchReader"], "has no NoSuchReader"),
+        (["--out", "{tmp}/missing-dir/records.jsonl"], "missing-dir"),
+    ],
+)
+def test_run_refuses_a_bad_battery_or_folder_before_any_call(tmp_path, capsys, argv, message):
+    # a refusal is a message and exit 2, before a call is spent
+    out = str(tmp_path / "r.jsonl")
+    argv = [a.replace("{tmp}", str(tmp_path)) for a in argv]
+    argv = ["--battery", "tests.fixtures.refund:Unreachable", "--out", out, *argv]
+    assert main(["run", REFUND, "--calls", "8", *argv]) == 2
+    err = capsys.readouterr().err
+    assert err.startswith("gadfly: ") and message in err and "Traceback" not in err
+
+
+@pytest.mark.parametrize("document", ["[]", '{"overall": null}', '{"frame": "x"}'])
+def test_portfolio_refuses_a_report_that_is_not_one(tmp_path, capsys, document):
+    report = tmp_path / "report.json"
+    report.write_text(document)
+    assert main(["portfolio", str(report)]) == 2
+    assert capsys.readouterr().err.startswith("gadfly: ")
+
+
 def test_portfolio_counts_categories_and_never_names_one(tmp_path, capsys):
     _, out = run_refund(tmp_path)
     capsys.readouterr()

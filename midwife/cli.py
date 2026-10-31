@@ -45,7 +45,9 @@ def load_battery(spec: str):
         raise ValueError("--battery is module:Class (for example midwife.batteries.egemma:EGemma)")
     if os.getcwd() not in sys.path:  # as `python -m` would: your module, from here
         sys.path.insert(0, os.getcwd())
-    target = getattr(importlib.import_module(module_name), attribute)
+    target = getattr(importlib.import_module(module_name), attribute, None)
+    if target is None:
+        raise ValueError(f"{module_name} has no {attribute}")
     return target() if isinstance(target, type) else target
 
 
@@ -113,6 +115,8 @@ def command_run(args) -> int:
     out = Path(args.out)
     if out.exists():  # a new file: never another run's
         raise FileExistsError(f"{out} exists: kept records are never written over")
+    if not out.parent.is_dir():  # found out before a call is spent, not after
+        raise FileNotFoundError(f"{out.parent} is not a folder: make it, or choose another --out")
     files = []  # the file is made by the first record, so a refused run leaves none
 
     def keep(record: Record) -> None:

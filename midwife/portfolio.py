@@ -57,7 +57,9 @@ def summarize(entries: list[Entry]) -> dict[str, Any]:
 
 def entry_from(document: dict[str, Any]) -> Entry:
     """An entry from a `gadfly report --json` document (or a bare overall)."""
-    overall = document.get("overall", document)
+    overall = document.get("overall", document) if isinstance(document, dict) else None
+    if not isinstance(overall, dict) or not isinstance(overall.get("category"), str):
+        raise ValueError("a portfolio reads `gadfly report --json` documents, and this is not one")
     return Entry(
         name=document.get("frame", document.get("name", "unnamed")),
         frame=document.get("hash", ""),
