@@ -69,16 +69,24 @@ def run(
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise ValueError(f"this frame asks for the {named} battery, not {battery.name}")
     battery.check(frame)
-    trials = plan(frame)
+    everything = plan(frame)
+    trials = everything
     if only is not None:
         wanted = set(only)
         unknown = wanted - {t.id for t in trials}
         if unknown:
             raise ValueError(f"the plan has no trial {sorted(unknown)}")
         trials = [t for t in trials if t.id in wanted]
-    # Kept records stand for calls, so they are read as judge will read them.
+    # Kept records stand for calls, so they are read as judge will read them,
+    # and, being this run's own, each must name the prompt its call was planned with.
     made = [record.as_dict() if isinstance(record, Record) else record for record in kept]
-    check_records(frame, made)
+    check_records(frame, made, {trial.id: trial.body_hash for trial in everything})
+    by_trial = {trial.id: trial for trial in everything}
+    by_input = {x["id"]: x for x in frame.inputs}
+    for record in made:
+        planned_prompt = prompt(frame, by_trial[record["trial"]], by_input[record["input"]])
+        if record["prompt"] != digest(planned_prompt):
+            raise ValueError(f"a kept {record['trial']} record was made from another prompt")
     done = {(record["input"], record["trial"], record["run"]) for record in made}
     inputs, wanted = frame.inputs, {trial.id for trial in trials}
     # Counted, not listed: a plan the budget refuses is never built.

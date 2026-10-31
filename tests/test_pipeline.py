@@ -257,6 +257,35 @@ def test_kept_records_are_checked_before_they_stand_for_calls(raw):
     assert battery.calls == []
 
 
+def test_a_kept_record_must_carry_the_prompt_it_stands_for(raw):
+    # a resumed run is Gadfly's own, so each kept record names the digest of
+    # the prompt its call was planned with; one that names another is refused
+    frame, battery = situate(raw), Rules()
+    made = [r.as_dict() for r in run(frame, Rules(), Budget(calls=21)).records]
+    altered = [{**made[0], "prompt": "0" * 64}, *made[1:]]
+    with pytest.raises(ValueError, match="another prompt"):
+        run(frame, battery, Budget(calls=21), kept=altered)
+    assert battery.calls == []
+
+
+@pytest.mark.parametrize(
+    "change, message",
+    [
+        (lambda r: None, "a record is a JSON object"),
+        (lambda r: {k: v for k, v in r.items() if k != "prompt"}, "lacks"),
+        (lambda r: {**r, "trial": ["baseline"]}, "trial is not a str"),
+        (lambda r: {**r, "usage": "4"}, "usage is not a dict"),
+        (lambda r: {**r, "opening": 3, "observation": None}, "opening is not a str"),
+    ],
+)
+def test_a_malformed_record_is_refused_not_raised(raw, change, message):
+    # judge and run read records a caller kept: a wrong shape is a refusal
+    frame = situate(raw)
+    made = [r.as_dict() for r in run(frame, Rules(), Budget(calls=21)).records]
+    with pytest.raises(ValueError, match=message):
+        judge(frame, [change(made[0]), *made[1:]])
+
+
 def test_a_plan_over_budget_is_refused_without_being_built(raw):
     # 40,000 planned calls against a budget of one: count them, do not list them
     raw["interventions"] = {"ablation": True}

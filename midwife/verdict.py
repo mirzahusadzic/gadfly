@@ -45,7 +45,11 @@ from .frame import Frame
 
 CARRIED, COOLED = "carried", "cooled"
 # What a record must say to be read: the call it was, and what it saw.
-RECORD_KEYS = {"frame", "input", "trial", "run", "body", "battery", "observation", "opening"}
+# `served` is not required: records older than it lack it.
+RECORD_KEYS = {
+    "frame", "input", "trial", "run", "body", "prompt", "battery",
+    "observation", "opening", "raw", "usage",
+}  # fmt: skip
 MISALIGNED, UNRESOLVED, OUTSIDE = "coupled but misaligned", "unresolved", "outside scope"
 
 
@@ -149,9 +153,19 @@ def check_records(
     battery = frame.battery["kind"]
     seen: set[tuple[str, str, int]] = set()
     for record in records:
+        if not isinstance(record, dict):
+            raise ValueError("a record is a JSON object")
         lacking = RECORD_KEYS - set(record)
         if lacking:
             raise ValueError(f"a record lacks {sorted(lacking)}")
+        for key, kind in (("input", str), ("trial", str), ("prompt", str), ("raw", str)):
+            if not isinstance(record[key], kind):
+                raise ValueError(f"a record's {key} is not a str")
+        if not isinstance(record["usage"], dict):
+            raise ValueError("a record's usage is not a dict")
+        for key in ("observation", "opening"):
+            if record[key] is not None and not isinstance(record[key], str):
+                raise ValueError(f"a record's {key} is not a str")
         if record["frame"] != frame.hash:
             raise ValueError("a record belongs to another frame")
         if record["battery"] != battery:

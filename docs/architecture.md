@@ -163,10 +163,11 @@ A verdict is narrower than it may look. Read these before relying on one.
   program or state. `scopeCheck` records the owner's check of an exclusion,
   which Gadfly does not make itself.
 - **Records are yours to keep and trust:** traceability rests on records the
-  caller keeps, which Gadfly neither authenticates nor signs. It does not
-  check a record's prompt digest against the current prompt, so a replay may
-  keep its study's own; keep records somewhere you trust, with the run details
-  you need.
+  caller keeps, which Gadfly neither authenticates nor signs. `judge` does
+  not check a record's prompt digest against the current prompt, so a replay
+  may keep its study's own; a run resumed from kept records does, since they
+  are its own. Keep records somewhere you trust, with the run details you
+  need.
 - **A battery tests what it is:** a deterministic battery tests the frame and
   its mechanics, not a model. A sampled live critic tests that model and
   endpoint at one encounter, not a provider's general policy.
