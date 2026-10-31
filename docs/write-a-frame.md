@@ -60,7 +60,7 @@ each key:
 - **Without the anchor:** `grant` or `unclear` may come back
 - **Through the bypass:** `unclear` must come back
 - **A level:** 1 of 1 answers alike
-- **Carriage:** `all-checks`, so an open check holds the category back
+- **Carriage:** `all-checks`, so a category waits for the checks it needs
 - **Materialized:** the answer is the form the recipient receives
 - **Battery:** `rule-reader`
 

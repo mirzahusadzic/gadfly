@@ -342,7 +342,7 @@ def readable(source: str, page: str) -> str:
     out.append(f"- **A level:** {standing['agree']} of {standing['quorum']} answers alike{stable}")
     carriage = raw.get("carriage", "all-checks")
     held = (
-        "an open check holds the category back"
+        "a category waits for the checks it needs"
         if carriage == "all-checks"
         else ("the category is named with its open checks beside it")
     )

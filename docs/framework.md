@@ -49,7 +49,7 @@ $$\Gamma=(A,r,g,P,T,B_0,p,o_p,D,\sigma)$$
 | $\sigma$ | `standing.quorum`, `agree`, `stable` | observation standing |
 | $\simeq_p$ | exact label equality | no hidden similarity function |
 | $E_{p,\delta}$ | `allowed` | the permitted influence relation |
-| carriage checks | `carriage` | whether an open check holds carried and cooled back (`all-checks`) or is listed beside them (`listed`) |
+| carriage checks | `carriage` | whether a category waits for the checks it needs, every carriage check for carried and a control that moved for cooled (`all-checks`), or is named with its open checks beside it (`listed`) |
 | scope check | `outsideScope`, `scopeCheck` | the owner's exclusion, and the owner's own check of it |
 
 The code hashes the **whole** frame, including the situated-use keys. This is

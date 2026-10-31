@@ -71,7 +71,7 @@ words, each span linked to its line in the file:
 
 - **Without the anchor:** `merge` or `unclear` may come back
 - **A level:** 4 of 5 answers alike
-- **Carriage:** `all-checks`, so an open check holds the category back
+- **Carriage:** `all-checks`, so a category waits for the checks it needs
 - **Materialized:** the answer is the form the recipient receives
 - **Battery:** `egemma`
 
