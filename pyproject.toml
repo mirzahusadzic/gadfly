@@ -1,7 +1,7 @@
 [project]
 name = "gadfly"
 version = "0.1.0"
-description = "Counterfactual load-bearing tests: situate a relation, intervene, observe, read the verdict by fixed rules."
+description = "Test whether a decision rests on the evidence you think it does: cut or change one declared line in fixed ways, ask again, and read the verdict by fixed rules."
 readme = "README.md"
 requires-python = ">=3.13"
 license = "Apache-2.0"
