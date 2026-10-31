@@ -7,12 +7,27 @@ requires-python = ">=3.13"
 license = "Apache-2.0"
 license-files = ["LICENSE", "LICENSES/*"]
 dependencies = []
+keywords = ["llm-evaluation", "ablation", "counterfactual", "grounding", "context-attribution"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+]
 
 [project.scripts]
 gadfly = "midwife.cli:main"
 
 [project.urls]
+Documentation = "https://mirzahusadzic.github.io/gadfly/"
 Repository = "https://github.com/mirzahusadzic/gadfly"
+Issues = "https://github.com/mirzahusadzic/gadfly/issues"
+Troubleshooting = "https://mirzahusadzic.github.io/gadfly/troubleshooting"
 
 [build-system]
 requires = ["hatchling>=1.27"]  # license expressions (PEP 639)

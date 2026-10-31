@@ -100,8 +100,15 @@ lists its open checks beside it.
 ### Install
 
 Gadfly is a small Python library with no runtime dependencies and no hidden
-state. It needs Python 3.13 or later and uv, and these commands install it and
-read a kept example back:
+state, published as `midwife` for Python 3.13 or later. This puts its command,
+`gadfly`, on your path:
+
+```bash
+uv tool install midwife
+```
+
+From Python, `uv add midwife` and `import midwife`. These commands clone the
+repository and read a kept example back, with no model:
 
 ```bash
 git clone https://github.com/mirzahusadzic/gadfly.git

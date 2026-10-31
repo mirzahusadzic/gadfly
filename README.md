@@ -1,9 +1,12 @@
 # Gadfly
 
+[![PyPI](https://img.shields.io/pypi/v/midwife)](https://pypi.org/project/midwife/)
+[![CI](https://github.com/mirzahusadzic/gadfly/actions/workflows/ci.yml/badge.svg)](https://github.com/mirzahusadzic/gadfly/actions/workflows/ci.yml)
+
 Gadfly tests whether a decision rests on the evidence you think it rests on.
 It removes or changes one declared line under fixed interventions, has a
 scorer read each trial, and reads one verdict by fixed rules. The method is
-[When meaning is load-bearing](docs/load-bearing.md).
+[When meaning is load-bearing](https://mirzahusadzic.github.io/gadfly/load-bearing).
 
 - **Fixed rules, not a model:** a verdict follows from the kept answers, so
   anyone can check it.
@@ -56,8 +59,19 @@ lists its open checks beside it.
 
 ### Install
 
-Gadfly needs Python 3.13 or later and [uv](https://docs.astral.sh/uv/). These
-commands clone it and install its environment:
+Gadfly is the `midwife` package on PyPI, for Python 3.13 or later. Its
+command, `gadfly`, goes on your path with [uv](https://docs.astral.sh/uv/) or
+pipx, and `uvx` runs it once without installing it:
+
+```bash
+uv tool install midwife
+gadfly --version
+uvx --from midwife gadfly --help
+```
+
+To use it from Python, add it to your project with `uv add midwife` or
+`pip install midwife`, then `import midwife`. The examples read records kept
+in the repository, so to run them, clone it:
 
 ```bash
 git clone https://github.com/mirzahusadzic/gadfly.git
@@ -129,7 +143,7 @@ run 5: cooled
 A pull request formats a value into SQL, which the repository's rules forbid.
 Gemma asks for changes with the rule and without it, so its training decides
 and the rule carries nothing here: `cooled`. [Your first
-frame](docs/first-frame.md) climbs one frame, a trial at a time, to `carried`.
+frame](https://mirzahusadzic.github.io/gadfly/first-frame) climbs one frame, a trial at a time, to `carried`.
 
 #### Run a frame
 
@@ -146,7 +160,7 @@ uv run gadfly report examples/upgrade.json records.jsonl
 ```
 
 `check-frame` and `plan` make no call, and `run` keeps each record as one JSON
-line the moment it exists. [Command line](docs/command-line.md) has every
+line the moment it exists. [Command line](https://mirzahusadzic.github.io/gadfly/command-line) has every
 command and flag.
 
 #### From Python
@@ -193,17 +207,17 @@ run(frame, EGemma(), budget, on_record=kept.append)
 The documentation site is built from `docs/`, and every page reads on GitHub
 too.
 
-- **[The examples](docs/examples/index.md):** experiments that climb one
+- **[The examples](https://mirzahusadzic.github.io/gadfly/examples/):** experiments that climb one
   capability a step, each with its predictions and kept runs.
-- **[Write a frame](docs/write-a-frame.md):** every key, and what the parser
+- **[Write a frame](https://mirzahusadzic.github.io/gadfly/write-a-frame):** every key, and what the parser
   refuses.
-- **[Reading a verdict](docs/reading-a-verdict.md):** the rules in order, and
+- **[Reading a verdict](https://mirzahusadzic.github.io/gadfly/reading-a-verdict):** the rules in order, and
   evidence apart from obligations.
-- **[Batteries](docs/batteries.md):** the shipped scorers, their privacy
+- **[Batteries](https://mirzahusadzic.github.io/gadfly/batteries):** the shipped scorers, their privacy
   guarantees, and writing your own.
-- **[Architecture and limits](docs/architecture.md):** what Gadfly keeps, and
+- **[Architecture and limits](https://mirzahusadzic.github.io/gadfly/architecture):** what Gadfly keeps, and
   what a verdict does not claim.
-- **[Python API](docs/reference.md):** every public function and class.
+- **[Python API](https://mirzahusadzic.github.io/gadfly/reference):** every public function and class.
 
 ---
 
@@ -237,4 +251,4 @@ to `docs/.vitepress/dist`, failing on a dead link.
 
 ---
 
-[Troubleshooting](docs/troubleshooting.md) · [Fonts and libraries](docs/notices.md) · [Apache-2.0](LICENSE) · [The essay under CC BY 4.0](LICENSES/CC-BY-4.0.txt)
+[Troubleshooting](https://mirzahusadzic.github.io/gadfly/troubleshooting) · [Fonts and libraries](https://mirzahusadzic.github.io/gadfly/notices) · [Apache-2.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSE) · [The essay under CC BY 4.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSES/CC-BY-4.0.txt)

@@ -302,3 +302,32 @@ def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
         if not any(pattern.fullmatch(message) for pattern in printed):
             unknown.append(message)
     assert quoted and unknown == []
+
+
+SITE = "https://mirzahusadzic.github.io/gadfly/"
+BLOB = "https://github.com/mirzahusadzic/gadfly/blob/main/"
+
+
+def test_the_readme_links_work_on_pypi():
+    # PyPI shows the README without the repository, so a relative link breaks
+    # there: each link is absolute, and lands on a page or file that exists
+    broken = []
+    for target in LINK.findall(_prose(ROOT / "README.md")):
+        url, _, anchor = target.partition("#")
+        if url.startswith(SITE):
+            route = url.removeprefix(SITE)
+            page = (
+                ROOT
+                / "docs"
+                / (f"{route}index.md" if route.endswith("/") or not route else f"{route}.md")
+            )
+        elif url.startswith(BLOB):
+            page = ROOT / url.removeprefix(BLOB)
+        elif re.match(r"[a-z]+:", url):
+            continue
+        else:
+            broken.append(target)  # relative: lost on PyPI
+            continue
+        if not page.exists() or (anchor and page.suffix == ".md" and anchor not in _anchors(page)):
+            broken.append(target)
+    assert broken == []
