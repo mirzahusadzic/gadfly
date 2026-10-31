@@ -1,146 +1,392 @@
-/* Gadfly's visual system: a system sans for prose, restrained blue/green roles. */
+/*
+   IMPORTANT: The @import rule must be at the very top of the CSS file.
+   Ensure these fonts are hosted by Google Fonts.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Public+Sans:wght@400;500;700&family=JetBrains+Mono&display=swap');
+
+/*
+   Define your core custom variables here.
+   These are the base colors and font families that Material for MkDocs will use.
+*/
 :root {
-  --gadfly-ink: #1d2733;
-  --gadfly-muted: #5f6b7a;
-  --gadfly-paper: #faf9f5;
-  --gadfly-panel: #f1f3f5;
-  --gadfly-rule: #d7dce2;
-  --gadfly-blue: #4057c7;
-  --gadfly-green: #257f4a;
-  --gadfly-amber: #a56b00;
-  --md-primary-fg-color: var(--gadfly-blue);
-  --md-primary-fg-color--light: #6c7fe0;
-  --md-primary-fg-color--dark: #2f43a3;
-  --md-accent-fg-color: var(--gadfly-green);
-  --md-text-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
-  --md-code-font: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  /* Color Palette Definitions */
+  --primary: #0084d1;
+  --primary-light: #00bcff;
+  --primary-dark: #0084d1;
+
+  --background-light: #f8f8f6;
+  --background-dark: #0d1117;
+
+  --gray-50:  #f2f6f9;
+  --gray-100: #eef2f4;
+  --gray-200: #dee2e4;
+  --gray-300: #ced2d4;
+  --gray-400: #9ea2a4;
+  --gray-500: #6f7476;
+  --gray-600: #4f5456;
+  --gray-700: #3e4244;
+  --gray-800: #25292b;
+  --gray-900: #161a1d;
+  --gray-950: #0a0e10;
+
+  /* Font Family Definitions (used by the theme variables below) */
+  --font-family-headings-custom: "Lora", serif;
+  --font-family-body-custom: "Public Sans", sans-serif;
+  --font-jetbrains-mono: "JetBrains Mono", monospace;
+  --font-inter: "Inter", sans-serif;
 }
 
-[data-md-color-scheme="default"] {
-  --md-default-bg-color: var(--gadfly-paper);
-  --md-default-fg-color: var(--gadfly-ink);
-  --md-default-fg-color--light: var(--gadfly-muted);
-  --md-typeset-a-color: var(--gadfly-blue);
+/*
+   Map your custom variables to Material for MkDocs' internal CSS variables for the default (light) scheme.
+*/
+:root {
+  /* Primary color - for header, sidebar active, etc. */
+  --md-primary-fg-color: var(--primary);
+  --md-primary-fg-color--light: rgba(var(--primary), 0.7);
+  --md-primary-bg-color: var(--background-light);
+
+  /* Accent color - for links, highlights, etc. */
+  --md-accent-fg-color: var(--primary-light);
+  --md-accent-fg-color--transparent: rgba(var(--primary), 0.1);
+  --md-accent-bg-color: var(--background-light);
+
+  /* Default text and background colors for general content */
+  --md-default-fg-color: var(--gray-900);
+  --md-default-fg-color--light: var(--gray-700);
+  --md-default-bg-color: var(--background-light);
+
+  /* Heading text color */
+  --md-typeset-heading-color: var(--gray-900);
+  --md-typeset-a-color: var(--primary);
+
+  /* Table of Contents/Sidebar navigation link colors */
+  --md-nav-link-color: var(--gray-700);
+  --md-nav-link-color--active: var(--primary-dark);
+
+
+  /* Apply your custom font variables to Material for MkDocs' font variables. */
+  --md-text-font: var(--font-family-body-custom);
+  --md-code-font: var(--font-jetbrains-mono);
+  --md-code-fg-color: rgb(var(--gray-900));
+
+  /* Light Mode Footer Variables */
+  --md-footer-bg-color: var(--gray-300); /* Example: Dark background for footer in light mode */
+  --md-footer-fg-color: var(--gray-100); /* Example: Light text for footer in light mode */
+  --md-footer-fg-color--light: rgba(var(--gray-100), 0.7); /* Lighter text variant */
+
+  /* Footer Navigation (Previous/Next buttons) */
+  --md-footer-nav-bg-color: rgb(255, 255, 255); /* Example: Primary color for nav button background */
+  --md-footer-nav-fg-color: rgb(255, 255, 255); /* Example: White text for nav buttons */
+  --md-footer-nav-fg-color--focus: rgb(255, 255, 255); /* White text on hover */
+
+  /* Social icons */
+  --md-footer-icon-color: var(--gray-100); /* Color of social icons */
+  --md-footer-icon-color--hover: var(--primary-light); /* Color on hover */
+
+  /* Optional: Adjust font size/weight for copyright or general footer text */
+  --md-footer-font-size: 0.85rem;
+  --md-typeset-color: var(--gray-950);
 }
 
+/*
+   Styles specifically for Dark Mode, applied when data-md-color-scheme="slate" is active.
+*/
 [data-md-color-scheme="slate"] {
-  --md-default-bg-color: #151a21;
-  --md-default-fg-color: #e5e9ef;
-  --md-default-fg-color--light: #aab4c1;
-  --md-typeset-a-color: #91a1ff;
-  --md-code-bg-color: #202731;
+  /* Primary color for dark mode */
+  --md-primary-fg-color: var(--primary-light);
+  --md-primary-fg-color--light: rgba(var(--primary-light), 0.7);
+  --md-primary-bg-color: var(--background-dark);
+  --md-typeset-color: var(--gray-400); 
+  
+  /* Accent color for dark mode */
+  --md-accent-fg-color: var(--primary-light);
+  --md-accent-fg-color--transparent: rgba(var(--primary), 0.1);
+  --md-accent-bg-color: var(--background-dark);
+
+  /* Default text and background colors for dark mode content */
+  --md-default-fg-color: var(--gray-300);
+  --md-default-fg-color--light: var(--gray-300);
+  --md-default-bg-color: var(--background-dark);
+
+  /* Heading text color for dark mode */
+  --md-typeset-heading-color: var(--gray-50);
+  --md-typeset-a-color: var(--primary-light);
+
+  /* Table of Contents/Sidebar navigation link colors for dark mode */
+  --md-nav-link-color: var(--gray-300);
+  --md-nav-link-color--active: var(--primary-light);
+
+
+  /* General footer background and text */
+  --md-footer-bg-color: var(--background-dark); /* Example: Very dark background for footer in dark mode */
+  --md-footer-fg-color: var(--gray-300); /* Example: Lighter text for footer in dark mode */
+  --md-footer-fg-color--light: rgba(var(--gray-300), 0.7);
+
+  /* Footer Navigation (Previous/Next buttons) */
+  --md-footer-nav-bg-color: var(--primary-dark); /* Example: Darker primary color for nav button background */
+  --md-footer-nav-fg-color: rgb(255, 255, 255); /* White text for nav buttons */
+  --md-footer-nav-fg-color--focus: var(--primary-light); /* Light primary on hover */
+  --md-footer-nav-border-color: var(--primary); /* Primary color for nav buttons */
 }
 
-.md-grid { max-width: 88rem; }
-.md-content__inner { max-width: 52rem; margin-inline: auto; }
-.md-sidebar { font-size: 0.72rem; }
-.md-nav__title { font-weight: 700; letter-spacing: 0.01em; }
 
+/* ======================================== */
+/* 1. Custom Admonition Styles              */
+/* ======================================== */
+
+/* Increase the overall size and spacing of admonitions */
+.md-typeset .admonition {
+  font-size: 1.01em;      /* Makes all text inside larger than body text */
+}
+
+/* ======================================== */
+/* 4. Custom Blockquote Styles              */
+/* ======================================== */
+
+.md-typeset blockquote {
+  font-family: var(--font-family-headings-custom);
+  font-size: 1.05em; /* Makes all text inside larger than body text */
+  font-style: bold;  /* Makes the text italic, a common style for quotes */
+  margin-left: 0;    /* Ensures it aligns correctly */
+  
+  /* Use a slightly different background to make it stand out */
+  background-color: rgba(var(--primary), 0.05); 
+}
+    
+/* ======================================== */
+/* 3. Use Monospace Font in Navigation      */
+/* ======================================== */
+
+/* Target the main navigation tabs in the header */
+.md-tabs__link {
+  font-family: var(--font-jetbrains-mono);
+  text-transform: none; /* Optional: Removes the default ALL CAPS styling */
+}
+
+/* Target all navigation links in the left and right sidebars */
+.md-nav__link {
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.85rem;
+}
+
+/* ======================================== */
+/* 3. Header                                */
+/* ======================================== */
+
+
+[data-md-color-scheme="slate"] .md-header {
+  background-color: color-mix(in srgb, var(--background-dark) 70%,#00bcff);
+  color: var(--md-default-fg-color--light);
+}
+
+/* ======================================== */
+/* 3. Use Monospace Font in Footer          */
+/* ======================================== */
+
+/* Target the main navigation tabs in the header */
+.md-footer__title {
+  font-family: var(--font-jetbrains-mono);
+  text-transform: none; /* Optional: Removes the default ALL CAPS styling */
+}
+
+.md-footer__direction {
+	font-size: .74rem;
+	opacity: .3;
+}
+
+/* ======================================== */
+/* 5. Custom Inline Code Styles (Optional)  */
+/* ======================================== */
+
+/* Targets <code> elements that are NOT inside a <pre> (a code block) */
+.md-typeset :not(pre) > code {
+  color: rgb(var(--primary-dark));  /* Makes inline code text your primary color */
+  font-size: 0.9em;                 /* Makes it slightly smaller than the surrounding text */
+  padding: 0.2em 0.4em;             /* Adds a little bit of padding */
+  border-radius: 4px;               /* Rounds the corners */
+}
+
+/* Dark mode version */
+[data-md-color-scheme="slate"] .md-typeset :not(pre) > code {
+  --md-code-fg-color: rgb(var(--gray-200));
+  color: var(--md-default-fg-color--light);
+}
+
+
+/* Optional: Slightly adjust font size if needed */
+/* Monospace fonts can sometimes appear larger, so you might want to scale them down. */
+/*
+.md-tabs__link,
+.md-nav__link {
+  font-size: 0.75rem;
+}
+*/
+
+/* Sidebar and TOC titles */
+.md-nav__title {
+  font-size: 1.5em;
+}
+
+/*
+   Applying custom font families to HTML elements for stronger control.
+   These rules override Material for MkDocs' defaults, ensuring your chosen fonts are used.
+*/
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-headings-custom);
+  color: var(--gray-900); /* No longer an empty ruleset */
+  /* Use a slightly different background to make it stand out */
+  background-color: rgba(var(--primary), 0.05); 
+}
+
+/* For dark mode headings */
+[data-md-color-scheme="slate"] h1,
+[data-md-color-scheme="slate"] h2,
+[data-md-color-scheme="slate"] h3,
+[data-md-color-scheme="slate"] h4,
+[data-md-color-scheme="slate"] h5,
+[data-md-color-scheme="slate"] h6 {
+  color: var(--gray-50); /* No longer an empty ruleset */
+}
+
+body {
+  font-family: var(--font-family-body-custom);
+}
+
+/*
+   This rule sets the font for the root HTML element, prioritizing 'Inter'.
+   This is often a base fallback. Ensure this aligns with your overall font strategy,
+   especially if 'Public Sans' (from --font-family-body-custom) is intended as the primary text font.
+*/
+html {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  scroll-padding-top: 3.6rem;
+}
+
+/* Your Tailwind-like border-color variable from your original snippet */
+*, ::after, ::before {
+  border-color: var(--gray-200);
+}
+
+/* Increase base font size for readability */
 .md-typeset {
-  font-size: 0.78rem;
-  line-height: 1.72;
-  letter-spacing: 0.005em;
+  font-size: 0.90rem;
 }
 
-.md-typeset h1,
-.md-typeset h2,
-.md-typeset h3 {
-  color: var(--gadfly-ink);
-  letter-spacing: -0.02em;
-  line-height: 1.18;
+/* Adjust sidebar width */
+.md-sidebar {
+  width: 15.5rem;
 }
 
-[data-md-color-scheme="slate"] .md-typeset h1,
-[data-md-color-scheme="slate"] .md-typeset h2,
-[data-md-color-scheme="slate"] .md-typeset h3 { color: #f1f4f8; }
+/* Remove max-width for a full-width layout */
+.md-grid {
+  max-width: none;
+}
 
-.md-typeset h1 { font-weight: 760; margin-bottom: 0.45em; }
-.md-typeset h2 { border-top: 1px solid var(--gadfly-rule); padding-top: 1.15rem; margin-top: 2.2rem; }
-[data-md-color-scheme="slate"] .md-typeset h2 { border-color: #303946; }
-.md-typeset a { text-decoration-thickness: 0.06em; text-underline-offset: 0.15em; }
+/* Remove top margin from main content inner container */
+.md-main__inner {
+  margin-top: 0;
+}
+
+/* ======================================== */
+/* 6. Custom Table Styles                   */
+/* ======================================== */
+
+/* ======================================== */
+/* 6. Custom Table Styles                   */
+/* ======================================== */
 
 .md-typeset table:not([class]) {
-  border: 1px solid var(--gadfly-rule);
-  border-radius: 0.45rem;
-  box-shadow: none;
-  font-size: 0.72rem;
-  overflow: hidden;
+  font-size: .85rem;
+  border: none;
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem; /* Add some space below the table */
+  background-color: var(--md-default-bg-color);
 }
-.md-typeset table:not([class]) th {
-  background: var(--gadfly-panel);
-  color: var(--gadfly-ink);
-  font-weight: 700;
-}
-[data-md-color-scheme="slate"] .md-typeset table:not([class]) { border-color: #303946; }
-[data-md-color-scheme="slate"] .md-typeset table:not([class]) th { background: #202731; color: #f1f4f8; }
 
+.md-typeset table:not([class]) th,
+.md-typeset table:not([class]) td {
+  border: 1px solid color-mix(in srgb, var(--background-light) 80%, var(--primary-light));
+  padding: 8px 12px;
+  text-align: left;
+  hyphens: auto;
+}
+
+.md-typeset table:not([class]) th:first-child,
+.md-typeset table:not([class]) td:first-child {
+  width: 25%;
+}
+
+.md-typeset table:not([class]) th:nth-child(2),
+.md-typeset table:not([class]) td:nth-child(2) {
+  width: 25%;
+}
+
+.md-typeset table:not([class]) th:last-child,
+.md-typeset table:not([class]) td:last-child {
+  width: 25%;
+}
+
+.md-typeset table:not([class]) thead th {
+  font-weight: bold;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset table:not([class]) tbody tr:nth-of-type(even) {
+  background-color: color-mix(in srgb, var(--background-light) 97%, black);
+}
+
+/* Dark mode table styles */
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) {
+  background-color: color-mix(in srgb, var(--md-default-bg-color) 90%, black);
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th,
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) td {
+  border: 1px solid color-mix(in srgb, var(--background-dark) 80%, var(--primary-dark));
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) thead th {
+  color: var(--md-default-fg-color--light);
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) tbody tr:nth-of-type(even) {
+  background-color: color-mix(in srgb, var(--background-dark) 92%, var(--primary-light));
+}
+
+/* Override theme's shrinking table container to allow full-width tables */
+.md-typeset__table {
+  display: block;
+  width: 100%;
+  overflow-x: auto; /* Add horizontal scroll for very wide tables on small screens */
+}
+
+.highlighttable,
+.linenos,
 .md-typeset code {
-  border-radius: 0.24rem;
-  padding: 0.1em 0.28em;
+  background-color: color-mix(in srgb, var(--background-light) 90%,var(--primary-dark));
 }
 
-.md-typeset pre > code { line-height: 1.55; }
-.md-typeset .admonition,
-.md-typeset details {
-  border-width: 1px;
-  border-radius: 0.4rem;
-  box-shadow: none;
+[data-md-color-scheme="slate"] .highlighttable,
+[data-md-color-scheme="slate"] .linenos,
+[data-md-color-scheme="slate"] .md-typeset code {
+  background-color: color-mix(in srgb, var(--background-dark) 95%,var(--primary-light));
 }
 
-.gadfly-hero {
-  margin: 0 0 2rem;
-  padding: clamp(1.25rem, 4vw, 2.6rem);
-  border: 1px solid var(--gadfly-rule);
-  border-radius: 0.7rem;
-  background:
-    radial-gradient(circle at 90% 10%, rgb(64 87 199 / 14%), transparent 42%),
-    linear-gradient(135deg, rgb(37 127 74 / 7%), transparent 56%),
-    var(--md-default-bg-color);
-}
-[data-md-color-scheme="slate"] .gadfly-hero { border-color: #303946; }
-.gadfly-hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); max-width: 14ch; }
-.gadfly-hero p { max-width: 62ch; font-size: 0.9rem; }
-.gadfly-hero .md-button { margin: 0.6rem 0.55rem 0 0; }
-
-.md-typeset .grid.cards > ul > li {
-  border-color: var(--gadfly-rule);
-  border-radius: 0.55rem;
-  background: color-mix(in srgb, var(--md-default-bg-color) 88%, var(--gadfly-panel));
-  transition: border-color 120ms ease, transform 120ms ease;
-}
-.md-typeset .grid.cards > ul > li:hover {
-  border-color: var(--gadfly-blue);
-  transform: translateY(-1px);
-}
-[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li { border-color: #303946; }
+/* ======================================== */
+/* Gadfly's charts (docs/javascripts/mermaid-house.mjs) */
+/* ======================================== */
 
 .mermaid-house {
   margin: 1.5rem 0 0.7rem;
   padding: 0.6rem;
   overflow-x: auto;
-  border: 1px solid var(--gadfly-rule);
+  border: 1px solid var(--gray-200);
   border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--md-default-bg-color) 94%, var(--gadfly-panel));
+  background: color-mix(in srgb, var(--md-default-bg-color) 94%, var(--gray-100));
 }
 .mermaid-house svg { max-width: 100%; height: auto; }
-[data-md-color-scheme="slate"] .mermaid-house { border-color: #303946; }
-
-.md-typeset blockquote {
-  border-left: 0.2rem solid var(--gadfly-green);
-  color: var(--md-default-fg-color--light);
-}
-
-.md-footer { border-top: 1px solid var(--gadfly-rule); }
-
-@media screen and (max-width: 76.1875em) {
-  .md-content__inner { max-width: none; }
-}
-
-@media screen and (max-width: 44.9375em) {
-  .gadfly-hero { margin-inline: -0.4rem; padding: 1.15rem; }
-  .md-typeset table:not([class]) { font-size: 0.68rem; }
-}
-
+[data-md-color-scheme="slate"] .mermaid-house { border-color: var(--gray-700); }
 
 /* Charts on a dark page: their dim grey labels sink into the fills. */
 [data-md-color-scheme="slate"] .mermaid-house svg :is(.nodeLabel, .nodeLabel *, .cluster-label span) {
