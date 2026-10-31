@@ -212,8 +212,8 @@ The phrase stuck.
 
 ---
 
-<sub>Moved from the README of
-[mirzahusadzic/mirzahusadzic](https://github.com/mirzahusadzic/mirzahusadzic) (revision 3be3efb); the text is unchanged,
-only its heading level and the hatch's markup for the docs site. Text © 2026 Mirza Husadzic, licensed under
+<sub>This page is the essay's home. It first appeared in the README of
+[mirzahusadzic/mirzahusadzic](https://github.com/mirzahusadzic/mirzahusadzic/blob/3be3efbc392f6476d43004a863f5a6e3a674ba2b/README.md)
+(revision 3be3efb). Text © 2026 Mirza Husadzic, licensed under
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (full text in `LICENSES/CC-BY-4.0.txt`).
 Separately attributed material retains its own terms.</sub>
