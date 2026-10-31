@@ -76,6 +76,8 @@ def cut(frame, trial) -> str:
     """What one trial does to the evidence, in a few words."""
     if trial.kind == "inversion":
         return "inverts " + ", ".join(f"{a} -> {b}" for a, b in trial.renamed)
+    if trial.kind == "input-inversion":
+        return "inverts the input's " + ", ".join(f"{a} -> {b}" for a, b in trial.renamed)
     if trial.renamed:
         return "renames " + ", ".join(f"{a} -> {b}" for a, b in trial.renamed)
     if trial.kind == "placement":

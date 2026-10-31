@@ -51,6 +51,12 @@ RECORD_KEYS = {
     "observation", "opening", "raw", "usage",
 }  # fmt: skip
 MISALIGNED, UNRESOLVED, OUTSIDE = "coupled but misaligned", "unresolved", "outside scope"
+# The trials that turn a sense, the allowed key each answers to, and what the
+# answer must follow when it turns
+TURNS = (
+    ("inversion", "inversion", "the relation's sense"),
+    ("input-inversion", "inputInversion", "what is asked"),
+)
 
 
 @dataclass
@@ -201,9 +207,9 @@ def check_records(
 
 
 def allowed_for(frame: Frame, base: str, trial: str = "ablation") -> list[str]:
-    """What a trial may produce (ablation; bypass, its designated opening;
-    inversion, what it must reach): the labels listed, or, for ordered
-    labels, those below (or above) the baseline."""
+    """What a trial may produce (ablation; bypass, its designated opening; an
+    inversion or input inversion, what it must reach): the labels listed, or,
+    for ordered labels, those below (or above) the baseline."""
     rule = _read_once(frame)["allowed"][trial]
     if isinstance(rule, list):
         return rule
@@ -236,14 +242,31 @@ def _finding(
             else:
                 finding.evidence.append("not outside scope until the owner's check is recorded")
         return finding
-    _read(frame, finding, levels, samples)
+    # An input the input inversion does not turn was asked as it stands: its
+    # level is a repeat's, never a stay
+    read = dict(levels)
+    if "input-inversion" in levels and not _turned(frame, x):
+        del read["input-inversion"]
+        finding.evidence.append("the input inversion does not reach this input")
+    _read(frame, finding, read, samples)
     # What the trials did not settle is listed whatever the category: a
     # category never hides an open check.
     base = levels.get("baseline")
-    finding.obligations[:0] = _open_checks(frame, levels, base)
+    finding.obligations[:0] = _open_checks(frame, read, base)
     if _read_once(frame).get("carriage", "all-checks") == "all-checks":
         _hold(finding)
     return finding
+
+
+def _turned(frame: Frame, x: str) -> bool:
+    """Whether the frame's input inversion changes what input `x` asks."""
+    from .interventions import rename
+
+    mapping = tuple(
+        sorted((_read_once(frame)["interventions"].get("inputInversion") or {}).items())
+    )
+    text = next(i["text"] for i in frame.inputs if i["id"] == x)
+    return rename(text, mapping) != text
 
 
 def _hold(finding: Finding) -> None:
@@ -310,9 +333,10 @@ def _read(
                 finding.obligations.append(
                     "discrimination: no control trial shows the scorer can move"
                 )
-        if levels.get("inversion") not in (None, base):
-            inverted = levels["inversion"]
-            say(f"the inversion moved it {base} -> {inverted}, though the ablation did not")
+        for trial, _, _ in TURNS:
+            if levels.get(trial) not in (None, base):
+                name = trial.replace("-", " ")
+                say(f"the {name} moved it {base} -> {levels[trial]}, though the ablation did not")
         # said whether or not the control moved: it is where else the decision rests
         if levels.get("cumulative") not in (None, base):
             say(
@@ -323,16 +347,19 @@ def _read(
     if moved:
         say(f"a sham moved it too ({', '.join(moved)}); the change is not specific")
         return
-    # The answer rests on the relation; inverted, it must move where the frame says.
-    inverted = levels.get("inversion", base)
-    if "inversion" in levels and inverted == base:
-        finding.category = MISALIGNED
-        say(f"inversion left it at {base}: the answer does not follow the relation's sense")
-        return
-    if "inversion" in levels and inverted not in allowed_for(frame, base, "inversion"):
-        finding.category = MISALIGNED
-        say(f"inversion moved it {base} -> {inverted}, which the frame does not allow")
-        return
+    # The answer rests on the relation; turned, it must move where the frame says.
+    for trial, key, follows in TURNS:
+        if trial not in levels:
+            continue
+        name, turned = trial.replace("-", " "), levels[trial]
+        if turned == base:
+            finding.category = MISALIGNED
+            say(f"{name} left it at {base}: the answer does not follow {follows}")
+            return
+        if turned not in allowed_for(frame, base, key):
+            finding.category = MISALIGNED
+            say(f"{name} moved it {base} -> {turned}, which the frame does not allow")
+            return
     finding.category = CARRIED
     shams = sum(t.startswith("sham-") for t in levels)
     held = [t for t in ("presentation", "placement") if t in levels] + (
@@ -344,8 +371,10 @@ def _read(
     )
     # The trials that settled more than the ablation are named too, so two
     # findings that ran different trials never read the same.
-    if "inversion" in levels:
-        say(f"inversion moved it {base} -> {inverted}: the answer follows the relation's sense")
+    for trial, _, follows in TURNS:
+        if trial in levels:
+            name = trial.replace("-", " ")
+            say(f"{name} moved it {base} -> {levels[trial]}: the answer follows {follows}")
     if "bypass" in levels and _fallback(frame, levels, base) is None:
         say(f"bypass moved it {base} -> {levels['bypass']}: no hidden fallback")
     if "control" in levels:
@@ -415,8 +444,9 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
         open_.append(
             f"monotonicity: the control removes the anchors and more, yet left it at {base}"
         )
-    if "inversion" in levels and levels["inversion"] is None:
-        open_.append("direction: the inversion has no agreed level")
+    for trial, _, _ in TURNS:
+        if trial in levels and levels[trial] is None:
+            open_.append(f"direction: the {trial.replace('-', ' ')} has no agreed level")
     if not _read_once(frame).get("materialized"):
         open_.append(
             "materialization: the frame does not say the observation is "

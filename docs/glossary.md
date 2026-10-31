@@ -81,6 +81,8 @@ with its cost:
   decide.
 - **Inversion:** the anchors' sense inverted in their own words, to show the
   answer follows it.
+- **Input inversion:** what is asked inverted, a case or a question, to show
+  the answer follows it.
 - **Bypass:** the connection that makes the anchor apply cut, to show no
   hidden fallback carries the decision.
 - **Control:** what any reader needs cut, to show this reader can move at

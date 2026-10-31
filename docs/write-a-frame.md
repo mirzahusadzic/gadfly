@@ -163,6 +163,7 @@ These keys choose the trials and how their answers are read.
 | `allowed.ablation` | yes | a list of labels, or `lower` or `higher` with `order` | what the ablation may produce |
 | `allowed.bypass` | no | the same, with a bypass trial | the opening a bypass must expose |
 | `allowed.inversion` | with an inversion | the same | what the inverted answer must reach, never the baseline's own label |
+| `allowed.inputInversion` | with an input inversion | the same | what the answer must reach when what is asked turns |
 | `standing.quorum`, `standing.agree` | yes | whole numbers, `1 <= agree <= quorum` | calls per trial, and how many alike make a level |
 | `standing.stable` | no | true or false, with `repeat` | that baseline and repeat may not split |
 | `carriage` | no | `all-checks` (the default) or `listed` | whether an open check holds a category back |
@@ -195,6 +196,7 @@ Gadfly refuses a trial that would repeat another before it spends a call.
 | `presentation` | words mapped to their replacements | a word repeats in any case, or it renames nothing the reader reads |
 | `placement` | `{"span": id, "after": id}` | the two spans are one, or the move leaves the order as it is |
 | `inversion` | phrases of the anchors mapped to their inversions | a phrase repeats in any case, is in no anchor, or is in a span that is not one; or `allowed.inversion` is missing |
+| `inputInversion` | phrases of the inputs mapped to their inversions | a phrase repeats in any case, or is in no input; or `allowed.inputInversion` is missing |
 | `bypass` | a list of span ids | it removes exactly the anchors, which repeats the ablation |
 | `control` | a list of span ids | it removes exactly the anchors |
 

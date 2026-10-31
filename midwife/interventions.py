@@ -138,6 +138,10 @@ def _nearest(
     return min(range(lo, hi), key=lambda i: (rng.random(), pool[i][1]))
 
 
+# A trial's id where it differs from its key in the frame
+TRIAL_IDS = {"inputInversion": "input-inversion"}
+
+
 def trial_ids(frame: Frame) -> list[str]:
     """The ids `plan` gives its trials, in its order, without building any
     trial's body: what a budget is counted from."""
@@ -149,8 +153,8 @@ def trial_ids(frame: Frame) -> list[str]:
     if sham:
         count = 1 if sham is True else sham["draws"]
         ids += [f"sham-{index}" for index in range(1, len(_drawn(frame, count)) + 1)]
-    kinds = ("presentation", "placement", "inversion", "bypass", "control")
-    ids += [kind for kind in kinds if iv.get(kind)]
+    kinds = ("presentation", "placement", "inversion", "inputInversion", "bypass", "control")
+    ids += [TRIAL_IDS.get(kind, kind) for kind in kinds if iv.get(kind)]
     return ids
 
 
@@ -183,6 +187,10 @@ def plan(frame: Frame) -> list[Trial]:
         inverting = renamer(mapping)
         inverted = tuple(Span(span.id, inverting(span.text), span.kind) for span in spans)
         trials.append(Trial("inversion", "inversion", (), mapping, inverted))
+    if iv.get("inputInversion"):
+        # what is asked turns; the evidence stays as it is
+        mapping = tuple(sorted(iv["inputInversion"].items()))
+        trials.append(Trial("input-inversion", "input-inversion", (), mapping, spans))
     if iv.get("bypass"):
         cut = tuple(iv["bypass"])
         trials.append(Trial("bypass", "bypass", cut, (), without(spans, set(cut))))
@@ -195,7 +203,8 @@ def plan(frame: Frame) -> list[Trial]:
 def prompt(frame: Frame, trial: Trial, x: dict[str, str]) -> str:
     """What the scorer reads: the trial's body and one input, nothing else.
     Presentation renames the input's words too, so only the wording moves;
-    an inversion changes the relation's sense in the body alone."""
-    renames = trial.kind == "presentation" and trial.renamed
+    an inversion changes the relation's sense in the body alone, and an input
+    inversion what is asked alone."""
+    renames = trial.kind in ("presentation", "input-inversion") and trial.renamed
     question = rename(x["text"], trial.renamed) if renames else x["text"]
     return f"{trial.text}\n\n---\n\n{question}"

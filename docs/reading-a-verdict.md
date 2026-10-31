@@ -60,15 +60,16 @@ category:
 5. **unresolved:** a sham moved too, so the change is not specific.
 6. **coupled but misaligned:** a declared inversion left it at the baseline,
    or moved it outside `allowed.inversion`: the answer rests on the relation
-   but does not follow its sense.
+   but does not follow its sense. An input inversion reads the same against
+   `allowed.inputInversion`, on each input its map turns.
 7. **carried:** otherwise.
 
 #### Open checks
 
 Whatever the category, the checks still open are listed after it: no hidden
 fallback, presentation invariance, specificity, monotonicity and
-materialization, direction when an inversion is declared, and discrimination
-for cooled.
+materialization, direction when an inversion or input inversion is declared,
+and discrimination for cooled.
 
 Monotonicity is open when the control removes the anchors and more, yet left
 the level where the ablation moved it from: cutting more moved it less, so

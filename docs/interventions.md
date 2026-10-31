@@ -22,6 +22,7 @@ call.
 | `presentation` | mapped words renamed in one pass, body and input | whether wording rather than meaning drives the scorer | `quorum` calls |
 | `placement` | one span moved after another, its text unchanged | whether the structure rather than the meaning drives the scorer | `quorum` calls |
 | `inversion` | the anchors' sense inverted in their own words; the input left as it is | whether the answer follows the relation's sense, reaching `allowed.inversion` | `quorum` calls |
+| `input-inversion` | what is asked inverted (a case, a question); the evidence left as it is | whether the answer follows what is asked, reaching `allowed.inputInversion` | `quorum` calls |
 | `bypass` | a named connection is cut | no hidden fallback; with `allowed.bypass`, only that opening clears it | `quorum` calls |
 | `control` | spans any reader needs | whether the scorer can move at all; cooled needs it to | `quorum` calls |
 
@@ -52,6 +53,7 @@ holds, and neither settles everything.
 | `presentation` | wording drives the observation | the tested wording change is invariant | that all paraphrases are |
 | `placement` | the span's place drives the observation | the tested move is invariant | that every reordering is |
 | `inversion` | the answer follows the relation's sense | after a carried ablation, the reading drops the sense: coupled but misaligned | that every way of stating the sense is read |
+| `input-inversion` | the answer follows what is asked | after a carried ablation, the reading drops what is asked: coupled but misaligned | that every way of asking is read |
 | `bypass` | a hidden connection still carries the relation | no tested fallback is visible | receiving-system materialization |
 | `control` | the scorer can move under a required removal | the scorer or task is insensitive | that it moves for the right reason |
 
@@ -136,6 +138,27 @@ description of the person is inverted, so a person declares the phrase. A
 conditional answer reads only as `conditional`, so an inversion inside its
 condition does not show at that grain; and it inverts words, so a reader
 that works on graphs needs its own guard as well.
+
+---
+
+### Input inversion turns what is asked
+
+`inputInversion` maps phrases of the input to their inversions, applied once
+to each input and never to the evidence: a case negated, or the description
+in a question. `allowed.inputInversion` names what the answer may reach, and
+the reading is the inversion's: a stay, or an outcome the frame does not
+allow, is coupled but misaligned. A map can swap two phrases in one pass:
+
+```json
+"inputInversion": {
+  "has approved": "has not approved",
+  "has not approved": "has approved"
+}
+```
+
+An input the map does not reach is asked as it stands, and its level is not
+read as a stay. Opening is not failing: a negated description often leaves
+a question open, which the frame allows by listing `open`.
 
 ---
 

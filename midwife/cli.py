@@ -100,6 +100,8 @@ def _change(frame, trial) -> str:
     # what a trial does to the body, so predictions can be written from here
     if trial.kind == "inversion":
         return "inverts " + ", ".join(f"{a} to {b}" for a, b in trial.renamed)
+    if trial.kind == "input-inversion":
+        return "inverts the input's " + ", ".join(f"{a} to {b}" for a, b in trial.renamed)
     if trial.renamed:
         return "renames " + ", ".join(f"{a} to {b}" for a, b in trial.renamed)
     if trial.kind == "placement":

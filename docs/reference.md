@@ -428,9 +428,9 @@ check_records(frame, records, bodies=None)
 
 #### allowed_for
 
-What a trial may produce (ablation; bypass, its designated opening;
-inversion, what it must reach): the labels listed, or, for ordered
-labels, those below (or above) the baseline.
+What a trial may produce (ablation; bypass, its designated opening; an
+inversion or input inversion, what it must reach): the labels listed, or,
+for ordered labels, those below (or above) the baseline.
 
 ```python
 allowed_for(frame, base, trial="ablation")
@@ -535,7 +535,8 @@ plan(frame)
 
 What the scorer reads: the trial's body and one input, nothing else.
 Presentation renames the input's words too, so only the wording moves;
-an inversion changes the relation's sense in the body alone.
+an inversion changes the relation's sense in the body alone, and an input
+inversion what is asked alone.
 
 ```python
 prompt(frame, trial, x)

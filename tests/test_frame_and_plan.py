@@ -364,3 +364,34 @@ def test_an_inversion_may_end_in_a_sign(raw):
     raw["allowed"]["inversion"] = ["grant"]
     inversion = next(t for t in plan(parse(raw)) if t.id == "inversion")
     assert "refunds rose by 20% after it." in inversion.text
+
+
+ASKED = {"without a receipt": "with a receipt"}
+
+
+def test_an_input_inversion_turns_what_is_asked_and_never_the_evidence(raw):
+    raw["interventions"]["inputInversion"] = ASKED
+    raw["allowed"]["inputInversion"] = ["grant", "unclear"]
+    frame = parse(raw)
+    trials = {t.id: t for t in plan(frame)}
+    turned = trials["input-inversion"]
+    assert turned.text == trials["baseline"].text  # the evidence as it is
+    asked = prompt(frame, turned, frame.inputs[0])
+    assert asked.endswith("A customer with a receipt asks for a refund on day 3.")
+
+
+@pytest.mark.parametrize(
+    "change, message",
+    [
+        ({"interventions": {"inputInversion": {"a gift card": "cash"}}}, "is in no input"),
+        ({"interventions": {"inputInversion": {}}}, "maps phrases"),
+        ({"allowed": {"inputInversion": ["grant"]}}, "go together"),
+    ],
+)
+def test_an_input_inversion_is_refused_unless_it_turns_an_input(raw, change, message):
+    for key, value in change.items():
+        raw[key] = {**raw[key], **value}
+    if "inputInversion" in raw["interventions"]:
+        raw["allowed"]["inputInversion"] = ["grant"]
+    with pytest.raises(FrameError, match=message):
+        parse(raw)

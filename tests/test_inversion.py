@@ -72,3 +72,50 @@ def test_the_inversion_tells_an_engine_that_drops_the_negation(frame):
     assert findings[0].evidence[-1] == (
         "inversion left it at Yes: the answer does not follow the relation's sense"
     )
+
+
+class Asked(Rules):
+    """The same rules, reading what is asked: a negated case is not an
+    approval, and a question about someone who is not the administrator is
+    not settled by the administrator's rule. Broken, it ignores both."""
+
+    def __init__(self, reads_what_is_asked=True):
+        super().__init__()
+        self.reads = reads_what_is_asked
+
+    def observe(self, frame, prompt, max_output_tokens):
+        body, _, asked = prompt.rpartition("\n\n---\n\n")
+        if not self.reads:  # the bug: the negation in what is asked is dropped
+            asked = asked.replace("has not approved", "has approved")
+            asked = asked.replace("not the database administrator", "the database administrator")
+        if "not the database administrator" in asked:
+            return Observation(label="open")
+        return super().observe(frame, f"{body}\n\n---\n\n{asked}", max_output_tokens)
+
+
+@pytest.mark.parametrize(
+    "fixture, approved, refused",
+    [("restore-case-inversion", "No", "Yes"), ("restore-question-inversion", "open", "open")],
+)
+def test_turning_what_is_asked_turns_or_opens_each_answer(fixture, approved, refused):
+    # the predictions, written before the tests: the case turned
+    # turns the answer; the question's description turned leaves it open
+    frame = situate(json.loads((FRAME.parent / f"{fixture}.json").read_text()))
+    findings = {f.input: f for f in read(frame, Asked())}
+    assert findings["approved"].levels["baseline"] == "Yes"
+    assert findings["approved"].levels["input-inversion"] == approved
+    assert findings["not-approved"].levels["input-inversion"] == refused
+    assert {f.category for f in findings.values()} == {CARRIED}
+    assert "input inversion moved it Yes -> " + approved + ": the answer follows what is asked" in (
+        findings["approved"].evidence
+    )
+
+
+@pytest.mark.parametrize("fixture", ["restore-case-inversion", "restore-question-inversion"])
+def test_an_engine_that_drops_what_is_asked_is_misaligned(fixture):
+    frame = situate(json.loads((FRAME.parent / f"{fixture}.json").read_text()))
+    findings = read(frame, Asked(reads_what_is_asked=False))
+    assert {f.category for f in findings} == {MISALIGNED}
+    assert findings[0].evidence[-1] == (
+        "input inversion left it at Yes: the answer does not follow what is asked"
+    )

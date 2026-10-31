@@ -29,6 +29,7 @@ INTERVENTIONS = (
     "presentation",
     "placement",
     "inversion",
+    "inputInversion",
     "bypass",
     "control",
 )
@@ -135,9 +136,9 @@ OPTIONAL = {
     "": ("materialized", "carriage", "outsideScope", "scopeCheck"),
     "observe": ("order",),
     "standing": ("stable",),
-    "allowed": ("bypass", "inversion"),
+    "allowed": ("bypass", "inversion", "inputInversion"),
     "interventions": ("repeat", "cumulative", "sham", "presentation", "placement", "inversion",
-                      "bypass", "control"),
+                      "inputInversion", "bypass", "control"),
 }  # fmt: skip
 
 
@@ -279,16 +280,25 @@ def parse(raw: dict[str, Any]) -> Frame:
     _check_interventions(interventions, spans, anchors, inputs)
 
     allowed = need("allowed", dict)
-    if "ablation" not in allowed or not set(allowed) <= {"ablation", "bypass", "inversion"}:
+    if "ablation" not in allowed or not set(allowed) <= {
+        "ablation",
+        "bypass",
+        "inversion",
+        "inputInversion",
+    }:
         raise FrameError(
             "allowed says what ablation may produce and, optionally, the opening bypass exposes"
-            " and what an inversion must reach"
+            " and what an inversion or input inversion must reach"
         )
     if "bypass" in allowed and not interventions.get("bypass"):
         raise FrameError("allowed.bypass needs a bypass trial")
     if ("inversion" in allowed) != bool(interventions.get("inversion")):
         raise FrameError(
             "an inversion trial and allowed.inversion, what it must reach, go together"
+        )
+    if ("inputInversion" in allowed) != bool(interventions.get("inputInversion")):
+        raise FrameError(
+            "an input inversion and allowed.inputInversion, what it must reach, go together"
         )
     order = observe.get("order")
     if order is not None and not (
@@ -467,3 +477,18 @@ def _check_interventions(
                 raise FrameError(
                     f"inversion's '{phrase}' is also in {elsewhere[0]}, which is not an anchor"
                 )
+    asked = interventions.get("inputInversion")
+    if asked is not None:
+        if not (
+            isinstance(asked, dict)
+            and asked
+            and all(isinstance(k, str) and k and isinstance(v, str) and v for k, v in asked.items())
+        ):
+            raise FrameError("inputInversion maps phrases of the input to their inversions")
+        if len({phrase.lower() for phrase in asked}) != len(asked):
+            raise FrameError("inputInversion names a phrase twice (it inverts without case)")
+        # It turns what is asked, never the evidence: each phrase is in an input.
+        for phrase in asked:
+            found = re.compile(rf"(?<!\w){re.escape(phrase)}(?!\w)", re.IGNORECASE)
+            if not any(found.search(x["text"]) for x in inputs):
+                raise FrameError(f"inputInversion's '{phrase}' is in no input")
