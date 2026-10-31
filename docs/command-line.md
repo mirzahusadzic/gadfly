@@ -93,11 +93,33 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | `--battery` | `module:Class`, required | The battery, imported from the current directory. |
 | `--out` | a new file, required | Where the records go, one JSON line each. |
 | `--calls` | a whole number, required | The most calls to make. |
-| `--output-tokens` | a whole number, 64 by default | Each answer's cap. |
+| `--output-tokens` | a whole number, 64 by default | Each call's cap, a battery's own drafting included. |
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |
 | `--only` | a trial id, repeatable | Runs only those trials: a partial run, for diagnosis. |
 | `--kept` | a records file | Records already made, whose calls are not made again, so a stopped run finishes. The new file holds them first, so it is the whole run. |
 | `--json` | flag | Prints the calls planned and made, the openings by reason, and why it stopped, as JSON. |
+
+#### Run in slices
+
+A run makes one call at a time, so a slow battery can take hours. Slices with
+no trial in common can run side by side, each into its own file, and their
+records together are the whole run:
+
+```bash
+uv run gadfly run frame.json --battery mine:Reader \
+  --calls 20 --only baseline --only repeat \
+  --out a.jsonl &
+uv run gadfly run frame.json --battery mine:Reader \
+  --calls 20 --only ablation --only control \
+  --out b.jsonl &
+wait
+cat a.jsonl b.jsonl > slices.jsonl
+```
+
+`gadfly report` reads `slices.jsonl` as the whole run. To keep it as one
+file, as a single run writes it, pass it as `--kept` with a new `--out`, and
+no call is spent. A trial in two slices is refused when they are read
+together: `two records for` that call.
 
 ---
 
