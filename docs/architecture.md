@@ -87,7 +87,7 @@ flowchart TB
 
     classDef default fill:#8a96a82e,stroke:#8a96a8,stroke-width:1px
     classDef person fill:#8e5bd64d,stroke:#8e5bd6,stroke-width:2px
-    classDef interface fill:#ffffff40,stroke:#b5bcc6,stroke-width:2px
+    classDef interface fill:#b5bcc633,stroke:#b5bcc6,stroke-width:2px
     classDef service fill:#e3a0084d,stroke:#e3a008,stroke-width:2px
     classDef kept fill:#4d6bfe4d,stroke:#4d6bfe,stroke-width:2px
     classDef engine fill:#2e9e5b4d,stroke:#2e9e5b,stroke-width:2px
