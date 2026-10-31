@@ -31,7 +31,12 @@ def rung_frame(rung: int) -> Path:
     full["interventions"] = {k: v for k, v in full["interventions"].items() if k in keep}
     full["name"] = f"quill-upgrade-rung-{rung}"
     path = HERE / f"rung{rung}.json"
-    path.write_text(json.dumps(full, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    text = json.dumps(full, indent=2, ensure_ascii=False) + "\n"
+    if path.exists():  # a frame with kept runs is never changed: a new idea is a new frame
+        if path.read_text(encoding="utf-8") != text:
+            raise SystemExit(f"{path.name} exists and differs: a kept frame is never changed")
+        return path
+    path.write_text(text, encoding="utf-8")
     return path
 
 

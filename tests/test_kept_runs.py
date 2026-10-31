@@ -117,3 +117,17 @@ def test_the_counts_the_results_quote_are_the_kept_runs():
     alert_cooled = next(i for i, run in enumerate(runs) if run[3] == COO)
     assert f"fix cooled (two runs; the {ordinal[fix_odd]} had no agreed cumulative)" in prose
     assert f"though its {ordinal[alert_cooled]} run agreed on database and read cooled" in prose
+
+
+def test_the_rung_generator_never_changes_a_kept_frame(tmp_path, monkeypatch):
+    # a rung frame with kept runs is never written over; the same frame is left as it is
+    from examples import climb
+
+    (tmp_path / "upgrade.json").write_text((EXAMPLES / "upgrade.json").read_text())
+    monkeypatch.setattr(climb, "HERE", tmp_path)
+    first = climb.rung_frame(1).read_text()
+    assert climb.rung_frame(1).read_text() == first  # the same frame: left alone
+    (tmp_path / "rung1.json").write_text(first.replace("quill-upgrade-rung-1", "edited"))
+    with pytest.raises(SystemExit, match="never changed"):
+        climb.rung_frame(1)
+    assert "edited" in (tmp_path / "rung1.json").read_text()
