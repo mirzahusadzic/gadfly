@@ -209,3 +209,10 @@ def test_ctrl_c_keeps_what_was_made_and_says_how_to_finish(tmp_path, capsys):
     err = capsys.readouterr().err
     assert "stopped by Ctrl-C after 2 calls" in err and f"--kept {out}" in err
     assert "Traceback" not in err and len(out.read_text().splitlines()) == 2
+
+
+def test_a_garbled_reply_still_writes_every_record(tmp_path):
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Garbled", "--calls", "8"]
+    assert main([*argv, "--out", str(out)]) == 0
+    assert len(out.read_text(encoding="utf-8").splitlines()) == 8

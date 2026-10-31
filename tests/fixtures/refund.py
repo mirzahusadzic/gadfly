@@ -57,3 +57,12 @@ class Interrupted(RuleReader):
         if self.calls == 3:
             raise KeyboardInterrupt
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class Garbled(RuleReader):
+    """The rule reader whose replies carry a lone surrogate, as a JSON reply
+    may: valid JSON, but not text a file can hold."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        observation = super().observe(frame, prompt, max_output_tokens)
+        return Observation(label=observation.label, raw="ok \ud800", served="reader \udfff")

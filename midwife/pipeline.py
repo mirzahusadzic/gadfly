@@ -15,6 +15,7 @@ stops early.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 
@@ -148,6 +149,14 @@ def judge(frame: Frame, records: Iterable[Record | dict]) -> list[Finding]:
     return judge_records(frame, [r.as_dict() if isinstance(r, Record) else r for r in records])
 
 
+_SURROGATE = re.compile("[\ud800-\udfff]")
+
+
+def _text(text: str) -> str:
+    """Text a file can hold: each lone surrogate becomes U+FFFD."""
+    return _SURROGATE.sub("\ufffd", text)
+
+
 def _observe(battery: Battery, frame: Frame, text: str, cap: int) -> Observation:
     """A battery that fails gives an opening, never a guessed label; what it
     said and spent is kept beside the opening."""
@@ -162,10 +171,22 @@ def _observe(battery: Battery, frame: Frame, text: str, cap: int) -> Observation
     wrong = [
         name for name, kind in kinds.items() if not isinstance(getattr(observation, name), kind)
     ]
+    if "usage" not in wrong and not all(
+        isinstance(key, str) and isinstance(value, int) and not isinstance(value, bool)
+        for key, value in observation.usage.items()
+    ):
+        wrong.append("usage")  # counts are whole numbers, or nothing can be spent by them
     if wrong:  # the call was spent: keep it, as an opening that names what was wrong
-        raw = observation.raw if isinstance(observation.raw, str) else ""
+        raw = _text(observation.raw) if isinstance(observation.raw, str) else ""
         opening = f"the battery returned a malformed observation ({', '.join(wrong)})"
         return Observation(label=None, opening=opening, raw=raw)
+    # a lone surrogate is valid JSON but no text a file can hold: keep the rest of it
+    observation = replace(
+        observation,
+        raw=_text(observation.raw),
+        served=_text(observation.served),
+        opening=None if observation.opening is None else _text(observation.opening),
+    )
     if observation.label is not None and observation.label not in frame.labels:
         return replace(
             observation, label=None, opening="the battery returned no label of this frame"

@@ -136,11 +136,12 @@ def command_run(args) -> int:
     progress = sys.stderr.isatty() and not args.json
 
     def keep(record: Record) -> None:
+        line = json.dumps(record.as_dict(), ensure_ascii=False) + "\n"  # before any file is made
         if not files:
             files.append(out.open("x", encoding="utf-8"))
             for old in kept:  # the kept records first, so the new file is the whole run
                 files[0].write(json.dumps(old, ensure_ascii=False) + "\n")
-        files[0].write(json.dumps(record.as_dict(), ensure_ascii=False) + "\n")
+        files[0].write(line)
         files[0].flush()
         made.append(record)
         if progress:

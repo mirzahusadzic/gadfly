@@ -1,5 +1,6 @@
 """The run: what it spends, when it stops, and what a failing battery leaves."""
 
+import json
 import tracemalloc
 
 import pytest
@@ -300,7 +301,13 @@ def test_a_budget_refusal_builds_no_trial(raw, monkeypatch):
 
 @pytest.mark.parametrize(
     "fields, named",
-    [({"usage": "4"}, "usage"), ({"raw": 4}, "raw"), ({"served": None}, "served")],
+    [
+        ({"usage": "4"}, "usage"),
+        ({"usage": {"output_tokens": 1, "opaque": object()}}, "usage"),
+        ({"usage": {"output_tokens": True}}, "usage"),
+        ({"raw": 4}, "raw"),
+        ({"served": None}, "served"),
+    ],
 )
 def test_a_malformed_observation_is_an_opening_with_a_record(raw, fields, named):
     # a battery of your own that fills a field with the wrong type: the call
@@ -331,3 +338,14 @@ def test_a_plan_over_budget_is_refused_without_being_built(raw):
         tracemalloc.stop()
     assert result.planned == 40_000 and result.records == () and battery.calls == []
     assert peak < 200_000, peak
+
+
+def test_a_reply_with_a_lone_surrogate_is_kept_as_text_a_file_holds(raw):
+    # a lone surrogate is valid JSON but not text a file can hold: it becomes U+FFFD
+    from tests.fixtures.refund import Garbled
+
+    raw["battery"] = {"kind": "rule-reader"}
+    frame = situate(raw)
+    [record, *_] = run(frame, Garbled(), Budget(calls=21)).records
+    assert record.raw == "ok \ufffd" and record.served == "reader \ufffd"
+    json.dumps(record.as_dict(), ensure_ascii=False).encode("utf-8")
