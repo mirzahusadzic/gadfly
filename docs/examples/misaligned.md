@@ -1,13 +1,15 @@
 # Misaligned: moving the wrong way
 
-!!! abstract "This step"
-    - **Teaches:** `allowed`,
-      [coupled but misaligned](../reading-a-verdict.md#the-rules-in-order),
-      several inputs in one frame, and the
-      [placement](../interventions.md#placement-is-one-move) trial.
-    - **Frames:** `10a-incident-fast.json` and `10b-incident-slow.json`: one
-      incident, four tasks, one route to the cause in each.
-    - **After:** [Quorum](quorum.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** `allowed`,
+>   [coupled but misaligned](../reading-a-verdict.md#the-rules-in-order),
+>   several inputs in one frame, and the
+>   [placement](../interventions.md#placement-is-one-move) trial.
+> - **Frames:** `10a-incident-fast.json` and `10b-incident-slow.json`: one
+>   incident, four tasks, one route to the cause in each.
+> - **After:** [Quorum](quorum.md).
 
 Not every decision is a diagnosis. These frames hold one incident (API latency
 rose from 180 ms to 2.4 s, with a deploy and a database failover in the same
@@ -73,11 +75,13 @@ Three things are new.
 10b is the same timeline with the two metric lines in place of the rollback,
 and those two lines are its anchors.
 
-!!! note "Predicted before the first call"
-    Database on all four tasks at baseline (10a medium-high, 10b high). The
-    ablation: unclear, or api for at least one task, blaming the deploy because
-    it is recent and salient (about 50%), which would read misaligned there.
-    Placement: database.
+> [!NOTE]
+> **Predicted before the first call**
+>
+> Database on all four tasks at baseline (10a medium-high, 10b high). The
+> ablation: unclear, or api for at least one task, blaming the deploy because
+> it is recent and salient (about 50%), which would read misaligned there.
+> Placement: database.
 
 ## What Gemma answered
 

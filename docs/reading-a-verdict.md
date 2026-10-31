@@ -4,7 +4,27 @@
 returns one `Overall` for the frame's test domain. Categories are read by fixed
 rules, not by a model.
 
---8<-- "README.md:verdicts"
+<!-- copy README.md:verdicts -->
+## What Gadfly says
+
+Each input gets one **finding**; a multi-input frame gets one **overall**
+category over the findings. The categories are not scores. The first matching
+rule below names the category.
+
+| Finding | Plain meaning |
+|---|---|
+| `carried` | Ablation moved the observation as the promise allows, and every carriage check passed: presentation and the shams held, the bypass exposed its opening, and the frame says the observation is what the recipient receives. |
+| `coupled but misaligned` | The relation matters, but presentation or placement moved it, or ablation moved it where the promise disallows. |
+| `cooled` | Ablation left the observation unchanged while a control showed the scorer can move: this relation has no operative influence here. |
+| `unresolved` | There is not enough agreed evidence: a trial is missing or split, repeat is unstable, a sham moved too, the scorer cannot tell, or a check the category needs is still open. |
+| `outside scope` | The receiving owner declares the distinction unnecessary, and their own check of that exclusion is recorded. |
+
+Every finding separates **Evidence** (why this category) from **Obligations**
+(what the trials did not settle). An obligation is not a passed check. By
+default (`carriage: all-checks`) an open check keeps carried, cooled and
+outside scope unresolved, and the evidence says so; a frame that says
+`carriage: listed` names the category and lists its open checks beside it.
+<!-- end copy -->
 
 ## The rules, in order
 

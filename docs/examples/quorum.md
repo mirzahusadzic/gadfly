@@ -1,11 +1,13 @@
 # Quorum: when the calls split
 
-!!! abstract "This step"
-    - **Teaches:** a trial's level, `standing.quorum` and `agree`, a trial with
-      no agreed level, and why a frame is run more than once.
-    - **Frame:** `09-sync-sms.json`: architecture review, at the grain of one
-      requirement.
-    - **After:** [Cooled](cooled.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** a trial's level, `standing.quorum` and `agree`, a trial with
+>   no agreed level, and why a frame is run more than once.
+> - **Frame:** `09-sync-sms.json`: architecture review, at the grain of one
+>   requirement.
+> - **After:** [Cooled](cooled.md).
 
 Until now every trial gave one answer on every call. A sampled reader need not:
 eGemma samples at temperature 0.7 unless told otherwise, and these frames do
@@ -54,11 +56,13 @@ requirement and this design: the requirement matters only because the provider
 is slower than it. The frame names no `allowed.bypass`, so any move from the
 baseline would clear that check.
 
-!!! note "Predicted before the first call"
-    Revise at baseline (high). The ablation stays at revise (about 55%): a
-    synchronous external call in checkout is a known anti-pattern, so cooled.
-    The bypass stays at revise too (about 60%), a fallback on the same prior.
-    The control (the design and the provider cut): unclear.
+> [!NOTE]
+> **Predicted before the first call**
+>
+> Revise at baseline (high). The ablation stays at revise (about 55%): a
+> synchronous external call in checkout is a known anti-pattern, so cooled.
+> The bypass stays at revise too (about 60%), a fallback on the same prior.
+> The control (the design and the provider cut): unclear.
 
 ## What Gemma answered
 

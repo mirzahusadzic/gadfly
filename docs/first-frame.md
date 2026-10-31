@@ -20,9 +20,53 @@ back from those records, and reading it needs no model.
 
 The frame is the whole experiment, written down before any call:
 
+<!-- copy examples/upgrade.json -->
 ```json
---8<-- "examples/upgrade.json"
+{
+  "name": "quill-upgrade",
+  "relation": "the decision to hold the upgrade rests on the changelog line that removes retry_after()",
+  "locus": "the evidence a reviewer has on the pull request: our code, the library's changelog, the CI result",
+  "role": "the reviewer of dependency upgrades",
+  "grain": "one changelog line",
+  "purpose": "merge an upgrade only when our code needs no change for it",
+  "trajectory": "pull request, evidence, the reviewer's decision, the merge button",
+  "crossing": "the decision posted on the pull request",
+  "promise": "the reviewer holds the upgrade while the changelog removes a function our code calls; without that line they merge or say unclear, never hold for another reason",
+  "baseline": "the pull request's evidence as it stands; nothing changed",
+  "body": {
+    "spans": [
+      {"id": "use", "kind": "code", "text": "src/billing/retry.py calls quill.retry_after(response) to wait before retrying a 429 response."},
+      {"id": "get", "kind": "code", "text": "src/billing/client.py calls quill.get(url, timeout=10) for every request."},
+      {"id": "removed", "kind": "changelog", "text": "quill 3.0.0 changelog, Breaking: retry_after() is removed; use Response.backoff() instead."},
+      {"id": "http3", "kind": "changelog", "text": "quill 3.0.0 changelog, Added: HTTP/3 support."},
+      {"id": "leak", "kind": "changelog", "text": "quill 3.0.0 changelog, Fixed: a memory leak in the connection pool."},
+      {"id": "typos", "kind": "changelog", "text": "quill 3.0.0 changelog, Docs: corrected typos in the README."},
+      {"id": "ci", "kind": "ci", "text": "CI on this pull request: all 214 tests passed; no test exercises the retry path."}
+    ]
+  },
+  "anchors": ["removed"],
+  "inputs": [
+    {"id": "pr", "text": "Dependabot opened pull request #212: bump quill from 2.4.1 to 3.0.0 in requirements.txt. Can it be merged as is?"}
+  ],
+  "observe": {
+    "labels": ["merge", "hold", "unclear"],
+    "instruction": "You review dependency upgrade pull requests for this repository. Use only the evidence given. Answer merge if the upgrade can be merged without changing our code, hold if our code must change before it can be merged, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {"draws": 2},
+    "presentation": {"quill": "heron", "retry_after": "wait_hint", "backoff": "pause"},
+    "bypass": ["use"],
+    "control": ["removed", "use"]
+  },
+  "allowed": {"ablation": ["merge", "unclear"]},
+  "standing": {"quorum": 5, "agree": 4},
+  "materialized": true,
+  "battery": {"kind": "egemma"}
+}
 ```
+<!-- end copy -->
 
 - **`body.spans`** is the evidence, one sentence per span. The `kind` groups
   spans for the sham trial (section 4).

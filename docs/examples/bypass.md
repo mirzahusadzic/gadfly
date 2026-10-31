@@ -1,12 +1,14 @@
 # Bypass: the line that connects
 
-!!! abstract "This step"
-    - **Teaches:** the [bypass](../interventions.md#bypass-and-control-are-different)
-      against a designated opening (`allowed.bypass`), and a hidden fallback the
-      verdict keeps open.
-    - **Frame:** `11-eu-clause.json`: a contract clause deciding an engineering
-      switch.
-    - **After:** [A frame built wrong](built-wrong.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** the [bypass](../interventions.md#bypass-and-control-are-different)
+>   against a designated opening (`allowed.bypass`), and a hidden fallback the
+>   verdict keeps open.
+> - **Frame:** `11-eu-clause.json`: a contract clause deciding an engineering
+>   switch.
+> - **After:** [A frame built wrong](built-wrong.md).
 
 Cross-domain, legal into engineering, at the grain of one clause. A customer's
 product manager asks for session replay; the vendor stores recordings in the
@@ -54,11 +56,13 @@ clause without its connection, which is a hidden fallback.
 opening, so any move from the baseline cleared its bypass. Naming one is the
 stronger claim.
 
-!!! note "Predicted before the first call"
-    Block at baseline (high). The ablation, the clause cut: still block, as a
-    German customer's data in a US data centre fires a GDPR prior (about 55%),
-    so cooled. The bypass: block rather than unclear (about 60%), so that check
-    stays open. The control: enable or unclear.
+> [!NOTE]
+> **Predicted before the first call**
+>
+> Block at baseline (high). The ablation, the clause cut: still block, as a
+> German customer's data in a US data centre fires a GDPR prior (about 55%),
+> so cooled. The bypass: block rather than unclear (about 60%), so that check
+> stays open. The control: enable or unclear.
 
 ## What Gemma answered
 

@@ -5,7 +5,22 @@ page is the bridge between the essay's symbols and the library's public names.
 It is deliberately an overview: the tutorial runs one frame; the reference lists
 every callable.
 
---8<-- "README.md:model"
+<!-- copy README.md:model -->
+## The path from premise to verdict
+
+| Stage | What it makes | What stays fixed |
+|---|---|---|
+| `situate` | a checked `Frame` and its SHA-256 | every declared coordinate, including grain and battery |
+| `plan` | the trials derived from the frame | trial bodies and order; the caller may inspect them before spending anything |
+| `run` | one `Record` per call | the exact body, input, trial and quorum index recorded beside the observation |
+| `judge` | one `Finding` per input | the frame, battery, body hashes, trial set, quorum and label vocabulary |
+| `overall` | one `Overall` over the findings | every input's category and evidence while combining the frame-level answer |
+
+Gadfly is a library with no hidden store. `run()` is the only stage that calls a
+battery; records go to your `on_record` callback as they are made. `judge()`
+recomputes the reading from those records. Keep them as JSON Lines, database
+rows, or fixtures, but keep them.
+<!-- end copy -->
 
 ## The essay and the frame
 

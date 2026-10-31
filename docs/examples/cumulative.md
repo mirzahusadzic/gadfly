@@ -1,12 +1,14 @@
 # Cumulative: two routes to one answer
 
-!!! abstract "This step"
-    - **Teaches:** the [cumulative](../interventions.md#what-each-trial-can-establish)
-      trial, "carried elsewhere too", and how to read a decision more than one
-      route supports.
-    - **Frames:** `10c2-incident-both.json` and `10d-incident-metrics.json`: the
-      same incident, with both routes present.
-    - **After:** [Misaligned](misaligned.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** the [cumulative](../interventions.md#what-each-trial-can-establish)
+>   trial, "carried elsewhere too", and how to read a decision more than one
+>   route supports.
+> - **Frames:** `10c2-incident-both.json` and `10d-incident-metrics.json`: the
+>   same incident, with both routes present.
+> - **After:** [Misaligned](misaligned.md).
 
 No single route is the valid one. A real timeline often holds both, the
 rollback and the metrics, and an engineer may take either, one faster than the
@@ -61,12 +63,14 @@ rollback.
 10d is the other half: the same timeline, with the two metrics as its anchors
 and the rollback as its cumulative's extra cut.
 
-!!! note "Predicted before the first call"
-    10c2: the ablation stays at database on all four tasks (high), and the
-    cumulative moves to api, so cooled with "carried elsewhere too"; cooled
-    overall in about one run in three. 10d: its ablation leaves only the
-    rollback, so it answers as 10a's baseline did: debug mostly unclear, the fix
-    database, optimize mostly database, the alert split.
+> [!NOTE]
+> **Predicted before the first call**
+>
+> 10c2: the ablation stays at database on all four tasks (high), and the
+> cumulative moves to api, so cooled with "carried elsewhere too"; cooled
+> overall in about one run in three. 10d: its ablation leaves only the
+> rollback, so it answers as 10a's baseline did: debug mostly unclear, the fix
+> database, optimize mostly database, the alert split.
 
 ## What Gemma answered
 

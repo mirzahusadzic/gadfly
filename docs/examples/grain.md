@@ -1,11 +1,13 @@
 # Grain: how much to cut
 
-!!! abstract "This step"
-    - **Teaches:** several anchors cut together, and the same evidence read at
-      two grains.
-    - **Frames:** `13-drop-table-section.json` and `13b-drop-table-reads.json`:
-      a data migration, a whole section and then one line.
-    - **After:** [Several inputs](inputs.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** several anchors cut together, and the same evidence read at
+>   two grains.
+> - **Frames:** `13-drop-table-section.json` and `13b-drop-table-reads.json`:
+>   a data migration, a whole section and then one line.
+> - **After:** [Several inputs](inputs.md).
 
 A change request drops the table `orders_v1`. The migration's status section
 says three things: the backfill copied every row and the counts match, writes
@@ -52,11 +54,13 @@ draws. The control cuts the change request itself. 13b is the same frame with a
 single anchor, the reads line; its `grain` says so, and that makes it another
 frame.
 
-!!! note "Predicted before the first call"
-    13: drop at baseline (high); keep or unclear with the section cut (high);
-    unresolved, as no bypass is declared. 13b: keep with the reads line cut, at
-    low confidence, as Gemma is cautious about dropping tables. If it stays at
-    drop, it is cooled at the line's grain while the section carries.
+> [!NOTE]
+> **Predicted before the first call**
+>
+> 13: drop at baseline (high); keep or unclear with the section cut (high);
+> unresolved, as no bypass is declared. 13b: keep with the reads line cut, at
+> low confidence, as Gemma is cautious about dropping tables. If it stays at
+> drop, it is cooled at the line's grain while the section carries.
 
 ## What Gemma answered
 

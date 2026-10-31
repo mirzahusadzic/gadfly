@@ -1,12 +1,14 @@
 # Several inputs: one grant, three requesters
 
-!!! abstract "This step"
-    - **Teaches:** one finding per input, how
-      [`overall`](../reading-a-verdict.md#several-inputs) combines them, and what
-      one `allowed` for every input cannot say.
-    - **Frame:** `12-payroll-access.json`: security, at the grain of one grant
-      line.
-    - **After:** [Bypass](bypass.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** one finding per input, how
+>   [`overall`](../reading-a-verdict.md#several-inputs) combines them, and what
+>   one `allowed` for every input cannot say.
+> - **Frame:** `12-payroll-access.json`: security, at the grain of one grant
+>   line.
+> - **After:** [Bypass](bypass.md).
 
 The incident frames had four inputs that should all read alike. This one has
 three that should not. One grant line, "members of Finance may read the payroll
@@ -50,13 +52,15 @@ puts Dana in Finance. The control cuts every grant that could allow a payroll
 read, and the default. The promise expects three readings: only Dana rests on
 the grant.
 
-!!! note "Predicted before the first call"
-    Dana: allow, and deny when the grant is cut (high); the bypass deny rather
-    than the designated unclear, as the default denies whom it cannot place
-    (about 55%). Sam: deny throughout, so cooled, or unresolved if the control
-    leaves deny. The backup job: allow throughout, so cooled. Overall
-    unresolved, although that is what the promise expects: the frame cannot
-    state a different expectation for each input.
+> [!NOTE]
+> **Predicted before the first call**
+>
+> Dana: allow, and deny when the grant is cut (high); the bypass deny rather
+> than the designated unclear, as the default denies whom it cannot place
+> (about 55%). Sam: deny throughout, so cooled, or unresolved if the control
+> leaves deny. The backup job: allow throughout, so cooled. Overall
+> unresolved, although that is what the promise expects: the frame cannot
+> state a different expectation for each input.
 
 ## What Gemma answered
 

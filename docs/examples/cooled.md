@@ -1,12 +1,14 @@
 # Cooled: a rule the reader already knows
 
-!!! abstract "This step"
-    - **Teaches:** [cooled](../reading-a-verdict.md#the-rules-in-order), the
-      [control](../interventions.md#bypass-and-control-are-different) trial,
-      the discrimination check, and a contrast pair.
-    - **Frames:** `07-sql-rule.json` and `08-clock-rule.json`: code review, at
-      the grain of one repository rule.
-    - **After:** [Your first frame](../first-frame.md), which ended carried.
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** [cooled](../reading-a-verdict.md#the-rules-in-order), the
+>   [control](../interventions.md#bypass-and-control-are-different) trial,
+>   the discrimination check, and a contrast pair.
+> - **Frames:** `07-sql-rule.json` and `08-clock-rule.json`: code review, at
+>   the grain of one repository rule.
+> - **After:** [Your first frame](../first-frame.md), which ended carried.
 
 Your first frame ended carried: cut the line and the decision moved. This step
 asks what it means when it does not move. Two pull requests each break one
@@ -50,11 +52,13 @@ diff together, what any reviewer needs in order to ask for changes. If the
 control cannot move the answer either, the reader is not reading this evidence,
 and no other result means much.
 
-!!! note "Predicted before the first call"
-    07: the ablation stays at request-changes (about 80%: its training flags SQL
-    injection), so cooled. 08: the ablation moves to approve (medium), so
-    unresolved with only "no hidden fallback" open, as neither frame declares a
-    bypass. The control: unclear in 07 (medium), unclear or approve in 08.
+> [!NOTE]
+> **Predicted before the first call**
+>
+> 07: the ablation stays at request-changes (about 80%: its training flags SQL
+> injection), so cooled. 08: the ablation moves to approve (medium), so
+> unresolved with only "no hidden fallback" open, as neither frame declares a
+> bypass. The control: unclear in 07 (medium), unclear or approve in 08.
 
 ## What Gemma answered
 

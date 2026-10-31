@@ -1,12 +1,14 @@
 # Paths: the result, not the route
 
-!!! abstract "This step"
-    - **Teaches:** inputs as different paths to one goal, an anchor every path
-      shares, and a designated opening read against every input.
-    - **Frames:** `14-orders-latency.json` (optimizing: five pull requests, one
-      goal) and `15-invoice-export.json` (implementing: one change, four
-      processes).
-    - **After:** [Grain](grain.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** inputs as different paths to one goal, an anchor every path
+>   shares, and a designated opening read against every input.
+> - **Frames:** `14-orders-latency.json` (optimizing: five pull requests, one
+>   goal) and `15-invoice-export.json` (implementing: one change, four
+>   processes).
+> - **After:** [Grain](grain.md).
 
 Some paths to an outcome are faster, some slower, some cheaper; several can be
 valid. These two frames ask whether a reviewer judges the result or the route
@@ -56,13 +58,15 @@ model (three weeks, 60 ms) and a longer timeout (ten minutes, still 1.9 s). The
 anchor is the goal. The bypass cuts every load-test result, which is what
 connects each change to the goal.
 
-!!! note "Predicted before the first call"
-    The four improvements accepted at baseline, the read model least surely
-    (about 70%), the timeout rejected (high); about 40% that at least one valid
-    path is rejected for its size or cost. The goal cut: the four still
-    accepted as far faster than before (about 60%), so cooled. The load tests
-    cut: the index and the cache still accepted on their reputation (about
-    55%).
+> [!NOTE]
+> **Predicted before the first call**
+>
+> The four improvements accepted at baseline, the read model least surely
+> (about 70%), the timeout rejected (high); about 40% that at least one valid
+> path is rejected for its size or cost. The goal cut: the four still
+> accepted as far faster than before (about 60%), so cooled. The load tests
+> cut: the index and the cache still accepted on their reputation (about
+> 55%).
 
 ```text
 $ uv run python examples/read.py examples/14-orders-latency.json
@@ -109,10 +113,12 @@ the test written first, a notebook prototype first, an AI assistant, or
 pairing. Each process is an input, told in the question, and the anchor is the
 passing test.
 
-!!! note "Predicted before the first call"
-    Accept at baseline for all four, the assistant least surely (about 75%).
-    The passing test cut: unclear (about 55%), or accepted on the diff and the
-    clean linters, which would be cooled.
+> [!NOTE]
+> **Predicted before the first call**
+>
+> Accept at baseline for all four, the assistant least surely (about 75%).
+> The passing test cut: unclear (about 55%), or accepted on the diff and the
+> clean linters, which would be cooled.
 
 ```text
 $ uv run python examples/read.py examples/15-invoice-export.json

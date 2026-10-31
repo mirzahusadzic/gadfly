@@ -1,10 +1,12 @@
 # Run your own
 
-!!! abstract "This step"
-    - **Teaches:** the method every example followed, and which trial answers
-      which question.
-    - **Frame:** yours.
-    - **After:** [Paths](paths.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** the method every example followed, and which trial answers
+>   which question.
+> - **Frame:** yours.
+> - **After:** [Paths](paths.md).
 
 ## Which trial answers which question
 

@@ -71,7 +71,6 @@ markdown_extensions:
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.arithmatex: {generic: true}
-  - pymdownx.snippets: {base_path: ["."], check_paths: true}
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -79,7 +78,9 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 
 hooks:
+  - hooks/github_alerts.py
   - hooks/github_math.py
+  - hooks/reference.py
   - hooks/schema.py
 
 plugins:

@@ -51,4 +51,17 @@ reader, the service and Gadfly.
 
 ## Every result at a glance
 
---8<-- "README.md:examples"
+<!-- copy README.md:examples -->
+| Example | Domain, grain | Does the decision rest on… | Read by Gemma, per run |
+|---|---|---|---|
+| `upgrade.json`, `rung1`-`rung6` | dependencies, one changelog line | the line that removes a function our code calls? | carried; the rungs show each check closing |
+| `07-sql-rule.json` | code review, one repository rule | the rule against formatted SQL? | cooled: its training decides |
+| `08-clock-rule.json` | code review, one repository rule | the rule against `datetime.now()`? | the rule decides; unresolved, no bypass declared |
+| `09-sync-sms.json` | architecture, one requirement | the 300 ms requirement? | cooled in two runs of three |
+| `10a`-`10d` | debugging, fixing, optimizing, alerting; one test or two metrics | which of two routes to the cause? | the metrics decide every task; the rollback alone decides the fix, not the cause; with both, either can go (cooled) |
+| `11-eu-clause.json` | contract into engineering, one clause | the clause keeping data in the EU? | the clause carries; applied without the line that makes it the customer's |
+| `12-payroll-access.json` | security, one grant, three requesters | the grant to Finance? | Dana carried, Sam unresolved, the backup job cooled |
+| `13`, `13b` | data migration, a section, then one line | the status saying the table is unused? | the section carries; "no reads in 30 days" carries nothing |
+| `14-orders-latency.json` | optimizing, one goal, five paths | the latency goal? | four paths carried whatever their cost; the timeout rejected |
+| `15-invoice-export.json` | implementing, one test, four processes | the passing test? | the test decides, never the process |
+<!-- end copy -->

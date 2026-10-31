@@ -30,7 +30,15 @@ Use `check` to refuse a foreign battery kind, a missing model or any frame the
 battery cannot safely serve. `run` calls `check` once before the first call, so a
 refusal spends nothing.
 
---8<-- "README.md:protocol"
+<!-- copy README.md:protocol -->
+```python
+class Battery(Protocol):
+    name: str
+
+    def check(self, frame: Frame) -> None: ...  # refuse before any call
+    def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation: ...
+```
+<!-- end copy -->
 
 The protocol's important invariant is **trial blindness**. A battery sees the
 intervened body and input, not `baseline`, `sham-1` or `ablation`. If a scorer
@@ -38,13 +46,41 @@ could branch on the trial id, the comparison would be cued.
 
 ## Shipped critic batteries
 
---8<-- "README.md:batteries"
+<!-- copy README.md:batteries -->
+| Battery | Reads with | Guarantees and recorded provenance |
+|---|---|---|
+| your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
+| `unified` | an LLM through the unified model router: `anthropic/`, `openrouter/`, `deepseek/`, `ultra-spark/` | loopback, no tools, no proxy, no redirects, `data_collection: deny` unless the exact model slug is listed under `trainsOnInputs`; refuses OpenAI slugs; `endpoints` pins OpenRouter endpoints; records the model and endpoint that served |
+| `egemma` | Gemma through eGemma's `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced |
+| `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
+
+The privacy and routing guarantees above belong to the shipped batteries.
+The `Battery` protocol does not constrain arbitrary third-party code.
+<!-- end copy -->
 
 Both critics ask for JSON in a schema. The default is `{"label": ...}`. A critic
 that already has its own answer shape keeps that shape and names where the label
 lives with a JSON pointer.
 
---8<-- "README.md:adapter"
+<!-- copy README.md:adapter -->
+Critics answer JSON to a schema, by default `{"label": <one of the frame's labels>}`.
+A critic with its own schema names where the label lives with a JSON pointer:
+
+```json
+"battery": {
+  "kind": "unified",
+  "model": "anthropic/claude-sonnet-5-5",
+  "reasoning": "low",
+  "output": {
+    "schema": {
+      "type": "object",
+      "properties": {"review": {"type": "object"}}
+    },
+    "label": "/review/verdict"
+  }
+}
+```
+<!-- end copy -->
 
 ### Costs
 

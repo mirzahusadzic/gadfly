@@ -1,10 +1,12 @@
 # A frame built wrong
 
-!!! abstract "This step"
-    - **Teaches:** the discrimination check as a check on the frame's author,
-      and why a frame gets a new version instead of an edit.
-    - **Frame:** `10c-incident-both.json`, kept as it ran, beside `10c2`.
-    - **After:** [Cumulative](cumulative.md).
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** the discrimination check as a check on the frame's author,
+>   and why a frame gets a new version instead of an edit.
+> - **Frame:** `10c-incident-both.json`, kept as it ran, beside `10c2`.
+> - **After:** [Cumulative](cumulative.md).
 
 10c2 is a second version. The first, 10c, differs by its name and its control:
 

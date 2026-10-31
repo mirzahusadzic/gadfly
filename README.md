@@ -10,7 +10,7 @@ when the premise is gone: a changelog line, a contributing rule, a requirement,
 a contract clause, an access grant, a measurement. Use an ordinary evaluation
 when you need a score, a ranking, or a broad quality measurement.
 
-<!-- --8<-- [start:verdicts] -->
+<!-- start:verdicts -->
 ## What Gadfly says
 
 Each input gets one **finding**; a multi-input frame gets one **overall**
@@ -30,7 +30,7 @@ Every finding separates **Evidence** (why this category) from **Obligations**
 default (`carriage: all-checks`) an open check keeps carried, cooled and
 outside scope unresolved, and the evidence says so; a frame that says
 `carriage: listed` names the category and lists its open checks beside it.
-<!-- --8<-- [end:verdicts] -->
+<!-- end:verdicts -->
 
 ## Quick start
 
@@ -92,7 +92,7 @@ to a carried verdict, and [the examples](docs/examples/index.md) cover the rest.
 
 The same test in Python:
 
-<!-- --8<-- [start:use] -->
+<!-- start:use -->
 ```python
 import json
 from pathlib import Path
@@ -113,7 +113,7 @@ kept = []
 run(frame, EGemma(), Budget(calls=calls_needed(frame)), on_record=kept.append)
 [finding] = judge(frame, kept)
 ```
-<!-- --8<-- [end:use] -->
+<!-- end:use -->
 
 The frame's `battery.kind` must equal the battery's `name`. A different battery
 is a different frame coordinate, so call `situate()` again when you swap it.
@@ -131,7 +131,7 @@ uv run gadfly run examples/upgrade.json --battery gadfly.batteries.egemma:EGemma
 uv run gadfly report examples/upgrade.json records.jsonl
 ```
 
-<!-- --8<-- [start:model] -->
+<!-- start:model -->
 ## The path from premise to verdict
 
 | Stage | What it makes | What stays fixed |
@@ -146,13 +146,13 @@ Gadfly is a library with no hidden store. `run()` is the only stage that calls a
 battery; records go to your `on_record` callback as they are made. `judge()`
 recomputes the reading from those records. Keep them as JSON Lines, database
 rows, or fixtures, but keep them.
-<!-- --8<-- [end:model] -->
+<!-- end:model -->
 
 ## Write a frame
 
 Start from `examples/upgrade.json` or the [first-frame tutorial](docs/first-frame.md).
 
-<!-- --8<-- [start:frame] -->
+<!-- start:frame -->
 The top-level keys are all checked before a call:
 
 | Key | What you write |
@@ -181,9 +181,9 @@ The frame is hashed whole. Rewording the promise, changing the grain or swapping
 the battery makes a new frame, and records from the old hash will be refused.
 `gadfly/frame.schema.json` gives editors the shape; `uv run gadfly check-frame`
 runs it and then the parser, which has the last word.
-<!-- --8<-- [end:frame] -->
+<!-- end:frame -->
 
-<!-- --8<-- [start:trials] -->
+<!-- start:trials -->
 ## The interventions
 
 | Trial | What changes | What it tests | Cost |
@@ -204,14 +204,14 @@ should matter to any reader. They answer different questions.
 
 The full cost is `inputs × planned trials × quorum`. `calls_needed(frame)` gives
 it without making a call.
-<!-- --8<-- [end:trials] -->
+<!-- end:trials -->
 
 ## Batteries
 
 A battery is a scorer. It reads the frame and the exact prompt for one call, and
 returns one label or one typed opening. It is not told which trial it is serving.
 
-<!-- --8<-- [start:protocol] -->
+<!-- start:protocol -->
 ```python
 class Battery(Protocol):
     name: str
@@ -219,13 +219,13 @@ class Battery(Protocol):
     def check(self, frame: Frame) -> None: ...  # refuse before any call
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation: ...
 ```
-<!-- --8<-- [end:protocol] -->
+<!-- end:protocol -->
 
 A deterministic battery of your own is the fastest way to test a frame's
 mechanics, at no cost: `tests/fixtures/refund.py` holds two, ten lines each. It
 tests the frame, not a model; the examples use a live one.
 
-<!-- --8<-- [start:batteries] -->
+<!-- start:batteries -->
 | Battery | Reads with | Guarantees and recorded provenance |
 |---|---|---|
 | your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
@@ -235,9 +235,9 @@ tests the frame, not a model; the examples use a live one.
 
 The privacy and routing guarantees above belong to the shipped batteries.
 The `Battery` protocol does not constrain arbitrary third-party code.
-<!-- --8<-- [end:batteries] -->
+<!-- end:batteries -->
 
-<!-- --8<-- [start:adapter] -->
+<!-- start:adapter -->
 Critics answer JSON to a schema, by default `{"label": <one of the frame's labels>}`.
 A critic with its own schema names where the label lives with a JSON pointer:
 
@@ -255,7 +255,7 @@ A critic with its own schema names where the label lives with a JSON pointer:
   }
 }
 ```
-<!-- --8<-- [end:adapter] -->
+<!-- end:adapter -->
 
 ## Examples
 
@@ -266,7 +266,7 @@ examples/read.py examples/<frame>.json` reads one back without a model;
 [the examples](docs/examples/index.md) climb them one capability a step, and
 `examples/FINDINGS.md` gathers what they showed.
 
-<!-- --8<-- [start:examples] -->
+<!-- start:examples -->
 | Example | Domain, grain | Does the decision rest on… | Read by Gemma, per run |
 |---|---|---|---|
 | `upgrade.json`, `rung1`-`rung6` | dependencies, one changelog line | the line that removes a function our code calls? | carried; the rungs show each check closing |
@@ -279,18 +279,18 @@ examples/read.py examples/<frame>.json` reads one back without a model;
 | `13`, `13b` | data migration, a section, then one line | the status saying the table is unused? | the section carries; "no reads in 30 days" carries nothing |
 | `14-orders-latency.json` | optimizing, one goal, five paths | the latency goal? | four paths carried whatever their cost; the timeout rejected |
 | `15-invoice-export.json` | implementing, one test, four processes | the passing test? | the test decides, never the process |
-<!-- --8<-- [end:examples] -->
+<!-- end:examples -->
 
 ## Boundaries
 
-<!-- --8<-- [start:boundaries] -->
+<!-- start:boundaries -->
 - A category is a fixed-rule reading of observations under one frame, not proof of causality and not a probability.
 - Under the default `carriage: all-checks`, carried, cooled and outside scope are named only once the checks they need have passed; until then the finding is unresolved and says which check is open. `carriage: listed` names the category and lists the open checks beside it; read those before relying on it.
 - Traceability rests on the records: each names its frame, battery, body, prompt and what served it. Gadfly does not check a prompt digest against the current prompt, so a replay may keep its study's own.
 - `materialized: true` is a declaration. Gadfly does not inspect a receiving document, field or program.
 - A deterministic battery tests the frame and mechanism, not a model. A sampled live critic tests sampled behavior at that model and endpoint, not a provider's general policy.
 - Gadfly has no authentication or signature on records. Keep records somewhere you trust and record the run metadata you need outside Gadfly.
-<!-- --8<-- [end:boundaries] -->
+<!-- end:boundaries -->
 
 ## Documentation
 

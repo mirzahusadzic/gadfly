@@ -1,12 +1,15 @@
-"""The moved text keeps its license, and the docs site can render its math."""
+"""The moved text keeps its license, the pages read on GitHub, and the docs
+site renders what GitHub shows: its math, its alerts and the reference."""
 
 import importlib
 import inspect
 import json
+import re
 from pathlib import Path
 
 import pytest
 
+from hooks import github_alerts, reference
 from hooks.github_math import on_page_markdown
 
 ROOT = Path(__file__).parent.parent
@@ -35,8 +38,9 @@ def test_github_math_becomes_arithmatex_math():
 
 def test_every_public_name_in_the_reference_has_a_docstring():
     # mkdocstrings leaves out what has none, so the reference would not show it
-    page = (ROOT / "docs/reference.md").read_text().splitlines()
-    modules = [line.removeprefix("::: ").strip() for line in page if line.startswith("::: ")]
+    page = (ROOT / "docs/reference.md").read_text()
+    modules = re.findall(r"^<!-- ::: (\S+) -->$", page, re.M)
+    assert modules
     missing = []
     for name in modules:
         module = importlib.import_module(name)
@@ -79,3 +83,60 @@ def test_every_quoted_output_is_what_the_code_prints(transcript):
     from tools.doc_outputs import printed
 
     assert printed(transcript) == transcript.quoted
+
+
+def test_a_github_alert_becomes_an_admonition_with_its_title():
+    source = (
+        "Before.\n\n> [!NOTE]\n> **Predicted first**\n>\n> Block, at about 55%.\n"
+        "> - a list item\n>   that wraps\n\nAfter.\n"
+    )
+    rendered = github_alerts.on_page_markdown(source, None, None, None)
+    assert rendered == (
+        'Before.\n\n!!! note "Predicted first"\n\n    Block, at about 55%.\n'
+        "    - a list item\n      that wraps\n\nAfter.\n"
+    )
+    untitled = github_alerts.on_page_markdown("> [!IMPORTANT]\n> Read this.\n", None, None, None)
+    assert untitled == "!!! abstract\n\n    Read this.\n"
+    quote = "> A plain quotation stays a quotation.\n"
+    assert github_alerts.on_page_markdown(quote, None, None, None) == quote
+
+
+def test_the_reference_unwraps_each_module_for_mkdocstrings():
+    rendered = reference.on_page_markdown("<!-- ::: gadfly.pipeline -->\n", None, None, None)
+    assert rendered == "::: gadfly.pipeline\n"
+
+
+# Syntax only MkDocs reads, which GitHub would show as it is written.
+SITE_ONLY = {
+    "an admonition": re.compile(r"^(!!!|\?\?\?\+?) ", re.M),
+    "a snippet include": re.compile(r"--8<--"),
+    "an attribute list": re.compile(r"\{ ?[.#:][\w-]"),
+    "a mkdocstrings line": re.compile(r"^::: ", re.M),
+    "a markdown div": re.compile(r"<div[^>]*\bmarkdown\b"),
+}
+
+
+@pytest.mark.parametrize(
+    "page", ["README.md", *(str(p.relative_to(ROOT)) for p in sorted(ROOT.glob("docs/**/*.md")))]
+)
+def test_every_page_reads_on_github(page):
+    # a callout is a GitHub alert, an included text is a copy, a module is named
+    # in a comment: the hooks turn them into what the site needs
+    text = (ROOT / page).read_text()
+    text = re.sub(r"```.*?```", "", text, flags=re.S)  # code shows as written anyway
+    found = [what for what, pattern in SITE_ONLY.items() if pattern.search(text)]
+    assert found == []
+
+
+def _copies():
+    from tools.doc_outputs import PAGES, copies
+
+    return [c for page in PAGES for c in copies(page)]
+
+
+@pytest.mark.parametrize("copy", _copies(), ids=lambda c: c.where())
+def test_every_copy_is_its_source(copy):
+    # `uv run python tools/doc_outputs.py --write` brings a page back in line
+    from tools.doc_outputs import copied
+
+    assert copied(copy.source) == copy.quoted

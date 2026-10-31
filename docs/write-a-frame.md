@@ -3,7 +3,36 @@
 A frame is plain JSON. Gadfly checks it before any call and hashes the checked
 value; a changed frame is a different frame.
 
---8<-- "README.md:frame"
+<!-- copy README.md:frame -->
+The top-level keys are all checked before a call:
+
+| Key | What you write |
+|---|---|
+| `name` | a short label for this frame |
+| `relation`, `locus`, `body` | the premise, where it acts, and `body.spans` carrying it |
+| `role`, `grain`, `purpose` | whose reading, at which unit, for what |
+| `trajectory`, `baseline`, `crossing`, `promise` | the path to the recipient, everything pinned, the boundary, and what must cross it |
+| `anchors` | span ids the relation rests on; at least one |
+| `inputs` | the finite test domain, each `{id, text}` with distinct ids |
+| `observe` | `labels`, `instruction`, and `order` when labels are ordered; other keys are your battery's |
+| `interventions` | the trials; `ablation` is required |
+| `allowed` | what `ablation` may produce, and optionally the opening `bypass` must expose |
+| `standing` | `quorum`, `agree`, and optionally `stable` (which needs `repeat`) |
+| `battery` | at least `kind`; shipped batteries use `model`, reasoning, schema or pins as documented below |
+| `materialized` | `true` only when the observation is the form the recipient receives |
+| `outsideScope` | the receiving owner's exclusion, in words; omit when there is none |
+| `scopeCheck` | the owner's check of that exclusion: `owner`, `statement`, `source`, `encounter` |
+| `carriage` | `all-checks` (the default) or `listed`: whether an open check holds a category back |
+
+`body.spans` are `{id, text}` with an optional `kind` used to match sham spans.
+`allowed` lists labels, or uses `lower`/`higher` along `observe.order`.
+`allowed.bypass` is the label or labels a bypass must expose.
+
+The frame is hashed whole. Rewording the promise, changing the grain or swapping
+the battery makes a new frame, and records from the old hash will be refused.
+`gadfly/frame.schema.json` gives editors the shape; `uv run gadfly check-frame`
+runs it and then the parser, which has the last word.
+<!-- end copy -->
 
 ## Required and optional fields
 

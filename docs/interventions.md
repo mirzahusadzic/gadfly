@@ -4,7 +4,28 @@ An intervention changes or removes the declared relation while preserving the
 frame, input and encounter. The plan is derived from the frame alone, before a
 call is made.
 
---8<-- "README.md:trials"
+<!-- copy README.md:trials -->
+## The interventions
+
+| Trial | What changes | What it tests | Cost |
+|---|---|---|---|
+| `baseline` | nothing | the level being explained | `quorum` calls |
+| `repeat` | nothing | whether that level is stable enough to compare | `quorum` calls |
+| `ablation` | the anchors are removed | required influence | `quorum` calls |
+| `cumulative` | anchors plus the spans they may fall back on | support carried elsewhere | `quorum` calls |
+| `sham-*` | as much unanchored text, of the anchors' kinds | specificity of the change | one `quorum` per draw |
+| `presentation` | mapped words renamed in one pass, body and input | whether wording rather than meaning drives the scorer | `quorum` calls |
+| `placement` | one span moved after another, its text unchanged | whether the structure rather than the meaning drives the scorer | `quorum` calls |
+| `bypass` | a named connection is cut | no hidden fallback; with `allowed.bypass`, only that opening clears it | `quorum` calls |
+| `control` | spans any reader needs | whether the scorer can move at all; cooled needs it to | `quorum` calls |
+
+`bypass` asks whether a fallback keeps the relation working without its
+connection. `control` asks whether the scorer changes under a removal that
+should matter to any reader. They answer different questions.
+
+The full cost is `inputs × planned trials × quorum`. `calls_needed(frame)` gives
+it without making a call.
+<!-- end copy -->
 
 ## What each trial can establish
 

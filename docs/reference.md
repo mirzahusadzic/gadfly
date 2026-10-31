@@ -1,7 +1,8 @@
 # Reference
 
-The reference is generated from public docstrings. For narrative guidance start
-with [Your first frame](first-frame.md) or [Reading a verdict](reading-a-verdict.md).
+The reference is generated from public docstrings on the docs site; on GitHub,
+read them in `gadfly/`. For narrative guidance start with
+[Your first frame](first-frame.md) or [Reading a verdict](reading-a-verdict.md).
 
 | Module | Read it for |
 |---|---|
@@ -14,25 +15,25 @@ with [Your first frame](first-frame.md) or [Reading a verdict](reading-a-verdict
 | `gadfly.cli` | the `gadfly` command: plan, run, report, check-frame, portfolio |
 | `gadfly.portfolio` | several frames' verdicts counted, never combined |
 
-::: gadfly.pipeline
+<!-- ::: gadfly.pipeline -->
 
-::: gadfly.frame
+<!-- ::: gadfly.frame -->
 
-::: gadfly.types
+<!-- ::: gadfly.types -->
 
-::: gadfly.verdict
+<!-- ::: gadfly.verdict -->
 
-::: gadfly.interventions
+<!-- ::: gadfly.interventions -->
 
-::: gadfly.batteries.critic
+<!-- ::: gadfly.batteries.critic -->
 
-::: gadfly.batteries.unified
+<!-- ::: gadfly.batteries.unified -->
 
-::: gadfly.batteries.egemma
+<!-- ::: gadfly.batteries.egemma -->
 
-::: gadfly.batteries.local_json
+<!-- ::: gadfly.batteries.local_json -->
 
-::: gadfly.cli
+<!-- ::: gadfly.cli -->
 
-::: gadfly.portfolio
+<!-- ::: gadfly.portfolio -->
 
