@@ -96,8 +96,21 @@ def render_report(frame, records: list[dict[str, Any]]) -> str:
     return "\n".join(rows)
 
 
+def _change(frame, trial) -> str:
+    # what a trial does to the body, so predictions can be written from here
+    if trial.renamed:
+        return "renames " + ", ".join(f"{a} to {b}" for a, b in trial.renamed)
+    if trial.kind == "placement":
+        move = frame.interventions["placement"]
+        return f"moves {move['span']} after {move['after']}"
+    if trial.removed:
+        return "cuts " + ", ".join(trial.removed) if len(trial.spans) else "cuts every span"
+    return "nothing, asked again" if trial.kind == "repeat" else "nothing"
+
+
 def command_plan(args) -> int:
-    """`gadfly plan`: the trials and the call count, without a call."""
+    """`gadfly plan`: the trials, what each changes, and the call count,
+    without a call."""
     frame = load_frame(args.frame)
     trials = plan(frame)
     body = {
@@ -112,6 +125,7 @@ def command_plan(args) -> int:
                 "kind": trial.kind,
                 "removed": list(trial.removed),
                 "renamed": [list(pair) for pair in trial.renamed],
+                "change": _change(frame, trial),
                 "body": trial.body_hash,
             }
             for trial in trials
@@ -122,7 +136,7 @@ def command_plan(args) -> int:
     else:
         print(f"{body['frame']} ({body['hash']}): {body['calls']} calls")
         for trial in trials:
-            print(f"  {trial.id:12} {trial.kind:12} body {trial.body_hash[:12]}")
+            print(f"  {trial.id:12} body {trial.body_hash[:12]}  {_change(frame, trial)}")
     return 0
 
 

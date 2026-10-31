@@ -54,18 +54,19 @@ makes, without making any:
 ```text
 $ uv run gadfly plan examples/upgrade.json
 quill-upgrade (569c71692864ab0fcfbfcd41baaa0011ee213bc0b90ca9bcb95dd40b7f085679): 40 calls
-  baseline     baseline     body b3b0e45a1db0
-  repeat       repeat       body b3b0e45a1db0
-  ablation     ablation     body f55c89aeef47
-  sham-1       sham         body 38181aba8284
-  sham-2       sham         body 67327300286d
-  presentation presentation body 5d71afdd24d7
-  bypass       bypass       body 429d3f15741d
-  control      control      body 0b3f0f01c0fa
+  baseline     body b3b0e45a1db0  nothing
+  repeat       body b3b0e45a1db0  nothing, asked again
+  ablation     body f55c89aeef47  cuts removed
+  sham-1       body 38181aba8284  cuts leak
+  sham-2       body 67327300286d  cuts typos
+  presentation body 5d71afdd24d7  renames backoff to pause, quill to heron, retry_after to wait_hint
+  bypass       body 429d3f15741d  cuts use
+  control      body 0b3f0f01c0fa  cuts removed, use
 ```
 
-Each line is a trial, its kind and the hash of the body the reader gets. The
-count is the inputs times the trials times `quorum`.
+Each line is a trial, the hash of the body the reader gets, and what the
+trial does to it, so the predictions can be written from here. The count is
+the inputs times the trials times `quorum`.
 
 ---
 

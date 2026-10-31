@@ -18,6 +18,31 @@ def at_root(monkeypatch):
     monkeypatch.chdir(ROOT)  # the battery is imported from here
 
 
+def test_plan_says_what_each_trial_changes(capsys):
+    # cuts, renames and moves, so predictions can be written from the command line
+    assert main(["plan", str(ROOT / "examples/upgrade.json")]) == 0
+    lines = {line.split()[0]: line for line in capsys.readouterr().out.splitlines()[1:]}
+    assert lines["baseline"].endswith("  nothing")
+    assert lines["repeat"].endswith("  nothing, asked again")
+    assert lines["ablation"].endswith("  cuts removed")
+    assert lines["presentation"].endswith(
+        "renames backoff to pause, quill to heron, retry_after to wait_hint"
+    )
+    assert lines["control"].endswith("  cuts removed, use")
+    assert main(["plan", REFUND, "--json"]) == 0
+    changes = {t["id"]: t["change"] for t in json.loads(capsys.readouterr().out)["trials"]}
+    assert changes["ablation"].startswith("cuts ")
+
+
+def test_plan_says_when_a_control_empties_the_body(tmp_path, capsys):
+    raw = json.loads(Path(REFUND).read_text())
+    raw["interventions"]["control"] = [span["id"] for span in raw["body"]["spans"]]
+    frame = tmp_path / "every.json"
+    frame.write_text(json.dumps(raw))
+    assert main(["plan", str(frame)]) == 0
+    assert capsys.readouterr().out.rstrip().endswith("  cuts every span")
+
+
 def test_plan_shows_the_trials_and_the_calls_without_spending(capsys):
     assert main(["plan", REFUND]) == 0
     out = capsys.readouterr().out

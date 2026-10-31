@@ -957,7 +957,8 @@ render_report(frame, records)
 
 #### command_plan
 
-`gadfly plan`: the trials and the call count, without a call.
+`gadfly plan`: the trials, what each changes, and the call count,
+without a call.
 
 ```python
 command_plan(args)

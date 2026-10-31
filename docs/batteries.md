@@ -47,8 +47,8 @@ input's text:
 <the input>
 ```
 
-A span the trial cuts is simply absent, and under presentation the input is
-renamed too. The instruction and the labels come from the frame, for the
+A span the trial cuts is simply absent, so a control that names every span
+sends an empty body, and under presentation the input is renamed too. The instruction and the labels come from the frame, for the
 battery to add as it needs.
 
 ---
