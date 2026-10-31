@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mirzahusadzic.github.io/gadfly/frame.schema.json",
   "title": "Gadfly frame",
-  "description": "Structural validation for editors. gadfly.frame.parse remains authoritative for cross-field invariants and trial non-vacuity.",
+  "description": "Structural validation for editors. midwife.frame.parse remains authoritative for cross-field invariants and trial non-vacuity.",
   "type": "object",
   "additionalProperties": false,
   "required": [

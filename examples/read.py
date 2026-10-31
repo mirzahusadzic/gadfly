@@ -14,9 +14,9 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from gadfly.cli import load_records
-from gadfly.pipeline import calls_needed, judge, plan, situate
-from gadfly.verdict import overall
+from midwife.cli import load_records
+from midwife.pipeline import calls_needed, judge, plan, situate
+from midwife.verdict import overall
 
 HERE = Path(__file__).parent
 

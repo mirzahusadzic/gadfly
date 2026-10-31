@@ -52,7 +52,7 @@ fresh and read the verdict:
 ```bash
 uv run gadfly plan examples/09-sync-sms.json
 uv run gadfly run examples/09-sync-sms.json \
-  --battery gadfly.batteries.egemma:EGemma \
+  --battery midwife.batteries.egemma:EGemma \
   --calls 40 --out my-run.jsonl
 uv run gadfly report examples/09-sync-sms.json my-run.jsonl
 ```

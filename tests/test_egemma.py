@@ -7,10 +7,10 @@ from unittest.mock import patch
 
 import pytest
 
-from gadfly.batteries import egemma
-from gadfly.batteries.egemma import EGemma, payload
-from gadfly.pipeline import calls_needed, judge, run, situate
-from gadfly.types import Budget
+from midwife.batteries import egemma
+from midwife.batteries.egemma import EGemma, payload
+from midwife.pipeline import calls_needed, judge, run, situate
+from midwife.types import Budget
 from tests.fakes import Fake
 
 

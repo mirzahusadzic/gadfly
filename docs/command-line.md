@@ -37,7 +37,7 @@ ok (schema and parser): quill-upgrade (569c71692864ab0fcfbfcd41baaa0011ee213bc0b
 The parser also checks what a schema cannot: that anchors name spans in the
 body, labels follow their order, a presentation map renames something, a
 placement moves something, and `stable` comes with `repeat`. The schema is
-`gadfly/frame.schema.json` (draft 2020-12), published at the site's root where
+`midwife/frame.schema.json` (draft 2020-12), published at the site's root where
 its `$id` points, and a parity test holds it and the parser to the same answer
 on every shipped frame.
 
@@ -74,7 +74,7 @@ and makes no file until its first record:
 
 ```bash
 uv run gadfly run examples/upgrade.json \
-  --battery gadfly.batteries.egemma:EGemma \
+  --battery midwife.batteries.egemma:EGemma \
   --calls 40 --out records.jsonl
 ```
 

@@ -2,7 +2,7 @@
 
 Gadfly's code is under Apache 2.0, and the essay's text under CC BY 4.0. The
 docs site also ships other people's work, listed here with their licences.
-The library itself, the `gadfly` package, has no runtime dependencies.
+The library itself, the `midwife` package, has no runtime dependencies.
 
 ---
 

@@ -6,9 +6,9 @@ import socket
 
 import pytest
 
-from gadfly.batteries.local_json import LocalJSON, payload
-from gadfly.pipeline import calls_needed, judge, run, situate
-from gadfly.types import Budget
+from midwife.batteries.local_json import LocalJSON, payload
+from midwife.pipeline import calls_needed, judge, run, situate
+from midwife.types import Budget
 from tests.fakes import Fake
 
 

@@ -4,9 +4,9 @@ import tracemalloc
 
 import pytest
 
-from gadfly.pipeline import calls_needed, judge, plan, run, situate
-from gadfly.types import Budget, Observation
-from gadfly.verdict import CARRIED, MISALIGNED
+from midwife.pipeline import calls_needed, judge, plan, run, situate
+from midwife.types import Budget, Observation
+from midwife.verdict import CARRIED, MISALIGNED
 
 
 @pytest.fixture

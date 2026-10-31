@@ -2,7 +2,7 @@
 
     uv run gadfly plan examples/upgrade.json
     uv run gadfly run examples/upgrade.json \\
-        --battery gadfly.batteries.egemma:EGemma \\
+        --battery midwife.batteries.egemma:EGemma \\
         --calls 40 --out records.jsonl
     uv run gadfly report examples/upgrade.json records.jsonl
     uv run gadfly check-frame my-frame.json
@@ -42,7 +42,7 @@ def load_battery(spec: str):
     """An instance of the battery class `module:Class`."""
     module_name, sep, attribute = spec.partition(":")
     if not sep or not module_name or not attribute:
-        raise ValueError("--battery is module:Class (for example gadfly.batteries.egemma:EGemma)")
+        raise ValueError("--battery is module:Class (for example midwife.batteries.egemma:EGemma)")
     if os.getcwd() not in sys.path:  # as `python -m` would: your module, from here
         sys.path.insert(0, os.getcwd())
     target = getattr(importlib.import_module(module_name), attribute)

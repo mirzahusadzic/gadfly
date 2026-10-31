@@ -5,28 +5,28 @@ Each module's section below is written from its public docstrings by
 and on GitHub. For narrative guidance start with
 [Your first frame](first-frame.md) or [Reading a verdict](reading-a-verdict.md).
 
-- **[`gadfly.pipeline`](#gadflypipeline):** `situate`, `plan`, `run`,
+- **[`midwife.pipeline`](#midwifepipeline):** `situate`, `plan`, `run`,
   `judge`, `overall`, `calls_needed`.
-- **[`gadfly.frame`](#gadflyframe):** frame parsing, hashing and refusal
+- **[`midwife.frame`](#midwifeframe):** frame parsing, hashing and refusal
   errors.
-- **[`gadfly.types`](#gadflytypes):** `Observation`, `Record`, `Budget`,
+- **[`midwife.types`](#midwifetypes):** `Observation`, `Record`, `Budget`,
   `Battery`.
-- **[`gadfly.verdict`](#gadflyverdict):** categories, levels, evidence and
+- **[`midwife.verdict`](#midwifeverdict):** categories, levels, evidence and
   obligations.
-- **[`gadfly.interventions`](#gadflyinterventions):** trial planning,
+- **[`midwife.interventions`](#midwifeinterventions):** trial planning,
   prompts and presentation renaming.
-- **`gadfly.batteries.*`:** the shipped loopback batteries, two critics and
+- **`midwife.batteries.*`:** the shipped loopback batteries, two critics and
   `local-json`.
-- **[`gadfly.cli`](#gadflycli):** the `gadfly` command, with plan, run,
+- **[`midwife.cli`](#midwifecli):** the `gadfly` command, with plan, run,
   report, check-frame and portfolio.
-- **[`gadfly.portfolio`](#gadflyportfolio):** several frames' verdicts
+- **[`midwife.portfolio`](#midwifeportfolio):** several frames' verdicts
   counted, never combined.
 
-<!-- api gadfly.pipeline -->
+<!-- api midwife.pipeline -->
 
 ---
 
-### gadfly.pipeline
+### midwife.pipeline
 
 The pipeline: situate → plan → run → judge (→ overall, over the inputs).
 
@@ -95,11 +95,11 @@ judge(frame, records)
 ```
 <!-- end api -->
 
-<!-- api gadfly.frame -->
+<!-- api midwife.frame -->
 
 ---
 
-### gadfly.frame
+### midwife.frame
 
 The frame you declare: the situated relation (L) and its assessment frame (Γ).
 
@@ -191,11 +191,11 @@ parse(raw)
 ```
 <!-- end api -->
 
-<!-- api gadfly.types -->
+<!-- api midwife.types -->
 
 ---
 
-### gadfly.types
+### midwife.types
 
 The types a pipeline passes from stage to stage, and the one a battery
 implements. Gadfly keeps no state: every value here is returned to the caller,
@@ -272,11 +272,11 @@ class Budget
 ```
 <!-- end api -->
 
-<!-- api gadfly.verdict -->
+<!-- api midwife.verdict -->
 
 ---
 
-### gadfly.verdict
+### midwife.verdict
 
 The verdict, read from the trial records by fixed rules and nothing else.
 
@@ -402,11 +402,11 @@ allowed_for(frame, base, trial="ablation")
 ```
 <!-- end api -->
 
-<!-- api gadfly.interventions -->
+<!-- api midwife.interventions -->
 
 ---
 
-### gadfly.interventions
+### midwife.interventions
 
 The admissible interventions Δ: each changes or removes the relation and
 keeps everything else as it was.
@@ -494,11 +494,11 @@ prompt(frame, trial, x)
 ```
 <!-- end api -->
 
-<!-- api gadfly.batteries.critic -->
+<!-- api midwife.batteries.critic -->
 
 ---
 
-### gadfly.batteries.critic
+### midwife.batteries.critic
 
 What every critic battery shares: one safe way to call a loopback server,
 and one way to read a label from a JSON answer (the frame's observation map).
@@ -571,11 +571,11 @@ label_at(answer, frame)
 ```
 <!-- end api -->
 
-<!-- api gadfly.batteries.unified -->
+<!-- api midwife.batteries.unified -->
 
 ---
 
-### gadfly.batteries.unified
+### midwife.batteries.unified
 
 The unified battery: an LLM critic through the unified model router.
 
@@ -678,11 +678,11 @@ observe(frame, prompt, max_output_tokens)
 ```
 <!-- end api -->
 
-<!-- api gadfly.batteries.egemma -->
+<!-- api midwife.batteries.egemma -->
 
 ---
 
-### gadfly.batteries.egemma
+### midwife.batteries.egemma
 
 The eGemma battery: Gemma 4 on this machine, through eGemma's /judge.
 
@@ -766,11 +766,11 @@ observe(frame, prompt, max_output_tokens)
 ```
 <!-- end api -->
 
-<!-- api gadfly.batteries.local_json -->
+<!-- api midwife.batteries.local_json -->
 
 ---
 
-### gadfly.batteries.local_json
+### midwife.batteries.local_json
 
 The local-json battery: any evaluator on this machine that answers JSON.
 
@@ -837,18 +837,18 @@ observe(frame, prompt, max_output_tokens)
 ```
 <!-- end api -->
 
-<!-- api gadfly.cli -->
+<!-- api midwife.cli -->
 
 ---
 
-### gadfly.cli
+### midwife.cli
 
 The command line: plan, run, report, check-frame, portfolio.
 
 ```bash
 uv run gadfly plan examples/upgrade.json
 uv run gadfly run examples/upgrade.json \
-    --battery gadfly.batteries.egemma:EGemma \
+    --battery midwife.batteries.egemma:EGemma \
     --calls 40 --out records.jsonl
 uv run gadfly report examples/upgrade.json records.jsonl
 uv run gadfly check-frame my-frame.json
@@ -953,11 +953,11 @@ main(argv=None)
 ```
 <!-- end api -->
 
-<!-- api gadfly.portfolio -->
+<!-- api midwife.portfolio -->
 
 ---
 
-### gadfly.portfolio
+### midwife.portfolio
 
 Several frames' verdicts side by side, without a verdict of their own.
 

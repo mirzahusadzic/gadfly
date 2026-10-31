@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 import pytest
 
-from gadfly.frame import FrameError, parse
-from gadfly.interventions import plan, prompt, rename
+from midwife.frame import FrameError, parse
+from midwife.interventions import plan, prompt, rename
 
 
 def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
@@ -171,7 +171,7 @@ def draws_to_plan(raw, anchors):
     raw["interventions"] = {"ablation": True, "sham": {"draws": 4}}
     raw["inputs"] = [{"id": "x", "text": "a request"}]
     CountingRandom.calls = 0
-    with patch("gadfly.interventions.random.Random", CountingRandom):
+    with patch("midwife.interventions.random.Random", CountingRandom):
         assert len([t for t in plan(parse(raw)) if t.kind == "sham"]) == 4
     return CountingRandom.calls
 
@@ -199,7 +199,7 @@ def mapping_bytes_to_parse(raw, words):
         touched[0] += len(text) + sum(len(a) + len(b) for a, b in pairs)
         return rename(text, pairs)
 
-    with patch("gadfly.interventions.rename", counting):
+    with patch("midwife.interventions.rename", counting):
         parse(raw)
     return touched[0]
 

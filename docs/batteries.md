@@ -129,7 +129,7 @@ A deterministic battery costs no tokens and shows the frame's mechanics
 plainly. This is the smallest useful shape:
 
 ```python
-from gadfly.types import Observation
+from midwife.types import Observation
 
 
 class CitationReader:

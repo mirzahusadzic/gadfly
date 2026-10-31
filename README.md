@@ -92,7 +92,7 @@ check that the battery answers:
 
 ```bash
 uv run gadfly run examples/rung1.json \
-  --battery gadfly.batteries.egemma:EGemma \
+  --battery midwife.batteries.egemma:EGemma \
   --calls 10 --out check.jsonl
 uv run gadfly report examples/rung1.json check.jsonl
 ```
@@ -137,7 +137,7 @@ and their cost, run it, and read its verdict:
 uv run gadfly check-frame examples/upgrade.json
 uv run gadfly plan examples/upgrade.json
 uv run gadfly run examples/upgrade.json \
-  --battery gadfly.batteries.egemma:EGemma \
+  --battery midwife.batteries.egemma:EGemma \
   --calls 40 --out records.jsonl
 uv run gadfly report examples/upgrade.json records.jsonl
 ```
@@ -155,10 +155,10 @@ The same test in Python reads a kept run back, then makes a fresh one:
 import json
 from pathlib import Path
 
-from gadfly.batteries.egemma import EGemma
-from gadfly.cli import load_records
-from gadfly.pipeline import calls_needed, judge, run, situate
-from gadfly.types import Budget
+from midwife.batteries.egemma import EGemma
+from midwife.cli import load_records
+from midwife.pipeline import calls_needed, judge, run, situate
+from midwife.types import Budget
 
 source = Path("examples/upgrade.json").read_text()
 frame = situate(json.loads(source))
@@ -212,8 +212,8 @@ bring the docs' transcripts, copies and reference back in line with the code:
 ```bash
 uv sync
 uv run pytest
-uv run ruff check gadfly examples tests tools
-uv run ruff format --check gadfly examples tests tools
+uv run ruff check midwife examples tests tools
+uv run ruff format --check midwife examples tests tools
 uv run python tools/doc_outputs.py --write
 ```
 

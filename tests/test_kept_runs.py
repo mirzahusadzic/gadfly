@@ -8,12 +8,12 @@ from pathlib import Path
 import pytest
 
 from examples.read import runs_of, verdict
-from gadfly.cli import load_records
-from gadfly.pipeline import calls_needed, judge, situate
-from gadfly.verdict import CARRIED as CAR
-from gadfly.verdict import COOLED as COO
-from gadfly.verdict import MISALIGNED as MIS
-from gadfly.verdict import UNRESOLVED as UNR
+from midwife.cli import load_records
+from midwife.pipeline import calls_needed, judge, situate
+from midwife.verdict import CARRIED as CAR
+from midwife.verdict import COOLED as COO
+from midwife.verdict import MISALIGNED as MIS
+from midwife.verdict import UNRESOLVED as UNR
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
 FRAMES = sorted(EXAMPLES.glob("*.json"))

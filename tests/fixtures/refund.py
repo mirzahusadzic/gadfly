@@ -8,7 +8,7 @@ policy's binding line says the rules decide (its bypass cuts that line).
 
 from __future__ import annotations
 
-from gadfly.types import Observation
+from midwife.types import Observation
 
 
 class PhraseMatcher:

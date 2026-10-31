@@ -6,7 +6,7 @@ each answering one need and keeping its contracts.
 | Capability | Use it | What it keeps |
 |---|---|---|
 | Command line and report | `gadfly plan`, `run`, `report` | records as JSON Lines, an explicit budget, evidence apart from obligations |
-| Frame schema and authoring check | `gadfly/frame.schema.json`, `gadfly check-frame` | the parser as the authority |
+| Frame schema and authoring check | `midwife/frame.schema.json`, `gadfly check-frame` | the parser as the authority |
 | Portfolio summary | `gadfly portfolio` | no verdict across frames |
 | `placement` intervention | `"placement": {"span": id, "after": id}` | old frames' hashes and categories |
 | `local-json` battery | `"battery": {"kind": "local-json", "url": ...}` | loopback, no credentials, a whole-call deadline |

@@ -10,10 +10,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from gadfly.batteries import unified
-from gadfly.batteries.critic import pointed, read_label
-from gadfly.batteries.unified import Unified, parse_stream, payload
-from gadfly.pipeline import situate
+from midwife.batteries import unified
+from midwife.batteries.critic import pointed, read_label
+from midwife.batteries.unified import Unified, parse_stream, payload
+from midwife.pipeline import situate
 from tests.fakes import Fake
 
 TOKEN = "ab" * 32

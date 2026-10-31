@@ -4,9 +4,9 @@ import copy
 
 import pytest
 
-from gadfly.pipeline import judge, plan, situate
-from gadfly.types import Record
-from gadfly.verdict import CARRIED, COOLED, MISALIGNED, OUTSIDE, UNRESOLVED, level
+from midwife.pipeline import judge, plan, situate
+from midwife.types import Record
+from midwife.verdict import CARRIED, COOLED, MISALIGNED, OUTSIDE, UNRESOLVED, level
 
 
 def records(frame, levels, runs=None):
@@ -251,8 +251,8 @@ def test_a_record_copied_twice_cannot_make_a_quorum(raw):
 
 
 def test_one_category_over_the_frames_inputs(raw):
-    from gadfly.pipeline import overall
-    from gadfly.verdict import Finding
+    from midwife.pipeline import overall
+    from midwife.verdict import Finding
 
     def found(x, category, obligations=()):
         return Finding(x, category, {}, [f"{x} read {category}"], list(obligations))

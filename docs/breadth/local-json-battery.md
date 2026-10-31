@@ -30,7 +30,7 @@ in its answer:
 }
 ```
 
-The public class is `gadfly.batteries.local_json.LocalJSON`.
+The public class is `midwife.batteries.local_json.LocalJSON`.
 
 #### The request
 

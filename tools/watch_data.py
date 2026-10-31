@@ -17,11 +17,11 @@ import sys
 from pathlib import Path
 
 from examples.read import cut, runs_of
-from gadfly.cli import load_records
-from gadfly.frame import digest
-from gadfly.interventions import plan, prompt
-from gadfly.pipeline import judge, situate
-from gadfly.verdict import overall
+from midwife.cli import load_records
+from midwife.frame import digest
+from midwife.interventions import plan, prompt
+from midwife.pipeline import judge, situate
+from midwife.verdict import overall
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs/public/assets/watch"

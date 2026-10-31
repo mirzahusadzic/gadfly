@@ -2,7 +2,7 @@
 
 import pytest
 
-from gadfly.pipeline import situate
+from midwife.pipeline import situate
 from tests.fixtures.after_the_poem import agreement_count, frame_for
 
 

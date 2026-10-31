@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
-from gadfly.cli import main
-from gadfly.frame import FrameError, parse, schema
+from midwife.cli import main
+from midwife.frame import FrameError, parse, schema
 from tests.conftest import REFUND
 from tests.fixtures.after_the_poem import frame_for
 

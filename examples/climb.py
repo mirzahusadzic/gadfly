@@ -16,10 +16,10 @@ import time
 from collections import Counter
 from pathlib import Path
 
-from gadfly.cli import load_records
-from gadfly.cli import main as gadfly
-from gadfly.pipeline import calls_needed, judge, situate
-from gadfly.verdict import overall
+from midwife.cli import load_records
+from midwife.cli import main as gadfly
+from midwife.pipeline import calls_needed, judge, situate
+from midwife.verdict import overall
 
 HERE = Path(__file__).parent
 STEPS = ["ablation", "repeat", "sham", "presentation", "bypass", "control"]
@@ -45,7 +45,7 @@ def climb(path: Path, runs: int) -> None:
         began = time.monotonic()
         n = len(list(out_dir.glob("*.jsonl"))) + 1
         out = out_dir / f"{n}.jsonl"
-        argv = ["run", str(path), "--battery", "gadfly.batteries.egemma:EGemma"]
+        argv = ["run", str(path), "--battery", "midwife.batteries.egemma:EGemma"]
         if gadfly([*argv, "--calls", str(calls_needed(frame)), "--out", str(out)]) != 0:
             raise SystemExit(f"run {n} failed")
         records = load_records(str(out))

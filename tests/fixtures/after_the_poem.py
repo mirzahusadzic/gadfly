@@ -26,8 +26,8 @@ import sys
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
-from gadfly.pipeline import judge, plan, situate
-from gadfly.types import Record
+from midwife.pipeline import judge, plan, situate
+from midwife.types import Record
 
 # The rubric's levels, lowest first.
 LEVELS = ["level-0", "level-1", "level-2", "level-3", "level-4"]

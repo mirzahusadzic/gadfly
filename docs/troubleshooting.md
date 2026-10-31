@@ -26,7 +26,7 @@ without an answer is an opening, which `run` counts and names.
 
 | You see | What it means, and what to do |
 | --- | --- |
-| `gadfly: --battery is module:Class (for example gadfly.batteries.egemma:EGemma)` | Name the class after a colon. |
+| `gadfly: --battery is module:Class (for example midwife.batteries.egemma:EGemma)` | Name the class after a colon. |
 | `gadfly: No module named '...'` | The battery's module is imported from the current directory. Run from the folder that holds it, or check its name. |
 | `gadfly: this frame asks for the egemma battery, not unified` | A frame names its battery in `battery.kind`, and another battery is another frame. Pass the one it names. |
 | `stopped: the plan needs 40 calls; the budget allows 10` | `--calls` is below what the plan needs, and nothing was spent. `gadfly plan` shows the count. |

@@ -11,14 +11,14 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 
 | Task | Source |
 | --- | --- |
-| Frame parsing, canonical JSON, hash, refusals | `gadfly/frame.py`, `gadfly/frame.schema.json` |
-| Trial planning, prompts, renaming, placement | `gadfly/interventions.py` |
-| Run, budget, cancellation, records | `gadfly/pipeline.py`, `gadfly/types.py` |
-| Verdict rules, levels, evidence, obligations | `gadfly/verdict.py` |
-| Several frames counted, never combined | `gadfly/portfolio.py` |
-| Command line | `gadfly/cli.py` |
-| What every critic shares: the loopback call, the label pointer | `gadfly/batteries/critic.py` |
-| The shipped batteries | `gadfly/batteries/unified.py` (the model router), `egemma.py`, `local_json.py` |
+| Frame parsing, canonical JSON, hash, refusals | `midwife/frame.py`, `midwife/frame.schema.json` |
+| Trial planning, prompts, renaming, placement | `midwife/interventions.py` |
+| Run, budget, cancellation, records | `midwife/pipeline.py`, `midwife/types.py` |
+| Verdict rules, levels, evidence, obligations | `midwife/verdict.py` |
+| Several frames counted, never combined | `midwife/portfolio.py` |
+| Command line | `midwife/cli.py` |
+| What every critic shares: the loopback call, the label pointer | `midwife/batteries/critic.py` |
+| The shipped batteries | `midwife/batteries/unified.py` (the model router), `egemma.py`, `local_json.py` |
 | Example frames and their kept runs | `examples/*.json`, `examples/runs/<frame>/` |
 | Predictions, results, findings | `examples/PREDICTIONS.md`, `examples/RESULTS.md`, `examples/FINDINGS.md` |
 | Reading kept runs back; running a frame against eGemma | `examples/read.py`; `examples/climb.py` |
@@ -31,7 +31,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 
 ### Preserve these behaviors
 
-- Fixed rules: a verdict follows from the records by the rules in `gadfly/verdict.py`, in their order; no model judges. A rule change is a method change: say so in the docs and test every category it touches.
+- Fixed rules: a verdict follows from the records by the rules in `midwife/verdict.py`, in their order; no model judges. A rule change is a method change: say so in the docs and test every category it touches.
 - A frame is hashed whole, as canonical JSON. Every record names its frame's hash, and `check_records` refuses records another plan, frame or battery made. Never default, rewrite or repair a frame.
 - Unresolved names the open check; evidence and obligations stay apart, and an obligation is not a passed check.
 - Trial blindness: a battery gets the frame and the prompt, never the trial's id.

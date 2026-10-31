@@ -202,7 +202,7 @@ all the inputs agree.
 
 ### Check before you run
 
-Point your editor at `gadfly/frame.schema.json`, its JSON Schema (draft
+Point your editor at `midwife/frame.schema.json`, its JSON Schema (draft
 2020-12), for completion and errors as you type. Then let the parser, which
 has the last word, check what only code can:
 

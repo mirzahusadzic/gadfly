@@ -92,7 +92,7 @@ def printed(transcript: Transcript) -> str:
             if argv[0] == "python":
                 argv[0] = sys.executable
             elif argv[0] == "gadfly":
-                argv[:1] = [sys.executable, "-m", "gadfly"]
+                argv[:1] = [sys.executable, "-m", "midwife"]
             done = subprocess.run(
                 argv, cwd=ROOT, env=env, capture_output=True, text=True, timeout=120
             )
@@ -301,7 +301,7 @@ def readable(source: str, page: str) -> str:
     the file as written one link away and each span linked to its line."""
     import json
 
-    from gadfly.pipeline import calls_needed, plan, situate
+    from midwife.pipeline import calls_needed, plan, situate
 
     path = ROOT / source
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -366,7 +366,7 @@ def frame_index() -> str:
     shows, each with its hash and the page that shows it."""
     import json
 
-    from gadfly.frame import digest
+    from midwife.frame import digest
 
     shown = {f.source: page.removesuffix(".md").removeprefix("docs/") for page in PAGES
              for f in frames(page)}  # fmt: skip

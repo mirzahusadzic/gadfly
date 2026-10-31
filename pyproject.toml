@@ -1,5 +1,5 @@
 [project]
-name = "gadfly"
+name = "midwife"
 version = "0.1.0"
 description = "Test whether a decision rests on the evidence you think it does: cut or change one declared line in fixed ways, ask again, and read the verdict by fixed rules."
 readme = "README.md"
@@ -9,7 +9,7 @@ license-files = ["LICENSE", "LICENSES/*"]
 dependencies = []
 
 [project.scripts]
-gadfly = "gadfly.cli:main"
+gadfly = "midwife.cli:main"
 
 [project.urls]
 Repository = "https://github.com/mirzahusadzic/gadfly"
@@ -27,7 +27,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=gadfly --cov-report=term-missing --cov-fail-under=85"
+addopts = "--cov=midwife --cov-report=term-missing --cov-fail-under=85"
 testpaths = ["tests"]
 pythonpath = ["."]
 

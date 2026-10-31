@@ -1,4 +1,4 @@
-"""`python -m gadfly`: the command line."""
+"""`python -m midwife`: the command line."""
 
 from .cli import main
 

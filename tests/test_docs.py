@@ -58,7 +58,7 @@ def test_every_public_name_in_the_reference_has_a_docstring():
 def test_the_site_publishes_the_frame_schema_where_its_id_says():
     # the site's public files are served at its root, /gadfly/
     published = ROOT / "docs/public/frame.schema.json"
-    assert published.resolve() == (ROOT / "gadfly/frame.schema.json").resolve()
+    assert published.resolve() == (ROOT / "midwife/frame.schema.json").resolve()
     assert "base: '/gadfly/'" in (ROOT / "docs/.vitepress/config.mjs").read_text()
     schema = json.loads(published.read_text())
     assert schema["$id"] == "https://mirzahusadzic.github.io/gadfly/frame.schema.json"

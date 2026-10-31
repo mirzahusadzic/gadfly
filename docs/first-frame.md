@@ -277,7 +277,7 @@ and read the verdict:
 uv run gadfly check-frame examples/upgrade.json
 uv run gadfly plan examples/upgrade.json
 uv run gadfly run examples/upgrade.json \
-  --battery gadfly.batteries.egemma:EGemma \
+  --battery midwife.batteries.egemma:EGemma \
   --calls 40 --out my-run.jsonl
 uv run gadfly report examples/upgrade.json my-run.jsonl
 ```

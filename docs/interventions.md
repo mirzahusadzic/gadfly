@@ -102,7 +102,7 @@ and the finding says so. This lists the plan and its cost without spending
 anything:
 
 ```python
-from gadfly.pipeline import calls_needed, plan
+from midwife.pipeline import calls_needed, plan
 
 for trial in plan(frame):
     print(trial.id, len(trial.removed), trial.body_hash)

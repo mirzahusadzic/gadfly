@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from gadfly.cli import main
+from midwife.cli import main
 
 ROOT = Path(__file__).parent.parent
 REFUND = str(ROOT / "tests/fixtures/refund.json")
@@ -123,9 +123,9 @@ def test_a_refusal_is_a_message_and_status_two(argv, message, capsys):
     assert main(argv) == 2 and message in capsys.readouterr().err
 
 
-def test_python_m_gadfly_is_the_command_line():
+def test_python_m_midwife_is_the_command_line():
     done = subprocess.run(
-        [sys.executable, "-m", "gadfly", "plan", REFUND],
+        [sys.executable, "-m", "midwife", "plan", REFUND],
         capture_output=True,
         text=True,
         cwd=ROOT,
@@ -135,7 +135,7 @@ def test_python_m_gadfly_is_the_command_line():
 
 
 def test_a_portfolio_refuses_no_frames_and_twice_named_ones_and_shows_disagreements():
-    from gadfly.portfolio import Entry, summarize
+    from midwife.portfolio import Entry, summarize
 
     with pytest.raises(ValueError, match="at least one frame"):
         summarize([])
