@@ -2,8 +2,8 @@
 
 import pytest
 
-from examples.after_the_poem import agreement_count, frame_for
 from gadfly.pipeline import situate
+from tests.fixtures.after_the_poem import agreement_count, frame_for
 
 
 @pytest.mark.parametrize(

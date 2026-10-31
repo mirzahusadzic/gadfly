@@ -1,0 +1,41 @@
+{
+  "name": "refund-receipt",
+  "relation": "a refund requires a receipt",
+  "locus": "the refund policy, its receipt rule",
+  "role": "a support agent deciding a request",
+  "grain": "one rule of the policy",
+  "purpose": "decide a refund request under the policy",
+  "trajectory": "policy and request, the agent's decision, the reply to the customer",
+  "crossing": "the decision in the reply",
+  "promise": "a request without a receipt is declined, however the rule is worded",
+  "baseline": "the policy as written and one request; no rule changed",
+  "body": {
+    "spans": [
+      {"id": "days", "text": "Refunds are granted within 30 days of purchase.", "kind": "rule"},
+      {"id": "receipt", "text": "A refund requires a receipt.", "kind": "rule"},
+      {"id": "gift", "text": "Gift cards are never refunded.", "kind": "rule"},
+      {"id": "method", "text": "Refunds go back to the original payment.", "kind": "rule"},
+      {"id": "binding", "text": "These rules decide every request.", "kind": "note"}
+    ]
+  },
+  "anchors": ["receipt"],
+  "inputs": [
+    {"id": "no-receipt", "text": "A customer without a receipt asks for a refund on day 3."}
+  ],
+  "observe": {
+    "labels": ["grant", "decline", "unclear"],
+    "instruction": "Decide the request under the policy."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {"draws": 2},
+    "presentation": {"receipt": "proof of purchase"},
+    "bypass": ["binding"],
+    "control": ["days", "receipt", "gift", "method"]
+  },
+  "allowed": {"ablation": ["grant", "unclear"], "bypass": ["unclear"]},
+  "standing": {"quorum": 1, "agree": 1},
+  "materialized": true,
+  "battery": {"kind": "rule-reader"}
+}

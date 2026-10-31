@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
-from examples.after_the_poem import frame_for
 from gadfly.cli import main
 from gadfly.frame import FrameError, parse, schema
 from tests.conftest import REFUND
+from tests.fixtures.after_the_poem import frame_for
 
 ROOT = Path(__file__).parent.parent
 VALIDATOR = Draft202012Validator(schema())
@@ -73,7 +73,7 @@ def test_the_schema_refuses_what_the_parser_refuses(change):
 
 
 def test_check_frame_says_ok_or_where_the_frame_is_wrong(tmp_path, capsys):
-    assert main(["check-frame", str(ROOT / "examples/refund.json")]) == 0
+    assert main(["check-frame", str(ROOT / "tests/fixtures/refund.json")]) == 0
     assert capsys.readouterr().out.startswith("ok (schema and parser): refund-receipt (")
     raw = copy.deepcopy(REFUND)
     raw["anchors"] = ["r9"]  # only the parser can see this one

@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from examples.after_the_poem import replay
+from tests.fixtures.after_the_poem import replay
 
 PLANS = [Path(p) for p in os.environ.get("GADFLY_ATP_PLANS", "").split(os.pathsep) if p]
 

@@ -10,7 +10,7 @@ import pytest
 from gadfly.cli import main
 
 ROOT = Path(__file__).parent.parent
-REFUND = str(ROOT / "examples/refund.json")
+REFUND = str(ROOT / "tests/fixtures/refund.json")
 
 
 @pytest.fixture(autouse=True)
@@ -33,7 +33,7 @@ def test_plan_shows_the_trials_and_the_calls_without_spending(capsys):
 
 def run_refund(tmp_path, *more):
     out = tmp_path / "records.jsonl"
-    argv = ["run", REFUND, "--battery", "examples.refund:RuleReader", "--calls", "8"]
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     return main([*argv, "--out", str(out), *more]), out
 
 
@@ -62,7 +62,7 @@ def test_run_never_writes_over_kept_records(tmp_path, capsys):
 
 def test_run_says_when_the_budget_stopped_it(tmp_path, capsys):
     out = tmp_path / "records.jsonl"
-    argv = ["run", REFUND, "--battery", "examples.refund:RuleReader", "--calls", "3"]
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "3"]
     assert main([*argv, "--out", str(out)]) == 0
     assert capsys.readouterr().out.splitlines()[1] == (
         "stopped: the plan needs 8 calls; the budget allows 3"
@@ -72,7 +72,7 @@ def test_run_says_when_the_budget_stopped_it(tmp_path, capsys):
 def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     status, first = run_refund(tmp_path, "--only", "baseline")
     rest = tmp_path / "rest.jsonl"
-    argv = ["run", REFUND, "--battery", "examples.refund:RuleReader", "--calls", "7"]
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "7"]
     assert main([*argv, "--out", str(rest), "--kept", str(first)]) == 0
     assert capsys.readouterr().out.endswith(f"wrote 7/7 calls to {rest}\n")
 
@@ -133,7 +133,7 @@ def test_a_portfolio_refuses_no_frames_and_twice_named_ones_and_shows_disagreeme
 def test_a_refused_run_writes_no_records_file(tmp_path, capsys):
     # the frame names the rule reader: another battery is refused before a call
     out = tmp_path / "records.jsonl"
-    argv = ["run", REFUND, "--battery", "examples.refund:PhraseMatcher", "--calls", "7"]
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:PhraseMatcher", "--calls", "7"]
     assert main([*argv, "--out", str(out)]) == 2
     assert "asks for the rule-reader battery" in capsys.readouterr().err
     assert not out.exists()
