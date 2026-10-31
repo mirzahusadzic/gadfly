@@ -113,6 +113,18 @@ A reader of the examples sees both versions and which came first.
 
 ---
 
+### The same shape in 10b
+
+[10b](misaligned.md)'s control has the same shape, found only after its runs:
+it cuts the deploy and the failover and keeps its anchors, the same two metric
+lines, so it left database on every call of every task. It did not matter
+there, because 10b's verdict, coupled but misaligned, rests on its ablation,
+which moved to api, and that reading never asks the control. Had the ablation
+held, Gadfly would have refused cooled as it did for 10c, so 10b stays as it
+ran, with this note beside it.
+
+---
+
 ### What to take from it
 
 - A control is a claim about the task: cut it and any reader must move. Check

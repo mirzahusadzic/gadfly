@@ -64,6 +64,14 @@ can be read back with `read.py`, without a model.
    first, a prototype, an AI assistant, pairing) was read identically on every
    call (15). The one path-dependent spread is a result near its threshold.
 
+A caveat on the incident frames' alert task (10). "Which component should get a
+new alert so this is caught sooner next time?" has two defensible answers: an
+alert on the database's failover and cache, or one on the API's latency, the
+symptom, which by the frames' own timestamps (14:03) showed before the
+database's metrics (14:04, 14:05). The frames expect database, so the alert
+splits in points 2 and 6 say as much about the question as about the reader. A
+later frame should ask a question with one answer.
+
 ## The service: eGemma
 
 - **No call failed.** 5,495 calls: no error, no
@@ -102,6 +110,12 @@ the database's new primary, so it could not move the answer, and it did not.
 Gadfly refused to call 10c cooled: "the control left it at database too". That
 check exists for a reader that cannot move; here it caught the frame's author.
 10c2 is the corrected frame, and 10c stays as it ran.
+
+10b's control has the same shape, found only on a later reading of every
+frame: it keeps its anchors, the same two metric lines, and stayed at database
+on all 60 of its calls. Its verdict, coupled but misaligned, rests on the
+ablation, which never asks the control, so the result stands; but the check
+could not have fired, and 10b stays as it ran.
 
 ### Design calls
 
