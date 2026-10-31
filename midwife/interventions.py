@@ -90,6 +90,8 @@ def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
             pools[span.kind].append((len(span.text), at, span))
     for pool in pools.values():
         pool.sort(key=lambda entry: entry[:2])
+    # each pool's lengths, kept beside it, so a draw never rebuilds them
+    lengths = {kind: [entry[0] for entry in pool] for kind, pool in pools.items()}
     anchors = [span for span in frame.spans if span.id in frame.anchors]
     rng = random.Random(int(frame.hash[:16], 16))
     draws: list[tuple[str, ...]] = []
@@ -99,15 +101,19 @@ def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
             pool = pools.get(anchor.kind)
             if not pool:
                 return draws
-            chosen.append(pool.pop(_nearest(pool, len(anchor.text), rng))[2].id)
+            at = _nearest(pool, lengths[anchor.kind], len(anchor.text), rng)
+            lengths[anchor.kind].pop(at)
+            chosen.append(pool.pop(at)[2].id)
         draws.append(tuple(sorted(chosen)))
     return draws
 
 
-def _nearest(pool: list[tuple[int, int, Span]], length: int, rng: random.Random) -> int:
-    """The index of the span in `pool` closest to `length`. The equally close
-    lie side by side in the sorted pool; the seed chooses among them."""
-    lengths = [entry[0] for entry in pool]
+def _nearest(
+    pool: list[tuple[int, int, Span]], lengths: list[int], length: int, rng: random.Random
+) -> int:
+    """The index of the span in `pool` closest to `length`, given the pool's
+    lengths. The equally close lie side by side in the sorted pool; the seed
+    chooses among them."""
     at = bisect_left(lengths, length)
     best = min(abs(lengths[i] - length) for i in (at - 1, at) if 0 <= i < len(pool))
     lo, hi = bisect_left(lengths, length - best), bisect_right(lengths, length + best)
