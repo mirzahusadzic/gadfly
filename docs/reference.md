@@ -579,8 +579,8 @@ label_at(answer, frame)
 
 The unified battery: an LLM critic through the unified model router.
 
-The router (github.com/mirzahusadzic/codex-unified-model-router) serves the
-Responses API on loopback and maps a model slug to its provider:
+The [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router)
+serves the Responses API on loopback and maps a model slug to its provider:
 `anthropic/...` runs on Anthropic's API; `openrouter/...`, `deepseek/...`
 and `ultra-spark/...` run on OpenRouter (DeepSeek's models through it), each
 with the router's own key. `ultra-spark/` is training-tier: it is sent only
@@ -686,7 +686,7 @@ observe(frame, prompt, max_output_tokens)
 
 The eGemma battery: Gemma 4 on this machine, through eGemma's /judge.
 
-eGemma (github.com/mirzahusadzic/egemma) reads the prompt under the frame's
+[eGemma](https://github.com/mirzahusadzic/egemma) reads the prompt under the frame's
 instruction, with no persona added, and a grammar holds its answer to the
 schema: by default `{"label": <one of the frame's labels>}`, or a critic's own
 schema with the label's place named, as for the unified battery. Nothing

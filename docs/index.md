@@ -35,7 +35,7 @@ Start where your question is; every path ends in the same few pages.
 ### What a result looks like
 
 A pull request formats a value into SQL, and the repository's rules forbid it.
-Gemma 4 26B, through eGemma, reviewed it in five kept runs, and reading them
+Gemma 4 26B, through [eGemma](https://github.com/mirzahusadzic/egemma), reviewed it in five kept runs, and reading them
 back calls no model:
 
 ```text

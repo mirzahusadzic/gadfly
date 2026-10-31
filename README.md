@@ -62,6 +62,41 @@ cd gadfly
 uv sync
 ```
 
+Reading the kept examples back needs nothing more. A live run also needs a
+battery: a scorer on this machine that Gadfly asks each trial.
+
+#### Set up a battery
+
+Each shipped battery calls a service on loopback. Start the service and give
+Gadfly its key; the address has a default.
+
+- **eGemma, for Gemma 4 on this machine:** install and start
+  [eGemma](https://github.com/mirzahusadzic/egemma) as its README says. Gadfly calls it at
+  `EGEMMA_URL`, by default `http://127.0.0.1:8000`, with the key from the
+  file named by `EGEMMA_API_KEY_FILE`, else `EGEMMA_API_KEY`. A frame names it
+  as `"battery": {"kind": "egemma"}`, as every example does.
+- **The unified model router, for Claude, DeepSeek and OpenRouter's
+  models:** install and start the [router](https://github.com/mirzahusadzic/codex-unified-model-router) as its README says.
+  Gadfly calls it at `http://127.0.0.1:18766`, with its token from
+  `CODEX_ROUTER_TOKEN`, else the router's settings file,
+  `~/.codex/unified-router/openrouter.env`. A frame names its model, as
+  `"battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5"}`,
+  and the router's `GET /v1/models` lists the ones it serves.
+- **`local-json`, for an evaluator of your own:** a service on this machine at
+  the frame's `battery.url` that answers JSON, with no key.
+- **Your own class:** any class whose `name` is the frame's `battery.kind`,
+  passed to `run` as `--battery module:Class`.
+
+These two commands make ten calls to eGemma and read the verdict, a quick
+check that the battery answers:
+
+```bash
+uv run gadfly run examples/rung1.json \
+  --battery gadfly.batteries.egemma:EGemma \
+  --calls 10 --out check.jsonl
+uv run gadfly report examples/rung1.json check.jsonl
+```
+
 ---
 
 ### Use
@@ -95,17 +130,8 @@ frame](docs/first-frame.md) climbs one frame, a trial at a time, to `carried`.
 
 #### Run a frame
 
-A live run needs a scorer on this machine, which Gadfly calls a battery:
-
-- **`egemma`:** eGemma at `EGEMMA_URL` (by default `http://127.0.0.1:8000`),
-  with its key in `EGEMMA_API_KEY_FILE` or `EGEMMA_API_KEY`.
-- **`unified`:** the unified model router, with its token in
-  `CODEX_ROUTER_TOKEN` or the router's own settings file.
-- **`local-json`:** your evaluator at `battery.url`, with no key.
-- **Your own:** any class whose `name` is the frame's `battery.kind`.
-
-These four commands check a frame, show its trials and their cost, run it, and
-read its verdict:
+With a battery set up, these four commands check a frame, show its trials
+and their cost, run it, and read its verdict:
 
 ```bash
 uv run gadfly check-frame examples/upgrade.json

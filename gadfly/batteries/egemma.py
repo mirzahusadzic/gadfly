@@ -1,6 +1,6 @@
 """The eGemma battery: Gemma 4 on this machine, through eGemma's /judge.
 
-eGemma (github.com/mirzahusadzic/egemma) reads the prompt under the frame's
+[eGemma](https://github.com/mirzahusadzic/egemma) reads the prompt under the frame's
 instruction, with no persona added, and a grammar holds its answer to the
 schema: by default `{"label": <one of the frame's labels>}`, or a critic's own
 schema with the label's place named, as for the unified battery. Nothing

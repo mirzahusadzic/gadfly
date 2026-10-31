@@ -1,7 +1,7 @@
 """The unified battery: an LLM critic through the unified model router.
 
-The router (github.com/mirzahusadzic/codex-unified-model-router) serves the
-Responses API on loopback and maps a model slug to its provider:
+The [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router)
+serves the Responses API on loopback and maps a model slug to its provider:
 `anthropic/...` runs on Anthropic's API; `openrouter/...`, `deepseek/...`
 and `ultra-spark/...` run on OpenRouter (DeepSeek's models through it), each
 with the router's own key. `ultra-spark/` is training-tier: it is sent only

@@ -3,7 +3,7 @@
 Every example here is an experiment, not a demonstration: a frame, the
 predictions written before its first call, and the records of every run. The
 reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
-eGemma on one machine, and reading an example back needs no model.
+[eGemma](https://github.com/mirzahusadzic/egemma) on one machine, and reading an example back needs no model.
 
 - **Predictions first:** `examples/PREDICTIONS.md` holds what each step
   expected, written before its first call.
