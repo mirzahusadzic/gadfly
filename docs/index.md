@@ -34,7 +34,7 @@ no runtime dependencies and no hidden state.
     ---
 
     Gadfly returns one of five categories, not a score. Read [Reading a verdict](reading-a-verdict.md),
-    then decide from the [examples](examples.md) whether that vocabulary fits your question.
+    then decide from the [examples](examples/index.md) whether that vocabulary fits your question.
 
 </div>
 
@@ -66,7 +66,7 @@ Gemma asks for changes with the rule and without it, while the control (the
 rule and the query both cut) moves it to approve: the reader can move, and the
 rule is not what moves it. Its training rejects formatted SQL anyway, so the
 rule carries nothing here: **cooled**. A rule Gemma cannot know from training
-moves the other way ([rung 8](examples.md#07-08-a-rule-the-model-knows-and-one-it-cannot)).
+moves the other way ([Cooled](examples/cooled.md)).
 
 --8<-- "README.md:verdicts"
 
@@ -87,7 +87,7 @@ uv run python examples/read.py examples/upgrade.json
 | choose trials and estimate calls | [Interventions](interventions.md) |
 | understand evidence and obligations | [Reading a verdict](reading-a-verdict.md) |
 | use a model, local service or your own scorer | [Batteries](batteries.md) |
-| see the method on other relations | [Examples](examples.md) |
+| climb the examples, one capability a step | [Examples](examples/index.md) |
 | run, report and check frames from the command line | [Extending Gadfly](roadmap.md) |
 | see the trust boundaries and current limits | [Architecture and limits](architecture.md) |
 | find a library name | [Reference](reference.md) |

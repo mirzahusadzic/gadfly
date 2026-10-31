@@ -97,7 +97,7 @@ run 5: unresolved
 ```
 
 Gemma gave the same answer on all 25 calls. On clear evidence this reader is
-close to deterministic; [rung 9](examples.md#09-a-synchronous-call-in-checkout) shows where it is not.
+close to deterministic; [Quorum](examples/quorum.md) shows where it is not.
 
 ## 4. Cut something harmless: shams
 
@@ -182,8 +182,8 @@ pr: carried
   evidence: the control moved it hold -> merge
 ```
 
-Rung 7 in the [examples](examples.md#07-08-a-rule-the-model-knows-and-one-it-cannot)
-is where a control decides a verdict.
+The next step of the ladder, [Cooled](examples/cooled.md), is where a control
+decides a verdict.
 
 ## 8. What "carried" says here
 
@@ -229,5 +229,7 @@ write down what you expect each trial to give, before the first call.
 `uv run gadfly check-frame my-frame.json` shows these before any call, with the
 schema's findings first when `jsonschema` is installed.
 
-Next: [Write a frame](write-a-frame.md) for the complete field reference.
+Next: the [examples](examples/index.md) climb on from here, one capability a
+step, starting with [Cooled](examples/cooled.md). [Write a frame](write-a-frame.md)
+is the complete field reference.
 

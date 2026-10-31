@@ -71,4 +71,4 @@ The overall category is unresolved because one input is. Each input's evidence
 is kept, prefixed with the input's name, and an obligation every input shares
 would be said once. That one frame reads three ways here is by design, which the
 frame's single set of allowed answers cannot yet say; see
-[Examples](../examples.md#12-one-grant-three-requesters).
+[Several inputs](../examples/inputs.md).

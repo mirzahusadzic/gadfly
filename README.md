@@ -88,7 +88,7 @@ run 5: unresolved
 
 Only the bypass check is open there, so it is not yet `carried`. The
 [first-frame tutorial](docs/first-frame.md) climbs one frame a trial at a time
-to a carried verdict, and [the examples](docs/examples.md) cover the rest.
+to a carried verdict, and [the examples](docs/examples/index.md) cover the rest.
 
 The same test in Python:
 
@@ -263,7 +263,7 @@ Each example is an experiment: a frame in `examples/`, its predictions written
 before the first call (`examples/PREDICTIONS.md`), and every run Gemma 4 26B
 gave through eGemma kept under `examples/runs/`. `uv run python
 examples/read.py examples/<frame>.json` reads one back without a model;
-[the examples page](docs/examples.md) walks through each, and
+[the examples](docs/examples/index.md) climb them one capability a step, and
 `examples/FINDINGS.md` gathers what they showed.
 
 <!-- --8<-- [start:examples] -->
