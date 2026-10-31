@@ -289,10 +289,15 @@ def _does(frame, trial) -> str:
     return "asks the same again" if trial.kind == "repeat" else "asks the evidence as it is"
 
 
-def _line_of(lines: list[str], span: str) -> int:
-    # the line in the file where a span is declared, for a link to it
+def _span_lines(lines: list[str]) -> dict[str, int]:
+    # the line in the file where each span is declared, for a link to it: the
+    # first line after "spans" that names its id, found in one pass
     start = next(i for i, line in enumerate(lines) if '"spans"' in line)
-    return next(i for i in range(start, len(lines)) if f'"id": "{span}"' in lines[i]) + 1
+    found: dict[str, int] = {}
+    for number, line in enumerate(lines[start:], start + 1):
+        for span in re.findall(r'"id": "([^"]+)"', line):
+            found.setdefault(span, number)
+    return found
 
 
 def readable(source: str, page: str) -> str:
@@ -316,9 +321,10 @@ def readable(source: str, page: str) -> str:
     out += [f"- **{key.capitalize()}:** {_text(str(raw[key]))}" for key in situation]
     out += ["", "**The evidence**, the anchor marked `*`:", ""]
     out += ["| Span | Kind | Text |", "|---|---|---|"]
+    at = _span_lines(lines)
     for span in frame.spans:
         mark = " `*`" if span.id in frame.anchors else ""
-        link = f"[`{span.id}`]({href}#L{_line_of(lines, span.id)})"
+        link = f"[`{span.id}`]({href}#L{at[span.id]})"
         out.append(f"| {link}{mark} | {span.kind} | {_cell(span.text)} |")
     out += ["", "**The question**", ""]
     out += [f"- **Asked, `{x['id']}`:** {_text(x['text'])}" for x in frame.inputs]

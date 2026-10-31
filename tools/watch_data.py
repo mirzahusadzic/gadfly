@@ -40,11 +40,12 @@ def watched(stem: str) -> dict:
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
     trials = plan(frame)
     prompts = {(x["id"], t.id): prompt(frame, t, x) for x in frame.inputs for t in trials}
+    digests = {key: digest(text) for key, text in prompts.items()}  # each prompt's, once
     runs = []
     for kept in runs_of(path):
         records = load_records(str(kept))
         for r in records:
-            if digest(prompts[r["input"], r["trial"]]) != r["prompt"]:
+            if digests[r["input"], r["trial"]] != r["prompt"]:
                 raise SystemExit(f"{kept}: {r['input']}/{r['trial']} was asked another prompt")
         findings = judge(frame, records)
         runs.append(

@@ -52,3 +52,33 @@ def test_judge_decodes_the_frame_once_not_once_per_input(monkeypatch):
         judge(frame, records)
         sizes.append(sum(decoded))
     assert sizes[1] < 2.6 * sizes[0], sizes
+
+
+def test_the_watch_data_digests_each_prompt_once(monkeypatch):
+    # a prompt is asked many times; its digest is taken once
+    from tools import watch_data
+
+    calls = []
+    digest = watch_data.digest
+    monkeypatch.setattr(watch_data, "digest", lambda text: calls.append(text) or digest(text))
+    watch_data.watched("upgrade")
+    frame = situate(json.loads((watch_data.ROOT / "examples/upgrade.json").read_text()))
+    slots = len(frame.inputs) * len(plan(frame))  # one per input and trial, not per record
+    assert len(calls) == slots, (len(calls), slots)
+
+
+def test_a_frame_shown_in_words_finds_its_span_lines_in_one_pass(tmp_path):
+    # each span links to its line: the file is read once, not once per span
+    from tools.doc_outputs import readable
+
+    def shown(n):
+        raw = copy.deepcopy(REFUND)
+        raw["body"]["spans"] += [
+            {"id": f"f{i}", "text": f"free {i}", "kind": "rule"} for i in range(n)
+        ]
+        path = tmp_path / f"frame-{n}.json"
+        path.write_text(json.dumps(raw, indent=2))
+        return instructions(lambda: readable(str(path), "docs/first-frame.md"))
+
+    small, large = shown(100), shown(200)
+    assert large < 2.6 * small, (small, large)
