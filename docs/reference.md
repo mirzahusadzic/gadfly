@@ -484,7 +484,9 @@ without(spans, removed)
 
 Rename each word consistently, whole words only, in one pass: a word is
 renamed once (a swap stays a swap), and a phrase wins over a word inside
-it. A capital is kept, and so is a word written in capitals.
+it. A capital is kept, and so is a word written in capitals. A word may
+begin or end in a sign, such as 20% or C++; it is never part of a longer
+word.
 
 ```python
 rename(text, mapping)

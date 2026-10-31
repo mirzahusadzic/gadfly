@@ -459,7 +459,7 @@ def _check_interventions(
         # in no other span, so the trial changes the relation's sense alone.
         anchored = set(anchors)
         for phrase in inversion:
-            found = re.compile(rf"\b{re.escape(phrase)}\b", re.IGNORECASE)
+            found = re.compile(rf"(?<!\w){re.escape(phrase)}(?!\w)", re.IGNORECASE)
             if not any(found.search(span.text) for span in spans if span.id in anchored):
                 raise FrameError(f"inversion's '{phrase}' is in no anchor")
             elsewhere = [s.id for s in spans if s.id not in anchored and found.search(s.text)]

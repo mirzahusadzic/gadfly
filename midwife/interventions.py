@@ -55,7 +55,9 @@ def without(spans: tuple[Span, ...], removed: set[str]) -> tuple[Span, ...]:
 def rename(text: str, mapping: tuple[tuple[str, str], ...]) -> str:
     """Rename each word consistently, whole words only, in one pass: a word is
     renamed once (a swap stays a swap), and a phrase wins over a word inside
-    it. A capital is kept, and so is a word written in capitals."""
+    it. A capital is kept, and so is a word written in capitals. A word may
+    begin or end in a sign, such as 20% or C++; it is never part of a longer
+    word."""
     return renamer(mapping)(text) if mapping else text
 
 
@@ -65,7 +67,9 @@ def renamer(mapping: tuple[tuple[str, str], ...]) -> Callable[[str], str]:
     here, and the function returned applies them to any text."""
     table = {old.lower(): new for old, new in mapping}
     words = "|".join(re.escape(old) for old in sorted(table, key=len, reverse=True))
-    pattern = re.compile(rf"\b(?:{words})\b", flags=re.IGNORECASE)
+    # whole words: no letter, digit or underscore just before or after, which
+    # holds at a sign as well as at a letter (\b would need one beyond "%")
+    pattern = re.compile(rf"(?<!\w)(?:{words})(?!\w)", flags=re.IGNORECASE)
 
     def swap(match: re.Match[str]) -> str:
         word = match.group(0)

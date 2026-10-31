@@ -335,3 +335,27 @@ def test_an_inversion_trial_without_what_it_must_reach_is_refused(raw):
     raw["interventions"]["inversion"] = INVERT
     with pytest.raises(FrameError, match="go together"):
         parse(raw)
+
+
+@pytest.mark.parametrize(
+    "text, mapping, renamed",
+    [
+        ("cut by 20% today", (("20%", "a fifth"),), "cut by a fifth today"),
+        ("written in C++ here", (("C++", "Rust"),), "written in Rust here"),
+        ("a .env file", ((".env", "settings"),), "a settings file"),
+        ("swords and words", (("word", "term"),), "swords and words"),  # never inside a word
+        ("Receipt or receipts", (("receipt", "slip"),), "Slip or receipts"),
+    ],
+)
+def test_a_word_may_begin_or_end_in_a_sign(text, mapping, renamed):
+    assert rename(text, mapping) == renamed
+
+
+def test_an_inversion_may_end_in_a_sign(raw):
+    raw["body"]["spans"][1]["text"] = (
+        "A refund requires a receipt; refunds dropped by 20% after it."
+    )
+    raw["interventions"]["inversion"] = {"dropped by 20%": "rose by 20%"}
+    raw["allowed"]["inversion"] = ["grant"]
+    inversion = next(t for t in plan(parse(raw)) if t.id == "inversion")
+    assert "refunds rose by 20% after it." in inversion.text
