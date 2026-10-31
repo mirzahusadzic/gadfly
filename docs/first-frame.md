@@ -134,6 +134,7 @@ The frame names `citation-reader`, so only a battery whose `name` is exactly
 $ uv run python examples/first_frame.py
 carried
 ablation moved it grounded -> ungrounded; held under presentation, 2 shams
+bypass moved it grounded -> ungrounded: no hidden fallback
 ```
 
 The relation moved the observation in the allowed direction, presentation and

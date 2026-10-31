@@ -26,7 +26,9 @@ def test_presentation_tells_a_phrase_from_a_rule(tmp_path):
     ]
     # every check passed: the bypass exposed the opening, nothing is left open
     assert findings[1][2] == [
-        "ablation moved it decline -> grant; held under presentation, 2 shams"
+        "ablation moved it decline -> grant; held under presentation, 2 shams",
+        "bypass moved it decline -> unclear: no hidden fallback",
+        "the control moved it decline -> grant",
     ]
 
 

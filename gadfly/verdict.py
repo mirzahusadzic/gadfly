@@ -299,26 +299,47 @@ def _read(
         f"ablation moved it {base} -> {ablated}"
         + (f"; held under {', '.join(held)}" if held else "")
     )
+    # The trials that settled more than the ablation are named too, so two
+    # findings that ran different trials never read the same.
+    if "bypass" in levels and _fallback(frame, levels, base) is None:
+        say(f"bypass moved it {base} -> {levels['bypass']}: no hidden fallback")
+    if "control" in levels:
+        control = levels["control"]
+        say(
+            f"the control moved it {base} -> {control}"
+            if control != base
+            else f"the control left it at {base}"
+        )
+
+
+def _fallback(frame: Frame, levels: dict[str, str | None], base: str | None) -> str | None:
+    """The no-hidden-fallback check while it is open; None once the bypass
+    settled it (it moved, or reached the designated opening)."""
+    bypass = levels.get("bypass")
+    if "bypass" not in levels:
+        return "no hidden fallback: no bypass trial was declared"
+    if bypass is None or base is None:
+        return "no hidden fallback: the bypass has no agreed level to read against baseline"
+    if "bypass" in frame.allowed:
+        opening = allowed_for(frame, base, "bypass")
+        if bypass not in opening:
+            return (
+                f"no hidden fallback: bypass gave {bypass}, "
+                f"not the designated opening ({', '.join(opening)})"
+            )
+        return None
+    if bypass == base:
+        return f"no hidden fallback: bypass left it at {base}"
+    return None
 
 
 def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) -> list[str]:
     """The carriage checks the trials did not settle: no hidden fallback,
     presentation invariance, specificity and materialization."""
     open_ = []
-    bypass = levels.get("bypass")
-    if "bypass" not in levels:
-        open_.append("no hidden fallback: no bypass trial was declared")
-    elif bypass is None or base is None:
-        open_.append("no hidden fallback: the bypass has no agreed level to read against baseline")
-    elif "bypass" in frame.allowed:
-        opening = allowed_for(frame, base, "bypass")
-        if bypass not in opening:
-            open_.append(
-                f"no hidden fallback: bypass gave {bypass}, "
-                f"not the designated opening ({', '.join(opening)})"
-            )
-    elif bypass == base:
-        open_.append(f"no hidden fallback: bypass left it at {base}")
+    fallback = _fallback(frame, levels, base)
+    if fallback:
+        open_.append(fallback)
     if "presentation" not in levels:
         open_.append("presentation invariance: no presentation trial was declared")
     shams = sum(t.startswith("sham-") for t in levels)

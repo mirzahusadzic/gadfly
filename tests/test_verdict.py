@@ -167,6 +167,18 @@ def test_carried_without_a_sham_keeps_specificity_open(raw):
     assert "sham" not in finding.evidence[0] and "presentation" in finding.evidence[0]
 
 
+def test_carried_evidence_names_the_bypass_and_the_control_that_settled_it(raw):
+    # without them, a run with a bypass and a control read the same as one without
+    raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
+    finding = verdict(situate(raw), ablation="grant", bypass="grant", control="grant")
+    assert finding.category == CARRIED
+    assert finding.evidence == [
+        "ablation moved it decline -> grant; held under presentation, 2 shams",
+        "bypass moved it decline -> grant: no hidden fallback",
+        "the control moved it decline -> grant",
+    ]
+
+
 def test_a_sham_that_moved_it_is_listed_under_every_category(raw):
     # misaligned and cooled are read before the shams; the moved sham stays visible
     raw["allowed"] = {"ablation": ["unclear"]}

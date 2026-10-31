@@ -49,6 +49,8 @@ phrase-matcher: coupled but misaligned
   no hidden fallback: bypass gave decline, not the designated opening (unclear)
 rule-reader: carried
   ablation moved it decline -> grant; held under presentation, 2 shams
+  bypass moved it decline -> unclear: no hidden fallback
+  the control moved it decline -> grant
 ```
 
 The category answers a narrow question. The evidence says why. An obligation

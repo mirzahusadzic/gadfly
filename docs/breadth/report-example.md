@@ -11,6 +11,8 @@ frame: refund-receipt (dd916080072539784691a5232645b4d9c5b00e9cfdddd51650d15b347
 records: 8  planned calls: 8
 overall: carried
   no-receipt: ablation moved it decline -> grant; held under presentation, 2 shams
+  no-receipt: bypass moved it decline -> unclear: no hidden fallback
+  no-receipt: the control moved it decline -> grant
 no-receipt: carried
   level baseline: decline
   level repeat: decline
@@ -21,6 +23,8 @@ no-receipt: carried
   level bypass: unclear
   level control: grant
   evidence: ablation moved it decline -> grant; held under presentation, 2 shams
+  evidence: bypass moved it decline -> unclear: no hidden fallback
+  evidence: the control moved it decline -> grant
 ```
 
 The ablation moved the level as the promise allows, the presentation and the

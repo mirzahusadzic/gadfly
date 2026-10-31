@@ -15,6 +15,8 @@ phrase-matcher: coupled but misaligned
   no hidden fallback: bypass gave decline, not the designated opening (unclear)
 rule-reader: carried
   ablation moved it decline -> grant; held under presentation, 2 shams
+  bypass moved it decline -> unclear: no hidden fallback
+  the control moved it decline -> grant
 ```
 
 The frame declares one anchor: the receipt rule. The phrase matcher reads the
@@ -58,6 +60,7 @@ word-matcher: coupled but misaligned
   no hidden fallback: bypass gave grounded, not the designated opening (ungrounded)
 citation-reader: carried
   ablation moved it grounded -> ungrounded; held under presentation, 2 shams
+  bypass moved it grounded -> ungrounded: no hidden fallback
 ```
 
 The relation is the answer's crate count resting on `S-2`. Presentation renames
@@ -94,6 +97,7 @@ eager-tool: coupled but misaligned
   no hidden fallback: bypass gave read-only, not the designated opening (deny)
 scope-reader: carried
   ablation moved it read-only -> deny; held under presentation, 1 sham
+  bypass moved it read-only -> deny: no hidden fallback
 ```
 
 The frame says the grant permits read-only and that removing it should produce a
@@ -107,6 +111,7 @@ both without the grant and without the contract's binding line, so it carries.
 $ uv run python examples/code_invariant.py
 full run: carried
   ablation moved it sorted -> unsorted; held under presentation, 1 sham
+  bypass moved it sorted -> unsorted: no hidden fallback
 records lost: unresolved
   no agreed level in: sham-1, presentation, bypass
   no hidden fallback: the bypass has no agreed level to read against baseline
