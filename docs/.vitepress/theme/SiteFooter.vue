@@ -14,6 +14,7 @@ const { theme } = useData();
     <a :href="theme.gadfly.github">Source on GitHub</a>
     <a :href="`${theme.gadfly.github}/blob/main/LICENSE`">Code under Apache 2.0</a>
     <a :href="`${theme.gadfly.github}/blob/main/LICENSES/CC-BY-4.0.txt`">The essay under CC BY 4.0</a>
-    <a :href="`${theme.gadfly.github}/tree/main/docs/.vitepress/theme/fonts`">Fonts under SIL OFL 1.1</a>
+    <a :href="withBase('/notices')">Fonts and libraries</a>
+    <a href="https://vitepress.dev">Built with VitePress</a>
   </footer>
 </template>

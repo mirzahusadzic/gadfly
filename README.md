@@ -211,6 +211,6 @@ to `docs/.vitepress/dist`, failing on a dead link.
 ### License
 
 The code is under Apache 2.0. The text of `docs/load-bearing.md` is © 2026
-Mirza Husadzic, under [CC BY 4.0](LICENSES/CC-BY-4.0.txt). The docs site's
-fonts, Albert Sans and Fraunces, are under the SIL Open Font License 1.1, with
-their licences beside them in `docs/.vitepress/theme/fonts/`.
+Mirza Husadzic, under [CC BY 4.0](LICENSES/CC-BY-4.0.txt). The fonts and
+libraries the docs site ships are listed with their licences in
+[Fonts and libraries](docs/notices.md).

@@ -81,6 +81,7 @@ const sidebar = [
     items: [
       { text: 'Architecture and limits', link: '/architecture' },
       { text: 'When meaning is load-bearing', link: '/load-bearing' },
+      { text: 'Fonts and libraries', link: '/notices' },
     ],
   },
 ];
