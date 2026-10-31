@@ -1,4 +1,5 @@
 import copy
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -115,6 +116,19 @@ def test_shams_remove_as_much_of_the_same_kind_closest_in_length_and_never_twice
     assert [t.removed for t in shams] == [("r3",), ("r4",)]
     raw["interventions"]["sham"] = {"draws": 4}
     assert [t.id for t in plan(parse(raw)) if t.kind == "sham"] == ["sham-1", "sham-2", "sham-3"]
+
+
+def test_the_prompt_is_the_body_a_rule_and_the_input(raw):
+    # the form the batteries page promises: the spans by line breaks, a rule
+    # between blank lines, then the input, renamed under presentation
+    frame = parse(raw)
+    x = frame.inputs[0]
+    for trial in plan(frame):
+        asked = rename(x["text"], trial.renamed)
+        body = "\n".join(span.text for span in trial.spans)
+        assert prompt(frame, trial, x) == f"{body}\n\n---\n\n{asked}"
+    page = (Path(__file__).parent.parent / "docs/batteries.md").read_text()
+    assert "<the trial's spans, one per line>\n\n---\n\n<the input>" in page
 
 
 def test_a_sham_never_cuts_a_declared_fallback(raw):

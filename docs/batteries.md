@@ -35,6 +35,22 @@ The protocol's invariant is **trial blindness**: a battery sees the changed
 body and the input, never `baseline`, `sham-1` or `ablation`. A scorer that
 could branch on the trial would cue the comparison.
 
+The prompt's form is a contract a battery may rely on: the trial's spans
+joined by line breaks, then a line `---` between blank lines, then the
+input's text:
+
+```text
+<the trial's spans, one per line>
+
+---
+
+<the input>
+```
+
+A span the trial cuts is simply absent, and under presentation the input is
+renamed too. The instruction and the labels come from the frame, for the
+battery to add as it needs.
+
 ---
 
 ### The shipped batteries
@@ -109,7 +125,8 @@ before a live run.
 The cap is the whole call's. A battery that writes before it answers reports
 every output token it spent in `usage`, so set `--output-tokens`
 (`Budget.output_tokens_per_call`) to what a whole call may spend: a call that
-reports more stops the run after it.
+reports more stops the run after it. A cap of your own, on money or time,
+goes through `run(cancelled=...)`, which is asked before every call.
 
 #### Record provenance
 
