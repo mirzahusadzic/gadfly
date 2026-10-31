@@ -41,7 +41,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
-from .frame import Frame
+from .frame import Frame, _read_once
 
 CARRIED, COOLED = "carried", "cooled"
 # What a record must say to be read: the call it was, and what it saw.
@@ -198,10 +198,10 @@ def allowed_for(frame: Frame, base: str, trial: str = "ablation") -> list[str]:
     """What a trial may produce (ablation; bypass, its designated opening):
     the labels listed, or, for ordered labels, those below (or above) the
     baseline."""
-    rule = frame.allowed[trial]
+    rule = _read_once(frame)["allowed"][trial]
     if isinstance(rule, list):
         return rule
-    order = list(frame.raw["observe"]["order"])
+    order = list(_read_once(frame)["observe"]["order"])
     at = order.index(base)
     return order[:at] if rule == "lower" else order[at + 1 :]
 
@@ -210,11 +210,11 @@ def _finding(
     frame: Frame, x: str, levels: dict[str, str | None], samples: dict[str, list[str | None]]
 ) -> Finding:
     finding = Finding(input=x, category=UNRESOLVED, levels=levels)
-    if frame.outside_scope:
+    if _read_once(frame).get("outsideScope"):
         # The exclusion is the owner's; the trials do not test it, so only
         # its own check is open or settled here.
-        finding.evidence.append(f"declared outside scope: {frame.outside_scope}")
-        check = frame.raw.get("scopeCheck")
+        finding.evidence.append(f"declared outside scope: {_read_once(frame).get('outsideScope')}")
+        check = _read_once(frame).get("scopeCheck")
         if check:
             finding.category = OUTSIDE
             finding.evidence.append(
@@ -225,7 +225,7 @@ def _finding(
             finding.obligations.append(
                 "independent scope check: the exclusion is declared, not tested"
             )
-            if frame.raw.get("carriage", "all-checks") == "listed":
+            if _read_once(frame).get("carriage", "all-checks") == "listed":
                 finding.category = OUTSIDE
             else:
                 finding.evidence.append("not outside scope until the owner's check is recorded")
@@ -235,7 +235,7 @@ def _finding(
     # category never hides an open check.
     base = levels.get("baseline")
     finding.obligations[:0] = _open_checks(frame, levels, base)
-    if frame.raw.get("carriage", "all-checks") == "all-checks":
+    if _read_once(frame).get("carriage", "all-checks") == "all-checks":
         _hold(finding)
     return finding
 
@@ -269,7 +269,7 @@ def _read(
         say(f"no agreed level in: {', '.join(missing)}")
         return
     base = levels["baseline"]
-    if frame.raw["standing"].get("stable") and "repeat" in samples:
+    if _read_once(frame)["standing"].get("stable") and "repeat" in samples:
         pooled = samples["baseline"] + samples["repeat"]
         if len(set(pooled)) > 1:
             shown = ", ".join("an opening" if s is None else s for s in pooled)
@@ -344,7 +344,7 @@ def _fallback(frame: Frame, levels: dict[str, str | None], base: str | None) -> 
         return "no hidden fallback: no bypass trial was declared"
     if bypass is None or base is None:
         return "no hidden fallback: the bypass has no agreed level to read against baseline"
-    if "bypass" in frame.allowed:
+    if "bypass" in _read_once(frame)["allowed"]:
         opening = allowed_for(frame, base, "bypass")
         if bypass not in opening:
             return (
@@ -366,7 +366,7 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
     if "presentation" not in levels:
         open_.append("presentation invariance: no presentation trial was declared")
     shams = sum(t.startswith("sham-") for t in levels)
-    declared = frame.interventions.get("sham")
+    declared = _read_once(frame)["interventions"].get("sham")
     wanted = 0 if not declared else 1 if declared is True else declared["draws"]
     if not wanted:
         open_.append("specificity: no sham trial was declared")
@@ -380,7 +380,7 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
     moved = [t for t, v in levels.items() if t.startswith("sham-") and v not in (None, base)]
     if moved and base is not None:
         open_.append(f"specificity: {', '.join(moved)} moved it too; the change is not specific")
-    if not frame.raw.get("materialized"):
+    if not _read_once(frame).get("materialized"):
         open_.append(
             "materialization: the frame does not say the observation is "
             "the form the recipient receives"

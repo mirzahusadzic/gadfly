@@ -116,6 +116,17 @@ class Frame:
         return self.raw.get("outsideScope")
 
 
+def _read_once(frame: Frame) -> dict[str, Any]:
+    """The frame's text decoded once and kept with it, for Gadfly's own reading
+    of many inputs; a caller reads `Frame.raw`, a fresh copy each time, since
+    nothing must change what the hash names."""
+    decoded = frame.__dict__.get("_decoded")
+    if decoded is None:
+        decoded = json.loads(frame.source)
+        object.__setattr__(frame, "_decoded", decoded)
+    return decoded
+
+
 def canonical(value: Any) -> str:
     """The one serialization a hash is taken of."""
     return json.dumps(
