@@ -1,5 +1,15 @@
 # Your first frame
 
+> [!IMPORTANT]
+> **This step**
+>
+> - **Teaches:** each trial in turn, levels, open checks, and
+>   [carried](reading-a-verdict.md#the-rules-in-order).
+> - **Frames:** `upgrade.json` and `rung1.json` to `rung6.json`:
+>   dependencies, at the grain of one changelog line.
+> - **After:** [In plain words](in-plain-words.md), the idea without the
+>   terms. This is the first step of the ladder.
+
 Gadfly asks one question about one decision: **does the decision rest on the
 evidence you think it rests on?** It cannot look inside the reader, so it
 changes the evidence in fixed ways, asks again, and compares what comes back.
