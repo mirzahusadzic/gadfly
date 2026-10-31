@@ -251,3 +251,52 @@ def test_the_notices_name_what_the_site_ships():
     fonts = sorted(p.name for p in (ROOT / "docs/.vitepress/theme/fonts").glob("*-OFL.txt"))
     assert fonts == ["albert-sans-OFL.txt", "fraunces-OFL.txt"]
     assert "Albert Sans" in notices and "Fraunces" in notices
+
+
+def _printed():
+    # every message the package can print, as a pattern: an f-string's fields match anything
+    import ast
+
+    def bare(text: str) -> str:  # without the prefix main adds
+        return text.lstrip("\n").removeprefix("gadfly: ")
+
+    patterns = []
+    for path in (ROOT / "midwife").rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.JoinedStr):
+                values = node.values
+            elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+                values = [node]
+            else:
+                continue
+            texts = [
+                (bare(v.value) if i == 0 else v.value) if isinstance(v, ast.Constant) else None
+                for i, v in enumerate(values)
+            ]
+            if sum(len(text) for text in texts if text) >= 8:  # f"gadfly: {error}" says nothing
+                parts = ["(.+?)" if text is None else re.escape(text) for text in texts]
+                patterns.append(re.compile("".join(parts), re.S))
+    return patterns
+
+
+def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
+    # the page quotes messages word for word, so a changed message must change it too
+    printed = _printed()
+    quoted = []
+    for row in (ROOT / "docs/troubleshooting.md").read_text(encoding="utf-8").splitlines():
+        if row.startswith("| `"):
+            cell = row.split(" | ")[0][2:]
+            quoted += [a or b for a, b in re.findall(r"``(.+?)``|`([^`]+)`", cell)]
+    unknown = []
+    for text in quoted:
+        if text.startswith("gadfly: "):
+            message = text.removeprefix("gadfly: ")
+        elif text.startswith('"') and text.endswith('"'):
+            message = text[1:-1]  # an opening, as run names it
+        else:
+            continue
+        if message.startswith(("[Errno", "No module named")):
+            continue  # Python's own words
+        if not any(pattern.fullmatch(message) for pattern in printed):
+            unknown.append(message)
+    assert quoted and unknown == []

@@ -18,6 +18,9 @@ without an answer is an opening, which `run` counts and names.
 | `"the router could not be reached: ..."` or `"the evaluator could not be reached: ..."` | The same for the router, at `http://127.0.0.1:18766`, or for your evaluator, at the frame's `battery.url`. |
 | `"eGemma answered 401"` or `"the router answered 401"` | The key or the token is wrong. |
 | `"eGemma answered 503 after 3 retries"` | eGemma stayed busy or has no model loaded; the battery waits and retries before it gives up. Check eGemma's own log. |
+| `gadfly: the evaluator's address must not hold a user or password` | A battery's address names a user or a password. Gadfly refuses it without repeating it; take the credentials out of the address. |
+| `gadfly: the evaluator's address has no valid port: ...` | The port after the colon is not a number from 0 to 65535. |
+| `gadfly: battery.timeout is a number of seconds, up to 3600` | The `local-json` battery's whole-call deadline is missing a positive number, or asks for more than an hour. |
 | `"router diagnostic: openrouter-data-policy"` | No OpenRouter endpoint for that model keeps no data, and the frame does not consent to one that trains on its inputs. Choose another model, or pin endpoints with `battery.endpoints`. |
 
 ---
@@ -27,11 +30,14 @@ without an answer is an opening, which `run` counts and names.
 | You see | What it means, and what to do |
 | --- | --- |
 | `gadfly: --battery is module:Class (for example midwife.batteries.egemma:EGemma)` | Name the class after a colon. |
+| `gadfly: tests.fixtures.refund has no NoSuchReader` | The module was found, but not the class named after the colon. Check its spelling and case. |
 | `gadfly: No module named '...'` | The battery's module is imported from the current directory. Run from the folder that holds it, or check its name. |
 | `gadfly: this frame asks for the egemma battery, not unified` | A frame names its battery in `battery.kind`, and another battery is another frame. Pass the one it names. |
 | `stopped: the plan needs 40 calls; the budget allows 10` | `--calls` is below what the plan needs, and nothing was spent. `gadfly plan` shows the count. |
+| `gadfly: runs is not a folder: make it, or choose another --out` | The folder `--out` names does not exist, and nothing was spent. Make it first. |
 | `gadfly: records.jsonl exists: kept records are never written over` | Choose a new `--out`. To finish a stopped run, pass its file as `--kept` with a new `--out`. |
-| A run stopped partway, by Ctrl-C or a crash | Every record made so far is in its file. Run again with that file as `--kept` and a new `--out`: only the missing calls are made, and the new file holds the whole run, to report as one. |
+| `gadfly: stopped by Ctrl-C after 12 calls; they are in records.jsonl; finish with --kept records.jsonl and a new --out` | Every record made so far is in its file. Run again with that file as `--kept` and a new `--out`: only the missing calls are made, and the new file holds the whole run, to report as one. A crash leaves the file the same way. |
+| `gadfly: a kept baseline record was made from another prompt` | A record passed as `--kept` was made with a prompt this frame does not plan for that call. Resume only from the records this frame's own run made. |
 
 ---
 
@@ -41,7 +47,9 @@ without an answer is an opening, which `run` counts and names.
 | --- | --- |
 | `gadfly: a record belongs to another frame` | The records were made under another frame: another file, or this one edited after the run, since any change makes a new hash. Read them with the frame they were made under. |
 | `gadfly: a baseline record was made on another body` | The trial's text differs from the one the record was made on. The frame, or the way Gadfly plans it, changed after the run. |
-| `gadfly: two records for ... run ...` | The same call is kept twice, usually from two files joined into one. Keep one of them. |
+| `gadfly: a record is a JSON object` or `gadfly: a record's trial is not a str` | A line of the records file is not a record Gadfly wrote: another file, or one edited by hand. |
+| ``gadfly: a portfolio reads `gadfly report --json` documents, and this is not one`` | Each file `portfolio` reads is the output of `gadfly report --json`. |
+| `gadfly: two records for pr/baseline run 2` | The same call is kept twice, usually from two files joined into one. Keep one of them. |
 | `unresolved`, with `no agreed level in: ...` | Fewer than `agree` answers matched in those trials: the reader split, or the calls came back as openings. The `openings` line of `run` says which. |
 | `unresolved`, with only open checks beside it | Every trial agreed, but a check the category needs is still open. [Reading a verdict](reading-a-verdict.md) explains `carriage` and each check. |
 
