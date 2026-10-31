@@ -41,6 +41,7 @@ nav:
       - Reading a verdict: reading-a-verdict.md
   - Examples:
       - examples/index.md
+      - Watch a run: examples/watch.md
       - Cooled: examples/cooled.md
       - Quorum: examples/quorum.md
       - Misaligned: examples/misaligned.md
@@ -97,10 +98,12 @@ plugins:
 
 extra_css:
   - stylesheets/house.css
+  - stylesheets/watch.css
 
 extra_javascript:
   - javascripts/mathjax.js
   - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+  - javascripts/watch.js
   - path: javascripts/mermaid-house.mjs
     type: module
 

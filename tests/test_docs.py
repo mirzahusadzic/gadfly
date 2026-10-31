@@ -11,6 +11,7 @@ import pytest
 
 from hooks import github_alerts, reference
 from hooks.github_math import on_page_markdown
+from tools import watch_data
 
 ROOT = Path(__file__).parent.parent
 
@@ -140,3 +141,11 @@ def test_every_copy_is_its_source(copy):
     from tools.doc_outputs import copied
 
     assert copied(copy.source) == copy.quoted
+
+
+@pytest.mark.parametrize("stem", watch_data.FRAMES)
+def test_the_watch_view_plays_the_kept_runs(stem):
+    # `uv run python -m tools.watch_data --write` brings a file back in line; it
+    # refuses a prompt its records' digest does not name
+    kept = (watch_data.OUT / f"{stem}.json").read_text(encoding="utf-8")
+    assert kept == watch_data.encoded(stem)
