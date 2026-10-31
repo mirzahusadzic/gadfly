@@ -12,6 +12,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Every action is pinned to the commit of its release, not a moving tag.
 jobs:
   test:
     name: Python ${{ matrix.python }}
@@ -22,8 +23,8 @@ jobs:
       matrix:
         python: ["3.13", "3.14", "3.15"]
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3: no moving major tag
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           python-version: ${{ matrix.python }}
       - name: Lint
@@ -31,16 +32,37 @@ jobs:
       - name: Test
         run: uv run --frozen pytest
 
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+        with:
+          python-version: "3.13"
+      - name: Build the wheel and the sdist
+        run: uv build --out-dir dist
+      - name: Check them as PyPI will
+        run: uvx twine check --strict dist/*
+      - name: Install the wheel alone and run the command it ships
+        run: |
+          uv venv /tmp/installed
+          uv pip install --python /tmp/installed dist/*.whl
+          /tmp/installed/bin/gadfly --version
+          /tmp/installed/bin/gadfly check-frame examples/upgrade.json
+          /tmp/installed/bin/python -c "from midwife.frame import schema; assert schema()['\$id']"
+
   docs:
     name: Docs
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - name: Build the site
-        run: npm run docs:build  # fails on a dead link
+        run: npm run docs:build  # fails on a dead link, or a shipped package without a licence

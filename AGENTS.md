@@ -64,4 +64,5 @@ Every page reads the same on GitHub as on the site.
 - Checks: `uv run ruff check .`, `uv run ruff format --check .`, `uv run pytest` (85% coverage; `GADFLY_ATP_PLANS` adds the After the Poem replay) and `npm run docs:build`, which fails on a dead link. CI runs them on Python 3.13 to 3.15.
 - A behavior change or a fix comes with a test that fails on the old code and passes after.
 - A live run spends a provider's calls: count them first with `gadfly plan` or `calls_needed`, and run only when the task includes it.
+- Release: a tag `vX.Y.Z` that names `pyproject.toml`'s version runs `.github/workflows/publish.yml`, which tests, builds, checks and publishes the `midwife` package to PyPI by trusted publishing; the site publishes from `main` once CI has passed. CI pins every action to its release's commit.
 - Commits only when asked; never push. Subject `area: what changed` in at most 72 characters, a blank line, then a body hard-wrapped at 72; check with `git log --format=%B origin/main..main | awk 'length > 72'`.
