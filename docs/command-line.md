@@ -17,7 +17,7 @@ that cannot be imported, prints `gadfly:` and the reason, and exits with 2.
 | --- | --- | --- | --- |
 | `check-frame FRAME` | no | `ok`, the frame's hash and its calls, or each problem and where it is | 0 when accepted, 1 when not |
 | `plan FRAME` | no | each trial, its kind and its body's hash, and the call count | 0 |
-| `run FRAME` | yes, up to `--calls` | the calls written, and why it stopped early | 0 |
+| `run FRAME` | yes, up to `--calls` | the calls written, how many came back as openings and why, and why it stopped early | 0 |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0 |
 | `portfolio REPORT...` | no | frames counted by category, the obligations they share, and frames whose inputs disagree | 0 |
 
@@ -78,6 +78,10 @@ uv run gadfly run examples/upgrade.json \
   --calls 40 --out records.jsonl
 ```
 
+It prints the calls it wrote. When some came back as openings, it also prints
+how many and the most common reason, such as `eGemma could not be reached`:
+[Troubleshooting](troubleshooting.md) says what each one means.
+
 | Flag | Value | Effect |
 | --- | --- | --- |
 | `--battery` | `module:Class`, required | The battery, imported from the current directory. |
@@ -87,7 +91,7 @@ uv run gadfly run examples/upgrade.json \
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |
 | `--only` | a trial id, repeatable | Runs only those trials: a partial run, for diagnosis. |
 | `--kept` | a records file | Records already made, whose calls are not made again, so a stopped run finishes. |
-| `--json` | flag | Prints the calls planned and made, and why it stopped, as JSON. |
+| `--json` | flag | Prints the calls planned and made, the openings by reason, and why it stopped, as JSON. |
 
 ---
 

@@ -121,5 +121,6 @@ Every page reads on GitHub as it does here.
 | use a model, a local service or your own scorer | [Batteries](batteries.md) |
 | run, report and check frames from a terminal | [Command line](command-line.md) |
 | look up a word such as anchor, grain or quorum | [Glossary](glossary.md) |
+| fix an error Gadfly prints | [Troubleshooting](troubleshooting.md) |
 | see the trust boundaries and current limits | [Architecture and limits](architecture.md) |
 | find a function or class | [Python API](reference.md) |

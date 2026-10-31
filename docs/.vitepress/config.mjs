@@ -21,7 +21,7 @@ const description =
 // frames, the reference, and the background. A page left out of it is a
 // draft, and goes in srcExclude, which keeps it off the site and its search.
 const guides = ['write-a-frame', 'interventions', 'reading-a-verdict', 'batteries'];
-const reference = ['command-line', 'reference', 'glossary', 'roadmap', 'breadth/'];
+const reference = ['command-line', 'reference', 'glossary', 'troubleshooting', 'roadmap', 'breadth/'];
 const sidebar = [
   { text: 'Home', link: '/' },
   {
@@ -64,6 +64,7 @@ const sidebar = [
       { text: 'Command line', link: '/command-line' },
       { text: 'Python API', link: '/reference' },
       { text: 'Glossary', link: '/glossary' },
+      { text: 'Troubleshooting', link: '/troubleshooting' },
       {
         text: 'Extending Gadfly',
         collapsed: true,
