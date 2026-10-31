@@ -229,7 +229,7 @@ For problems after a run, see [Refused records](reading-a-verdict.md#refused-rec
 | `two inputs share an id` | input ids are record keys and must be unique |
 | `allowed 'lower' needs observe.order` | declare the full label order before using a direction |
 | `the frame does not say its baseline` | pin $B_0$; do not leave the comparison implicit |
-| `the frame asks for the X battery, not Y` | make `battery.kind` and the battery class's `name` the same string |
+| `this frame asks for the X battery, not Y`, from `run` | make `battery.kind` and the battery class's `name` the same string |
 | `carriage is all-checks or listed` | the policy is one of the two words, or left out for `all-checks` |
 | `scopeCheck checks an outsideScope exclusion` | record the owner's check only beside the exclusion it checks |
 | `placement leaves the order as it is` | move the span after one it does not already follow |

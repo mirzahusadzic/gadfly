@@ -55,7 +55,8 @@ does.
 Each shipped battery finds its service and its key on this machine:
 
 - **`egemma`:** `EGEMMA_URL`, by default `http://127.0.0.1:8000`, and the key
-  from the file named by `EGEMMA_API_KEY_FILE`, else `EGEMMA_API_KEY`.
+  from the file named by `EGEMMA_API_KEY_FILE`, else `EGEMMA_API_KEY`, else
+  `WORKBENCH_API_KEY`.
 - **`unified`:** the router at `http://127.0.0.1:18766`, and its token from
   `CODEX_ROUTER_TOKEN`, else the router's own settings file.
 - **`local-json`:** the frame's `battery.url`, and no key at all.

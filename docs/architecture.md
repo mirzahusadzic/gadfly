@@ -135,7 +135,7 @@ The chart is about **boundaries**, which a table cannot show as directly:
 | Boundary | What crosses it | What the caller keeps |
 |---|---|---|
 | your code → `situate` | one JSON declaration | the frame and its hash |
-| `run` → batteries | one prompt and output cap | the battery is told neither trial id nor frame hash |
+| `run` → batteries | one prompt and output cap | the battery gets the frame and the prompt, never the trial's id |
 | `run` → your records | one immutable `Record` at a time | the only durable state in the workflow |
 | records → `judge` | saved evidence, not a live service | verdicts can be recomputed without another call |
 | shipped batteries → local services | schema-constrained requests to loopback | tokens and credentials stay out of observations |
