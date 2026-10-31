@@ -274,13 +274,16 @@ def _read(
         if levels.get("control") == base:
             say(f"ablation left it at {base}, and so did the control: the scorer cannot tell")
             finding.obligations.append(f"discrimination: the control left it at {base} too")
-            return
-        finding.category = COOLED
-        say(f"ablation left it at {base}")
-        if "control" in levels:
-            say(f"the control moved it {base} -> {levels['control']}: the scorer can tell")
         else:
-            finding.obligations.append("discrimination: no control trial shows the scorer can move")
+            finding.category = COOLED
+            say(f"ablation left it at {base}")
+            if "control" in levels:
+                say(f"the control moved it {base} -> {levels['control']}: the scorer can tell")
+            else:
+                finding.obligations.append(
+                    "discrimination: no control trial shows the scorer can move"
+                )
+        # said whether or not the control moved: it is where else the decision rests
         if levels.get("cumulative") not in (None, base):
             say(
                 f"the cumulative ablation moved it to {levels['cumulative']}: carried elsewhere too"

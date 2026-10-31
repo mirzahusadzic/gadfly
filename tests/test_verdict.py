@@ -157,6 +157,19 @@ def test_cooled_notes_a_cumulative_ablation_that_moved_it(raw):
     assert finding.category == COOLED and "carried elsewhere" in finding.evidence[1]
 
 
+def test_a_cumulative_that_moved_it_is_said_when_the_control_did_not(raw):
+    # the levels showed it, but the evidence did not: a reader of an unresolved
+    # finding lost the one trial that says the decision rests elsewhere too
+    raw["interventions"]["cumulative"] = ["r1"]
+    raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
+    finding = verdict(situate(raw), cumulative="grant")
+    assert finding.category == UNRESOLVED
+    assert "discrimination: the control left it at decline too" in finding.obligations
+    assert (
+        finding.evidence[-1] == "the cumulative ablation moved it to grant: carried elsewhere too"
+    )
+
+
 def test_carried_without_a_sham_keeps_specificity_open(raw):
     del raw["interventions"]["sham"]
     finding = verdict(situate(raw), ablation="grant")
