@@ -17,8 +17,8 @@ const description =
 
 // The sidebar, sorted by who reads it: a first look, the examples (a ladder,
 // each step building on the ones before it), guides for writing and reading
-// frames, the reference, and the background. Every other page is a draft,
-// kept in the repository but off the site and out of its search (srcExclude).
+// frames, the reference, and the background. A page left out of it is a
+// draft, and goes in srcExclude, which keeps it off the site and its search.
 const guides = ['write-a-frame', 'interventions', 'reading-a-verdict', 'batteries'];
 const reference = ['command-line', 'reference', 'glossary', 'roadmap', 'breadth/'];
 const sidebar = [
@@ -90,7 +90,6 @@ export default defineConfig({
   lang: 'en',
   base: '/gadfly/',
   cleanUrls: true,
-  srcExclude: ['plain-words-notes.md'],
   // The theme menu (theme/ThemeMenu.vue) applies the theme, from the page head
   // before the first paint; VitePress's own switch is off.
   appearance: false,

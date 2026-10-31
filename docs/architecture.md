@@ -170,3 +170,45 @@ A verdict is narrower than it may look. Read these before relying on one.
 - **A battery tests what it is:** a deterministic battery tests the frame and
   its mechanics, not a model. A sampled live critic tests that model and
   endpoint at one encounter, not a provider's general policy.
+
+---
+
+### Limits in practice
+
+The examples showed what using Gadfly asks of its author, beyond what the code
+guarantees.
+
+- **It shows that, not why:** a cooled verdict says the anchor is not what
+  decides, not whether a training habit or another line does.
+  [The cumulative trial](examples/cumulative.md) narrows it down.
+- **A verdict is only as good as its frame:** the author names the anchor,
+  the line that makes it apply and a fair control, and a frame built wrong
+  reads wrong, as [A frame built wrong](examples/built-wrong.md) shows.
+  Predictions written before the first call keep a frame from being shaped by
+  its result.
+- **Answers are labels:** the reader picks one of a few fixed labels, so a
+  decision given as nuanced free text has to be cut down to fit.
+- **Strict, so often unresolved:** one trial without an agreed level makes a
+  finding unresolved, and one such input makes the frame's overall category
+  unresolved. Unresolved names the open check; it is not a failure.
+- **Thin statistics:** a trial's level is `agree` of `quorum` calls, 4 of 5
+  in every example, with no confidence range. A frame that names no
+  temperature gets the battery's default, and its records do not say what that
+  was.
+- **It cuts, renames and moves, never adds:** a decision that follows from a
+  default, such as access denied because nothing grants it, cannot be moved by
+  cutting evidence, as [Several inputs](examples/inputs.md) shows.
+- **It reads what a decision rests on, not whether it is right:** blocking a
+  customer without the line saying they signed may well be good caution, as in
+  [Bypass](examples/bypass.md).
+- **The words are the essay's:** carried, cooled, crossing and locus mean
+  something narrower here, and the [Glossary](glossary.md) defines each.
+
+---
+
+### Nearest neighbours
+
+Context-attribution tools for AI answers, such as ContextCite, also cut
+sources to see what an answer relies on. Gadfly's own part is the promise
+declared before the run, the fixed rules, the list of what is still open, and
+records anyone can read back.

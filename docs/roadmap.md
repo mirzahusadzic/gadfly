@@ -35,6 +35,31 @@ details.
 
 ---
 
+### What comes next
+
+The examples point at these, most useful first. None is built yet.
+
+1. **Expectations per input:** an optional expected result for each input,
+   so a frame whose inputs differ on purpose reads as promised. Today several
+   real frames read unresolved when each input behaved as promised (design
+   calls A and B in `examples/FINDINGS.md`).
+2. **Regression tests for AI deployments:** keep a set of frames and run them
+   again when the model, prompt or policy changes, then compare verdicts. Does
+   the new model still enforce the rule because of the rule? `gadfly
+   portfolio` is a start.
+3. **Comparing readers:** run one frame on Gemma, Claude or a panel of human
+   reviewers, which makes the essay's handoff measurable.
+4. **Changes beyond cutting:** change a value (400 ms becomes 100 ms) or add
+   contrary evidence, which tests direction, not only dependence.
+5. **Better statistics:** report counts with ranges, stop early once a level
+   is clear, and keep the temperature with the answers.
+6. **Help writing frames:** for example, a warning when a control leaves a
+   line that still points to the answer, as in
+   [A frame built wrong](examples/built-wrong.md). It flags problems and never
+   writes a frame from a result.
+
+---
+
 ### Deliberately left out
 
 These stay out on purpose, each because it would undo a boundary the method

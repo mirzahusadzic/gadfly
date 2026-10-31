@@ -10,6 +10,9 @@ eGemma on one machine, and reading an example back needs no model.
 - **Every run kept:** `examples/runs/` holds every record of every run.
 - **Nothing edited after:** a wrong prediction stays in, and so does a frame
   that turned out to be built wrong; a corrected frame is a new one beside it.
+- **Cheap to run:** 5,495 calls in all, across code review, contracts, access
+  rules, incidents, migrations and performance work, and not one failed
+  (`examples/FINDINGS.md`).
 
 ---
 
