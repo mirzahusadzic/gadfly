@@ -9,9 +9,10 @@
 
 It uses only the public pipeline. `run` needs an explicit call budget,
 writes each record as one JSON line the moment it exists, never writes over
-a file, and says when it stopped early; `report` keeps a finding's evidence
-and its open obligations apart. A battery is named `module:Class` and is
-imported from the current directory.
+a file and makes none until its first record, and says when it stopped
+early; `report` keeps a finding's evidence and its open obligations apart.
+A battery is named `module:Class` and is imported from the current
+directory.
 """
 
 from __future__ import annotations
@@ -108,12 +109,17 @@ def command_run(args) -> int:
     battery = load_battery(args.battery)
     kept = load_records(args.kept) if args.kept else []
     out = Path(args.out)
-    with out.open("x", encoding="utf-8") as file:  # a new file: never another run's
+    if out.exists():  # a new file: never another run's
+        raise FileExistsError(f"{out} exists: kept records are never written over")
+    files = []  # the file is made by the first record, so a refused run leaves none
 
-        def keep(record: Record) -> None:
-            file.write(json.dumps(record.as_dict(), ensure_ascii=False) + "\n")
-            file.flush()
+    def keep(record: Record) -> None:
+        if not files:
+            files.append(out.open("x", encoding="utf-8"))
+        files[0].write(json.dumps(record.as_dict(), ensure_ascii=False) + "\n")
+        files[0].flush()
 
+    try:
         result = run(
             frame,
             battery,
@@ -122,6 +128,9 @@ def command_run(args) -> int:
             only=args.only,
             kept=kept,
         )
+    finally:
+        for file in files:
+            file.close()
     if args.json:
         payload = {
             "frame": frame.name,

@@ -1,6 +1,10 @@
 """The refund example, as a user runs it."""
 
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -113,3 +117,30 @@ def test_a_code_invariant_its_lost_records_and_its_owners_exclusion():
         ("declared out of scope", "unresolved"),
         ("declared and checked", "outside scope"),
     ]
+
+
+def test_a_refused_live_run_leaves_no_records_file_behind(tmp_path, monkeypatch):
+    # an empty file left by a refusal would refuse the next, keyed run
+    monkeypatch.delenv("CODEX_ROUTER_TOKEN", raising=False)
+    monkeypatch.setattr("gadfly.batteries.unified.ENV_FILE", tmp_path / "absent.env")
+    out = tmp_path / "records.jsonl"
+    with pytest.raises(RuntimeError, match="no router token"):
+        refund_live.main(Unified("http://127.0.0.1:1/v1/responses"), "anthropic/x", out)
+    assert not out.exists()
+
+
+def test_the_live_example_says_why_it_refuses_in_one_line(tmp_path):
+    env = {k: v for k, v in os.environ.items() if "EGEMMA" not in k and k != "WORKBENCH_API_KEY"}
+    done = subprocess.run(
+        [sys.executable, "examples/refund_live.py", "egemma", "gemma", str(tmp_path / "r.jsonl")],
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).parent.parent,
+        env={**env, "PYTHONPATH": str(Path(__file__).parent.parent)},
+        timeout=60,
+    )
+    assert done.returncode != 0 and "Traceback" not in done.stderr
+    assert done.stderr.strip() == (
+        "refund_live: no eGemma key: set EGEMMA_API_KEY_FILE or EGEMMA_API_KEY"
+    )
+    assert not (tmp_path / "r.jsonl").exists()

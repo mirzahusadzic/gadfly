@@ -38,13 +38,25 @@ def frame_for(kind: str, model: str):
 
 def main(battery, model: str, path: Path):
     frame = frame_for(battery.name, model)
-    with path.open("x", encoding="utf-8") as kept:  # a new file: never another run's
+    if path.exists():  # a new file: never another run's
+        raise FileExistsError(f"{path} exists: kept records are never written over")
+    kept = []  # the file is made by the first record, so a refused run leaves none
+
+    def keep(record) -> None:
+        if not kept:
+            kept.append(path.open("x", encoding="utf-8"))
+        kept[0].write(json.dumps(record.as_dict()) + "\n")
+
+    try:
         result = run(
             frame,
             battery,
             Budget(calls=calls_needed(frame), output_tokens_per_call=1024),
-            on_record=lambda r: kept.write(json.dumps(r.as_dict()) + "\n"),
+            on_record=keep,
         )
+    finally:
+        for file in kept:
+            file.close()
     [finding] = judge(frame, result.records)
     return result, finding
 
@@ -53,7 +65,10 @@ if __name__ == "__main__":
     if len(sys.argv) != 4 or sys.argv[1] not in ("unified", "egemma"):
         sys.exit(__doc__)
     kind, model, out = sys.argv[1:]
-    result, finding = main(Unified() if kind == "unified" else EGemma(), model, Path(out))
+    try:
+        result, finding = main(Unified() if kind == "unified" else EGemma(), model, Path(out))
+    except (OSError, RuntimeError, ValueError) as error:  # a refusal, in one line
+        sys.exit(f"refund_live: {error}")
     print(f"{kind} {model}: {finding.category} ({result.stopped or 'every call made'})")
     for trial, level in finding.levels.items():
         print(f"  {trial:13} {level}")

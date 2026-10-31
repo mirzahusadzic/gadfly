@@ -55,7 +55,7 @@ def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):
 def test_run_never_writes_over_kept_records(tmp_path, capsys):
     (tmp_path / "records.jsonl").write_text("")
     status, _ = run_refund(tmp_path)
-    assert status == 2 and "File exists" in capsys.readouterr().err
+    assert status == 2 and "never written over" in capsys.readouterr().err
 
 
 def test_run_says_when_the_budget_stopped_it(tmp_path, capsys):
@@ -125,3 +125,12 @@ def test_a_portfolio_refuses_no_frames_and_twice_named_ones_and_shows_disagreeme
         summarize([one, one])
     split = Entry("b", "h2", "unresolved", {"x1": "carried", "x2": "cooled"})
     assert summarize([one, split])["input_disagreements"] == {"b": split.inputs}
+
+
+def test_a_refused_run_writes_no_records_file(tmp_path, capsys):
+    # the frame names the rule reader: another battery is refused before a call
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "examples.refund:PhraseMatcher", "--calls", "7"]
+    assert main([*argv, "--out", str(out)]) == 2
+    assert "asks for the rule-reader battery" in capsys.readouterr().err
+    assert not out.exists()
