@@ -31,9 +31,10 @@
     "ablation": true,
     "sham": {"draws": 2},
     "presentation": {"receipt": "proof of purchase"},
-    "bypass": ["binding"]
+    "bypass": ["binding"],
+    "control": ["days", "receipt", "gift", "method"]
   },
-  "allowed": {"ablation": ["grant", "unclear"]},
+  "allowed": {"ablation": ["grant", "unclear"], "bypass": ["unclear"]},
   "standing": {"quorum": 1, "agree": 1},
   "materialized": true,
   "battery": {"kind": "rule-reader"}

@@ -1,6 +1,4 @@
 import copy
-import json
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -240,7 +238,7 @@ def test_a_placement_that_cannot_move_anything_is_refused(raw, placement, messag
         parse(raw)
 
 
-def test_a_frame_without_placement_keeps_its_hash():
+def test_a_frame_without_placement_keeps_its_hash(raw):
     # placement is additive: a frame that does not use it is the frame it was
-    refund = json.loads((Path(__file__).parent.parent / "examples/refund.json").read_text())
-    assert parse(refund).hash == "6a788e8843504c0828dc1dc8c236c349e8f9750c0cd2d52b2d124d2bb9580e9e"
+    # (the fixture's hash, pinned when placement came in)
+    assert parse(raw).hash == "2c31b067f4037cef9e6e4f277ea382db65604ebd170f3b900357c9b7ce0ed2e6"

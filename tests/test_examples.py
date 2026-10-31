@@ -17,19 +17,16 @@ def test_presentation_tells_a_phrase_from_a_rule(tmp_path):
     findings = refund.main(tmp_path / "records.jsonl")
     assert [(name, category) for name, category, _ in findings] == [
         ("phrase-matcher", "coupled but misaligned"),
-        # carried needs every carriage check passed, and its fallback is open
-        ("rule-reader", "unresolved"),
+        ("rule-reader", "carried"),
     ]
     assert findings[0][2] == [
         "presentation moved it decline -> grant",
-        # misaligned lists its open checks too
-        "no hidden fallback: bypass left it at decline",
+        # a phrase holds whether or not the rules bind: its fallback is open too
+        "no hidden fallback: bypass gave decline, not the designated opening (unclear)",
     ]
+    # every check passed: the bypass exposed the opening, nothing is left open
     assert findings[1][2] == [
-        "ablation moved it decline -> grant; held under presentation, 2 shams",
-        "not carried while 1 carriage check is open",
-        # it reads the rule whether or not the rules bind: a fallback, left open
-        "no hidden fallback: bypass left it at decline",
+        "ablation moved it decline -> grant; held under presentation, 2 shams"
     ]
 
 
@@ -55,22 +52,22 @@ def test_the_live_example_runs_through_a_battery_without_a_model(tmp_path, monke
         )
     finally:
         fake.close()
-    assert result.stopped is None and len(fake.requests) == 21
+    assert result.stopped is None and len(fake.requests) == 24
     assert {b["reasoning"]["effort"] for _, b in fake.requests} == {"low"}
-    # a critic that always declines: nothing shows it can tell, so not cooled
+    # a critic that always declines: the control (no rules at all) leaves it too
     assert finding.category == "unresolved"
-    assert len((tmp_path / "records.jsonl").read_text().splitlines()) == 21
+    assert "the scorer cannot tell" in finding.evidence[-1]
+    assert len((tmp_path / "records.jsonl").read_text().splitlines()) == 24
 
 
 def test_the_review_handoff_worked_example():
     from examples import review_handoff
 
     assert review_handoff.main() == [
-        # the authority frame declares no bypass and no sham, so carried waits
-        ("state projection", "carried", "unresolved"),
-        # nothing shows the summary's reading can move, so cooled waits
+        ("state projection", "carried", "carried"),
+        # it says the same whatever it is given: the control cannot move it either
         ("summary: fix ready", "unresolved", "unresolved"),
-        ("drops its openings", "coupled but misaligned", "unresolved"),
+        ("drops its openings", "coupled but misaligned", "carried"),
         ("projection, a record lost", "unresolved", "-"),
     ]
 
@@ -84,7 +81,7 @@ def test_a_cited_source_tells_a_reader_from_a_word_matcher():
 
     assert categories(citation) == [
         ("word-matcher", "coupled but misaligned"),
-        ("citation-reader", "unresolved"),  # its fallback is open
+        ("citation-reader", "carried"),
     ]
 
 
@@ -104,7 +101,7 @@ def test_a_tool_permission_moved_the_wrong_way_is_misaligned():
 
     assert categories(tool_permission) == [
         ("eager-tool", "coupled but misaligned"),
-        ("scope-reader", "unresolved"),
+        ("scope-reader", "carried"),
     ]
 
 
@@ -112,7 +109,7 @@ def test_a_code_invariant_its_lost_records_and_its_owners_exclusion():
     from examples import code_invariant
 
     assert categories(code_invariant) == [
-        ("full run", "unresolved"),
+        ("full run", "carried"),
         ("records lost", "unresolved"),
         ("declared out of scope", "unresolved"),
         ("declared and checked", "outside scope"),

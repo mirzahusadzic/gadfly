@@ -4,7 +4,9 @@ with the records kept where the caller chooses (here, a JSON Lines file).
 Both scorers decline the request while the rule is in the policy, and grant it
 once the rule is removed. Only one of them reads the rule; the other reads a
 phrase. The presentation trial, which renames "receipt" consistently, tells
-them apart.
+them apart. The rule reader also applies the rules only while the policy says
+they decide (its binding line): with that line cut, it cannot decide, which
+is the opening the frame's bypass must expose.
 
     python examples/refund.py records.jsonl
 """
@@ -41,10 +43,16 @@ class PhraseMatcher:
 
 
 class RuleReader(PhraseMatcher):
-    """Reads the rule in either of its wordings."""
+    """Reads the rule in either of its wordings, while the rules bind."""
 
     name = "rule-reader"
     phrases = ("requires a receipt", "requires a proof of purchase")
+
+    def observe(self, frame, prompt, max_output_tokens):
+        policy, _, _request = prompt.partition("\n\n---\n\n")
+        if "These rules decide every request." not in policy:
+            return Observation(label="unclear")  # no rule binds: nothing to decide by
+        return super().observe(frame, prompt, max_output_tokens)
 
 
 def main(path: Path) -> list[tuple[str, str, list[str]]]:

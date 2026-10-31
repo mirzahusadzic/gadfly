@@ -34,7 +34,7 @@
     "presentation": {"files": "entries"},
     "bypass": ["binding"]
   },
-  "allowed": {"ablation": ["deny"]},
+  "allowed": {"ablation": ["deny"], "bypass": ["deny"]},
   "standing": {"quorum": 1, "agree": 1},
   "materialized": true,
   "battery": {"kind": "scope-reader"}

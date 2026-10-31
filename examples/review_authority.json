@@ -40,6 +40,11 @@
         "kind": "grant"
       },
       {
+        "id": "grant2",
+        "text": "Grant G-2: the reviewer may read the CI logs.",
+        "kind": "grant"
+      },
+      {
         "id": "link",
         "text": "State: T-17 challenges C-2.",
         "kind": "state"
@@ -52,6 +57,11 @@
       {
         "id": "assigned",
         "text": "State: R-3 is assigned.",
+        "kind": "state"
+      },
+      {
+        "id": "granted",
+        "text": "State: G-1 is granted to R-3.",
         "kind": "state"
       }
     ]
@@ -90,10 +100,23 @@
       "T-17": "T-8",
       "r-1842": "r-77",
       "R-3": "R-9"
-    }
+    },
+    "sham": {
+      "draws": 1
+    },
+    "bypass": [
+      "granted"
+    ],
+    "control": [
+      "grant",
+      "grant2"
+    ]
   },
   "allowed": {
     "ablation": [
+      "none"
+    ],
+    "bypass": [
       "none"
     ]
   }

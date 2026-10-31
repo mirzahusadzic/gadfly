@@ -33,7 +33,7 @@
     "presentation": {"sort rows by key k": "order rows by key k"},
     "bypass": ["bind"]
   },
-  "allowed": {"ablation": ["unsorted"]},
+  "allowed": {"ablation": ["unsorted"], "bypass": ["unsorted"]},
   "standing": {"quorum": 1, "agree": 1},
   "materialized": true,
   "battery": {"kind": "key-reader"}

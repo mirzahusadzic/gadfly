@@ -34,7 +34,7 @@
     "presentation": {"cobalt": "verdigris"},
     "bypass": ["binding"]
   },
-  "allowed": {"ablation": ["ungrounded"]},
+  "allowed": {"ablation": ["ungrounded"], "bypass": ["ungrounded"]},
   "standing": {"quorum": 1, "agree": 1},
   "materialized": true,
   "battery": {"kind": "citation-reader"}

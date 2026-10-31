@@ -1,9 +1,9 @@
 """Code invariant: does the output order rest on line L-2?
 
-One scorer reads the sort-key line in either wording. A full run moves as
-the promise allows, but its fallback check stays open, so it is not yet
-carried. The same records, read without the sham, presentation and bypass
-trials, are unresolved (a record lost is no evidence). The receiving owner's
+One scorer reads the sort-key line in either wording, while the lines
+decide the output: a full run carries, every check passed. The same
+records, read without the sham, presentation and bypass trials, are
+unresolved (a record lost is no evidence). The receiving owner's
 exclusion, declared alone, is not yet outside scope; declared and checked by
 the owner, it is. Deterministic.
 """
@@ -39,6 +39,8 @@ class KeyReader:
 
     def observe(self, frame, prompt, max_output_tokens):
         policy, _, _ = prompt.partition("\n\n---\n\n")
+        if "These lines decide the output." not in policy:
+            return Observation(label="unsorted")  # the lines do not decide: no order
         if "sort rows by key k" in policy or "order rows by key k" in policy:
             return Observation(label="sorted")
         return Observation(label="unsorted")

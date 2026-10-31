@@ -3,7 +3,9 @@
 Two scorers read the same frame. Both give the count while S-2 is cited and
 drop it when S-2 is removed. Only one of them reads the source; the other
 reads the word "cobalt". The presentation trial, which renames cobalt
-consistently, tells them apart. Deterministic: no model is called.
+consistently, tells them apart. The source reader grounds an answer only
+while the records decide the question, so cutting that line exposes the
+opening the bypass looks for. Deterministic: no model is called.
 """
 
 from __future__ import annotations
@@ -35,10 +37,16 @@ class WordMatcher:
 
 
 class CitationReader(WordMatcher):
-    """Reads the source in either of its wordings."""
+    """Reads the source in either of its wordings, while the records decide."""
 
     name = "citation-reader"
     words = ("cobalt manifest records", "verdigris manifest records")
+
+    def observe(self, frame, prompt, max_output_tokens):
+        policy, _, _ = prompt.partition("\n\n---\n\n")
+        if "These records decide every question." not in policy:
+            return Observation(label="ungrounded")  # the sources do not decide: no ground
+        return super().observe(frame, prompt, max_output_tokens)
 
 
 def assess(raw: dict, battery) -> tuple[str, list[str]]:

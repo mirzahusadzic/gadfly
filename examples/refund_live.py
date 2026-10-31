@@ -1,10 +1,23 @@
 """The refund frame read by a live critic: a model through the unified router,
 or Gemma 4 through eGemma. Each call is a model call: the frame is public and
-small (7 trials, 3 runs each), but a routed model costs what its provider
-charges.
+small (8 trials, 3 runs each: 24 calls), but a routed model costs what its
+provider charges.
 
     python examples/refund_live.py unified anthropic/claude-sonnet-5-5 records.jsonl
-    python examples/refund_live.py egemma gemma records.jsonl
+    python examples/refund_live.py egemma records.jsonl
+
+What the answer says of the critic:
+- carried: it declines because of the receipt rule, whatever the rule's
+  wording, and only while the rules bind;
+- coupled but misaligned: the wording, or a disallowed answer without the
+  rule, moves it;
+- cooled: it declines without the rule too, yet a control (no rules at all)
+  moves it: something else, such as the request's own "without a receipt",
+  drives the decline;
+- unresolved: it cannot be told, for the reason the evidence names (the
+  control left it too: it declines whatever it is given).
+eGemma serves one model, so it takes no model name; its key is
+EGEMMA_API_KEY or EGEMMA_API_KEY_FILE, the router's CODEX_ROUTER_TOKEN.
 """
 
 from __future__ import annotations
@@ -62,9 +75,13 @@ def main(battery, model: str, path: Path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4 or sys.argv[1] not in ("unified", "egemma"):
+    kind, *rest = sys.argv[1:] or [""]
+    if kind == "unified" and len(rest) == 2:
+        model, out = rest
+    elif kind == "egemma" and len(rest) in (1, 2):  # a model name, if given, is not read
+        model, out = "egemma", rest[-1]
+    else:
         sys.exit(__doc__)
-    kind, model, out = sys.argv[1:]
     try:
         result, finding = main(Unified() if kind == "unified" else EGemma(), model, Path(out))
     except (OSError, RuntimeError, ValueError) as error:  # a refusal, in one line

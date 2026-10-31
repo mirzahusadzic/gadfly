@@ -23,15 +23,16 @@ FRAMES = ("review_finding.json", "review_authority.json")
 
 
 def operations(body: str) -> list[str]:
-    grant = re.search(r"Grant G-\d+: (.+)", body)
-    if grant is None:
-        return []
+    """What the grant permits, and only while the state says it is granted."""
+    grant = re.search(r"Grant (G-\d+): (.+)", body)
+    if grant is None or f"State: {grant.group(1)} is granted to" not in body:
+        return []  # an unbound grant permits nothing: the opening a bypass exposes
     ops = [
         op
         for op, phrase in (("inspect", "may inspect"), ("propose", "propose a repair"))
-        if phrase in grant.group(1)
+        if phrase in grant.group(2)
     ]
-    return ops + (["apply"] if "may apply" in grant.group(1) else [])
+    return ops + (["apply"] if "may apply" in grant.group(2) else [])
 
 
 def projection(body: str) -> dict:
