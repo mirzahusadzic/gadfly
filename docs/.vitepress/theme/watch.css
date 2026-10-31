@@ -2,7 +2,9 @@
    captions and interface text, 17px content, Fraunces at 400 for the trial (22px)
    and the verdict (32px), mono only for the prompt as the reader got it; weights 400
    and 600. Answers take categorical slots validated against both page
-   surfaces; "unclear" is a neutral grey. */
+   surfaces and told apart under red-green colour blindness; "unclear" is a
+   neutral grey, lighter than the slots in the dark themes so it never reads
+   as the green. */
 .gadfly-watch {
   --w-a: #2a78d6;
   --w-b: #eb6834;
@@ -29,7 +31,7 @@
   --w-a: #3987e5;
   --w-b: #d95926;
   --w-c: #199e70;
-  --w-u: #8b8f96;
+  --w-u: #b4b8bf;
 }
 .gadfly-watch :is(ol, ul) { margin-left: 0 !important; padding-left: 0 !important; list-style: none; }
 .gadfly-watch :is(ol, ul) > li { margin-left: 0 !important; }
@@ -103,7 +105,13 @@
 }
 .w-line-text, .gadfly-watch .w-asked { font-family: var(--vp-font-family-mono); font-size: 0.875rem; line-height: 1.6; }
 .w-line-text { flex: 1 1 17.5rem; }
-.w-line.is-anchor { border-left-color: var(--w-accent); background: var(--vp-c-brand-soft); }
+/* the line under test, on the action wash in the inks a theme sets for it */
+.w-line.is-anchor {
+  --w-ink: var(--gf-action-wash-ink, var(--vp-c-text-1));
+  --w-muted: var(--gf-action-wash-muted, var(--vp-c-text-2));
+  color: var(--w-ink); border-left-color: var(--w-accent); background: var(--vp-c-brand-soft);
+}
+.w-line.is-anchor .w-tag.is-anchor { border-color: var(--gf-action-wash-ink, var(--w-accent)); }
 .w-line.is-hidden .w-line-text {
   color: var(--w-muted); text-decoration: line-through 1.5px; text-decoration-color: currentColor;
   animation: w-strike 600ms ease 300ms both;

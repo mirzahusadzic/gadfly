@@ -27,24 +27,40 @@
   src: url('./fonts/fraunces-latin-opsz-normal.woff2') format('woff2');
 }
 
-/* The themes: Light, and After the Poem's three studies as they are, with
- * its colours in their roles. Its page background frames the sidebar; its
- * panel is the page you read, lighter; panel2 the cards in a menu; its title
- * colour the headings; its action colour the links, controls and the current
- * selection, with the action fill and ink on buttons; its assessment colour
- * the callouts; its console the code, and its source-code colour inline code.
+/* The themes: Light, and After the Poem's three studies, with its colours in
+ * their roles. Its page background frames the sidebar; its panel is the page
+ * you read; panel2 the panels and the cards in a menu; its title colour the
+ * headings; its action colour the links, controls and the current selection,
+ * with the action fill and ink on buttons; its assessment colour the
+ * callouts; its console the code, and its source-code colour inline code.
  * --gf-mark-* are the swatch in the top bar, --gf-dot-* a study's own swatch
  * in the menu, and --shiki-* the code's colours on the console, from the
- * study's own hexes (Light keeps GitHub's), each at least 5:1. */
+ * study's own hexes (Light's are GitHub's, its keyword red and comment grey
+ * darkened to hold on its grey), each at least 5:1. Code sits in a well the
+ * colour of the sidebar, but for Paper & iris's dark terminal, its own.
+ *
+ * Every theme keeps its own hues, and its surfaces sit at Paper & iris's
+ * lightness offsets from the page (OKLCH L): the sidebar 9.5 darker, the
+ * panels 9.5 and the rules 22.5 away from it, inline code 11.8 away. A dark
+ * theme's sidebar keeps its page's saturation (chroma to lightness), so a
+ * darker sidebar is never a more saturated one. The
+ * action wash marks the line under test on a panel, at least 5.5 from it in
+ * lightness and never only another hue: in the light themes a pale band in
+ * the action's family, 6 towards the page; in the dark studies a light band
+ * in the study's own colour, Dusk's apricot and Watermelon's radar mint, with
+ * the study's dark inks on it (--gf-action-wash-ink and -muted).
+ * So every surface reads apart by lightness alone, as it must for a
+ * colour-blind reader; tests/test_docs.py holds the offsets and the
+ * contrasts. */
 
 /* Dusk & apricot, the default: plum, lilac, a little butter yellow. */
 :root,
 [data-theme='dusk'] {
   color-scheme: dark;
-  --gf-bg: #282235;
+  --gf-bg: #1d1827;
   --gf-panel: #352d44;
-  --gf-panel2: #3f354f;
-  --gf-line: #655475;
+  --gf-panel2: #52416b;
+  --gf-line: #786399;
   --gf-text: #f7edf8;
   --gf-muted: #d0c1da;
   --gf-title: #f2bf9d;
@@ -52,9 +68,11 @@
   --gf-action: #f3d780;
   --gf-action-fill: #f3d780;
   --gf-action-ink: #392a32;
-  --gf-action-wash: #514333;
-  --gf-source-code: #604152;
-  --gf-console-bg: #292332;
+  --gf-action-wash: #f2bf9d;
+  --gf-action-wash-ink: #392a32;
+  --gf-action-wash-muted: #604152;
+  --gf-source-code: #6d405a;
+  --gf-console-bg: #1d1827;
   --gf-console-text: #e4d2c7;
   --gf-scroll: #846d98;
   --gf-mark-1: #493347;
@@ -76,40 +94,40 @@
   --shiki-token-link: #ffd0a4;
 }
 
-/* Light: white paper and blue links, the blue at 5.2:1 on the page. */
+/* Light: white paper and blue links, the blue at 6.8:1 on the page. */
 [data-theme='light'] {
   color-scheme: light;
-  --gf-bg: #f5f7f9;
+  --gf-bg: #dee0e2;
   --gf-panel: #ffffff;
-  --gf-panel2: #eff2f5;
-  --gf-line: #d8dee4;
+  --gf-panel2: #dde0e3;
+  --gf-line: #b1b6bc;
   --gf-text: #1f2328;
-  --gf-muted: #59636e;
+  --gf-muted: #525b66;
   --gf-title: #1f2328;
-  --gf-assessment: #0072b5;
-  --gf-action: #0072b5;
-  --gf-action-fill: #0072b5;
+  --gf-assessment: #005f99;
+  --gf-action: #005f99;
+  --gf-action-fill: #005f99;
   --gf-action-ink: #ffffff;
-  --gf-action-wash: #e0eef7;
-  --gf-source-code: #f5f7f9;
-  --gf-console-bg: #f5f7f9;
+  --gf-action-wash: #e9f6fe;
+  --gf-source-code: #d6d8da;
+  --gf-console-bg: #dee0e2;
   --gf-console-text: #1f2328;
   --gf-scroll: #a3abb4;
   --gf-mark-1: #ffffff;
   --gf-mark-2: #1f2328;
-  --gf-mark-3: #0072b5;
+  --gf-mark-3: #005f99;
   --gf-dot-1: #ffffff;
   --gf-dot-2: #1f2328;
-  --gf-dot-3: #0072b5;
+  --gf-dot-3: #005f99;
   --shiki-foreground: #1f2328;
   --shiki-background: var(--gf-console-bg);
-  --shiki-token-keyword: #cf222e;
+  --shiki-token-keyword: #b9001b;
   --shiki-token-string: #0a3069;
   --shiki-token-string-expression: #0a3069;
   --shiki-token-constant: #0550ae;
   --shiki-token-function: #6639ba;
   --shiki-token-parameter: #953800;
-  --shiki-token-comment: #59636e;
+  --shiki-token-comment: #525b66;
   --shiki-token-punctuation: #1f2328;
   --shiki-token-link: #0a3069;
 }
@@ -128,7 +146,7 @@
   --gf-action: #7c3b24;
   --gf-action-fill: #efb08a;
   --gf-action-ink: #3e2b30;
-  --gf-action-wash: #f4dbc6;
+  --gf-action-wash: #fee9d8;
   --gf-source-code: #dfcbe1;
   --gf-console-bg: #352c41;
   --gf-console-text: #e4d2c7;
@@ -155,20 +173,22 @@
 /* Watermelon & mint: ripe berry, fresh mint, coral. */
 [data-theme='play'] {
   color-scheme: dark;
-  --gf-bg: #3f1c2b;
+  --gf-bg: #311420;
   --gf-panel: #512539;
-  --gf-panel2: #71364d;
-  --gf-line: #a36b7b;
+  --gf-panel2: #793450;
+  --gf-line: #a85475;
   --gf-text: #fff2ed;
   --gf-muted: #eec6d2;
   --gf-title: #ffcfbf;
   --gf-assessment: #b2f3cc;
-  --gf-action: #ffaca7;
+  --gf-action: #ffb4b0;
   --gf-action-fill: #ffa19c;
   --gf-action-ink: #481e2e;
-  --gf-action-wash: #7c3549;
-  --gf-source-code: #7a3b51;
-  --gf-console-bg: #352330;
+  --gf-action-wash: #b2f3cc;
+  --gf-action-wash-ink: #481e2e;
+  --gf-action-wash-muted: #71364d;
+  --gf-source-code: #813a53;
+  --gf-console-bg: #311420;
   --gf-console-text: #f0d9cf;
   --gf-scroll: #b5768e;
   --gf-mark-1: #642b44;

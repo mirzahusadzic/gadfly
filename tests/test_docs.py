@@ -3,7 +3,9 @@ quote, copy and document is what the code prints, copies and declares."""
 
 import importlib
 import inspect
+import itertools
 import json
+import math
 import re
 from collections import Counter
 from pathlib import Path
@@ -331,3 +333,169 @@ def test_the_readme_links_work_on_pypi():
         if not page.exists() or (anchor and page.suffix == ".md" and anchor not in _anchors(page)):
             broken.append(target)
     assert broken == []
+
+
+THEMES = ROOT / "docs/.vitepress/theme/custom.css"
+# Machado, Oliveira and Fernandes (2009) at full severity, on linear RGB
+CVD = {
+    "deutan": [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413],
+               [-0.011820, 0.042940, 0.968881]],
+    "protan": [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216],
+               [-0.003882, -0.048116, 1.051998]],
+}  # fmt: skip
+
+
+def _linear(colour: str) -> list[float]:
+    channels = (int(colour[i : i + 2], 16) / 255 for i in (1, 3, 5))
+    return [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+
+
+def _oklab(rgb: list[float]) -> tuple[float, float, float]:
+    r, g, b = rgb
+    lms = [
+        (0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b) ** (1 / 3),
+        (0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b) ** (1 / 3),
+        (0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b) ** (1 / 3),
+    ]
+    rows = [
+        (0.2104542553, 0.7936177850, -0.0040720468),
+        (1.9779984951, -2.4285922050, 0.4505937099),
+        (0.0259040371, 0.7827717662, -0.8086757660),
+    ]
+    return tuple(100 * sum(w * x for w, x in zip(row, lms, strict=True)) for row in rows)
+
+
+def _lightness(colour: str) -> float:
+    return _oklab(_linear(colour))[0]
+
+
+def _saturation(colour: str) -> float:
+    lightness, a, b = _oklab(_linear(colour))
+    return math.hypot(a, b) / lightness
+
+
+def _seen(colour: str, cvd: str) -> tuple[float, float, float]:
+    rgb = _linear(colour)
+    return _oklab([max(0.0, sum(m * c for m, c in zip(row, rgb, strict=True))) for row in CVD[cvd]])
+
+
+def _contrast(ink: str, ground: str) -> float:
+    def luminance(colour):
+        r, g, b = _linear(colour)
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+    high, low = sorted((luminance(ink), luminance(ground)), reverse=True)
+    return (high + 0.05) / (low + 0.05)
+
+
+def _themes() -> dict[str, dict[str, str]]:
+    css = THEMES.read_text(encoding="utf-8")
+    return {
+        name: dict(re.findall(r"--gf-([a-z0-9-]+): (#[0-9a-f]{6});", body))
+        for name, body in re.findall(r"\[data-theme='([a-z]+)'\] \{(.*?)\n\}", css, re.S)
+    }
+
+
+def test_every_theme_sets_its_surfaces_apart_as_paper_and_iris_does():
+    # each surface at the same lightness offset from the page, the sidebar
+    # darker and the rest away from the page, so a theme reads by lightness
+    themes = _themes()
+    assert set(themes) == {"dusk", "light", "daylight", "play"}
+    paper = themes["daylight"]
+    offsets = {
+        key: abs(_lightness(paper[key]) - _lightness(paper["panel"]))
+        for key in ("bg", "panel2", "line", "source-code")
+    }
+    drift = []
+    for name, theme in themes.items():
+        page = _lightness(theme["panel"])
+        away = 1 if page < 50 else -1
+        for key, offset in offsets.items():
+            expected = page + (-offset if key == "bg" else away * offset)
+            if abs(_lightness(theme[key]) - expected) > 0.6:
+                drift.append(f"{name} {key}: L {_lightness(theme[key]):.1f}, not {expected:.1f}")
+        if page < 50 and abs(_saturation(theme["bg"]) - _saturation(theme["panel"])) > 0.02:
+            drift.append(f"{name} bg: more saturated than its page")
+    assert drift == []
+
+
+def test_code_sits_in_the_sidebars_colour_and_reads_at_5_to_1():
+    # a well the colour of the sidebar, unless a study keeps a dark terminal
+    # on its light page; every colour of the code at 5:1 on it
+    css = THEMES.read_text(encoding="utf-8")
+    off = []
+    for name, body in re.findall(r"\[data-theme='([a-z]+)'\] \{(.*?)\n\}", css, re.S):
+        theme = dict(re.findall(r"--gf-([a-z0-9-]+): (#[0-9a-f]{6});", body))
+        console = theme["console-bg"]
+        terminal = _lightness(console) < 50 < _lightness(theme["panel"])
+        if console != theme["bg"] and not terminal:
+            off.append(f"{name}: code on {console}, its sidebar {theme['bg']}")
+        inks = re.findall(
+            r"--(shiki-token-[a-z-]+|shiki-foreground|gf-console-text): (#[0-9a-f]{6});", body
+        )
+        assert inks
+        off += [
+            f"{name}: {token} at {_contrast(ink, console):.2f}"
+            for token, ink in inks
+            if _contrast(ink, console) < 5
+        ]
+    assert off == []
+
+
+def test_the_line_under_test_stands_off_its_panel_for_every_eye():
+    # the wash marks the line under test on a panel: lighter or darker than
+    # it, never only another hue, and apart under red-green colour blindness
+    # (6 is the floor beside the line's rule and tag, which say it in shape);
+    # the line is set in the inks its theme gives the wash, read below
+    faint = []
+    for name, theme in _themes().items():
+        panel, wash = theme["panel2"], theme["action-wash"]
+        step = _lightness(wash) - _lightness(panel)
+        if abs(step) < 5.5:
+            faint.append(f"{name}: the wash is {step:+.1f} from its panel")
+        for cvd in CVD:
+            if math.dist(_seen(panel, cvd), _seen(wash, cvd)) < 6:
+                faint.append(f"{name}: wash and panel alike under {cvd}")
+    assert faint == []
+    watch = (ROOT / "docs/.vitepress/theme/watch.css").read_text(encoding="utf-8")
+    line = re.search(r"\n\.w-line\.is-anchor \{(.*?)\}", watch, re.S).group(1)
+    assert "--w-ink: var(--gf-action-wash-ink" in line
+    assert "--w-muted: var(--gf-action-wash-muted" in line
+
+
+def test_every_theme_keeps_its_text_readable_on_every_surface():
+    # body ink at 7:1 on the page; every ink at 4.5:1 wherever it is set; on
+    # the wash, the line under test's own inks, its text and its muted words
+    low = []
+    for name, theme in _themes().items():
+        grounds = ("panel", "bg", "panel2", "source-code")
+        for ink in ("text", "muted", "action", "title"):
+            for ground in grounds[:3] if ink == "title" else grounds:
+                need = 7 if (ink, ground) == ("text", "panel") else 4.5
+                ratio = _contrast(theme[ink], theme[ground])
+                if ratio < need:
+                    low.append(f"{name}: {ink} on {ground} at {ratio:.2f}")
+        for ink, own in (("text", "action-wash-ink"), ("muted", "action-wash-muted")):
+            ratio = _contrast(theme.get(own, theme[ink]), theme["action-wash"])
+            if ratio < 4.5:
+                low.append(f"{name}: the line's {ink} on the wash at {ratio:.2f}")
+    assert low == []
+
+
+def test_the_watch_view_tells_every_answer_apart_for_every_eye():
+    # the answers' dots, in the light and the dark themes, apart under
+    # red-green colour blindness: the validator's target, every pair
+    css = (ROOT / "docs/.vitepress/theme/watch.css").read_text(encoding="utf-8")
+    alike = []
+    for scheme, rule in (
+        ("light", r"\n\.gadfly-watch \{"),
+        ("dark", r"\n\.dark \.gadfly-watch \{"),
+    ):
+        block = re.search(rule + r"(.*?)\n\}", css, re.S).group(1)
+        dots = dict(re.findall(r"--w-([abcu]): (#[0-9a-f]{6});", block))
+        assert set(dots) == set("abcu")
+        for one, other in itertools.combinations(sorted(dots), 2):
+            for cvd in CVD:
+                if math.dist(_seen(dots[one], cvd), _seen(dots[other], cvd)) < 8:
+                    alike.append(f"{scheme}: {one} and {other} under {cvd}")
+    assert alike == []
