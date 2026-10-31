@@ -296,6 +296,8 @@ def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
     for text in quoted:
         if text.startswith("gadfly: "):
             message = text.removeprefix("gadfly: ")
+        elif text.startswith("stopped: "):
+            message = text.removeprefix("stopped: ")  # why a run stopped, as run says it
         elif text.startswith('"') and text.endswith('"'):
             message = text[1:-1]  # an opening, as run names it
         else:

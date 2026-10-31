@@ -59,6 +59,10 @@ served it:
 }
 ```
 
+`usage.output_tokens` is every output token the call spent, the evaluator's
+own drafting included. A run stops after a call that reports more than its
+cap, so set `--output-tokens` to what a whole call may spend.
+
 ---
 
 ### Contracts

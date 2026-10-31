@@ -106,6 +106,11 @@ in all. Input tokens and a provider's prices are outside the budget, so a model
 may be slower or cost more than the caps suggest. Run `calls_needed(frame)`
 before a live run.
 
+The cap is the whole call's. A battery that writes before it answers reports
+every output token it spent in `usage`, so set `--output-tokens`
+(`Budget.output_tokens_per_call`) to what a whole call may spend: a call that
+reports more stops the run after it.
+
 #### Record provenance
 
 Every record names these, so a verdict can be traced to what was read and who

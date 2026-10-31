@@ -39,6 +39,7 @@ without an answer is an opening, which `run` counts and names.
 | `gadfly: runs is not a folder: make it, or choose another --out` | The folder `--out` names does not exist, and nothing was spent. Make it first. |
 | `gadfly: records.jsonl exists: kept records are never written over` | Choose a new `--out`. To finish a stopped run, pass its file as `--kept` with a new `--out`. |
 | `gadfly: stopped by Ctrl-C after 12 calls; they are in records.jsonl; finish with --kept records.jsonl and a new --out` | Every record made so far is in its file. Run again with that file as `--kept` and a new `--out`: only the missing calls are made, and the new file holds the whole run, to report as one. A crash leaves the file the same way. |
+| `stopped: the battery reported 900 output tokens for a call capped at 64` | The battery spent more output tokens on one call than `--output-tokens` allows, so the run stopped after that call, and its record is kept. A battery that writes before it answers spends tokens on the whole call: set `--output-tokens` to what a whole call may spend, and finish with `--kept`. |
 | `gadfly: a kept baseline record was made from another prompt` | A record passed as `--kept` was made with a prompt this frame does not plan for that call. Resume only from the records this frame's own run made. |
 
 ---
