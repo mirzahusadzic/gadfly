@@ -44,3 +44,16 @@ class Unreachable(RuleReader):
 
     def observe(self, frame, prompt, max_output_tokens):
         return Observation(label=None, opening="the reader could not be reached: ConnectionRefused")
+
+
+class Interrupted(RuleReader):
+    """The rule reader, stopped by Ctrl-C on its third call."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def observe(self, frame, prompt, max_output_tokens):
+        self.calls += 1
+        if self.calls == 3:
+            raise KeyboardInterrupt
+        return super().observe(frame, prompt, max_output_tokens)

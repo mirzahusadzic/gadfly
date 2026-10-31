@@ -27,10 +27,23 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from . import __version__
 from .frame import FrameError, schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
 from .types import Budget, Record
+
+EXAMPLES = """\
+examples:
+  gadfly check-frame my-frame.json      check a frame, with no call
+  gadfly plan my-frame.json             its trials and their cost, with no call
+  gadfly run my-frame.json --battery midwife.batteries.egemma:EGemma \\
+      --calls 40 --out records.jsonl    make the calls, keeping each record
+  gadfly report my-frame.json records.jsonl
+                                        read the verdict, with no call
+
+docs: https://mirzahusadzic.github.io/gadfly/command-line
+"""
 
 
 def load_frame(path: str):
@@ -118,6 +131,9 @@ def command_run(args) -> int:
     if not out.parent.is_dir():  # found out before a call is spent, not after
         raise FileNotFoundError(f"{out.parent} is not a folder: make it, or choose another --out")
     files = []  # the file is made by the first record, so a refused run leaves none
+    made = []
+    # a run takes minutes: in a terminal, count the calls as they are made
+    progress = sys.stderr.isatty() and not args.json
 
     def keep(record: Record) -> None:
         if not files:
@@ -126,6 +142,9 @@ def command_run(args) -> int:
                 files[0].write(json.dumps(old, ensure_ascii=False) + "\n")
         files[0].write(json.dumps(record.as_dict(), ensure_ascii=False) + "\n")
         files[0].flush()
+        made.append(record)
+        if progress:
+            print(f"\r{len(made)} calls made", end="", file=sys.stderr, flush=True)
 
     try:
         result = run(
@@ -136,9 +155,20 @@ def command_run(args) -> int:
             only=args.only,
             kept=kept,
         )
+    except KeyboardInterrupt:
+        # every record made so far is already in its file: say how to finish
+        kept_where = (
+            f"they are in {out}; finish with --kept {out} and a new --out"
+            if files
+            else ("no record was kept")
+        )
+        print(f"\ngadfly: stopped by Ctrl-C after {len(made)} calls; {kept_where}", file=sys.stderr)
+        return 130
     finally:
         for file in files:
             file.close()
+        if progress and made:
+            print(file=sys.stderr)
     # a service that is down answers every call with an opening: say so, so a
     # run that spent its calls on nothing does not read as a finished one
     openings = Counter(r.opening for r in result.records if r.opening is not None)
@@ -167,6 +197,8 @@ def command_run(args) -> int:
             )
         if result.stopped:
             print(f"stopped: {result.stopped}")
+        if files:
+            print(f"to read the verdict: gadfly report {args.frame} {out}")
     return 0
 
 
@@ -228,16 +260,22 @@ def command_portfolio(args) -> int:
 
 def parser() -> argparse.ArgumentParser:
     """The command line's arguments."""
-    root = argparse.ArgumentParser(prog="gadfly", description=__doc__.split("\n\n")[0])
-    commands = root.add_subparsers(dest="command", required=True)
+    root = argparse.ArgumentParser(
+        prog="gadfly",
+        description="Test whether a decision rests on the evidence you think it does.",
+        epilog=EXAMPLES,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    root.add_argument("--version", action="version", version=f"gadfly {__version__}")
+    commands = root.add_subparsers(dest="command", metavar="command")
 
     show = commands.add_parser("plan", help="show trials and call count without spending")
-    show.add_argument("frame")
-    show.add_argument("--json", action="store_true")
+    show.add_argument("frame", help="the frame, a JSON file")
+    show.add_argument("--json", action="store_true", help="print JSON instead of text")
     show.set_defaults(func=command_plan)
 
     execute = commands.add_parser("run", help="run a battery and keep records as JSON Lines")
-    execute.add_argument("frame")
+    execute.add_argument("frame", help="the frame, a JSON file")
     execute.add_argument("--battery", required=True, help="module:Class")
     execute.add_argument("--out", required=True, help="a new JSON Lines file")
     execute.add_argument("--calls", required=True, type=int, help="the most calls to make")
@@ -245,18 +283,18 @@ def parser() -> argparse.ArgumentParser:
     execute.add_argument("--token-budget", type=int, help="the most output tokens in all")
     execute.add_argument("--only", action="append", help="a trial id; may repeat")
     execute.add_argument("--kept", help="records already made: their calls are not made again")
-    execute.add_argument("--json", action="store_true")
+    execute.add_argument("--json", action="store_true", help="print JSON instead of text")
     execute.set_defaults(func=command_run)
 
     report = commands.add_parser("report", help="judge a kept JSON Lines file")
-    report.add_argument("frame")
-    report.add_argument("records")
-    report.add_argument("--json", action="store_true")
+    report.add_argument("frame", help="the frame the records were made under")
+    report.add_argument("records", help="the records, a JSON Lines file")
+    report.add_argument("--json", action="store_true", help="print JSON instead of text")
     report.set_defaults(func=command_report)
 
     check = commands.add_parser("check-frame", help="check a frame before any call")
-    check.add_argument("frame")
-    check.add_argument("--json", action="store_true")
+    check.add_argument("frame", help="the frame, a JSON file")
+    check.add_argument("--json", action="store_true", help="print JSON instead of text")
     check.set_defaults(func=command_check_frame)
 
     portfolio = commands.add_parser("portfolio", help="count verdicts across report files")
@@ -267,12 +305,19 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     """Run one command; a refusal is a message and exit status 2."""
-    args = parser().parse_args(argv)
+    command_line = parser()
+    args = command_line.parse_args(argv)
+    if args.command is None:  # no command: what the tool does, not an error
+        command_line.print_help()
+        return 0
     try:
         return args.func(args)
     except (OSError, ValueError, RuntimeError, KeyError, ImportError) as error:
         print(f"gadfly: {error}", file=sys.stderr)
         return 2
+    except KeyboardInterrupt:
+        print("gadfly: stopped by Ctrl-C", file=sys.stderr)
+        return 130
 
 
 if __name__ == "__main__":

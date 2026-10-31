@@ -3,7 +3,8 @@
 `gadfly` checks, plans, runs and reports frames from a terminal, using only
 the public pipeline. Each command takes a frame file, and `run` and `report`
 also take a file of records, one JSON object per line. `uv run python -m
-gadfly` is the same command.
+midwife` is the same command. `gadfly` alone prints its help with examples,
+and `gadfly --version` its version.
 
 ---
 
@@ -12,12 +13,13 @@ gadfly` is the same command.
 Every command but `portfolio` also takes `--json`, which prints the same as
 JSON. A refusal, such as a missing file, an existing `--out` file or a battery
 that cannot be imported, prints `gadfly:` and the reason, and exits with 2.
+Results go to standard output, and messages to standard error.
 
 | Command | Calls a model | Prints | Exit status |
 | --- | --- | --- | --- |
 | `check-frame FRAME` | no | `ok`, the frame's hash and its calls, or each problem and where it is | 0 when accepted, 1 when not |
 | `plan FRAME` | no | each trial, its kind and its body's hash, and the call count | 0 |
-| `run FRAME` | yes, up to `--calls` | the calls written, how many came back as openings and why, and why it stopped early | 0 |
+| `run FRAME` | yes, up to `--calls` | the calls written, how many came back as openings and why, why it stopped early, and how to read the verdict | 0, or 130 when stopped by Ctrl-C |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0 |
 | `portfolio REPORT...` | no | frames counted by category, the obligations they share, and frames whose inputs disagree | 0 |
 
@@ -78,9 +80,12 @@ uv run gadfly run examples/upgrade.json \
   --calls 40 --out records.jsonl
 ```
 
-It prints the calls it wrote. When some came back as openings, it also prints
-how many and the most common reason, such as `eGemma could not be reached`:
-[Troubleshooting](troubleshooting.md) says what each one means.
+It prints the calls it wrote, and in a terminal counts them as they are
+made. When some came back as openings, it also prints how many and the most
+common reason, such as `eGemma could not be reached`:
+[Troubleshooting](troubleshooting.md) says what each one means. Stopped by
+Ctrl-C, it says where the records made so far are and how to finish with
+`--kept`.
 
 | Flag | Value | Effect |
 | --- | --- | --- |

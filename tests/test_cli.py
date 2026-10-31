@@ -39,7 +39,9 @@ def run_refund(tmp_path, *more):
 
 def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):
     status, out = run_refund(tmp_path)
-    assert status == 0 and capsys.readouterr().out == f"wrote 8/8 calls to {out}\n"
+    assert status == 0 and capsys.readouterr().out == (
+        f"wrote 8/8 calls to {out}\nto read the verdict: gadfly report {REFUND} {out}\n"
+    )
     assert len(out.read_text().splitlines()) == 8
     assert main(["report", REFUND, str(out)]) == 0
     report = capsys.readouterr().out.splitlines()
@@ -93,7 +95,7 @@ def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     rest = tmp_path / "rest.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "7"]
     assert main([*argv, "--out", str(rest), "--kept", str(first)]) == 0
-    assert capsys.readouterr().out.endswith(f"wrote 7/7 calls to {rest}, after 1 kept record\n")
+    assert f"wrote 7/7 calls to {rest}, after 1 kept record\n" in capsys.readouterr().out
     # the new file is the whole run, so it reports as one
     assert main(["report", REFUND, str(rest)]) == 0
     report = capsys.readouterr().out.splitlines()
@@ -185,3 +187,22 @@ def test_a_refused_run_writes_no_records_file(tmp_path, capsys):
     assert main([*argv, "--out", str(out)]) == 2
     assert "asks for the rule-reader battery" in capsys.readouterr().err
     assert not out.exists()
+
+
+def test_the_command_line_says_what_it_is_and_how_to_use_it(capsys):
+    # clig.dev: a version, help when there is no command, examples and the docs
+    with pytest.raises(SystemExit) as shown:
+        main(["--version"])
+    assert shown.value.code == 0 and capsys.readouterr().out.startswith("gadfly 0.")
+    assert main([]) == 0
+    usage = capsys.readouterr().out
+    assert "examples:" in usage and "https://mirzahusadzic.github.io/gadfly/" in usage
+
+
+def test_ctrl_c_keeps_what_was_made_and_says_how_to_finish(tmp_path, capsys):
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Interrupted", "--calls", "8"]
+    assert main([*argv, "--out", str(out)]) == 130
+    err = capsys.readouterr().err
+    assert "stopped by Ctrl-C after 2 calls" in err and f"--kept {out}" in err
+    assert "Traceback" not in err and len(out.read_text().splitlines()) == 2
