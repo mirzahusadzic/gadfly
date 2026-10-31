@@ -43,18 +43,17 @@ no runtime dependencies and no hidden state.
 This is the deterministic refund example: two batteries read the same relation.
 
 ```text
+$ python examples/refund.py records.jsonl
 phrase-matcher: coupled but misaligned
   presentation moved it decline -> grant
-  no hidden fallback: bypass left it at decline
-rule-reader: unresolved
+  no hidden fallback: bypass gave decline, not the designated opening (unclear)
+rule-reader: carried
   ablation moved it decline -> grant; held under presentation, 2 shams
-  not carried while 1 carriage check is open
-  no hidden fallback: bypass left it at decline
 ```
 
-The category answers a narrow question. The evidence says why. The obligation
-says what is still open: here, the rule reader keeps working without the
-connection removed by the bypass, so carried waits until that check passes.
+The category answers a narrow question. The evidence says why. An obligation
+says what is still open: here the phrase matcher keeps declining with the
+rules' binding line cut. The rule reader has nothing left open: carried.
 
 --8<-- "README.md:verdicts"
 

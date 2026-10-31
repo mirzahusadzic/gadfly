@@ -38,22 +38,22 @@ outside scope unresolved, and the evidence says so; a frame that says
 git clone https://github.com/mirzahusadzic/gadfly.git
 cd gadfly
 uv sync
-uv run python examples/refund.py refund-records.jsonl
 ```
 
 ```text
+$ uv run python examples/refund.py refund-records.jsonl
 phrase-matcher: coupled but misaligned
   presentation moved it decline -> grant
-  no hidden fallback: bypass left it at decline
-rule-reader: unresolved
+  no hidden fallback: bypass gave decline, not the designated opening (unclear)
+rule-reader: carried
   ablation moved it decline -> grant; held under presentation, 2 shams
-  not carried while 1 carriage check is open
-  no hidden fallback: bypass left it at decline
 ```
 
-The phrase matcher reads a word, and the presentation trial catches it. The
-rule reader moves as the promise allows, but it reads the rule whether or not
-the rules bind, so its fallback check is open and carried waits for it.
+The phrase matcher reads a word, and the presentation trial catches it; it
+also keeps declining with the binding line cut, a fallback it is not cleared
+of. The rule reader moves as the promise allows, holds under presentation and
+the shams, and with the binding line cut cannot decide: the opening the frame
+names. Every check passed, so it is carried.
 
 The same test in Python:
 
@@ -91,7 +91,7 @@ The same from the command line (also `python -m gadfly`):
 gadfly check-frame examples/refund.json   # the frame's shape, then the parser
 gadfly plan examples/refund.json          # the trials and the call count, no call
 gadfly run examples/refund.json --battery examples.refund:RuleReader \
-    --calls 7 --out records.jsonl         # each record kept as one JSON line
+    --calls 8 --out records.jsonl         # each record kept as one JSON line
 gadfly report examples/refund.json records.jsonl
 ```
 
@@ -226,13 +226,13 @@ A critic with its own schema names where the label lives with a JSON pointer:
 <!-- --8<-- [start:examples] -->
 | Example | Relation | What it teaches | Calls |
 |---|---|---|---|
-| `examples/refund.py` | a refund requires a receipt | a phrase matcher is misaligned by presentation; a rule reader moves as allowed, but its open fallback keeps carried waiting | 7 per battery |
-| `examples/review_handoff.py` | a failure reaches a review state; a grant bounds operations | the essay's worked example: one system carries the finding; a "fix ready" summary cannot show its reading moves; a lost record is unresolved | 6–7 per system |
-| `examples/citation.py` | an answer rests on cited source S-2 | a word matcher is exposed by presentation; a source reader's fallback stays open | 7 per battery |
+| `examples/refund.py` | a refund requires a receipt | a phrase matcher is misaligned by presentation; a rule reader carries, every check passed | 8 per battery |
+| `examples/review_handoff.py` | a failure reaches a review state; a grant bounds operations | the essay's worked example: the state projection carries both; dropped openings are misaligned; a "fix ready" summary, the same whatever it is given, cannot be told; a lost record is unresolved | 7–8 per system |
+| `examples/citation.py` | an answer rests on cited source S-2 | a word matcher is exposed by presentation; a source reader carries | 7 per battery |
 | `examples/system_prompt.py` | one system line governs a refusal | a scorer that can move is cooled by its control; an always-refuse scorer cannot tell | 6 per battery |
-| `examples/tool_permission.py` | a grant limits a tool to read-only | an eager tool permits a disallowed modification; a scope reader's fallback stays open | 6 per battery |
-| `examples/code_invariant.py` | a sort line governs output order | a lost record is no evidence; an owner's exclusion is outside scope only once checked | 6 |
-| `examples/refund_live.py` | the refund relation through a routed model or eGemma | the same pipeline with a sampled battery and real token cost | 21 to a model |
+| `examples/tool_permission.py` | a grant limits a tool to read-only | an eager tool permits a disallowed modification; a scope reader carries | 6 per battery |
+| `examples/code_invariant.py` | a sort line governs output order | a full run carries; a lost record is no evidence; an owner's exclusion is outside scope only once checked | 6 |
+| `examples/refund_live.py` | the refund relation through a routed model or eGemma | the same frame read by a sampled critic: carried, cooled (its control moved) or unresolved (it cannot tell), at real token cost | 24, to a model |
 <!-- --8<-- [end:examples] -->
 
 ## Boundaries

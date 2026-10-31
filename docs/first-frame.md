@@ -71,7 +71,7 @@ across cases; Gadfly will return one finding per input and an overall category.
     "labels": ["grounded", "ungrounded"],
     "instruction": "Answer the question from the cited source."
   },
-  "allowed": {"ablation": ["ungrounded"]}
+  "allowed": {"ablation": ["ungrounded"], "bypass": ["ungrounded"]}
 }
 ```
 
@@ -79,7 +79,11 @@ The labels are the entire comparison vocabulary. The comparison is exact label
 equality: there is no undocumented similarity threshold and no hidden scalar.
 Ordered outcomes additionally use `observe.order` with `allowed: "lower"` or
 `"higher"`. The allowed relation says what a valid ablation may produce; a move
-outside it is `coupled but misaligned`, not carriage.
+outside it is `coupled but misaligned`, not carriage. `allowed.bypass` names
+the designated opening: what the reader must answer once the connection that
+makes the relation operative (here the binding line, "These records decide
+every question.") is cut. A reader that answers anything else there has a
+hidden fallback.
 
 ## 4. Choose the interventions
 
@@ -123,35 +127,23 @@ The frame names `citation-reader`, so only a battery whose `name` is exactly
 `citation-reader` may read it.
 
 ```python
-import json
-from pathlib import Path
-
-from examples.citation import CitationReader
-from gadfly.pipeline import calls_needed, judge, run, situate
-from gadfly.types import Budget
-
-frame = situate(json.loads(Path("examples/citation.json").read_text()))
-kept = []
-result = run(frame, CitationReader(), Budget(calls=calls_needed(frame)), on_record=kept.append)
-[finding] = judge(frame, kept)
-print(finding.category)
-print(*finding.evidence, sep="\n")
-print(*finding.obligations, sep="\n")
+--8<-- "examples/first_frame.py:7:"
 ```
 
 ```text
-unresolved
+$ python examples/first_frame.py
+carried
 ablation moved it grounded -> ungrounded; held under presentation, 2 shams
-not carried while 1 carriage check is open
-no hidden fallback: bypass left it at grounded
 ```
 
-The relation moved the observation in the allowed direction, and presentation
-and the shams held. But cutting the binding line left the reader answering
-`grounded`: it reads S-2 whether or not the records decide the question, so no
-hidden fallback is shown, and carried waits for that check. The last line is an
-obligation, not a passed check. The same frame read by `WordMatcher` instead
-becomes `coupled but misaligned`, because renaming *cobalt* changes its answer.
+The relation moved the observation in the allowed direction, presentation and
+the shams held, and cutting the binding line exposed the designated opening:
+the reader answers `ungrounded` once the records no longer decide the question,
+so it has no hidden fallback. Every carriage check passed, so the finding is
+`carried`, with no obligation left. The same frame read by `WordMatcher` instead
+becomes `coupled but misaligned`, because renaming *cobalt* changes its answer,
+and it lists the fallback it was not cleared of: it answers `grounded` with the
+binding line cut.
 
 Run both scorers with:
 

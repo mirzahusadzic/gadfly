@@ -5,6 +5,8 @@ import inspect
 import json
 from pathlib import Path
 
+import pytest
+
 from hooks.github_math import on_page_markdown
 
 ROOT = Path(__file__).parent.parent
@@ -63,3 +65,17 @@ def test_the_site_publishes_the_frame_schema_where_its_id_says(tmp_path):
     on_post_build({"site_dir": str(tmp_path)})
     published = json.loads((tmp_path / "frame.schema.json").read_text())
     assert published["$id"] == "https://mirzahusadzic.github.io/gadfly/frame.schema.json"
+
+
+def _transcripts():
+    from tools.doc_outputs import PAGES, transcripts
+
+    return [t for page in PAGES for t in transcripts(page)]
+
+
+@pytest.mark.parametrize("transcript", _transcripts(), ids=lambda t: t.where())
+def test_every_quoted_output_is_what_the_code_prints(transcript):
+    # `python tools/doc_outputs.py --write` brings a page back in line
+    from tools.doc_outputs import printed
+
+    assert printed(transcript) == transcript.quoted

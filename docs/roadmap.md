@@ -19,7 +19,7 @@ command line a reader writes Python to keep records, then joins
 
 ```bash
 gadfly plan examples/refund.json
-gadfly run examples/refund.json --battery examples.refund:RuleReader --calls 7 --out records.jsonl
+gadfly run examples/refund.json --battery examples.refund:RuleReader --calls 8 --out records.jsonl
 gadfly report examples/refund.json records.jsonl
 ```
 
