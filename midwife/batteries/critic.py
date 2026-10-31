@@ -16,8 +16,15 @@ MAX_RESPONSE_BYTES = 1_000_000
 
 
 def loopback(url: str, what: str) -> str:
-    """The URL, if it names this machine over plain http; else ValueError."""
+    """The URL, if it names this machine over plain http on a valid port;
+    else ValueError, which never repeats a user or password the URL holds."""
     parsed = urlparse(url)
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError(f"{what}'s address must not hold a user or password")
+    try:
+        parsed.port  # noqa: B018 -- reading it checks it
+    except ValueError:
+        raise ValueError(f"{what}'s address has no valid port: {url}") from None
     if parsed.scheme != "http" or parsed.hostname not in LOOPBACK:
         raise ValueError(f"{what} must be on this machine over http, not {url}")
     return url

@@ -505,7 +505,8 @@ and one way to read a label from a JSON answer (the frame's observation map).
 
 #### loopback
 
-The URL, if it names this machine over plain http; else ValueError.
+The URL, if it names this machine over plain http on a valid port;
+else ValueError, which never repeats a user or password the URL holds.
 
 ```python
 loopback(url, what)

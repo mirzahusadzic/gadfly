@@ -93,9 +93,7 @@ def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     rest = tmp_path / "rest.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "7"]
     assert main([*argv, "--out", str(rest), "--kept", str(first)]) == 0
-    assert capsys.readouterr().out.endswith(
-        f"wrote 7/7 calls to {rest}, after 1 kept record\n"
-    )
+    assert capsys.readouterr().out.endswith(f"wrote 7/7 calls to {rest}, after 1 kept record\n")
     # the new file is the whole run, so it reports as one
     assert main(["report", REFUND, str(rest)]) == 0
     report = capsys.readouterr().out.splitlines()

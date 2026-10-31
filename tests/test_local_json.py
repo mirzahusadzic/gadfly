@@ -57,6 +57,9 @@ def test_the_request_is_the_instruction_the_prompt_the_schema_and_the_cap_alone(
         ({}, "battery.url"),
         ({"url": "http://127.0.0.1:1/judge", "timeout": 0}, "timeout"),
         ({"url": "http://127.0.0.1:1/judge", "timeout": True}, "timeout"),
+        ({"url": "http://127.0.0.1:1/judge", "timeout": 10**1000}, "timeout"),
+        ({"url": "http://127.0.0.1:bad/judge"}, "port"),
+        ({"url": "http://user:secret@127.0.0.1:1/judge"}, "user or password"),
         ({"url": "http://127.0.0.1:1/judge", "token": "x"}, "reads no"),
         ({"url": "http://127.0.0.1:1/judge", "output": {"schema": {}, "label": "x"}}, "pointer"),
     ],
@@ -65,6 +68,15 @@ def test_check_refuses_what_the_battery_must_not_serve(raw, battery, message):
     raw["battery"] = {"kind": "local-json", **battery}
     with pytest.raises(ValueError, match=message):
         LocalJSON().check(situate(raw))
+
+
+def test_a_refusal_never_shows_a_password(raw):
+    # a refused address is named without the credentials it may hold
+    for url in ("https://user:secret@example.com/judge", "http://user:secret@127.0.0.1:1/x"):
+        raw["battery"] = {"kind": "local-json", "url": url}
+        with pytest.raises(ValueError) as refused:
+            LocalJSON().check(situate(raw))
+        assert "secret" not in str(refused.value)
 
 
 def test_check_refuses_another_batterys_frame(raw):

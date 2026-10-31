@@ -94,7 +94,7 @@ consent, retention, credential and recording rules.
 | tools | never sent | no persona or cache fields added | never sent | unknown |
 | provider collection | `data_collection: deny` unless the exact model slug is in `trainsOnInputs` | stays on this machine by contract | stays on this machine | unknown |
 | credentials | router token from environment or its env file; never placed in a request body or record | key from environment/file; sent only as an Authorization header | none sent | unknown |
-| deadline | whole call, `timeout` seconds, even mid-line | whole call, per attempt | whole call, `battery.timeout` (30 s) | unknown |
+| deadline | whole call, `timeout` seconds, even mid-line | whole call, per attempt | whole call, `battery.timeout` (30 s, at most an hour) | unknown |
 | verification | model and endpoint recorded when the router reports them | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | unknown |
 
 #### Costs

@@ -27,7 +27,6 @@ What this battery promises, whatever the frame says:
 from __future__ import annotations
 
 import json
-import math
 import time
 import urllib.error
 import urllib.request
@@ -47,6 +46,7 @@ from .critic import (
 
 BATTERY_KEYS = {"kind", "url", "timeout", "output"}
 DEFAULT_TIMEOUT = 30.0
+MAX_TIMEOUT = 3600  # a whole call, in seconds: an hour is already more than a reader needs
 
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
@@ -87,9 +87,9 @@ class LocalJSON:
         if (
             isinstance(timeout, bool)
             or not isinstance(timeout, int | float)
-            or not (math.isfinite(timeout) and timeout > 0)
+            or not 0 < timeout <= MAX_TIMEOUT
         ):
-            raise ValueError("battery.timeout is a positive number of seconds")
+            raise ValueError(f"battery.timeout is a number of seconds, up to {MAX_TIMEOUT}")
         check_output(battery)
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
