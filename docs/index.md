@@ -1,11 +1,14 @@
 # Is the premise load-bearing?
 
-Your friend says it's raining because they saw wet umbrellas by the door.
-Hide the umbrellas and ask again: if they now say "I don't know", the
-umbrellas were the reason; if they still say "raining", something else told
-them. Gadfly plays that game with whatever reads your evidence, to test
-whether a decision rests on the line you think it does: it changes that line
-in fixed ways, asks again each time, and reads one verdict by fixed rules.
+"It's raining," your friend says, back from the hall. "How do you know?" you
+ask. "There were wet umbrellas by the door."
+
+So you call another friend, one who hasn't been in, and describe the hall
+without the umbrellas. If they say "I don't know", the umbrellas were the
+reason; if they still say it's raining, something else you told them did.
+Gadfly plays that game with whatever reads your evidence, to test whether a
+decision rests on the line you think it does: it changes that line in fixed
+ways, asks again each time, and reads one verdict by fixed rules.
 
 ---
 
@@ -14,7 +17,7 @@ in fixed ways, asks again each time, and reads one verdict by fixed rules.
 Start where your question is; every path ends in the same few pages.
 
 - **I'm new to this:** [Gadfly in plain words](in-plain-words.md) tells the
-  whole game, once for a kid and once for their father.
+  whole game, once for a kid and once for a grown-up.
 - **I have a rule to test:** a changelog line, a contributing rule, a
   requirement, a contract clause or an access grant. Start with
   [Your first frame](first-frame.md).

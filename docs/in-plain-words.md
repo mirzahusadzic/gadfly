@@ -1,6 +1,6 @@
 # Gadfly in plain words
 
-The same idea told twice: once for a kid, and once for their father.
+The same idea told twice: once for a kid, and once for a grown-up.
 
 ---
 
@@ -8,21 +8,21 @@ The same idea told twice: once for a kid, and once for their father.
 
 Your friend says it's raining outside, and you want to know how they know. They say: "I saw wet umbrellas by the door."
 
-So you play a game. You hide the umbrellas and ask again:
+You can't make them forget what they saw, so you play a game with friends who haven't been to the door. You call each one, describe the hall a little differently each time, and ask if it's raining:
 
-- If they now say "I don't know", the umbrellas were the reason.
-- If they still say "raining", something else told them. Maybe they heard rain on the roof, or maybe they always say "raining".
-- To tell those two apart, you hide everything: the umbrellas, the window, the sound. If they still say "raining", they aren't looking at anything. They're just guessing.
+- Leave out the umbrellas. If they now say "I don't know", the umbrellas were the reason.
+- If they still say "raining", something else you told them did. Maybe you mentioned the rain on the roof, or maybe they always say "raining".
+- To tell those two apart, leave out everything: the umbrellas, the window, the sound. If they still say "raining", they aren't listening to anything you say. They're just guessing.
 
-You also hide a sock, which has nothing to do with rain, to make sure hiding *anything* doesn't confuse them. And you call umbrellas "brollies", to check that they react to what things are, not to their names.
+You also leave out a sock, which has nothing to do with rain, to make sure leaving out *anything* doesn't confuse them. And you say "brollies" instead of umbrellas, to check that they react to what things are, not to their names.
 
-Gadfly plays that game with computers, and it plays it very carefully.
+Gadfly plays that game with computers, and it plays it very carefully. A computer is even better at it than your friends: it forgets everything between questions, so Gadfly can ask the same one every time.
 
 [Watch a run](examples/watch.md) shows the game played for real, one step at a time.
 
 ---
 
-### For the father
+### For the grown-up
 
 When an AI, or a person, makes a decision from a pile of documents, you usually can't see *why*. You believe a code reviewer rejected a change because of your team's rule, but it might have rejected it anyway.
 
