@@ -324,14 +324,12 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
     shams = sum(t.startswith("sham-") for t in levels)
     declared = frame.interventions.get("sham")
     wanted = 0 if not declared else 1 if declared is True else declared["draws"]
-    if shams < max(wanted, 1):
+    if not wanted:
+        open_.append("specificity: no sham trial was declared")
+    elif shams < wanted:
         open_.append(
-            f"specificity: {shams} sham trial(s), {wanted} declared"
-            + (
-                "; the body has no unanchored span of the anchors' kind left"
-                if wanted > shams
-                else ""
-            )
+            f"specificity: {shams} sham trial(s), {wanted} declared; "
+            "the body has no unanchored span of the anchors' kind left"
         )
     if not frame.raw.get("materialized"):
         open_.append(

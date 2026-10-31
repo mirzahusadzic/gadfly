@@ -161,7 +161,8 @@ def test_carried_without_a_sham_keeps_specificity_open(raw):
     del raw["interventions"]["sham"]
     finding = verdict(situate(raw), ablation="grant")
     assert finding.category == CARRIED
-    assert any(o.startswith("specificity: 0 sham") for o in finding.obligations)
+    # said as the other undeclared checks are, not as "0 sham trial(s), 0 declared"
+    assert "specificity: no sham trial was declared" in finding.obligations
     # the evidence names only the trials that ran
     assert "sham" not in finding.evidence[0] and "presentation" in finding.evidence[0]
 
