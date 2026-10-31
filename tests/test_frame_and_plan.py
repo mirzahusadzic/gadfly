@@ -343,6 +343,11 @@ def test_an_inversion_trial_without_what_it_must_reach_is_refused(raw):
         ("cut by 20% today", (("20%", "a fifth"),), "cut by a fifth today"),
         ("written in C++ here", (("C++", "Rust"),), "written in Rust here"),
         ("a .env file", ((".env", "settings"),), "a settings file"),
+        (  # a phrase copied with its sentence's closing period
+            "If Priya renews it, Sam notifies the customers.",
+            (("notifies the customers.", "informs the customers."),),
+            "If Priya renews it, Sam informs the customers.",
+        ),
         ("swords and words", (("word", "term"),), "swords and words"),  # never inside a word
         ("Receipt or receipts", (("receipt", "slip"),), "Slip or receipts"),
     ],
