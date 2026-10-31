@@ -79,16 +79,19 @@ def renamer(mapping: tuple[tuple[str, str], ...]) -> Callable[[str], str]:
 
 def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
     """Spans to remove instead of the anchors: as many as the anchors, of the
-    same kinds, none cited, none bypassed, and no span in two draws. Each is
-    the closest in length still free; spans equally close are drawn among by
-    the frame's own seed. A draw that cannot be matched is left out; the
-    verdict says so."""
-    bypassed = set(frame.interventions.get("bypass") or [])
+    same kinds, none cited, none bypassed, none a declared fallback, and no
+    span in two draws. A fallback is declared to carry the relation, so
+    cutting it is no sham. Each is the closest in length still free; spans
+    equally close are drawn among by the frame's own seed. A draw that
+    cannot be matched is left out; the verdict says so."""
+    iv = frame.interventions
     anchored = set(frame.anchors)  # looked up, not scanned
+    # what a sham may not cut
+    kept = anchored | set(iv.get("bypass") or []) | set(iv.get("cumulative") or [])
     # Free spans by kind, each pool sorted by length then body order, once.
     pools: dict[str, list[tuple[int, int, Span]]] = defaultdict(list)
     for at, span in enumerate(frame.spans):
-        if span.id not in anchored and span.id not in bypassed:
+        if span.id not in kept:
             pools[span.kind].append((len(span.text), at, span))
     for pool in pools.values():
         pool.sort(key=lambda entry: entry[:2])

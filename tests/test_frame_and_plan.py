@@ -117,6 +117,14 @@ def test_shams_remove_as_much_of_the_same_kind_closest_in_length_and_never_twice
     assert [t.id for t in plan(parse(raw)) if t.kind == "sham"] == ["sham-1", "sham-2", "sham-3"]
 
 
+def test_a_sham_never_cuts_a_declared_fallback(raw):
+    # a fallback is declared to carry the relation, so cutting it is no sham:
+    # r3, the closest in length to the anchor r2, is declared one
+    raw["interventions"]["cumulative"] = ["r3"]
+    shams = [t for t in plan(parse(raw)) if t.kind == "sham"]
+    assert [t.removed for t in shams] == [("r4",), ("r1",)]
+
+
 def test_a_sham_that_cannot_be_matched_is_left_out(raw):
     for span in raw["body"]["spans"]:
         if span["id"] != "r2":

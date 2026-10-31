@@ -379,7 +379,8 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
     elif shams < wanted:
         open_.append(
             f"specificity: {shams} sham trial(s), {wanted} declared; "
-            "the body has no unanchored span of the anchors' kind left"
+            "the body has no span of the anchors' kind left that is not an "
+            "anchor, bypassed or a fallback"
         )
     # A sham that moved it is listed whatever the category: misaligned and
     # cooled are read before the shams, and must not hide them.
