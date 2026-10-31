@@ -142,11 +142,7 @@
 }
 
 
-/* Charts on a dark page: the neo look's light drop shadow glows there, and
-   its dim grey labels sink into the fills. No shadow, brighter labels. */
-[data-md-color-scheme="slate"] .mermaid-house svg :is(rect, polygon, path, circle) {
-  filter: none !important;
-}
+/* Charts on a dark page: their dim grey labels sink into the fills. */
 [data-md-color-scheme="slate"] .mermaid-house svg :is(.nodeLabel, .nodeLabel *, .cluster-label span) {
   color: #eef1f5 !important;
 }
