@@ -243,11 +243,13 @@ def test_the_notices_name_what_the_site_ships():
     # the site ships others' work, and ELK's licence asks that its source be named
     notices = (ROOT / "docs/notices.md").read_text(encoding="utf-8")
     built_with = json.loads((ROOT / "package.json").read_text())["devDependencies"]
-    named = {"vitepress": "VitePress", "mermaid": "Mermaid", "@mermaid-js/layout-elk": "ELK",
-             "markdown-it-mathjax3": "markdown-it-mathjax3"}  # fmt: skip
+    named = {"vitepress": "VitePress", "vue": "Vue", "mermaid": "Mermaid",
+             "@mermaid-js/layout-elk": "ELK", "markdown-it-mathjax3": "markdown-it-mathjax3",
+             "shiki": "Shiki"}  # fmt: skip
     assert sorted(built_with) == sorted(named)
     assert [name for name in named.values() if name not in notices] == []
     assert "github.com/kieler/elkjs" in notices and "Eclipse Public License 2.0" in notices
+    assert "gadfly/notices/third-party.txt" in notices  # the texts the build writes
     fonts = sorted(p.name for p in (ROOT / "docs/.vitepress/theme/fonts").glob("*-OFL.txt"))
     assert fonts == ["albert-sans-OFL.txt", "fraunces-OFL.txt"]
     assert "Albert Sans" in notices and "Fraunces" in notices

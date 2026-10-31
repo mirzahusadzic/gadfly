@@ -13,6 +13,8 @@
     "@mermaid-js/layout-elk": "0.2.3",
     "markdown-it-mathjax3": "4.3.2",
     "mermaid": "11.17.2",
-    "vitepress": "1.6.4"
+    "shiki": "2.5.0",
+    "vitepress": "1.6.4",
+    "vue": "3.5.44"
   }
 }

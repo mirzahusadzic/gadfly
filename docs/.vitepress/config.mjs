@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { createCssVariablesTheme } from 'shiki';
 import { defineConfig } from 'vitepress';
 import { frameLinks, githubMath, githubSlug, hangingLines, mermaidFences } from './markdown.mjs';
+import { writeNotices } from './notices.mjs';
 import { HEAD } from './theme/theme.js';
 
 const github = 'https://github.com/mirzahusadzic/gadfly';
@@ -118,8 +119,10 @@ export default defineConfig({
   },
   // A page without headings (Watch a run) has no outline, so its column
   // takes the outline's room.
-  // Each published frame's file, for its source page's download link.
+  // Each published frame's file, for its source page's download link, and
+  // the licences of what the site ships (notices.mjs).
   buildEnd({ outDir }) {
+    writeNotices(outDir);
     const index = JSON.parse(readFileSync(new URL('frames.json', import.meta.url), 'utf8'));
     mkdirSync(join(outDir, 'frames'), { recursive: true });
     for (const [stem, { path }] of Object.entries(index)) {

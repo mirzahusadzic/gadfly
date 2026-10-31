@@ -9,10 +9,12 @@ The library itself, the `midwife` package, has no runtime dependencies.
 ### Fonts
 
 The site serves both faces itself, with their licences beside them in
-`docs/.vitepress/theme/fonts/`.
+`docs/.vitepress/theme/fonts/` and published with the site.
 
-- **Albert Sans:** the text face, SIL Open Font License 1.1.
-- **Fraunces:** the headings, SIL Open Font License 1.1.
+- **Albert Sans:** the text face, under the
+  [SIL Open Font License 1.1](https://mirzahusadzic.github.io/gadfly/notices/albert-sans-OFL.txt).
+- **Fraunces:** the headings, under the
+  [SIL Open Font License 1.1](https://mirzahusadzic.github.io/gadfly/notices/fraunces-OFL.txt).
 
 ---
 
@@ -45,13 +47,18 @@ it bundles.
   Chevrotain, roughjs, Lodash and Day.js, are under the MIT, ISC, BSD, Apache
   2.0 and Unlicense licences.
 
-`package-lock.json` names every package the site is built from, with its
-version and licence.
+Every package the site ships is listed with its version and its licence's
+full text in [third-party.txt](https://mirzahusadzic.github.io/gadfly/notices/third-party.txt), which the build writes
+from the packages themselves; `package-lock.json` names every package the site
+is built from.
 
 ---
 
-### Math
+### Drawn when the site is built
 
-The essay's formulas are drawn into the pages when the site is built, by
-[MathJax](https://www.mathjax.org) (Apache 2.0) through markdown-it-mathjax3
-(MIT); no math code runs in the browser.
+Two libraries work only while the pages are built, and what they draw is part
+of the pages; none of their code runs in the browser.
+
+- **[MathJax](https://www.mathjax.org)** (Apache 2.0), through
+  markdown-it-mathjax3 (MIT), draws the essay's formulas.
+- **[Shiki](https://github.com/shikijs/shiki)** (MIT) colours the code.
