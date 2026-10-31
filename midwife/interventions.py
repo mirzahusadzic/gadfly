@@ -145,7 +145,8 @@ def trial_ids(frame: Frame) -> list[str]:
     if sham:
         count = 1 if sham is True else sham["draws"]
         ids += [f"sham-{index}" for index in range(1, len(_drawn(frame, count)) + 1)]
-    ids += [kind for kind in ("presentation", "placement", "bypass", "control") if iv.get(kind)]
+    kinds = ("presentation", "placement", "inversion", "bypass", "control")
+    ids += [kind for kind in kinds if iv.get(kind)]
     return ids
 
 
@@ -173,6 +174,11 @@ def plan(frame: Frame) -> list[Trial]:
     if iv.get("placement"):
         moved = place(spans, iv["placement"]["span"], iv["placement"]["after"])
         trials.append(Trial("placement", "placement", (), (), moved))
+    if iv.get("inversion"):
+        mapping = tuple(sorted(iv["inversion"].items()))
+        inverting = renamer(mapping)
+        inverted = tuple(Span(span.id, inverting(span.text), span.kind) for span in spans)
+        trials.append(Trial("inversion", "inversion", (), mapping, inverted))
     if iv.get("bypass"):
         cut = tuple(iv["bypass"])
         trials.append(Trial("bypass", "bypass", cut, (), without(spans, set(cut))))
@@ -184,6 +190,8 @@ def plan(frame: Frame) -> list[Trial]:
 
 def prompt(frame: Frame, trial: Trial, x: dict[str, str]) -> str:
     """What the scorer reads: the trial's body and one input, nothing else.
-    Presentation renames the input's words too, so only the wording moves."""
-    question = rename(x["text"], trial.renamed) if trial.renamed else x["text"]
+    Presentation renames the input's words too, so only the wording moves;
+    an inversion changes the relation's sense in the body alone."""
+    renames = trial.kind == "presentation" and trial.renamed
+    question = rename(x["text"], trial.renamed) if renames else x["text"]
     return f"{trial.text}\n\n---\n\n{question}"

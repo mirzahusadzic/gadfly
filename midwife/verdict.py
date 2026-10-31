@@ -201,9 +201,9 @@ def check_records(
 
 
 def allowed_for(frame: Frame, base: str, trial: str = "ablation") -> list[str]:
-    """What a trial may produce (ablation; bypass, its designated opening):
-    the labels listed, or, for ordered labels, those below (or above) the
-    baseline."""
+    """What a trial may produce (ablation; bypass, its designated opening;
+    inversion, what it must reach): the labels listed, or, for ordered
+    labels, those below (or above) the baseline."""
     rule = _read_once(frame)["allowed"][trial]
     if isinstance(rule, list):
         return rule
@@ -310,6 +310,9 @@ def _read(
                 finding.obligations.append(
                     "discrimination: no control trial shows the scorer can move"
                 )
+        if levels.get("inversion") not in (None, base):
+            inverted = levels["inversion"]
+            say(f"the inversion moved it {base} -> {inverted}, though the ablation did not")
         # said whether or not the control moved: it is where else the decision rests
         if levels.get("cumulative") not in (None, base):
             say(
@@ -319,6 +322,16 @@ def _read(
     moved = [t for t, v in levels.items() if t.startswith("sham-") and v != base]
     if moved:
         say(f"a sham moved it too ({', '.join(moved)}); the change is not specific")
+        return
+    # The answer rests on the relation; inverted, it must move where the frame says.
+    inverted = levels.get("inversion", base)
+    if "inversion" in levels and inverted == base:
+        finding.category = MISALIGNED
+        say(f"inversion left it at {base}: the answer does not follow the relation's sense")
+        return
+    if "inversion" in levels and inverted not in allowed_for(frame, base, "inversion"):
+        finding.category = MISALIGNED
+        say(f"inversion moved it {base} -> {inverted}, which the frame does not allow")
         return
     finding.category = CARRIED
     shams = sum(t.startswith("sham-") for t in levels)
@@ -331,6 +344,8 @@ def _read(
     )
     # The trials that settled more than the ablation are named too, so two
     # findings that ran different trials never read the same.
+    if "inversion" in levels:
+        say(f"inversion moved it {base} -> {inverted}: the answer follows the relation's sense")
     if "bypass" in levels and _fallback(frame, levels, base) is None:
         say(f"bypass moved it {base} -> {levels['bypass']}: no hidden fallback")
     if "control" in levels:
@@ -364,7 +379,8 @@ def _fallback(frame: Frame, levels: dict[str, str | None], base: str | None) -> 
 
 def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) -> list[str]:
     """The carriage checks the trials did not settle: no hidden fallback,
-    presentation invariance, specificity, monotonicity and materialization."""
+    presentation invariance, specificity, monotonicity, direction (when an
+    inversion is declared) and materialization."""
     open_ = []
     fallback = _fallback(frame, levels, base)
     if fallback:
@@ -399,6 +415,8 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
         open_.append(
             f"monotonicity: the control removes the anchors and more, yet left it at {base}"
         )
+    if "inversion" in levels and levels["inversion"] is None:
+        open_.append("direction: the inversion has no agreed level")
     if not _read_once(frame).get("materialized"):
         open_.append(
             "materialization: the frame does not say the observation is "

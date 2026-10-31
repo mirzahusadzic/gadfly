@@ -208,6 +208,14 @@
             }
           }
         },
+        "inversion": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "bypass": {
           "$ref": "#/$defs/ids"
         },
@@ -227,6 +235,9 @@
           "$ref": "#/$defs/influence"
         },
         "bypass": {
+          "$ref": "#/$defs/influence"
+        },
+        "inversion": {
           "$ref": "#/$defs/influence"
         }
       }

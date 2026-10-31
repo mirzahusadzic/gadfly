@@ -12,6 +12,7 @@ import copy
 import hashlib
 import json
 import math
+import re
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
@@ -27,6 +28,7 @@ INTERVENTIONS = (
     "sham",
     "presentation",
     "placement",
+    "inversion",
     "bypass",
     "control",
 )
@@ -133,9 +135,9 @@ OPTIONAL = {
     "": ("materialized", "carriage", "outsideScope", "scopeCheck"),
     "observe": ("order",),
     "standing": ("stable",),
-    "allowed": ("bypass",),
-    "interventions": ("repeat", "cumulative", "sham", "presentation", "placement", "bypass",
-                      "control"),
+    "allowed": ("bypass", "inversion"),
+    "interventions": ("repeat", "cumulative", "sham", "presentation", "placement", "inversion",
+                      "bypass", "control"),
 }  # fmt: skip
 
 
@@ -277,12 +279,17 @@ def parse(raw: dict[str, Any]) -> Frame:
     _check_interventions(interventions, spans, anchors, inputs)
 
     allowed = need("allowed", dict)
-    if "ablation" not in allowed or not set(allowed) <= {"ablation", "bypass"}:
+    if "ablation" not in allowed or not set(allowed) <= {"ablation", "bypass", "inversion"}:
         raise FrameError(
             "allowed says what ablation may produce and, optionally, the opening bypass exposes"
+            " and what an inversion must reach"
         )
     if "bypass" in allowed and not interventions.get("bypass"):
         raise FrameError("allowed.bypass needs a bypass trial")
+    if ("inversion" in allowed) != bool(interventions.get("inversion")):
+        raise FrameError(
+            "an inversion trial and allowed.inversion, what it must reach, go together"
+        )
     order = observe.get("order")
     if order is not None and not (
         isinstance(order, list)
@@ -436,3 +443,27 @@ def _check_interventions(
         for x in inputs:
             if not body_moves and renaming(x["text"]) == x["text"]:
                 raise FrameError(f"presentation renames nothing {x['id']} reads")
+    inversion = interventions.get("inversion")
+    if inversion is not None:
+        if not (
+            isinstance(inversion, dict)
+            and inversion
+            and all(
+                isinstance(k, str) and k and isinstance(v, str) and v for k, v in inversion.items()
+            )
+        ):
+            raise FrameError("inversion maps phrases to their inversions")
+        if len({phrase.lower() for phrase in inversion}) != len(inversion):
+            raise FrameError("inversion names a phrase twice (it inverts without case)")
+        # An inversion is the relation's own: each phrase is in an anchor, and
+        # in no other span, so the trial changes the relation's sense alone.
+        anchored = set(anchors)
+        for phrase in inversion:
+            found = re.compile(rf"\b{re.escape(phrase)}\b", re.IGNORECASE)
+            if not any(found.search(span.text) for span in spans if span.id in anchored):
+                raise FrameError(f"inversion's '{phrase}' is in no anchor")
+            elsewhere = [s.id for s in spans if s.id not in anchored and found.search(s.text)]
+            if elsewhere:
+                raise FrameError(
+                    f"inversion's '{phrase}' is also in {elsewhere[0]}, which is not an anchor"
+                )

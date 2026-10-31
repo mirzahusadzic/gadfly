@@ -458,3 +458,59 @@ def test_a_misaligned_finding_lists_it_too():
 def test_no_monotonicity_check_when_the_control_moved_or_spares_the_anchors(control, levels):
     finding = verdict(superset_control(control=control), **levels)
     assert finding.category == CARRIED and finding.obligations == []
+
+
+def inverting(**allowed):
+    raw = copy.deepcopy(REFUND)
+    raw["interventions"]["inversion"] = {"requires a receipt": "needs no receipt"}
+    raw["allowed"]["inversion"] = allowed.get("reach", ["grant", "unclear"])
+    raw["materialized"] = True
+    raw["carriage"] = "listed"
+    return situate(raw)
+
+
+CARRIES = {"*": "decline", "ablation": "grant", "bypass": "unclear"}
+
+
+def test_an_inversion_that_reaches_what_the_frame_allows_carries_it():
+    finding = verdict(inverting(), **CARRIES, inversion="grant")
+    assert finding.category == CARRIED
+    assert "inversion moved it decline -> grant: the answer follows the relation's sense" in (
+        finding.evidence
+    )
+
+
+def test_an_inversion_that_leaves_the_answer_is_misaligned():
+    finding = verdict(inverting(), **CARRIES, inversion="decline")
+    assert finding.category == MISALIGNED
+    assert finding.evidence[-1] == (
+        "inversion left it at decline: the answer does not follow the relation's sense"
+    )
+
+
+def test_an_inversion_that_moves_it_where_the_frame_does_not_allow_is_misaligned():
+    finding = verdict(inverting(reach=["unclear"]), **CARRIES, inversion="grant")
+    assert finding.category == MISALIGNED
+    assert (
+        finding.evidence[-1]
+        == "inversion moved it decline -> grant, which the frame does not allow"
+    )
+
+
+def test_an_inversion_with_no_agreed_level_leaves_direction_open():
+    finding = verdict(inverting(), **CARRIES, inversion=["grant", "unclear", "decline"])
+    assert finding.category == UNRESOLVED
+    assert "direction: the inversion has no agreed level" in finding.obligations
+
+
+def test_on_the_cooled_side_an_inversion_is_evidence_only():
+    raw = copy.deepcopy(REFUND)
+    raw["interventions"]["inversion"] = {"requires a receipt": "needs no receipt"}
+    raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
+    raw["allowed"]["inversion"] = ["grant"]
+    raw["carriage"] = "listed"
+    finding = verdict(situate(raw), **{"*": "decline", "control": "grant", "inversion": "grant"})
+    assert finding.category == COOLED
+    assert "the inversion moved it decline -> grant, though the ablation did not" in (
+        finding.evidence
+    )

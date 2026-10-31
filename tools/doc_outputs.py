@@ -324,6 +324,8 @@ def _words(labels: list[str] | str) -> str:
 
 def _does(frame, trial) -> str:
     """What one trial does to the evidence, in a few words."""
+    if trial.kind == "inversion":
+        return "inverts " + ", ".join(f"`{a}` to `{b}`" for a, b in trial.renamed)
     if trial.renamed:
         return "renames " + ", ".join(f"`{a}` to `{b}`" for a, b in trial.renamed)
     if trial.kind == "placement":
@@ -343,6 +345,7 @@ TESTS = {
     "sham": "whether any cut of the same kind moves it",
     "presentation": "whether the wording, not the meaning, drives it",
     "placement": "whether the place, not the meaning, drives it",
+    "inversion": "whether the answer follows the relation's sense",
     "bypass": "whether a hidden fallback still carries it",
     "control": "whether the reader can move at all",
 }
@@ -414,6 +417,9 @@ def readable(source: str, page: str) -> str:
         for trial in plan(frame)
     ]
     reading = [(f"Without {anchor}", f"{_words(raw['allowed']['ablation'])} may come back")]
+    if "inversion" in raw["allowed"]:
+        reached = _words(raw["allowed"]["inversion"])
+        reading.append(("After the inversion", f"{reached} must come back, not the baseline's"))
     if "bypass" in raw["allowed"]:
         reading.append(("Through the bypass", f"{_words(raw['allowed']['bypass'])} must come back"))
     standing = raw["standing"]

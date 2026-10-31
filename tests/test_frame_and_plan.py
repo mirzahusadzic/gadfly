@@ -287,3 +287,51 @@ def test_a_frame_nested_too_deep_is_refused_as_a_frame(raw):
     raw["baseline"] = deep
     with pytest.raises(FrameError, match="nests"):
         parse(raw)
+
+
+INVERT = {"requires a receipt": "needs no receipt"}
+
+
+def test_an_inversion_changes_the_anchors_sense_and_never_the_input(raw):
+    raw["interventions"]["inversion"] = INVERT
+    raw["allowed"]["inversion"] = ["grant", "unclear"]
+    frame = parse(raw)
+    ids = [t.id for t in plan(frame)]
+    assert ids.index("presentation") < ids.index("inversion") < ids.index("bypass")
+    inversion = next(t for t in plan(frame) if t.id == "inversion")
+    assert "A refund needs no receipt." in inversion.text
+    assert inversion.text.count("needs no receipt") == 1
+    x = frame.inputs[0]
+    assert prompt(frame, inversion, x).endswith(x["text"])  # the case is never inverted
+
+
+@pytest.mark.parametrize(
+    "change, message",
+    [
+        ({"interventions": {"inversion": {"never refunded": "always refunded"}}}, "in no anchor"),
+        ({"interventions": {"inversion": {}}}, "maps phrases"),
+        ({"interventions": {"inversion": {"receipt": "slip", "Receipt": "card"}}}, "twice"),
+        ({"allowed": {"inversion": ["grant"]}}, "go together"),
+    ],
+)
+def test_an_inversion_is_refused_unless_it_is_the_relations_own(raw, change, message):
+    for key, value in change.items():
+        raw[key] = {**raw[key], **value}
+    if "inversion" in raw["interventions"]:
+        raw["allowed"]["inversion"] = ["grant"]
+    with pytest.raises(FrameError, match=message):
+        parse(raw)
+
+
+def test_an_inversion_in_a_span_beside_the_anchor_is_refused(raw):
+    raw["body"]["spans"][4]["text"] = "Every refund requires a receipt, these rules say."
+    raw["interventions"]["inversion"] = INVERT
+    raw["allowed"]["inversion"] = ["grant"]
+    with pytest.raises(FrameError, match="also in r5, which is not an anchor"):
+        parse(raw)
+
+
+def test_an_inversion_trial_without_what_it_must_reach_is_refused(raw):
+    raw["interventions"]["inversion"] = INVERT
+    with pytest.raises(FrameError, match="go together"):
+        parse(raw)

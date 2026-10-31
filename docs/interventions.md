@@ -21,6 +21,7 @@ call.
 | `sham-*` | as much text of the anchors' kinds, never an anchor, a bypassed span or a declared fallback | specificity of the change | one `quorum` per draw |
 | `presentation` | mapped words renamed in one pass, body and input | whether wording rather than meaning drives the scorer | `quorum` calls |
 | `placement` | one span moved after another, its text unchanged | whether the structure rather than the meaning drives the scorer | `quorum` calls |
+| `inversion` | the anchors' sense inverted in their own words; the input left as it is | whether the answer follows the relation's sense, reaching `allowed.inversion` | `quorum` calls |
 | `bypass` | a named connection is cut | no hidden fallback; with `allowed.bypass`, only that opening clears it | `quorum` calls |
 | `control` | spans any reader needs | whether the scorer can move at all; cooled needs it to | `quorum` calls |
 
@@ -50,6 +51,7 @@ holds, and neither settles everything.
 | `sham` | the scorer responds to irrelevant same-kind text | the ablation's change is more specific | that every possible irrelevant change is controlled |
 | `presentation` | wording drives the observation | the tested wording change is invariant | that all paraphrases are |
 | `placement` | the span's place drives the observation | the tested move is invariant | that every reordering is |
+| `inversion` | the answer follows the relation's sense | after a carried ablation, the reading drops the sense: coupled but misaligned | that every way of stating the sense is read |
 | `bypass` | a hidden connection still carries the relation | no tested fallback is visible | receiving-system materialization |
 | `control` | the scorer can move under a required removal | the scorer or task is insensitive | that it moves for the right reason |
 
@@ -101,6 +103,39 @@ baseline, so it is refused. This moves the grant after the audit line:
 ```json
 "placement": {"span": "grant", "after": "audit"}
 ```
+
+---
+
+### Inversion asks for a direction
+
+Every other trial asks whether the answer rests on the anchors; `inversion`
+asks whether it follows their sense. It maps phrases of the anchors to their
+inversions, applied once as presentation is, to the anchors alone: a phrase
+found in any other span is refused, and the case and question stay as they
+are. `allowed.inversion` names what the inverted answer must reach, and the
+baseline's own label never counts:
+
+```json
+"interventions": {
+  "inversion": {
+    "the incident commander approves the restore":
+      "the incident commander does not approve the restore"
+  }
+},
+"allowed": {"ablation": ["open"], "inversion": ["Yes", "No", "open"]}
+```
+
+It is read after a carried ablation. An inversion that stays at the baseline,
+or reaches a label `allowed.inversion` does not list, is coupled but
+misaligned; one with no agreed level leaves direction open. It is a change
+to the method, read only when a frame declares it, so no earlier frame reads
+differently.
+
+Its limits are three. A who-question may rightly keep its answer when a
+description of the person is inverted, so a person declares the phrase. A
+conditional answer reads only as `conditional`, so an inversion inside its
+condition does not show at that grain; and it inverts words, so a reader
+that works on graphs needs its own guard as well.
 
 ---
 

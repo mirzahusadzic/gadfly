@@ -79,6 +79,8 @@ with its cost:
   meaning, not wording.
 - **Placement:** one span moved after another, to show its place does not
   decide.
+- **Inversion:** the anchors' sense inverted in their own words, to show the
+  answer follows it.
 - **Bypass:** the connection that makes the anchor apply cut, to show no
   hidden fallback carries the decision.
 - **Control:** what any reader needs cut, to show this reader can move at
