@@ -17,11 +17,15 @@ can be read back with `read.py`, without a model.
 
 2. **The same prompt in another frame gets the same answers.** Some trials in
    different frames leave the same body, so Gemma got the identical prompt from
-   another frame. Their answers match closely: 10d's ablation and 10a's baseline
-   (debug unclear on 11 and 10 of 15, fix database on 15 and 15, alert split 8
-   to 7 in both), and the body that is 10a's and 10b's ablation and the
-   cumulative of 10c, 10c2 and 10d (optimize api on 15, 15, 15, 14 and 14 of
-   15). Nothing of the frame around a prompt shows in its answers.
+   another frame. Their answers mostly match within a call or two: 10d's
+   ablation and 10a's baseline (debug unclear on 11 and 10 of 15, fix database
+   on 15 and 15, alert split 8 to 7 both times, once each way), and the body
+   that is 10a's and 10b's ablation and the cumulative of 10c, 10c2 and 10d
+   (optimize api on 15, 15, 15, 14 and 14 of 15). The widest gap is on that
+   last body's debug task: api on 9 of 15 calls in 10a, and on 13, 13, 13 and
+   14 in the other four. The reader never sees the frame, only the prompt, so
+   a gap like that is sampling at temperature 0.7, and fifteen calls do not
+   pin a rate closer than that.
 
 3. **It mostly reads what it is given.** Cut the line a decision should rest on
    and it says unclear: the EU clause (11), the migration's status section (13),
