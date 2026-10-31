@@ -67,6 +67,15 @@ def test_bypass_clears_the_fallback_check_only_at_its_designated_opening(raw):
     assert not any(o.startswith("no hidden fallback") for o in reached.obligations)
 
 
+def test_a_bypass_that_holds_at_baseline_settles_nothing(raw):
+    # naming the baseline answer as the opening cannot make a bypass that
+    # never moved read as one that did
+    raw["allowed"]["bypass"] = ["decline"]
+    held = verdict(situate(raw), ablation="grant", bypass="decline")
+    assert "no hidden fallback: bypass left it at decline" in held.obligations
+    assert not [line for line in held.evidence if "bypass moved it" in line]
+
+
 def test_cooled_when_ablation_leaves_it(raw):
     assert verdict(situate(raw)).category == COOLED
 

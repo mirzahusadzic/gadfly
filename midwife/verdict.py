@@ -336,8 +336,7 @@ def _fallback(frame: Frame, levels: dict[str, str | None], base: str | None) -> 
                 f"no hidden fallback: bypass gave {bypass}, "
                 f"not the designated opening ({', '.join(opening)})"
             )
-        return None
-    if bypass == base:
+    if bypass == base:  # nothing moved, even where the opening names the baseline answer
         return f"no hidden fallback: bypass left it at {base}"
     return None
 
