@@ -76,6 +76,17 @@ def test_a_bypass_that_holds_at_baseline_settles_nothing(raw):
     assert not [line for line in held.evidence if "bypass moved it" in line]
 
 
+def test_a_stable_split_names_an_opening_not_none(raw):
+    # a call that opened is not a level of None: the split says it opened
+    raw["interventions"]["repeat"] = True
+    raw["standing"]["stable"] = True
+    frame = situate(raw)
+    baseline = ["decline"] * (frame.quorum - 1) + [None]
+    finding = verdict(frame, baseline=baseline, ablation="grant")
+    [split] = [line for line in finding.evidence if "sessions split" in line]
+    assert "None" not in split and "an opening" in split
+
+
 def test_cooled_when_ablation_leaves_it(raw):
     assert verdict(situate(raw)).category == COOLED
 

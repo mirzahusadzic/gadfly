@@ -272,7 +272,8 @@ def _read(
     if frame.raw["standing"].get("stable") and "repeat" in samples:
         pooled = samples["baseline"] + samples["repeat"]
         if len(set(pooled)) > 1:
-            say(f"the baseline and repeat sessions split ({', '.join(map(str, pooled))})")
+            shown = ", ".join("an opening" if s is None else s for s in pooled)
+            say(f"the baseline and repeat sessions split ({shown})")
             return
     if "repeat" in levels and levels["repeat"] != base:
         say(f"repeat gave {levels['repeat']}, baseline {base}: this grain cannot tell")
