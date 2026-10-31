@@ -3,9 +3,11 @@ they copy is the text it copies.
 
 A ```text block that opens with `$ ` lines is a transcript: each `$` line
 is run from the repository root, in order, and what the last one prints is
-what the block must show below it. A `.jsonl` argument the repository does
-not hold is a new records file, made in a fresh directory, so a transcript
-never writes into the repository; one it holds is kept records, read in place.
+what the block must show below it. A long command wraps as in a shell: a line
+ending in `\\` goes on in the next, indented line. A `.jsonl` argument the
+repository does not hold is a new records file, made in a fresh directory, so
+a transcript never writes into the repository; one it holds is kept records,
+read in place.
 
 A copy sits between `<!-- copy SOURCE -->` and `<!-- end copy -->`. SOURCE is
 a file, fenced when it is not Markdown, or `README.md:NAME`, the README's text
@@ -35,7 +37,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PAGES = ["README.md", *sorted(str(p.relative_to(ROOT)) for p in ROOT.glob("docs/**/*.md"))]
-BLOCK = re.compile(r"```text\n((?:\$ [^\n]*\n)+)(.*?)```", re.S)
+BLOCK = re.compile(r"```text\n((?:\$ (?:[^\n]*\\\n[ \t]+)*[^\n]*\n)+)(.*?)```", re.S)
+COMMAND = re.compile(r"\$ ((?:[^\n]*\\\n[ \t]+)*[^\n]*)\n")
 COPY = re.compile(r"<!-- copy (\S+) -->\n(.*?)<!-- end copy -->", re.S)
 API = re.compile(r"<!-- api (\S+) -->\n(.*?)<!-- end api -->", re.S)
 
@@ -59,7 +62,7 @@ def transcripts(page: str) -> list[Transcript]:
     return [
         Transcript(
             page,
-            tuple(line[2:] for line in match.group(1).splitlines()),
+            tuple(COMMAND.findall(match.group(1))),
             match.group(2),
             match.start(2),
             match.end(2),

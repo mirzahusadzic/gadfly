@@ -1,11 +1,11 @@
 # Watch a run
 
-Gadfly checks whether an answer really rests on one line of evidence. It hides
-or changes the evidence in a few fixed ways, asks again each time, and compares
-the answers with the first one. Here is a real run, played one trial at a time:
-on the left, exactly what Gemma read in that trial; on the right, what it
-answered, what that shows, and the checks filling in until the verdict. Press
-play, or click any trial.
+Gadfly checks whether an answer really rests on one line of evidence: it
+hides or changes the evidence in a few fixed ways, asks again each time, and
+compares the answers with the first one. Here is a real run, played one trial
+at a time: on the left, exactly what Gemma read in that trial; on the right,
+what it answered, what that shows, and the checks filling in until the
+verdict. Press play, or click any trial.
 
 <div class="gadfly-watch" data-frames="upgrade,07-sql-rule,09-sync-sms,11-eu-clause,12-payroll-access,10c2-incident-both"></div>
 

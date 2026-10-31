@@ -1,14 +1,19 @@
 # Examples
 
-Every example here is an experiment, not a demonstration. Each is a frame, the
-predictions written before its first call (`examples/PREDICTIONS.md`), and the
-records of every run (`examples/runs/`). The reader is Gemma 4 26B (the QAT
-q4_0 GGUF build, revision `d1c082be`), served by eGemma on one machine. A wrong
-prediction stays in, and so does a frame that turned out to be built wrong: a
-frame is never edited after its runs, and a corrected one is a new frame beside
-it. Reading an example back needs no model.
+Every example here is an experiment, not a demonstration: a frame, the
+predictions written before its first call, and the records of every run. The
+reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
+eGemma on one machine, and reading an example back needs no model.
 
-## The ladder
+- **Predictions first:** `examples/PREDICTIONS.md` holds what each step
+  expected, written before its first call.
+- **Every run kept:** `examples/runs/` holds every record of every run.
+- **Nothing edited after:** a wrong prediction stays in, and so does a frame
+  that turned out to be built wrong; a corrected frame is a new one beside it.
+
+---
+
+### The ladder
 
 The examples climb. Each step is one or two frames on a new domain or grain,
 and it teaches one more thing Gadfly does, on top of the steps before it.
@@ -28,7 +33,9 @@ and it teaches one more thing Gadfly does, on top of the steps before it.
 | [Paths](paths.md) | 14, 15 | inputs as paths to one goal; the result, not the route | optimizing; implementing |
 | [Run your own](your-own.md) | yours | predictions first; plan, run, report; which trial answers which question | yours |
 
-## How a step reads
+---
+
+### How a step reads
 
 Each step shows four things, each printed from the files in `examples/` by
 `examples/read.py`, which calls no model:
@@ -42,16 +49,19 @@ Each step shows four things, each printed from the files in `examples/` by
    `--input`), its levels, its evidence and its open checks, in the words
    `gadfly report` uses.
 
-Then what to take from it, and an experiment to try next. The scale is small on
-purpose: one model, one machine, three to five runs a frame, each trial asked
-five times with four to agree. What each result says is narrow, and each step
-says how narrow. `examples/RESULTS.md` sets every result against its
-prediction, and `examples/FINDINGS.md` gathers what they showed about the
-reader, the service and Gadfly.
+Then what to take from it, and an experiment to try next. The scale is small
+on purpose: one model, one machine, three to five runs a frame, each trial
+asked five times with four to agree, so each step says how narrow its result
+is.
 
-## Every result at a glance
+`examples/RESULTS.md` sets every result against its prediction, and
+`examples/FINDINGS.md` gathers what they showed about the reader, the service
+and Gadfly.
 
-<!-- copy README.md:examples -->
+---
+
+### Every result at a glance
+
 | Example | Domain, grain | Does the decision rest on… | Read by Gemma, per run |
 |---|---|---|---|
 | `upgrade.json`, `rung1`-`rung6` | dependencies, one changelog line | the line that removes a function our code calls? | carried; the rungs show each check closing |
@@ -64,4 +74,3 @@ reader, the service and Gadfly.
 | `13`, `13b` | data migration, a section, then one line | the status saying the table is unused? | the section carries; "no reads in 30 days" carries nothing |
 | `14-orders-latency.json` | optimizing, one goal, five paths | the latency goal? | four paths carried whatever their cost; the timeout rejected |
 | `15-invoice-export.json` | implementing, one test, four processes | the passing test? | the test decides, never the process |
-<!-- end copy -->

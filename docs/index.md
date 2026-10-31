@@ -1,27 +1,35 @@
 # Is the premise load-bearing?
 
-**Gadfly removes or changes one declared relation, asks a scorer to read each
-trial, and returns one fixed-rule verdict.** It is a small Python library with
-no runtime dependencies and no hidden state.
+Gadfly tests whether a decision rests on the evidence you think it rests on.
+It removes or changes one declared line in fixed ways, asks the reader again
+each time, and reads one verdict from the answers by fixed rules. It is a
+small Python library with no runtime dependencies and no hidden state.
 
-**[Test your first frame](first-frame.md)** · [Read the essay](load-bearing.md)
+---
 
-## Choose your path
+### Choose your path
 
-- **I have a rule to test.** A changelog line, a contributing rule, a
+Start where your question is; every path ends in the same few pages.
+
+- **I have a rule to test:** a changelog line, a contributing rule, a
   requirement, a contract clause or an access grant. Start with
   [Your first frame](first-frame.md).
-- **I have read the essay.** Translate $L$ and $\Gamma$ into frame keys,
-  interventions and records. Start with [Framework](framework.md).
-- **I have two minutes.** Gadfly returns one of five categories, not a score.
-  Read [Reading a verdict](reading-a-verdict.md), then decide from the
-  [examples](examples/index.md) whether that vocabulary fits your question.
+- **I want to see it work:** [Watch a run](examples/watch.md) plays a kept
+  run, one trial at a time.
+- **I want the method first:** [When meaning is load-bearing](load-bearing.md)
+  is the essay Gadfly applies, and [Framework](framework.md) translates its
+  $L$ and $\Gamma$ into frame keys, interventions and records.
+- **I have two minutes:** Gadfly returns one of five categories, not a score.
+  The categories are below, and [the examples](examples/index.md) show whether
+  that vocabulary fits your question.
 
-## What a result looks like
+---
 
-A pull request builds SQL by formatting a value into the query, and the
-repository's rules forbid it. Gemma 4 26B, through eGemma, reviews it in five
-kept runs; reading them back calls no model.
+### What a result looks like
+
+A pull request formats a value into SQL, and the repository's rules forbid it.
+Gemma 4 26B, through eGemma, reviewed it in five kept runs, and reading them
+back calls no model:
 
 ```text
 $ uv run python examples/read.py examples/07-sql-rule.json
@@ -41,35 +49,48 @@ run 4: cooled
 run 5: cooled
 ```
 
-Gemma asks for changes with the rule and without it, while the control (the
-rule and the query both cut) moves it to approve: the reader can move, and the
-rule is not what moves it. Its training rejects formatted SQL anyway, so the
-rule carries nothing here: **cooled**. A rule Gemma cannot know from training
-moves the other way ([Cooled](examples/cooled.md)).
+Gemma asks for changes with the rule and without it, while the control, with
+the rule and the query both cut, moves it to approve. So the reader can move,
+and the rule is not what moves it: **cooled**. A rule Gemma cannot know from
+training moves the other way ([Cooled](examples/cooled.md)).
+
+---
 
 <!-- copy README.md:verdicts -->
-## What Gadfly says
+### What Gadfly says
 
-Each input gets one **finding**; a multi-input frame gets one **overall**
-category over the findings. The categories are not scores. The first matching
-rule below names the category.
+Each input gets one **finding**, and a frame with several inputs gets one
+**overall** category over them. The categories are not scores; the first rule
+that matches names the category.
 
-| Finding | Plain meaning |
-|---|---|
-| `carried` | Ablation moved the observation as the promise allows, and every carriage check passed: presentation and the shams held, the bypass exposed its opening, and the frame says the observation is what the recipient receives. |
-| `coupled but misaligned` | The relation matters, but presentation or placement moved it, or ablation moved it where the promise disallows. |
-| `cooled` | Ablation left the observation unchanged while a control showed the scorer can move: this relation has no operative influence here. |
-| `unresolved` | There is not enough agreed evidence: a trial is missing or split, repeat is unstable, a sham moved too, the scorer cannot tell, or a check the category needs is still open. |
-| `outside scope` | The receiving owner declares the distinction unnecessary, and their own check of that exclusion is recorded. |
+- **`carried`:** ablation moved the observation as the promise allows, and
+  every carriage check passed: presentation and the shams held, the bypass
+  exposed its opening, and the frame says the observation is what the
+  recipient receives.
+- **`coupled but misaligned`:** the relation matters, but presentation or
+  placement moved it, or ablation moved it where the promise disallows.
+- **`cooled`:** ablation left the observation unchanged while a control
+  showed the scorer can move, so this relation has no operative influence
+  here.
+- **`unresolved`:** there is not enough agreed evidence: a trial is missing
+  or split, repeat is unstable, a sham moved too, the scorer cannot tell, or a
+  check the category needs is still open.
+- **`outside scope`:** the receiving owner declares the distinction
+  unnecessary, and their own check of that exclusion is recorded.
 
-Every finding separates **Evidence** (why this category) from **Obligations**
-(what the trials did not settle). An obligation is not a passed check. By
-default (`carriage: all-checks`) an open check keeps carried, cooled and
-outside scope unresolved, and the evidence says so; a frame that says
+Every finding keeps its **evidence** (why this category) apart from its
+**obligations** (what the trials did not settle), and an obligation is not a
+passed check. Under the default `carriage: all-checks`, an open check keeps
+carried, cooled and outside scope unresolved; a frame with
 `carriage: listed` names the category and lists its open checks beside it.
 <!-- end copy -->
 
-## Install
+---
+
+### Install
+
+Gadfly needs Python 3.11 or later and uv. These commands install it and read a
+kept example back:
 
 ```bash
 git clone https://github.com/mirzahusadzic/gadfly.git
@@ -78,16 +99,19 @@ uv sync
 uv run python examples/read.py examples/upgrade.json
 ```
 
-## Where to go next
+---
 
-| If you want to... | Read |
+### Where to go next
+
+Every page reads on GitHub as it does here.
+
+| If you want to | Read |
 |---|---|
-| write and validate a frame | [Write a frame](write-a-frame.md) |
-| choose trials and estimate calls | [Interventions](interventions.md) |
-| understand evidence and obligations | [Reading a verdict](reading-a-verdict.md) |
-| use a model, local service or your own scorer | [Batteries](batteries.md) |
-| climb the examples, one capability a step | [Examples](examples/index.md) |
-| run, report and check frames from the command line | [Extending Gadfly](roadmap.md) |
+| write a frame and check it before any call | [Write a frame](write-a-frame.md) |
+| choose trials and estimate their calls | [Interventions](interventions.md) |
+| read evidence apart from obligations | [Reading a verdict](reading-a-verdict.md) |
+| use a model, a local service or your own scorer | [Batteries](batteries.md) |
+| run, report and check frames from a terminal | [Command line](command-line.md) |
+| look up a word such as anchor, grain or quorum | [Glossary](glossary.md) |
 | see the trust boundaries and current limits | [Architecture and limits](architecture.md) |
-| find a library name | [Reference](reference.md) |
-
+| find a function or class | [Python API](reference.md) |

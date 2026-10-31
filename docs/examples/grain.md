@@ -14,10 +14,16 @@ says three things: the backfill copied every row and the counts match, writes
 stopped on 1 October, and the query log shows no reads in 30 days. The
 instruction allows a drop only "without losing data or breaking a reader".
 
-## The frame
+---
+
+### The frame
+
+Gadfly plans `13-drop-table-section.json` like this, one span a line, the
+anchors marked `*`:
 
 ```text
-$ uv run python examples/read.py examples/13-drop-table-section.json --frame
+$ uv run python examples/read.py \
+    examples/13-drop-table-section.json --frame
 drop-table-section: 1 input x 7 trials x 5 calls = 35 calls, 4 of 5 to agree
 relation: approving the drop rests on the migration's status section
 grain: the migration's whole status section
@@ -47,12 +53,13 @@ allowed: ablation -> keep, unclear
 ```
 
 The anchors are the whole section, three spans, and the ablation cuts them
-together. A sham cuts as many spans as the anchors, each of an anchor's kind and
-the closest to it in length, and no span is drawn twice. So each sham here cuts
-three unrelated status lines, and the six in the body are just enough for two
-draws. The control cuts the change request itself. 13b is the same frame with a
-single anchor, the reads line; its `grain` says so, and that makes it another
-frame.
+together. A sham cuts as many spans as the anchors, each of an anchor's kind
+and the closest to it in length, and no span is drawn twice. So each sham here
+cuts three unrelated status lines, and the six in the body are just enough for
+two draws.
+
+The control cuts the change request itself. 13b is the same frame with a single
+anchor, the reads line; its `grain` says so, and that makes it another frame.
 
 > [!NOTE]
 > **Predicted before the first call**
@@ -62,10 +69,16 @@ frame.
 > low confidence, as Gemma is cautious about dropping tables. If it stays at
 > drop, it is cooled at the line's grain while the section carries.
 
-## What Gemma answered
+---
+
+### What Gemma answered
+
+Every call's label on `13-drop-table-section.json`, trial by trial, over all
+the kept runs:
 
 ```text
-$ uv run python examples/read.py examples/13-drop-table-section.json
+$ uv run python examples/read.py \
+    examples/13-drop-table-section.json
 drop-table-section: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         drop
 baseline      drop 15
@@ -80,8 +93,12 @@ run 2: unresolved
 run 3: unresolved
 ```
 
+Every call's label on `13b-drop-table-reads.json`, trial by trial, over all the
+kept runs:
+
 ```text
-$ uv run python examples/read.py examples/13b-drop-table-reads.json
+$ uv run python examples/read.py \
+    examples/13b-drop-table-reads.json
 drop-table-reads: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         drop
 baseline      drop 15
@@ -96,10 +113,16 @@ run 2: unresolved
 run 3: cooled
 ```
 
-## What Gadfly read
+---
+
+### What Gadfly read
+
+Run 1's verdict on `13b-drop-table-reads.json`, in the words `gadfly report`
+uses:
 
 ```text
-$ uv run python examples/read.py examples/13b-drop-table-reads.json --verdict 1
+$ uv run python examples/read.py \
+    examples/13b-drop-table-reads.json --verdict 1
 drop: cooled
   levels: baseline drop, repeat drop, ablation drop, sham-1 drop, sham-2 drop, presentation drop, control unclear
   evidence: ablation left it at drop
@@ -107,17 +130,21 @@ drop: cooled
   open: no hidden fallback: no bypass trial was declared
 ```
 
-Cut the section and every call says unclear: the drop rests on the section,
-and 13 is unresolved only because it declares no bypass. Cut only "no reads in
-30 days" and Gemma still drops the table on every call: cooled, that line
-carries nothing. The instruction says to drop only without breaking a reader,
-and no other line shows the readers are gone. At the coarser grain the review
-looks sound; at the finer one it skips the check that protects a reader. The
-prediction (keep) was wrong, and the alternative it named came true.
+Cut the section and every call says unclear: the drop rests on the section, and
+13 is unresolved only because it declares no bypass. Cut only "no reads in 30
+days" and Gemma still drops the table on every call: cooled, that line carries
+nothing. The instruction says to drop only without breaking a reader, and no
+other line shows the readers are gone.
+
+At the coarser grain the review looks sound; at the finer one it skips the
+check that protects a reader. The prediction (keep) was wrong, and the
+alternative it named came true.
 
 13b's run 2 is unresolved because its control split three to two.
 
-## What to take from it
+---
+
+### What to take from it
 
 - Anchors are a set, cut together. A coarse anchor can show that the decision
   rests on the section; it cannot show which line it rests on.
@@ -125,7 +152,9 @@ prediction (keep) was wrong, and the alternative it named came true.
 - A cooled at the fine grain can be the most useful finding of all. Here it is
   a review skipping a check its own instruction asks for.
 
-## Try next
+---
+
+### Try next
 
 Write 13c, anchored on the writes line alone ("writes to orders_v1 stopped on 1
 October"), and predict it. Then decide which of the three lines a reviewer must

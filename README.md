@@ -1,38 +1,60 @@
 # Gadfly
 
-**A load-bearing test for a premise that has to survive a handoff.** Declare the
-relation, its grain and the promise a recipient needs. Gadfly removes or changes
-the relation under fixed interventions, has a scorer read each trial, and reads
-one verdict by fixed rules. The method is [When meaning is load-bearing](docs/load-bearing.md).
+Gadfly tests whether a decision rests on the evidence you think it rests on.
+It removes or changes one declared line under fixed interventions, has a
+scorer read each trial, and reads one verdict by fixed rules. The method is
+[When meaning is load-bearing](docs/load-bearing.md).
 
-Use Gadfly when you can name the premise and a consequence that should change
-when the premise is gone: a changelog line, a contributing rule, a requirement,
-a contract clause, an access grant, a measurement. Use an ordinary evaluation
-when you need a score, a ranking, or a broad quality measurement.
+- **Fixed rules, not a model:** a verdict follows from the kept answers, so
+  anyone can check it.
+- **It says what it does not know:** an unresolved verdict names the check
+  still open, kept apart from the evidence.
+- **Kept records:** every answer is tied to its exact frame, and reading a run
+  back calls no model.
+- **Small:** a Python 3.11 library with no runtime dependencies and no hidden
+  state.
+
+Use it when you can name the premise and a consequence that should change
+without it: a changelog line, a contributing rule, a contract clause, an
+access grant. For a score or a ranking, use an ordinary evaluation.
+
+---
 
 <!-- start:verdicts -->
-## What Gadfly says
+### What Gadfly says
 
-Each input gets one **finding**; a multi-input frame gets one **overall**
-category over the findings. The categories are not scores. The first matching
-rule below names the category.
+Each input gets one **finding**, and a frame with several inputs gets one
+**overall** category over them. The categories are not scores; the first rule
+that matches names the category.
 
-| Finding | Plain meaning |
-|---|---|
-| `carried` | Ablation moved the observation as the promise allows, and every carriage check passed: presentation and the shams held, the bypass exposed its opening, and the frame says the observation is what the recipient receives. |
-| `coupled but misaligned` | The relation matters, but presentation or placement moved it, or ablation moved it where the promise disallows. |
-| `cooled` | Ablation left the observation unchanged while a control showed the scorer can move: this relation has no operative influence here. |
-| `unresolved` | There is not enough agreed evidence: a trial is missing or split, repeat is unstable, a sham moved too, the scorer cannot tell, or a check the category needs is still open. |
-| `outside scope` | The receiving owner declares the distinction unnecessary, and their own check of that exclusion is recorded. |
+- **`carried`:** ablation moved the observation as the promise allows, and
+  every carriage check passed: presentation and the shams held, the bypass
+  exposed its opening, and the frame says the observation is what the
+  recipient receives.
+- **`coupled but misaligned`:** the relation matters, but presentation or
+  placement moved it, or ablation moved it where the promise disallows.
+- **`cooled`:** ablation left the observation unchanged while a control
+  showed the scorer can move, so this relation has no operative influence
+  here.
+- **`unresolved`:** there is not enough agreed evidence: a trial is missing
+  or split, repeat is unstable, a sham moved too, the scorer cannot tell, or a
+  check the category needs is still open.
+- **`outside scope`:** the receiving owner declares the distinction
+  unnecessary, and their own check of that exclusion is recorded.
 
-Every finding separates **Evidence** (why this category) from **Obligations**
-(what the trials did not settle). An obligation is not a passed check. By
-default (`carriage: all-checks`) an open check keeps carried, cooled and
-outside scope unresolved, and the evidence says so; a frame that says
+Every finding keeps its **evidence** (why this category) apart from its
+**obligations** (what the trials did not settle), and an obligation is not a
+passed check. Under the default `carriage: all-checks`, an open check keeps
+carried, cooled and outside scope unresolved; a frame with
 `carriage: listed` names the category and lists its open checks beside it.
 <!-- end:verdicts -->
 
-## Quick start
+---
+
+### Install
+
+Gadfly needs Python 3.11 or later and [uv](https://docs.astral.sh/uv/). These
+commands clone it and install its environment:
 
 ```bash
 git clone https://github.com/mirzahusadzic/gadfly.git
@@ -40,9 +62,13 @@ cd gadfly
 uv sync
 ```
 
+---
+
+### Use
+
 Every example is a real experiment: a frame, the predictions written before
-the first call, and the records of each run, read by Gemma 4 26B through eGemma.
-Reading them back needs no model:
+its first call, and the records of each run, read by Gemma 4 26B through
+eGemma. Reading one back calls no model:
 
 ```text
 $ uv run python examples/read.py examples/07-sql-rule.json
@@ -62,35 +88,41 @@ run 4: cooled
 run 5: cooled
 ```
 
-A pull request builds SQL by formatting a value into the query, and the
-repository's rules forbid it. Gemma asks for changes, and still does once the
-rule is cut: its training decides, not the rule, so the rule carries nothing
-here (`cooled`). The same experiment with a rule Gemma cannot know from
-training, "read the time only through `clock.now()`", moves the other way:
+A pull request formats a value into SQL, which the repository's rules forbid.
+Gemma asks for changes with the rule and without it, so its training decides
+and the rule carries nothing here: `cooled`. [Your first
+frame](docs/first-frame.md) climbs one frame, a trial at a time, to `carried`.
 
-```text
-$ uv run python examples/read.py examples/08-clock-rule.json
-clock-rule: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
-trial         review
-baseline      request-changes 25
-repeat        request-changes 25
-ablation      approve 25
-sham-1        request-changes 25
-sham-2        request-changes 25
-presentation  request-changes 25
-control       approve 24, request-changes 1
-run 1: unresolved
-run 2: unresolved
-run 3: unresolved
-run 4: unresolved
-run 5: unresolved
+#### Run a frame
+
+A live run needs a scorer on this machine, which Gadfly calls a battery:
+
+- **`egemma`:** eGemma at `EGEMMA_URL` (by default `http://127.0.0.1:8000`),
+  with its key in `EGEMMA_API_KEY_FILE` or `EGEMMA_API_KEY`.
+- **`unified`:** the unified model router, with its token in
+  `CODEX_ROUTER_TOKEN` or the router's own settings file.
+- **`local-json`:** your evaluator at `battery.url`, with no key.
+- **Your own:** any class whose `name` is the frame's `battery.kind`.
+
+These four commands check a frame, show its trials and their cost, run it, and
+read its verdict:
+
+```bash
+uv run gadfly check-frame examples/upgrade.json
+uv run gadfly plan examples/upgrade.json
+uv run gadfly run examples/upgrade.json \
+  --battery gadfly.batteries.egemma:EGemma \
+  --calls 40 --out records.jsonl
+uv run gadfly report examples/upgrade.json records.jsonl
 ```
 
-Only the bypass check is open there, so it is not yet `carried`. The
-[first-frame tutorial](docs/first-frame.md) climbs one frame a trial at a time
-to a carried verdict, and [the examples](docs/examples/index.md) cover the rest.
+`check-frame` and `plan` make no call, and `run` keeps each record as one JSON
+line the moment it exists. [Command line](docs/command-line.md) has every
+command and flag.
 
-The same test in Python:
+#### From Python
+
+The same test in Python reads a kept run back, then makes a fresh one:
 
 <!-- start:use -->
 ```python
@@ -102,201 +134,66 @@ from gadfly.cli import load_records
 from gadfly.pipeline import calls_needed, judge, run, situate
 from gadfly.types import Budget
 
-frame = situate(json.loads(Path("examples/upgrade.json").read_text()))
+source = Path("examples/upgrade.json").read_text()
+frame = situate(json.loads(source))
 
-# a kept run, read back: no call
-[finding] = judge(frame, load_records("examples/runs/upgrade/1.jsonl"))
-print(finding.category, finding.evidence, finding.obligations)
+kept_run = load_records("examples/runs/upgrade/1.jsonl")
+[finding] = judge(frame, kept_run)
+print(finding.category, finding.evidence)
+print(finding.obligations)
 
-# a fresh run, through eGemma on this machine
 kept = []
-run(frame, EGemma(), Budget(calls=calls_needed(frame)), on_record=kept.append)
+budget = Budget(calls=calls_needed(frame))
+run(frame, EGemma(), budget, on_record=kept.append)
 [finding] = judge(frame, kept)
 ```
 <!-- end:use -->
 
-The frame's `battery.kind` must equal the battery's `name`. A different battery
-is a different frame coordinate, so call `situate()` again when you swap it.
-For several inputs, `overall(judge(frame, kept))` returns one category over all
-of them. A stopped run is continued with `run(..., kept=kept)`; records already
-in `kept` are not made again.
+- **The battery is part of the frame:** `battery.kind` must equal the
+  battery's `name`, and another battery is another frame, so call `situate()`
+  again when you swap it.
+- **Several inputs:** `overall(judge(frame, kept))` returns one category over
+  all of them.
+- **A stopped run:** `run(..., kept=kept)` continues it, and records already
+  in `kept` are not made again.
 
-The same from the command line (also `uv run python -m gadfly`):
+---
+
+### Learn more
+
+The documentation site is built from `docs/`, and every page reads on GitHub
+too.
+
+- **[The examples](docs/examples/index.md):** experiments that climb one
+  capability a step, each with its predictions and kept runs.
+- **[Write a frame](docs/write-a-frame.md):** every key, and what the parser
+  refuses.
+- **[Reading a verdict](docs/reading-a-verdict.md):** the rules in order, and
+  evidence apart from obligations.
+- **[Batteries](docs/batteries.md):** the shipped scorers, their privacy
+  guarantees, and writing your own.
+- **[Architecture and limits](docs/architecture.md):** what Gadfly keeps, and
+  what a verdict does not claim.
+- **[Python API](docs/reference.md):** every public function and class.
+
+---
+
+### Develop
+
+The suite needs no model and no network. These commands run it, lint, and
+bring the docs' transcripts, copies and reference back in line with the code:
 
 ```bash
-uv run gadfly check-frame examples/upgrade.json  # the frame's shape, then the parser
-uv run gadfly plan examples/upgrade.json         # the trials and the call count, no call
-uv run gadfly run examples/upgrade.json --battery gadfly.batteries.egemma:EGemma \
-    --calls 40 --out records.jsonl               # each record kept as one JSON line
-uv run gadfly report examples/upgrade.json records.jsonl
+uv sync
+uv run pytest
+uv run ruff check gadfly examples tests tools
+uv run ruff format --check gadfly examples tests tools
+uv run python tools/doc_outputs.py --write
 ```
 
-<!-- start:model -->
-## The path from premise to verdict
+The After the Poem replay runs when `GADFLY_ATP_PLANS` names its plans.
 
-| Stage | What it makes | What stays fixed |
-|---|---|---|
-| `situate` | a checked `Frame` and its SHA-256 | every declared coordinate, including grain and battery |
-| `plan` | the trials derived from the frame | trial bodies and order; the caller may inspect them before spending anything |
-| `run` | one `Record` per call | the exact body, input, trial and quorum index recorded beside the observation |
-| `judge` | one `Finding` per input | the frame, battery, body hashes, trial set, quorum and label vocabulary |
-| `overall` | one `Overall` over the findings | every input's category and evidence while combining the frame-level answer |
-
-Gadfly is a library with no hidden store. `run()` is the only stage that calls a
-battery; records go to your `on_record` callback as they are made. `judge()`
-recomputes the reading from those records. Keep them as JSON Lines, database
-rows, or fixtures, but keep them.
-<!-- end:model -->
-
-## Write a frame
-
-Start from `examples/upgrade.json` or the [first-frame tutorial](docs/first-frame.md).
-
-<!-- start:frame -->
-The top-level keys are all checked before a call:
-
-| Key | What you write |
-|---|---|
-| `name` | a short label for this frame |
-| `relation`, `locus`, `body` | the premise, where it acts, and `body.spans` carrying it |
-| `role`, `grain`, `purpose` | whose reading, at which unit, for what |
-| `trajectory`, `baseline`, `crossing`, `promise` | the path to the recipient, everything pinned, the boundary, and what must cross it |
-| `anchors` | span ids the relation rests on; at least one |
-| `inputs` | the finite test domain, each `{id, text}` with distinct ids |
-| `observe` | `labels`, `instruction`, and `order` when labels are ordered; other keys are your battery's |
-| `interventions` | the trials; `ablation` is required |
-| `allowed` | what `ablation` may produce, and optionally the opening `bypass` must expose |
-| `standing` | `quorum`, `agree`, and optionally `stable` (which needs `repeat`) |
-| `battery` | at least `kind`; shipped batteries use `model`, reasoning, schema or pins as documented below |
-| `materialized` | `true` only when the observation is the form the recipient receives |
-| `outsideScope` | the receiving owner's exclusion, in words; omit when there is none |
-| `scopeCheck` | the owner's check of that exclusion: `owner`, `statement`, `source`, `encounter` |
-| `carriage` | `all-checks` (the default) or `listed`: whether an open check holds a category back |
-
-`body.spans` are `{id, text}` with an optional `kind` used to match sham spans.
-`allowed` lists labels, or uses `lower`/`higher` along `observe.order`.
-`allowed.bypass` is the label or labels a bypass must expose.
-
-The frame is hashed whole. Rewording the promise, changing the grain or swapping
-the battery makes a new frame, and records from the old hash will be refused.
-`gadfly/frame.schema.json` gives editors the shape; `uv run gadfly check-frame`
-runs it and then the parser, which has the last word.
-<!-- end:frame -->
-
-<!-- start:trials -->
-## The interventions
-
-| Trial | What changes | What it tests | Cost |
-|---|---|---|---|
-| `baseline` | nothing | the level being explained | `quorum` calls |
-| `repeat` | nothing | whether that level is stable enough to compare | `quorum` calls |
-| `ablation` | the anchors are removed | required influence | `quorum` calls |
-| `cumulative` | anchors plus the spans they may fall back on | support carried elsewhere | `quorum` calls |
-| `sham-*` | as much unanchored text, of the anchors' kinds | specificity of the change | one `quorum` per draw |
-| `presentation` | mapped words renamed in one pass, body and input | whether wording rather than meaning drives the scorer | `quorum` calls |
-| `placement` | one span moved after another, its text unchanged | whether the structure rather than the meaning drives the scorer | `quorum` calls |
-| `bypass` | a named connection is cut | no hidden fallback; with `allowed.bypass`, only that opening clears it | `quorum` calls |
-| `control` | spans any reader needs | whether the scorer can move at all; cooled needs it to | `quorum` calls |
-
-`bypass` asks whether a fallback keeps the relation working without its
-connection. `control` asks whether the scorer changes under a removal that
-should matter to any reader. They answer different questions.
-
-The full cost is `inputs × planned trials × quorum`. `calls_needed(frame)` gives
-it without making a call.
-<!-- end:trials -->
-
-## Batteries
-
-A battery is a scorer. It reads the frame and the exact prompt for one call, and
-returns one label or one typed opening. It is not told which trial it is serving.
-
-<!-- start:protocol -->
-```python
-class Battery(Protocol):
-    name: str
-
-    def check(self, frame: Frame) -> None: ...  # refuse before any call
-    def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation: ...
-```
-<!-- end:protocol -->
-
-A deterministic battery of your own is the fastest way to test a frame's
-mechanics, at no cost: `tests/fixtures/refund.py` holds two, ten lines each. It
-tests the frame, not a model; the examples use a live one.
-
-<!-- start:batteries -->
-| Battery | Reads with | Guarantees and recorded provenance |
-|---|---|---|
-| your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
-| `unified` | an LLM through the unified model router: `anthropic/`, `openrouter/`, `deepseek/`, `ultra-spark/` | loopback, no tools, no proxy, no redirects, `data_collection: deny` unless the exact model slug is listed under `trainsOnInputs`; refuses OpenAI slugs; `endpoints` pins OpenRouter endpoints; records the model and endpoint that served |
-| `egemma` | Gemma through eGemma's `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced |
-| `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
-
-The privacy and routing guarantees above belong to the shipped batteries.
-The `Battery` protocol does not constrain arbitrary third-party code.
-<!-- end:batteries -->
-
-<!-- start:adapter -->
-Critics answer JSON to a schema, by default `{"label": <one of the frame's labels>}`.
-A critic with its own schema names where the label lives with a JSON pointer:
-
-```json
-"battery": {
-  "kind": "unified",
-  "model": "anthropic/claude-sonnet-5-5",
-  "reasoning": "low",
-  "output": {
-    "schema": {
-      "type": "object",
-      "properties": {"review": {"type": "object"}}
-    },
-    "label": "/review/verdict"
-  }
-}
-```
-<!-- end:adapter -->
-
-## Examples
-
-Each example is an experiment: a frame in `examples/`, its predictions written
-before the first call (`examples/PREDICTIONS.md`), and every run Gemma 4 26B
-gave through eGemma kept under `examples/runs/`. `uv run python
-examples/read.py examples/<frame>.json` reads one back without a model;
-[the examples](docs/examples/index.md) climb them one capability a step, and
-`examples/FINDINGS.md` gathers what they showed.
-
-<!-- start:examples -->
-| Example | Domain, grain | Does the decision rest on… | Read by Gemma, per run |
-|---|---|---|---|
-| `upgrade.json`, `rung1`-`rung6` | dependencies, one changelog line | the line that removes a function our code calls? | carried; the rungs show each check closing |
-| `07-sql-rule.json` | code review, one repository rule | the rule against formatted SQL? | cooled: its training decides |
-| `08-clock-rule.json` | code review, one repository rule | the rule against `datetime.now()`? | the rule decides; unresolved, no bypass declared |
-| `09-sync-sms.json` | architecture, one requirement | the 300 ms requirement? | cooled in two runs of three |
-| `10a`-`10d` | debugging, fixing, optimizing, alerting; one test or two metrics | which of two routes to the cause? | the metrics decide every task; the rollback alone decides the fix, not the cause; with both, either can go (cooled) |
-| `11-eu-clause.json` | contract into engineering, one clause | the clause keeping data in the EU? | the clause carries; applied without the line that makes it the customer's |
-| `12-payroll-access.json` | security, one grant, three requesters | the grant to Finance? | Dana carried, Sam unresolved, the backup job cooled |
-| `13`, `13b` | data migration, a section, then one line | the status saying the table is unused? | the section carries; "no reads in 30 days" carries nothing |
-| `14-orders-latency.json` | optimizing, one goal, five paths | the latency goal? | four paths carried whatever their cost; the timeout rejected |
-| `15-invoice-export.json` | implementing, one test, four processes | the passing test? | the test decides, never the process |
-<!-- end:examples -->
-
-## Boundaries
-
-<!-- start:boundaries -->
-- A category is a fixed-rule reading of observations under one frame, not proof of causality and not a probability.
-- Under the default `carriage: all-checks`, carried, cooled and outside scope are named only once the checks they need have passed; until then the finding is unresolved and says which check is open. `carriage: listed` names the category and lists the open checks beside it; read those before relying on it.
-- Traceability rests on the records: each names its frame, battery, body, prompt and what served it. Gadfly does not check a prompt digest against the current prompt, so a replay may keep its study's own.
-- `materialized: true` is a declaration. Gadfly does not inspect a receiving document, field or program.
-- A deterministic battery tests the frame and mechanism, not a model. A sampled live critic tests sampled behavior at that model and endpoint, not a provider's general policy.
-- Gadfly has no authentication or signature on records. Keep records somewhere you trust and record the run metadata you need outside Gadfly.
-<!-- end:boundaries -->
-
-## Documentation
-
-Start with [Your first frame](docs/first-frame.md), then read [Reading a verdict](docs/reading-a-verdict.md).
-The [reference](docs/reference.md) is the API lookup. The essay remains the
-normative account of the method and the five carriage checks.
+#### The docs site
 
 The site is built with VitePress from `docs/`, on Node 24 or later:
 
@@ -309,20 +206,11 @@ npm run docs:build
 `docs:dev` serves a site that follows your edits, and `docs:build` writes it
 to `docs/.vitepress/dist`, failing on a dead link.
 
-## Development
+---
 
-```bash
-uv sync
-uv run pytest
-uv run ruff check gadfly examples tests tools
-uv run ruff format --check gadfly examples tests tools
-```
+### License
 
-The After the Poem replay runs when `GADFLY_ATP_PLANS` names its plans.
-
-## License
-
-Code: Apache-2.0. The text of `docs/load-bearing.md`: © 2026 Mirza Husadzic,
-[CC BY 4.0](LICENSES/CC-BY-4.0.txt). The docs site's fonts, Albert Sans and
-Fraunces, are under the SIL Open Font License 1.1, with their licences beside
-them in `docs/.vitepress/theme/fonts/`.
+The code is under Apache 2.0. The text of `docs/load-bearing.md` is © 2026
+Mirza Husadzic, under [CC BY 4.0](LICENSES/CC-BY-4.0.txt). The docs site's
+fonts, Albert Sans and Fraunces, are under the SIL Open Font License 1.1, with
+their licences beside them in `docs/.vitepress/theme/fonts/`.

@@ -1,8 +1,9 @@
----
-hide: [toc]
----
-
 # Architecture and limits
+
+Gadfly is a library with no state: your code hands it a frame, it calls one
+battery, and every record goes back to you as it is made. The chart shows
+where each boundary is, and the sections below read it and list what a verdict
+does not claim.
 
 ```mermaid
 ---
@@ -86,12 +87,12 @@ flowchart TB
     ST --> JU
     JU -->|"finding"| YOU
 
-    classDef default fill:#8a96a82e,stroke:#8a96a8,stroke-width:1px
-    classDef person fill:#8e5bd64d,stroke:#8e5bd6,stroke-width:2px
+    classDef default fill:#8a96a833,stroke:#8a96a8,stroke-width:1px
+    classDef person fill:#8e5bd633,stroke:#8e5bd6,stroke-width:2px
     classDef interface fill:#b5bcc633,stroke:#b5bcc6,stroke-width:2px
-    classDef service fill:#e3a0084d,stroke:#e3a008,stroke-width:2px
-    classDef kept fill:#4d6bfe4d,stroke:#4d6bfe,stroke-width:2px
-    classDef engine fill:#2e9e5b4d,stroke:#2e9e5b,stroke-width:2px
+    classDef service fill:#e3a00833,stroke:#e3a008,stroke-width:2px
+    classDef kept fill:#4d6bfe33,stroke:#4d6bfe,stroke-width:2px
+    classDef engine fill:#2e9e5b33,stroke:#2e9e5b,stroke-width:2px
     classDef group fill:#8a96a814,stroke:#8a96a8,stroke-width:2px,stroke-dasharray:6 4
     class YOU person
     class SI,PL,RU,JU engine
@@ -110,11 +111,24 @@ flowchart TB
 <p align="center"><em>Gadfly keeps no state: each record goes to you as it is made, and judge reads them back.
 The shipped batteries use the loopback paths shown; your own battery is arbitrary code. One battery serves a run.</em></p>
 
-- `run` never starts a call the `Budget` cannot cover, stops between calls on `cancelled()`, and hands each `Record` to `on_record` as it is made.
-- A failed or unreadable answer is an opening, never a guessed label.
-- `judge` reads only records the plan could have made: this frame, its trials and bodies, runs within the quorum, each once.
+---
 
-## Reading the chart
+### What the code guarantees
+
+Three promises hold whatever battery serves the run.
+
+- **A run spends only what it may:** `run` never starts a call the `Budget`
+  cannot cover, stops between calls on `cancelled()`, and hands each `Record`
+  to `on_record` as it is made.
+- **A failure is an opening:** a failed or unreadable answer becomes an
+  opening, never a guessed label.
+- **A verdict reads only its own records:** `judge` reads only records the
+  plan could have made: this frame, its trials and bodies, runs within the
+  quorum, each once.
+
+---
+
+### Reading the chart
 
 The chart is about **boundaries**, which a table cannot show as directly:
 
@@ -126,23 +140,33 @@ The chart is about **boundaries**, which a table cannot show as directly:
 | records → `judge` | saved evidence, not a live service | verdicts can be recomputed without another call |
 | shipped batteries → local services | schema-constrained requests to loopback | tokens and credentials stay out of observations |
 
-The shipped batteries honor no-proxy, no-redirect and loopback rules. The
-`Battery` protocol does not; a third-party battery may do anything its code does.
+The shipped batteries keep the loopback, no-proxy and no-redirect rules. The
+`Battery` protocol does not, so a battery of your own may do anything its code
+does.
 
-## Current limits
+---
 
-- Under the default `carriage: all-checks`, a category is named only once the
-  checks it needs have passed; `carriage: listed` names it with the open checks
-  beside it, as After the Poem's study reads them. Read the policy before the
-  category.
-- `materialized: true` is an author declaration. It does not inspect the receiving
-  document, field, program or state.
-- Traceability rests on caller-kept records. Gadfly does not authenticate or sign
-  them and deliberately does not check a record's prompt digest against the
-  current prompt in all replay cases.
-- `scopeCheck` records the owner's check of an exclusion; Gadfly does not make
-  that check itself.
-- The command line, the frame schema and the person-readable report are in the
-  package; see [Extending Gadfly](roadmap.md).
-- Gadfly is a small research library. A result is about the declared frame, test
-  inputs, scorer and encounter; it is not a general quality score.
+### Current limits
+
+A verdict is narrower than it may look. Read these before relying on one.
+
+- **A category is a reading, not a proof:** it is a fixed-rule reading of
+  observations under one frame, not proof of causality and not a probability.
+  A result is about the declared frame, inputs, scorer and encounter, not a
+  general quality score.
+- **Read the policy before the category:** under the default
+  `carriage: all-checks`, a category is named only once the checks it needs
+  have passed. `carriage: listed` names it with the open checks beside it, as
+  After the Poem's study reads them.
+- **Declarations are not inspections:** `materialized: true` is the author's
+  declaration, and Gadfly does not inspect the receiving document, field,
+  program or state. `scopeCheck` records the owner's check of an exclusion,
+  which Gadfly does not make itself.
+- **Records are yours to keep and trust:** traceability rests on records the
+  caller keeps, which Gadfly neither authenticates nor signs. It does not
+  check a record's prompt digest against the current prompt, so a replay may
+  keep its study's own; keep records somewhere you trust, with the run details
+  you need.
+- **A battery tests what it is:** a deterministic battery tests the frame and
+  its mechanics, not a model. A sampled live critic tests that model and
+  endpoint at one encounter, not a provider's general policy.

@@ -11,15 +11,22 @@
 
 Until now every trial gave one answer on every call. A sampled reader need not:
 eGemma samples at temperature 0.7 unless told otherwise, and these frames do
-not say. This step is an architecture review. The proposal sends the order
-confirmation by SMS inside the checkout request and waits for the provider; the
-requirements say checkout answers within 300 ms; the provider takes 400 to 900
-ms.
+not say.
 
-## The frame
+This step is an architecture review. The proposal sends the order confirmation
+by SMS inside the checkout request and waits for the provider; the requirements
+say checkout answers within 300 ms; the provider takes 400 to 900 ms.
+
+---
+
+### The frame
+
+Gadfly plans `09-sync-sms.json` like this, one span a line, the anchors marked
+`*`:
 
 ```text
-$ uv run python examples/read.py examples/09-sync-sms.json --frame
+$ uv run python examples/read.py \
+    examples/09-sync-sms.json --frame
 sync-sms-design: 1 input x 8 trials x 5 calls = 40 calls, 4 of 5 to agree
 relation: the request to revise the design rests on the checkout latency requirement
 grain: one requirement
@@ -64,7 +71,12 @@ baseline would clear that check.
 > The bypass stays at revise too (about 60%), a fallback on the same prior.
 > The control (the design and the provider cut): unclear.
 
-## What Gemma answered
+---
+
+### What Gemma answered
+
+Every call's label on `09-sync-sms.json`, trial by trial, over all the kept
+runs:
 
 ```text
 $ uv run python examples/read.py examples/09-sync-sms.json
@@ -83,12 +95,15 @@ run 2: unresolved
 run 3: cooled
 ```
 
-## What Gadfly read
+---
+
+### What Gadfly read
 
 Runs 1 and 3 agreed on every trial:
 
 ```text
-$ uv run python examples/read.py examples/09-sync-sms.json --verdict 1
+$ uv run python examples/read.py \
+    examples/09-sync-sms.json --verdict 1
 review: cooled
   levels: baseline revise, repeat revise, ablation revise, sham-1 revise, sham-2 revise, presentation revise, bypass revise, control unclear
   evidence: ablation left it at revise
@@ -104,7 +119,8 @@ bypass, which stayed at revise, is listed open beside it.
 Run 2's bypass got three revise and two unclear:
 
 ```text
-$ uv run python examples/read.py examples/09-sync-sms.json --verdict 2
+$ uv run python examples/read.py \
+    examples/09-sync-sms.json --verdict 2
 review: unresolved
   levels: baseline revise, repeat revise, ablation revise, sham-1 revise, sham-2 revise, presentation revise, bypass None, control unclear
   evidence: no agreed level in: bypass
@@ -121,7 +137,9 @@ whether the wait matters is a guess, and over three runs the bypass calls went
 ten to five. One run of 40 calls would have read cooled or unresolved by the
 luck of the draw; three runs show which trial is fragile.
 
-## What to take from it
+---
+
+### What to take from it
 
 - A level belongs to a trial at a standing, not to the reader. Choose quorum and
   agree before the first call.
@@ -130,7 +148,9 @@ luck of the draw; three runs show which trial is fragile.
 - Run a frame more than once when its result matters, and read one run's verdict
   as one draw.
 
-## Try next
+---
+
+### Try next
 
 `uv run gadfly plan examples/09-sync-sms.json` prints the trials and their
 calls. Work out what the bypass's ten to five would have read at a quorum of 3

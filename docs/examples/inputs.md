@@ -15,10 +15,16 @@ three that should not. One grant line, "members of Finance may read the payroll
 table", and three requests against the same policy: Dana (in Finance), Sam (in
 Support) and the nightly backup job (granted every table by its own line).
 
-## The frame
+---
+
+### The frame
+
+Gadfly plans `12-payroll-access.json` like this, one span a line, the anchors
+marked `*`:
 
 ```text
-$ uv run python examples/read.py examples/12-payroll-access.json --frame
+$ uv run python examples/read.py \
+    examples/12-payroll-access.json --frame
 payroll-access: 3 inputs x 8 trials x 5 calls = 120 calls, 4 of 5 to agree
 relation: allowing a payroll read rests on the grant to Finance
 grain: one grant line, across three requesters
@@ -47,10 +53,11 @@ trials:
 allowed: ablation -> deny, unclear; bypass -> unclear
 ```
 
-The anchor is the grant to Finance. The bypass cuts the directory, the line that
-puts Dana in Finance. The control cuts every grant that could allow a payroll
-read, and the default. The promise expects three readings: only Dana rests on
-the grant.
+The anchor is the grant to Finance. The bypass cuts the directory, the line
+that puts Dana in Finance.
+
+The control cuts every grant that could allow a payroll read, and the default.
+The promise expects three readings: only Dana rests on the grant.
 
 > [!NOTE]
 > **Predicted before the first call**
@@ -62,10 +69,16 @@ the grant.
 > unresolved, although that is what the promise expects: the frame cannot
 > state a different expectation for each input.
 
-## What Gemma answered
+---
+
+### What Gemma answered
+
+Every call's label on `12-payroll-access.json`, trial by trial, over all the
+kept runs:
 
 ```text
-$ uv run python examples/read.py examples/12-payroll-access.json
+$ uv run python examples/read.py \
+    examples/12-payroll-access.json
 payroll-access: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         dana        sam         backup-job
 baseline      allow 15    deny 15     allow 15
@@ -83,10 +96,15 @@ run 3: unresolved (dana carried, sam unresolved, backup-job cooled)
 
 Each requester reads differently, and the same in every run.
 
-## What Gadfly read
+---
+
+### What Gadfly read
+
+Run 1's verdict on `12-payroll-access.json`, in the words `gadfly report` uses:
 
 ```text
-$ uv run python examples/read.py examples/12-payroll-access.json --verdict 1
+$ uv run python examples/read.py \
+    examples/12-payroll-access.json --verdict 1
 dana: carried
   levels: baseline allow, repeat allow, ablation deny, sham-1 allow, sham-2 allow, presentation allow, bypass unclear, control deny
   evidence: ablation moved it allow -> deny; held under presentation, 2 shams
@@ -118,12 +136,15 @@ backup-job: cooled
 `overall` keeps each input's category and reads the frame as unresolved: any
 unresolved input makes it so, and so does a mix of carried and cooled. That is
 the right reading of the rules and the wrong one for this promise, which
-expects exactly these three. A frame states one `allowed` and one designated
-opening for all its inputs. `gadfly report` prints the same reading with the
-evidence of all three inputs together; [Example report](../breadth/report-example.md)
-reads one through.
+expects exactly these three.
 
-## What to take from it
+A frame states one `allowed` and one designated opening for all its inputs.
+`gadfly report` prints the same reading with the evidence of all three inputs
+together; [Example report](../breadth/report-example.md) reads one through.
+
+---
+
+### What to take from it
 
 - Inputs are cases of one promise, each read on its own, and `overall` never
   hides a weaker one.
@@ -133,7 +154,9 @@ reads one through.
   different `allowed` answers their own frames. `examples/FINDINGS.md` lists
   this as an open design call.
 
-## Try next
+---
+
+### Try next
 
 Split 12 into three frames, one per requester, each with its own `allowed` and
 its own bypass, and predict each verdict. Sam's frame needs a control that can

@@ -8,7 +8,9 @@
 > - **Frame:** yours.
 > - **After:** [Paths](paths.md).
 
-## Which trial answers which question
+---
+
+### Which trial answers which question
 
 | You want to know whether... | Declare | Step that shows it |
 |---|---|---|
@@ -24,7 +26,9 @@
 | several cases of one promise read alike | several `inputs` | [Several inputs](inputs.md), [Paths](paths.md) |
 | a finer cut tells more | another frame at another `grain` | [Grain](grain.md) |
 
-## The method
+---
+
+### The method
 
 1. **Write the frame.** Start from the example closest to your decision, and
    run `uv run gadfly check-frame my-frame.json` until it is accepted. Define
@@ -41,19 +45,23 @@
 7. **Never edit a frame after its runs.** A frame that asked the wrong question
    gets a new version beside it, with the reason, and the old one keeps its runs.
 
-With eGemma on this machine (its key in `EGEMMA_API_KEY` or
-`EGEMMA_API_KEY_FILE`):
+With eGemma on this machine and its key in `EGEMMA_API_KEY` or
+`EGEMMA_API_KEY_FILE`, these commands plan a kept frame's 40 calls, run it
+fresh and read the verdict:
 
 ```bash
-uv run gadfly plan examples/09-sync-sms.json   # 40 calls
-uv run gadfly run examples/09-sync-sms.json --battery gadfly.batteries.egemma:EGemma \
-    --calls 40 --out my-run.jsonl
+uv run gadfly plan examples/09-sync-sms.json
+uv run gadfly run examples/09-sync-sms.json \
+  --battery gadfly.batteries.egemma:EGemma \
+  --calls 40 --out my-run.jsonl
 uv run gadfly report examples/09-sync-sms.json my-run.jsonl
 ```
 
 This reads a kept frame fresh, without adding to its runs. Each kept run was
-made by `examples/climb.py`, which runs a frame against eGemma and keeps the run
-beside the others. A reader other than the one recorded (another model, another
-revision, another temperature) is a new experiment: write its predictions down
-first. [Batteries](../batteries.md) covers other readers, and
-[Write a frame](../write-a-frame.md) every field.
+made by `examples/climb.py`, which runs a frame against eGemma and keeps the
+run beside the others.
+
+A reader other than the one recorded (another model, another revision, another
+temperature) is a new experiment: write its predictions down first.
+[Batteries](../batteries.md) covers other readers, and [Write a
+frame](../write-a-frame.md) every field.

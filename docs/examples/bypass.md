@@ -14,10 +14,16 @@ Cross-domain, legal into engineering, at the grain of one clause. A customer's
 product manager asks for session replay; the vendor stores recordings in the
 US; the customer's agreement keeps their data in the EU.
 
-## The frame
+---
+
+### The frame
+
+Gadfly plans `11-eu-clause.json` like this, one span a line, the anchors marked
+`*`:
 
 ```text
-$ uv run python examples/read.py examples/11-eu-clause.json --frame
+$ uv run python examples/read.py \
+    examples/11-eu-clause.json --frame
 eu-clause: 1 input x 8 trials x 5 calls = 40 calls, 4 of 5 to agree
 relation: blocking the integration rests on the contract clause that keeps customer data in the EU
 grain: one contract clause
@@ -47,10 +53,12 @@ allowed: ablation -> enable, unclear; bypass -> unclear
 The anchor is the clause. But a clause binds this customer only through the
 line that says the customer signed it, "Acme GmbH signed the Enterprise
 agreement in March". That line is the connection, and the **bypass** cuts it
-and keeps the clause. `allowed.bypass` names the answer the bypass must reach to
-clear its check, the **designated opening**: unclear, since without that line
-nothing says the agreement is Acme's. A reader that still blocks is applying the
-clause without its connection, which is a hidden fallback.
+and keeps the clause.
+
+`allowed.bypass` names the answer the bypass must reach to clear its check, the
+**designated opening**: unclear, since without that line nothing says the
+agreement is Acme's. A reader that still blocks is applying the clause without
+its connection, which is a hidden fallback.
 
 [Your first frame](../first-frame.md#6-cut-the-connection-bypass) named no
 opening, so any move from the baseline cleared its bypass. Naming one is the
@@ -64,7 +72,12 @@ stronger claim.
 > so cooled. The bypass: block rather than unclear (about 60%), so that check
 > stays open. The control: enable or unclear.
 
-## What Gemma answered
+---
+
+### What Gemma answered
+
+Every call's label on `11-eu-clause.json`, trial by trial, over all the kept
+runs:
 
 ```text
 $ uv run python examples/read.py examples/11-eu-clause.json
@@ -83,10 +96,15 @@ run 2: unresolved
 run 3: unresolved
 ```
 
-## What Gadfly read
+---
+
+### What Gadfly read
+
+Run 1's verdict on `11-eu-clause.json`, in the words `gadfly report` uses:
 
 ```text
-$ uv run python examples/read.py examples/11-eu-clause.json --verdict 1
+$ uv run python examples/read.py \
+    examples/11-eu-clause.json --verdict 1
 enable: unresolved
   levels: baseline block, repeat block, ablation unclear, sham-1 block, sham-2 block, presentation block, bypass block, control unclear
   evidence: ablation moved it block -> unclear; held under presentation, 2 shams
@@ -98,11 +116,15 @@ enable: unresolved
 Blocking rests on the clause: cut it and every call says unclear. The
 prediction was the opposite, a block on the GDPR prior. But the bypass blocks
 on every call: Gemma applies the agreement to Acme without the line that makes
-it Acme's. The open check, "bypass gave block, not the designated opening
-(unclear)", says that in Gadfly's words, and as the one carriage check still
-open it holds the verdict at unresolved. The bypass prediction was right.
+it Acme's.
 
-## What to take from it
+The open check, "bypass gave block, not the designated opening (unclear)", says
+that in Gadfly's words, and as the one carriage check still open it holds the
+verdict at unresolved. The bypass prediction was right.
+
+---
+
+### What to take from it
 
 - Ablation asks whether the anchor matters. Bypass asks whether it matters for
   the reason the frame claims, through the connection the frame names.
@@ -113,7 +135,9 @@ open it holds the verdict at unresolved. The bypass prediction was right.
   too; the verdict does not judge that, it says the decision does not rest on
   the line the frame says it does.
 
-## Try next
+---
+
+### Try next
 
 Add a second input: "Can we turn on ReplayCo session replay for Borealis Ltd?",
 with a line saying Borealis signed the Standard agreement, which has no data

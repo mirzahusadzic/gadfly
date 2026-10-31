@@ -24,10 +24,16 @@ database:
 
 10a holds only the fast route, and 10b only the slow one.
 
-## The frame
+---
+
+### The frame
+
+Gadfly plans `10a-incident-fast.json` like this, one span a line, the anchors
+marked `*`:
 
 ```text
-$ uv run python examples/read.py examples/10a-incident-fast.json --frame
+$ uv run python examples/read.py \
+    examples/10a-incident-fast.json --frame
 incident-fast: 4 inputs x 8 trials x 5 calls = 160 calls, 4 of 5 to agree
 relation: the answer 'database' rests on the rollback that left the latency as it was
 grain: one test
@@ -83,10 +89,16 @@ and those two lines are its anchors.
 > it is recent and salient (about 50%), which would read misaligned there.
 > Placement: database.
 
-## What Gemma answered
+---
+
+### What Gemma answered
+
+Every call's label on `10a-incident-fast.json`, trial by trial, over all the
+kept runs:
 
 ```text
-$ uv run python examples/read.py examples/10a-incident-fast.json
+$ uv run python examples/read.py \
+    examples/10a-incident-fast.json
 incident-fast: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         debug                          fix                 optimize                       alert
 baseline      unclear 10, database 4, api 1  database 15         database 12, api 2, unclear 1  api 8, database 7
@@ -102,8 +114,12 @@ run 2: coupled but misaligned (debug unresolved, fix cooled, optimize coupled bu
 run 3: coupled but misaligned (debug unresolved, fix coupled but misaligned, optimize unresolved, alert unresolved)
 ```
 
+Every call's label on `10b-incident-slow.json`, trial by trial, over all the
+kept runs:
+
 ```text
-$ uv run python examples/read.py examples/10b-incident-slow.json
+$ uv run python examples/read.py \
+    examples/10b-incident-slow.json
 incident-slow: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         debug              fix                 optimize     alert
 baseline      database 15        database 15         database 15  database 15
@@ -121,14 +137,23 @@ run 3: coupled but misaligned (debug unresolved, fix coupled but misaligned, opt
 With one route each, the baselines already differ. The metrics decide every
 task on every call. The rollback, an elimination (it was not the API), decides
 where the fix goes on every call, and the cause itself mostly not: unclear on
-ten calls of fifteen. Both routes are valid and lead an engineer to the same
-answer; to this reader the elimination is enough to act on, not enough to
-explain. The 10a prediction was wrong for debug and for the alert.
+ten calls of fifteen.
 
-## What Gadfly read
+Both routes are valid and lead an engineer to the same answer; to this reader
+the elimination is enough to act on, not enough to explain. The 10a prediction
+was wrong for debug and for the alert.
+
+---
+
+### What Gadfly read
+
+Run 2's verdict for `debug` on `10b-incident-slow.json`, in the words `gadfly
+report` uses:
 
 ```text
-$ uv run python examples/read.py examples/10b-incident-slow.json --verdict 2 --input debug
+$ uv run python examples/read.py \
+    examples/10b-incident-slow.json --verdict 2 \
+    --input debug
 debug: coupled but misaligned
   levels: baseline database, repeat database, ablation api, sham-1 database, sham-2 database, presentation database, control database
   evidence: ablation moved it database -> api, which the frame does not allow
@@ -138,17 +163,22 @@ debug: coupled but misaligned
 Cut the only route and the answers do not go to unclear: they go to api, the
 service named in the symptom. That is **coupled but misaligned**. The ablation
 moved, so the anchors do influence the decision, but to an answer the frame
-does not allow. The rule is read before cooled and carried, and no later check
-can clear it. 10b reads misaligned on every task whose ablation agreed, in every
-run. Most of 10a's task-runs are unresolved: with only the elimination, the
-debug and alert baselines split, and a trial without a level comes first. A
-run's overall reading is misaligned when any input is, so two of 10a's three
-runs read misaligned too.
+does not allow.
+
+The rule is read before cooled and carried, and no later check can clear it.
+10b reads misaligned on every task whose ablation agreed, in every run.
+
+Most of 10a's task-runs are unresolved: with only the elimination, the debug
+and alert baselines split, and a trial without a level comes first. A run's
+overall reading is misaligned when any input is, so two of 10a's three runs
+read misaligned too.
 
 Placement left every level it could be compared with where it was: where the
 rollback sits did not matter.
 
-## What to take from it
+---
+
+### What to take from it
 
 - `allowed` is the frame's promise put in labels. Write it from the promise,
   before the run.
@@ -158,7 +188,9 @@ rollback sits did not matter.
   two ablations, which ask the same timeline.
 - Inputs share one plan and one `allowed`, and each gets its own finding.
 
-## Try next
+---
+
+### Try next
 
 Change 10b's instruction to say "answer unclear unless the evidence rules a
 component in or out", and predict whether its ablation still goes to api. The

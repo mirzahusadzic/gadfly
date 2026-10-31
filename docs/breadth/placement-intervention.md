@@ -3,17 +3,21 @@
 It replaces the workaround of making a second frame just to move one span, which
 loses a paired in-frame comparison and doubles setup.
 
-## Need
+---
+
+### Need
 
 The essay treats each intervention as a change to the declared relation that
-preserves the rest of the encounter. `presentation` changes wording with a
-one-to-one rename. It cannot test whether structural location matters: a grant
-placed before or after an instruction, a caveat moved out of its section, or a
-code invariant moved away from the operation it governs.
+keeps the rest of the encounter. `presentation` changes wording with a
+one-to-one rename, so it cannot test whether a span's place matters: a grant
+before or after an instruction, a caveat moved out of its section, or a code
+invariant moved away from the operation it governs.
 
-## Interface
+---
 
-One optional key:
+### Interface
+
+It is one optional key of `interventions`:
 
 ```json
 {
@@ -24,7 +28,7 @@ One optional key:
 }
 ```
 
-Semantics:
+The trial works like this:
 
 - `span` and `after` name distinct body spans.
 - The trial removes `span` from its current position and inserts it immediately
@@ -35,7 +39,9 @@ Semantics:
   `coupled but misaligned`: structure, not just wording, drove the observation.
 - The cost is one trial times `quorum`.
 
-## Contracts
+---
+
+### Contracts
 
 - The key is additive. Existing frame hashes and records are unchanged until a
   frame declares `placement`.
@@ -46,7 +52,9 @@ Semantics:
 - `frame.py`, `interventions.py`, `verdict.py`, the frame table, the trials
   table and the JSON Schema all know the key.
 
-## Tests
+---
+
+### Tests
 
 1. A placement that reorders the body yields a distinct `body_hash` and a
    `placement` trial, planned after presentation and before bypass.

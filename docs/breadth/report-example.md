@@ -7,7 +7,8 @@ up to, then each input's category, its trials' levels, the evidence and what is
 still open, each kept apart.
 
 ```text
-$ uv run gadfly report examples/12-payroll-access.json examples/runs/12-payroll-access/1.jsonl
+$ uv run gadfly report examples/12-payroll-access.json \
+    examples/runs/12-payroll-access/1.jsonl
 frame: payroll-access (202930b299ef9e09c878a7bec08524032b364c6d2fb91d94f72d8e018bff7cf7)
 records: 120  planned calls: 120
 overall: unresolved
@@ -56,19 +57,22 @@ backup-job: cooled
   obligation: no hidden fallback: bypass gave allow, not the designated opening (unclear)
 ```
 
-Read it from the bottom. The backup job is allowed by its own grant whatever
-happens to Finance's (the ablation left it at allow), and the control, which
-cuts every grant, shows the reader can move: **cooled**. Its bypass cut the
-directory, which the backup job never needed, so it stayed at allow rather than
-the designated opening, and that check stays open. Sam is denied whatever is
-cut, the control included, so nothing shows the reader could move for him:
-**unresolved**, with the `discrimination` obligation saying what is missing.
-Dana is **carried**: cut the grant and she is denied, cut the directory entry
-that puts her in Finance and the answer is unclear, rename and cut neighbours
-and nothing moves.
+Read it from the bottom, one requester at a time.
+
+- **The backup job, cooled:** its own grant allows it whatever happens to
+  Finance's, so the ablation left it at allow, and the control, which cuts
+  every grant, shows the reader can move. Its bypass cut the directory, which
+  the backup job never needed, so it stayed at allow rather than the
+  designated opening, and that check stays open.
+- **Sam, unresolved:** he is denied whatever is cut, the control included, so
+  nothing shows the reader could move for him; the `discrimination`
+  obligation says what is missing.
+- **Dana, carried:** cut the grant and she is denied, cut the directory entry
+  that puts her in Finance and the answer is unclear, and renaming or cutting
+  neighbours moves nothing.
 
 The overall category is unresolved because one input is. Each input's evidence
 is kept, prefixed with the input's name, and an obligation every input shares
-would be said once. That one frame reads three ways here is by design, which the
-frame's single set of allowed answers cannot yet say; see
+would be said once. That one frame reads three ways here is by design, which
+its single set of allowed answers cannot yet say; see
 [Several inputs](../examples/inputs.md).

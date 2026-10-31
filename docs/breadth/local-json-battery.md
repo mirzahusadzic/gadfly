@@ -3,14 +3,21 @@
 It replaces copy-pasted loopback HTTP code for local evaluators that already
 expose a JSON `judge` endpoint.
 
-## Need
+---
 
-`unified` reaches cloud providers through a router. `egemma` is specific to one
-service's wire format. A team with a local classifier, test oracle or retrieval
-checker should not have to reimplement loopback validation, no-proxy, redirect
-refusal, deadlines, response caps, label pointers and provenance.
+### Need
 
-## Interface
+`unified` reaches cloud providers through a router, and `egemma` is specific
+to one service's wire format. A team with a local classifier, test oracle or
+retrieval checker should not have to rebuild loopback validation, no-proxy,
+redirect refusal, deadlines, response caps, label pointers and provenance.
+
+---
+
+### Interface
+
+A frame names the evaluator's address, its deadline and where the label lives
+in its answer:
 
 ```json
 {
@@ -23,9 +30,11 @@ refusal, deadlines, response caps, label pointers and provenance.
 }
 ```
 
-Public class: `gadfly.batteries.local_json.LocalJSON`.
+The public class is `gadfly.batteries.local_json.LocalJSON`.
 
-Request (fixed, no arbitrary headers or tools):
+#### The request
+
+The request is fixed, with no headers or tools of the frame's choosing:
 
 ```json
 {
@@ -36,7 +45,10 @@ Request (fixed, no arbitrary headers or tools):
 }
 ```
 
-Response:
+#### The response
+
+The evaluator answers with the parsed answer, its text, its usage and what
+served it:
 
 ```json
 {
@@ -47,7 +59,9 @@ Response:
 }
 ```
 
-## Contracts
+---
+
+### Contracts
 
 - only plain `http` URLs whose parsed host is `127.0.0.1`, `localhost` or `::1`;
 - no environment proxy and no redirects, reusing `critic.opener()`;
@@ -58,7 +72,9 @@ Response:
   separate battery with an explicit credential contract;
 - records use the existing `Observation` and `Record` fields, including `served`.
 
-## Tests
+---
+
+### Tests
 
 The request is the easy part; the tests are the negative ones: an address off
 this machine, a proxy in the environment, a redirect, an unreachable evaluator,

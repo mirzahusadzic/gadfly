@@ -20,7 +20,7 @@ const description =
 // frames, the reference, and the background. docs/in-plain-words.md is a
 // draft, built but not listed.
 const guides = ['write-a-frame', 'interventions', 'reading-a-verdict', 'batteries'];
-const reference = ['reference', 'roadmap', 'breadth/'];
+const reference = ['command-line', 'reference', 'glossary', 'roadmap', 'breadth/'];
 const sidebar = [
   { text: 'Home', link: '/' },
   {
@@ -59,7 +59,9 @@ const sidebar = [
   {
     text: 'Reference',
     items: [
+      { text: 'Command line', link: '/command-line' },
       { text: 'Python API', link: '/reference' },
+      { text: 'Glossary', link: '/glossary' },
       {
         text: 'Extending Gadfly',
         collapsed: true,
@@ -119,7 +121,7 @@ export default defineConfig({
       { text: 'Start here', link: '/first-frame', activeMatch: '^/(first-frame|framework)' },
       { text: 'Examples', link: '/examples/', activeMatch: '^/examples/' },
       { text: 'Guides', link: '/write-a-frame', activeMatch: `^/(${guides.join('|')})` },
-      { text: 'Reference', link: '/reference', activeMatch: `^/(${reference.join('|')})` },
+      { text: 'Reference', link: '/command-line', activeMatch: `^/(${reference.join('|')})` },
     ],
     sidebar,
     outline: { level: [2, 4], label: 'On this page' },

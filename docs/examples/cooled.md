@@ -13,14 +13,22 @@
 Your first frame ended carried: cut the line and the decision moved. This step
 asks what it means when it does not move. Two pull requests each break one
 repository rule, and the two frames are alike but for the rule, the diff and
-its names. 07's rule forbids formatting a value into SQL, which every reviewer
-is taught. 08's forbids calling `datetime.now()` directly, a house rule no
-reviewer could know without reading it.
+its names.
 
-## The frame
+07's rule forbids formatting a value into SQL, which every reviewer is taught.
+08's forbids calling `datetime.now()` directly, a house rule no reviewer could
+know without reading it.
+
+---
+
+### The frame
+
+Gadfly plans `07-sql-rule.json` like this, one span a line, the anchors marked
+`*`:
 
 ```text
-$ uv run python examples/read.py examples/07-sql-rule.json --frame
+$ uv run python examples/read.py \
+    examples/07-sql-rule.json --frame
 sql-rule: 1 input x 7 trials x 5 calls = 35 calls, 4 of 5 to agree
 relation: the request for changes rests on the contributing rule against formatting values into SQL
 grain: one contributing rule
@@ -47,10 +55,12 @@ allowed: ablation -> approve, unclear
 ```
 
 The anchor is the rule. Three other rules of its kind give the shams something
-harmless to cut. The new trial is the **control**: it cuts the rule and the
-diff together, what any reviewer needs in order to ask for changes. If the
-control cannot move the answer either, the reader is not reading this evidence,
-and no other result means much.
+harmless to cut.
+
+The new trial is the **control**: it cuts the rule and the diff together, what
+any reviewer needs in order to ask for changes. If the control cannot move the
+answer either, the reader is not reading this evidence, and no other result
+means much.
 
 > [!NOTE]
 > **Predicted before the first call**
@@ -60,7 +70,12 @@ and no other result means much.
 > unresolved with only "no hidden fallback" open, as neither frame declares a
 > bypass. The control: unclear in 07 (medium), unclear or approve in 08.
 
-## What Gemma answered
+---
+
+### What Gemma answered
+
+Every call's label on `07-sql-rule.json`, trial by trial, over all the kept
+runs:
 
 ```text
 $ uv run python examples/read.py examples/07-sql-rule.json
@@ -80,6 +95,9 @@ run 4: cooled
 run 5: cooled
 ```
 
+Every call's label on `08-clock-rule.json`, trial by trial, over all the kept
+runs:
+
 ```text
 $ uv run python examples/read.py examples/08-clock-rule.json
 clock-rule: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
@@ -98,10 +116,15 @@ run 4: unresolved
 run 5: unresolved
 ```
 
-## What Gadfly read
+---
+
+### What Gadfly read
+
+Run 1's verdict on `07-sql-rule.json`, in the words `gadfly report` uses:
 
 ```text
-$ uv run python examples/read.py examples/07-sql-rule.json --verdict 1
+$ uv run python examples/read.py \
+    examples/07-sql-rule.json --verdict 1
 review: cooled
   levels: baseline request-changes, repeat request-changes, ablation request-changes, sham-1 request-changes, sham-2 request-changes, presentation request-changes, control approve
   evidence: ablation left it at request-changes
@@ -112,15 +135,17 @@ review: cooled
 **Cooled** says the ablation left the decision where it was while a control
 showed the reader can move: the anchor carries nothing here, something else
 decides. In 07 that something is Gemma's training, which rejects formatted SQL
-with the rule or without it. Without the control, cooled would be a guess. A
-reader that never moves leaves every ablation where it was, and would make
-every relation look cooled. So under the default `carriage: all-checks`,
-Gadfly names cooled only beside a control that moved, and says so ("the scorer
-can tell"). A control that stays leaves the finding unresolved with
+with the rule or without it. Without the control, cooled would be a guess.
+
+A reader that never moves leaves every ablation where it was, and would make
+every relation look cooled. So under the default `carriage: all-checks`, Gadfly
+names cooled only beside a control that moved, and says so ("the scorer can
+tell"). A control that stays leaves the finding unresolved with
 `discrimination` open; [A frame built wrong](built-wrong.md) is that case.
 
 ```text
-$ uv run python examples/read.py examples/08-clock-rule.json --verdict 1
+$ uv run python examples/read.py \
+    examples/08-clock-rule.json --verdict 1
 review: unresolved
   levels: baseline request-changes, repeat request-changes, ablation approve, sham-1 request-changes, sham-2 request-changes, presentation request-changes, control approve
   evidence: ablation moved it request-changes -> approve; held under presentation, 2 shams
@@ -131,15 +156,18 @@ review: unresolved
 
 08 moves: cut the clock rule and Gemma approves. The shams and the presentation
 held, so the move is the rule's. But no bypass is declared, so one carriage
-check stays open: "not carried while 1 carriage check is open". Unresolved here
-is a test not finished, not a test failed. 08 declares no bypass because the
-rule reaches the decision only through the diff, which the control already
-cuts.
+check stays open: "not carried while 1 carriage check is open".
+
+Unresolved here is a test not finished, not a test failed. 08 declares no
+bypass because the rule reaches the decision only through the diff, which the
+control already cuts.
 
 07's control was predicted unclear and came out approve: with the diff gone,
 every rule still in view is satisfied.
 
-## What to take from it
+---
+
+### What to take from it
 
 - A rule that carries nothing is not a useless rule. A reviewer like this one
   would enforce it anyway, so the rule is not what a reader of its decisions
@@ -148,7 +176,9 @@ every rule still in view is satisfied.
 - A contrast pair, two frames alike but for one thing, says more than either
   alone: the same shape and the same reader, read two ways.
 
-## Try next
+---
+
+### Try next
 
 Write a third frame for the pair: a house rule Gemma could half-guess, such as
 "every new endpoint declares a rate limit", and a diff that adds an endpoint

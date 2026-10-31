@@ -15,10 +15,16 @@ rollback and the metrics, and an engineer may take either, one faster than the
 other, to the same answer. Then cutting one route asks whether the decision
 needs it, and cutting both asks whether it rests on the other.
 
-## The frame
+---
+
+### The frame
+
+Gadfly plans `10c2-incident-both.json` like this, one span a line, the anchors
+marked `*`:
 
 ```text
-$ uv run python examples/read.py examples/10c2-incident-both.json --frame
+$ uv run python examples/read.py \
+    examples/10c2-incident-both.json --frame
 incident-both-v2: 4 inputs x 8 trials x 5 calls = 160 calls, 4 of 5 to agree
 relation: the answer 'database' rests on the rollback that left the latency as it was
 grain: one test, with a second route present
@@ -55,10 +61,11 @@ allowed: ablation -> unclear
 ```
 
 The anchor is the rollback. The **cumulative** trial cuts the anchors and more:
-here the rollback and both metrics, every route at once. That leaves the same
-timeline the ablations of 10a and 10b asked, word for word. The control cuts
-every line that points anywhere: the deploy, the failover, both metrics and the
-rollback.
+here the rollback and both metrics, every route at once.
+
+That leaves the same timeline the ablations of 10a and 10b asked, word for
+word. The control cuts every line that points anywhere: the deploy, the
+failover, both metrics and the rollback.
 
 10d is the other half: the same timeline, with the two metrics as its anchors
 and the rollback as its cumulative's extra cut.
@@ -72,10 +79,16 @@ and the rollback as its cumulative's extra cut.
 > rollback, so it answers as 10a's baseline did: debug mostly unclear, the fix
 > database, optimize mostly database, the alert split.
 
-## What Gemma answered
+---
+
+### What Gemma answered
+
+Every call's label on `10c2-incident-both.json`, trial by trial, over all the
+kept runs:
 
 ```text
-$ uv run python examples/read.py examples/10c2-incident-both.json
+$ uv run python examples/read.py \
+    examples/10c2-incident-both.json
 incident-both-v2: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         debug              fix                optimize           alert
 baseline      database 15        database 15        database 15        database 15
@@ -91,8 +104,12 @@ run 2: unresolved (debug cooled, fix unresolved, optimize cooled, alert cooled)
 run 3: unresolved (debug cooled, fix cooled, optimize cooled, alert unresolved)
 ```
 
+Every call's label on `10d-incident-metrics.json`, trial by trial, over all the
+kept runs:
+
 ```text
-$ uv run python examples/read.py examples/10d-incident-metrics.json
+$ uv run python examples/read.py \
+    examples/10d-incident-metrics.json
 incident-both-metrics: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         debug                          fix                optimize                       alert
 baseline      database 15                    database 15        database 15                    database 15
@@ -108,10 +125,17 @@ run 2: unresolved (debug unresolved, fix cooled, optimize cooled, alert unresolv
 run 3: coupled but misaligned (debug unresolved, fix cooled, optimize cooled, alert coupled but misaligned)
 ```
 
-## What Gadfly read
+---
+
+### What Gadfly read
+
+Run 3's verdict for `optimize` on `10c2-incident-both.json`, in the words
+`gadfly report` uses:
 
 ```text
-$ uv run python examples/read.py examples/10c2-incident-both.json --verdict 3 --input optimize
+$ uv run python examples/read.py \
+    examples/10c2-incident-both.json --verdict 3 \
+    --input optimize
 optimize: cooled
   levels: baseline database, repeat database, ablation database, cumulative api, sham-1 database, sham-2 database, presentation database, control api
   evidence: ablation left it at database
@@ -122,17 +146,20 @@ optimize: cooled
 
 The ablation left it at database, and the control moved it, so the reader can
 tell. The cumulative moved it too, so the decision rests on what the cumulative
-also cut. That last line is what the trial is for. Cooled alone says the
-rollback is not needed; with the cumulative it says the decision is carried
-elsewhere too, here by the metrics. The rollback is a valid route the decision
-does not need while the metrics are there.
+also cut. That last line is what the trial is for.
+
+Cooled alone says the rollback is not needed; with the cumulative it says the
+decision is carried elsewhere too, here by the metrics. The rollback is a valid
+route the decision does not need while the metrics are there.
 
 10d cuts the metrics instead, and its answers fall back to the fast route's: its
 ablation asks the same body as 10a's baseline, and the two agree within a call
 or two of fifteen. The diagnosis rests on the metrics:
 
 ```text
-$ uv run python examples/read.py examples/10d-incident-metrics.json --verdict 1 --input debug
+$ uv run python examples/read.py \
+    examples/10d-incident-metrics.json --verdict 1 \
+    --input debug
 debug: unresolved
   levels: baseline database, repeat database, ablation unclear, cumulative api, sham-1 database, sham-2 database, presentation database, control api
   evidence: ablation moved it database -> unclear; held under presentation, 2 shams
@@ -152,7 +179,9 @@ usually has a trial whose calls split, such as the fix's cumulative in 10c2 (api
 9, database 6), and one unresolved input makes the run unresolved. 10c2's
 prediction, cooled overall in about one run in three, was wrong.
 
-## What to take from it
+---
+
+### What to take from it
 
 - Declare a cumulative trial when a decision could rest on more than one route.
   Without it, cooled says only "not this"; with it, it also says "and here
@@ -165,7 +194,9 @@ prediction, cooled overall in about one run in three, was wrong.
   with every route cut: api on 9 of 15 calls in 10a, on 13 or 14 in each of the
   four other frames.
 
-## Try next
+---
+
+### Try next
 
 Add a third route to 10c2's timeline, say "the API's CPU stayed near 30%", and
 predict whether the cumulative still moves the diagnosis. It is a new frame,

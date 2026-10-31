@@ -14,10 +14,16 @@ Some paths to an outcome are faster, some slower, some cheaper; several can be
 valid. These two frames ask whether a reviewer judges the result or the route
 taken to it. Each route is an input, and the evidence they share is the anchor.
 
-## 14: one goal, five paths
+---
+
+### 14: one goal, five paths
+
+Gadfly plans `14-orders-latency.json` like this, one span a line, the anchors
+marked `*`:
 
 ```text
-$ uv run python examples/read.py examples/14-orders-latency.json --frame
+$ uv run python examples/read.py \
+    examples/14-orders-latency.json --frame
 orders-latency: 5 inputs x 8 trials x 5 calls = 200 calls, 4 of 5 to agree
 relation: accepting each performance change rests on the goal it is measured against
 grain: one goal, five paths to it
@@ -69,7 +75,8 @@ connects each change to the goal.
 > 55%).
 
 ```text
-$ uv run python examples/read.py examples/14-orders-latency.json
+$ uv run python examples/read.py \
+    examples/14-orders-latency.json
 orders-latency: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         index       cache                 batch                           readmodel   timeout
 baseline      accept 15   accept 15             accept 12, reject 3             accept 15   reject 15
@@ -88,11 +95,14 @@ run 3: unresolved (index carried, cache carried, batch unresolved, readmodel car
 The four that meet the goal are accepted whatever their cost, and each rests on
 the goal and on its load test: cut either and the answer is unclear, so they
 are carried whenever their levels agree. Both cuts were predicted otherwise.
+
 The batched query, 180 ms against 200, is the one near its threshold and the
 one whose calls spread. The timeout is the other kind of input:
 
 ```text
-$ uv run python examples/read.py examples/14-orders-latency.json --verdict 1 --input timeout
+$ uv run python examples/read.py \
+    examples/14-orders-latency.json --verdict 1 \
+    --input timeout
 timeout: unresolved
   levels: baseline reject, repeat reject, ablation unclear, sham-1 reject, sham-2 reject, presentation reject, bypass reject, control unclear
   evidence: ablation moved it reject -> unclear; held under presentation, 2 shams
@@ -106,7 +116,9 @@ timeout makes nothing faster, which needs no measurement. The designated
 opening, unclear, is right for the four improvements and wrong for this one,
 so its check stays open for a reason that does not apply.
 
-## 15: one change, four processes
+---
+
+### 15: one change, four processes
 
 One pull request, the same diff and the same passing test, reached four ways:
 the test written first, a notebook prototype first, an AI assistant, or
@@ -121,7 +133,8 @@ passing test.
 > clean linters, which would be cooled.
 
 ```text
-$ uv run python examples/read.py examples/15-invoice-export.json
+$ uv run python examples/read.py \
+    examples/15-invoice-export.json
 invoice-export: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         test-first  prototype   assistant   pairing
 baseline      accept 15   accept 15   accept 15   accept 15
@@ -141,7 +154,9 @@ unclear without it. The process carried nothing, and the test result carried
 the decision, as the promise says. No bypass is declared, so each input is
 unresolved with only that check open.
 
-## What to take from it
+---
+
+### What to take from it
 
 - To ask whether the route matters, make the routes the inputs and keep the
   evidence the same. To ask whether the result matters, anchor the result.
@@ -150,7 +165,9 @@ unresolved with only that check open.
 - A designated opening applies to every input. When one input should land
   elsewhere, as the timeout should, give it a frame of its own.
 
-## Try next
+---
+
+### Try next
 
 In 15 the process lives in the question, so no trial can cut it. Write 15b with
 the process as a span of the evidence ("Process: an AI assistant wrote the code

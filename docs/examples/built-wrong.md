@@ -11,7 +11,8 @@
 10c2 is a second version. The first, 10c, differs by its name and its control:
 
 ```text
-$ git diff --no-index examples/10c-incident-both.json examples/10c2-incident-both.json
+$ git diff --no-index examples/10c-incident-both.json \
+    examples/10c2-incident-both.json
 diff --git a/examples/10c-incident-both.json b/examples/10c2-incident-both.json
 index 19265ed..1fd822f 100644
 --- a/examples/10c-incident-both.json
@@ -41,10 +42,16 @@ index 19265ed..1fd822f 100644
 which name the database's new primary, so it left a line pointing at the
 database.
 
-## What Gemma answered
+---
+
+### What Gemma answered
+
+Every call's label on `10c-incident-both.json`, trial by trial, over all the
+kept runs:
 
 ```text
-$ uv run python examples/read.py examples/10c-incident-both.json
+$ uv run python examples/read.py \
+    examples/10c-incident-both.json
 incident-both: 3 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
 trial         debug              fix                 optimize     alert
 baseline      database 15        database 15         database 15  database 15
@@ -60,10 +67,17 @@ run 2: unresolved (debug unresolved, fix unresolved, optimize unresolved, alert 
 run 3: unresolved (debug unresolved, fix unresolved, optimize unresolved, alert unresolved)
 ```
 
-## What Gadfly read
+---
+
+### What Gadfly read
+
+Run 1's verdict for `debug` on `10c-incident-both.json`, in the words `gadfly
+report` uses:
 
 ```text
-$ uv run python examples/read.py examples/10c-incident-both.json --verdict 1 --input debug
+$ uv run python examples/read.py \
+    examples/10c-incident-both.json --verdict 1 \
+    --input debug
 debug: unresolved
   levels: baseline database, repeat database, ablation database, cumulative api, sham-1 database, sham-2 database, presentation database, control database
   evidence: ablation left it at database, and so did the control: the scorer cannot tell
@@ -81,7 +95,9 @@ The reader was fine. The control did not cut what any reader needs, and the
 check that exists to catch a reader that cannot move caught the frame's author
 instead.
 
-## A new version, never an edit
+---
+
+### A new version, never an edit
 
 The fix was not to change 10c's control. Every record names the hash of the
 whole frame it was made under, so an edited frame refuses its old records
@@ -95,14 +111,18 @@ would leave nothing to show that it happened. So:
 
 A reader of the examples sees both versions and which came first.
 
-## What to take from it
+---
+
+### What to take from it
 
 - A control is a claim about the task: cut it and any reader must move. Check
   that it cuts everything that points to the answer.
 - When a check fails, ask first whether the frame asked the right question.
 - Correct a frame with a new version and its reason, and keep the old one.
 
-## Try next
+---
+
+### Try next
 
 Copy 10c to a file of your own, change one word of its `crossing`, and report a
 kept run against it:

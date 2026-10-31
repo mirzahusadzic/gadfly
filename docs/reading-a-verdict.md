@@ -4,97 +4,129 @@
 returns one `Overall` for the frame's test domain. Categories are read by fixed
 rules, not by a model.
 
+---
+
 <!-- copy README.md:verdicts -->
-## What Gadfly says
+### What Gadfly says
 
-Each input gets one **finding**; a multi-input frame gets one **overall**
-category over the findings. The categories are not scores. The first matching
-rule below names the category.
+Each input gets one **finding**, and a frame with several inputs gets one
+**overall** category over them. The categories are not scores; the first rule
+that matches names the category.
 
-| Finding | Plain meaning |
-|---|---|
-| `carried` | Ablation moved the observation as the promise allows, and every carriage check passed: presentation and the shams held, the bypass exposed its opening, and the frame says the observation is what the recipient receives. |
-| `coupled but misaligned` | The relation matters, but presentation or placement moved it, or ablation moved it where the promise disallows. |
-| `cooled` | Ablation left the observation unchanged while a control showed the scorer can move: this relation has no operative influence here. |
-| `unresolved` | There is not enough agreed evidence: a trial is missing or split, repeat is unstable, a sham moved too, the scorer cannot tell, or a check the category needs is still open. |
-| `outside scope` | The receiving owner declares the distinction unnecessary, and their own check of that exclusion is recorded. |
+- **`carried`:** ablation moved the observation as the promise allows, and
+  every carriage check passed: presentation and the shams held, the bypass
+  exposed its opening, and the frame says the observation is what the
+  recipient receives.
+- **`coupled but misaligned`:** the relation matters, but presentation or
+  placement moved it, or ablation moved it where the promise disallows.
+- **`cooled`:** ablation left the observation unchanged while a control
+  showed the scorer can move, so this relation has no operative influence
+  here.
+- **`unresolved`:** there is not enough agreed evidence: a trial is missing
+  or split, repeat is unstable, a sham moved too, the scorer cannot tell, or a
+  check the category needs is still open.
+- **`outside scope`:** the receiving owner declares the distinction
+  unnecessary, and their own check of that exclusion is recorded.
 
-Every finding separates **Evidence** (why this category) from **Obligations**
-(what the trials did not settle). An obligation is not a passed check. By
-default (`carriage: all-checks`) an open check keeps carried, cooled and
-outside scope unresolved, and the evidence says so; a frame that says
+Every finding keeps its **evidence** (why this category) apart from its
+**obligations** (what the trials did not settle), and an obligation is not a
+passed check. Under the default `carriage: all-checks`, an open check keeps
+carried, cooled and outside scope unresolved; a frame with
 `carriage: listed` names the category and lists its open checks beside it.
 <!-- end copy -->
 
-## The rules, in order
+---
 
-For each input, each trial's observations reduce to one level when exactly one
-label has at least `agree` observations. The first matching rule names the category:
+### The rules, in order
 
-1. **unresolved** — any planned trial has no agreed level. With `stable`, baseline
-   and repeat sessions must not split. A repeat level that differs from baseline
-   is also unresolved: the grain cannot tell the levels apart.
-2. **coupled but misaligned** — presentation moved the observation, or
+For each input, a trial's observations reduce to one level when exactly one
+label has at least `agree` of them. The first rule that matches names the
+category:
+
+1. **unresolved:** a planned trial has no agreed level. With `stable`, the
+   baseline and repeat sessions must not split, and a repeat level that
+   differs from the baseline is unresolved too: the grain cannot tell the
+   levels apart.
+2. **coupled but misaligned:** presentation moved the observation, or
    placement did.
-3. **coupled but misaligned** — ablation moved it outside `allowed`; for ordered
-   labels, the move was in the wrong direction.
-4. **cooled** — ablation left it unchanged. If a declared control also left it
-   unchanged, the finding is unresolved because the scorer cannot tell. Without a
-   control, discrimination is open.
-5. **unresolved** — a sham moved too, so the observed change is not specific.
-6. **carried** — otherwise.
+3. **coupled but misaligned:** ablation moved it outside `allowed`, or, for
+   ordered labels, in the wrong direction.
+4. **cooled:** ablation left it unchanged. If a declared control also left it
+   unchanged, the finding is unresolved because the scorer cannot tell; with
+   no control, discrimination is open.
+5. **unresolved:** a sham moved too, so the change is not specific.
+6. **carried:** otherwise.
 
-Then the open checks are listed, whatever the category: no hidden fallback,
-presentation invariance, specificity and materialization, and discrimination for
-cooled. Under the default `carriage: all-checks` a category is named only when
-the checks it needs have passed: every carriage check for carried, a control
-that moved for cooled. Otherwise the finding is unresolved, and its evidence
-says which (`not carried while 1 carriage check is open`). Under
-`carriage: listed` the category stands and its open checks are listed beside it.
+#### Open checks
 
-`outside scope` comes first when `outsideScope` is declared: the trials do not
-test an exclusion, so only the owner's check of it is open or settled. With
-`scopeCheck` the finding is outside scope and says who checked it, from what and
-when; without it, the finding is unresolved (under `listed`, outside scope with
-the check open). Records are still checked either way.
+Whatever the category, the checks still open are listed after it: no hidden
+fallback, presentation invariance, specificity and materialization, and
+discrimination for cooled.
 
-## Evidence is not obligation
+- **Under the default `carriage: all-checks`:** a category is named only when
+  the checks it needs have passed, every carriage check for carried and a
+  control that moved for cooled. Otherwise the finding is unresolved, and its
+  evidence says why (`not carried while 1 carriage check is open`).
+- **Under `carriage: listed`:** the category stands, with its open checks
+  listed beside it.
+
+#### Outside scope
+
+`outside scope` comes first when the frame declares `outsideScope`, because
+the trials do not test an exclusion; only the owner's check of it is open or
+settled. With `scopeCheck`, the finding is outside scope and says who checked
+it, from what and when. Without it the finding is unresolved, or outside scope
+with the check open under `listed`, and the records are checked either way.
+
+---
+
+### Evidence is not obligation
+
+A finding keeps why its category was named apart from what is still open:
 
 ```python
 [finding] = judge(frame, kept)
-print(finding.category)      # the fixed-rule answer for this input
-print(finding.levels)        # agreed level or None for each planned trial
-print(finding.evidence)      # why this category
-print(finding.obligations)   # what did not run or did not pass
+print(finding.category)
+print(finding.levels)
+print(finding.evidence)
+print(finding.obligations)
 ```
 
-An evidence line such as `ablation moved it decline -> grant` says why the rule
-matched. An obligation such as `no hidden fallback: bypass left it at decline`
-says that a required check remains open. A UI must not merge the two lists or
-render an obligation as a warning on an otherwise unconditional success.
+- **`category`:** the fixed-rule answer for this input.
+- **`levels`:** each planned trial's agreed level, or `None`.
+- **`evidence`:** why this category, such as
+  `ablation moved it decline -> grant`.
+- **`obligations`:** what did not run or did not pass, such as
+  `no hidden fallback: bypass left it at decline`.
 
-The five carriage checks in the essay are required influence, presentation
-invariance, no hidden fallback, traceability and materialization. Required
-influence is the ablation rule; presentation invariance, no hidden fallback and
-materialization are open checks until their trials or the frame settle them;
-traceability rests on the records, each of which names its frame, battery, body,
-prompt and what served it.
+A UI must not merge the two lists, or show an obligation as a warning on an
+otherwise unconditional success. Of the essay's five carriage checks, required
+influence is the ablation rule, and presentation invariance, no hidden
+fallback and materialization stay open until their trials or the frame settle
+them. Traceability rests on the records, each of which names its frame,
+battery, body, prompt and what served it.
 
-## Several inputs
+---
 
-`overall` preserves each input's category and evidence:
+### Several inputs
+
+`overall` keeps each input's category and evidence, and names one category for
+the frame:
 
 - `outside scope` when declared for the frame;
 - otherwise `coupled but misaligned` if any input is;
-- otherwise `unresolved` if any input is unresolved, or if carried and cooled are mixed;
+- otherwise `unresolved` if any input is unresolved, or if carried and cooled
+  are mixed;
 - otherwise the one category all inputs share.
 
-Shared obligations appear once; other obligations keep the input id. The overall
+Shared obligations appear once, and others keep their input's id. The overall
 category never makes a weaker input disappear.
 
-## Partial and stopped runs
+---
 
-A stopped run is not a verdict on all planned trials. Continue it with the
+### Partial and stopped runs
+
+A stopped run is not a verdict on all the planned trials. Continue it with the
 records you kept:
 
 ```python
@@ -102,12 +134,18 @@ continued = run(frame, battery, Budget(calls=12), kept=kept)
 all_records = [*kept, *continued.records]
 ```
 
-The same `(input, trial, run)` is never made twice. If a record is lost, that call
-becomes missing and the finding is unresolved until it is made again or dropped
-from `kept` intentionally. Records from another frame or battery, an unknown
-trial, a duplicate run, or a label outside `observe.labels` are refused.
+The same `(input, trial, run)` is never made twice. A lost record makes its
+call missing, and the finding stays unresolved until the call is made again
+or deliberately dropped from `kept`. Records from another frame or battery, an
+unknown trial, a duplicate run, or a label outside `observe.labels` are
+refused.
 
-## Refused records
+---
+
+### Refused records
+
+Each refusal says what went wrong with a kept record, before any verdict is
+read from it.
 
 | Refusal | Meaning |
 |---|---|
@@ -119,4 +157,3 @@ trial, a duplicate run, or a label outside `observe.labels` are refused.
 | `run N is outside the quorum of M` | re-situate with the intended standing; do not edit the record |
 | `two records for input/trial run N` | the persisted set contains the same call twice |
 | `... is not one of this frame's labels` | the scorer's answer was outside the declared observation map |
-
