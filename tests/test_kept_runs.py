@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from examples.read import runs_of
+from examples.read import runs_of, verdict
 from gadfly.cli import load_records
 from gadfly.pipeline import calls_needed, judge, situate
 from gadfly.verdict import CARRIED as CAR
@@ -19,7 +19,7 @@ EXAMPLES = Path(__file__).parent.parent / "examples"
 FRAMES = sorted(EXAMPLES.glob("*.json"))
 
 # Each kept run's category for each input, in the frame's order of inputs, as
-# examples/RESULTS.md and docs/examples.md report them: a frame edited after its
+# examples/RESULTS.md and docs/examples/ report them: a frame edited after its
 # runs refuses them, and a change to the rules that reads them otherwise fails here.
 REPORTED: dict[str, list[list[str]]] = {
     "07-sql-rule": [[COO]] * 5,
@@ -73,3 +73,10 @@ def test_each_kept_run_reads_as_reported(stem):
 
 def test_every_frame_has_its_reported_verdicts():
     assert sorted(REPORTED) == [p.stem for p in FRAMES]
+
+
+def test_reading_one_input_back_refuses_an_input_the_frame_lacks():
+    # an empty reading would look like an input with nothing to say
+    with pytest.raises(SystemExit, match="has no input 'nobody'"):
+        verdict(EXAMPLES / "12-payroll-access.json", 1, "nobody")
+    assert verdict(EXAMPLES / "12-payroll-access.json", 1, "sam").startswith("sam: unresolved")
