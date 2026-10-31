@@ -331,6 +331,11 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
             f"specificity: {shams} sham trial(s), {wanted} declared; "
             "the body has no unanchored span of the anchors' kind left"
         )
+    # A sham that moved it is listed whatever the category: misaligned and
+    # cooled are read before the shams, and must not hide them.
+    moved = [t for t, v in levels.items() if t.startswith("sham-") and v not in (None, base)]
+    if moved and base is not None:
+        open_.append(f"specificity: {', '.join(moved)} moved it too; the change is not specific")
     if not frame.raw.get("materialized"):
         open_.append(
             "materialization: the frame does not say the observation is "

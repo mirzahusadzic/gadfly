@@ -167,6 +167,19 @@ def test_carried_without_a_sham_keeps_specificity_open(raw):
     assert "sham" not in finding.evidence[0] and "presentation" in finding.evidence[0]
 
 
+def test_a_sham_that_moved_it_is_listed_under_every_category(raw):
+    # misaligned and cooled are read before the shams; the moved sham stays visible
+    raw["allowed"] = {"ablation": ["unclear"]}
+    misaligned = verdict(situate(raw), ablation="grant", sham_2="grant")
+    assert misaligned.category == MISALIGNED
+    assert "specificity: sham-2 moved it too; the change is not specific" in misaligned.obligations
+    cooled = verdict(situate(raw), sham_1="grant")
+    assert cooled.category == COOLED
+    assert "specificity: sham-1 moved it too; the change is not specific" in cooled.obligations
+    held = verdict(situate(raw), ablation="unclear")
+    assert not any("moved it too" in o for o in held.obligations)
+
+
 def test_carried_evidence_counts_the_shams_that_held(raw):
     finding = verdict(situate(raw), ablation="grant")
     assert finding.evidence == [
