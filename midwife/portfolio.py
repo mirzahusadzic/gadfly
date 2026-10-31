@@ -57,14 +57,27 @@ def summarize(entries: list[Entry]) -> dict[str, Any]:
 
 def entry_from(document: dict[str, Any]) -> Entry:
     """An entry from a `gadfly report --json` document (or a bare overall)."""
+    refusal = "a portfolio reads `gadfly report --json` documents, and this is not one"
     overall = document.get("overall", document) if isinstance(document, dict) else None
     if not isinstance(overall, dict) or not isinstance(overall.get("category"), str):
-        raise ValueError("a portfolio reads `gadfly report --json` documents, and this is not one")
+        raise ValueError(refusal)
+    name = document.get("frame", document.get("name", "unnamed"))
+    inputs = overall.get("inputs", {})
+    evidence, obligations = overall.get("evidence", []), overall.get("obligations", [])
+    if not (
+        isinstance(name, str)
+        and isinstance(document.get("hash", ""), str)
+        and isinstance(inputs, dict)
+        and all(isinstance(k, str) and isinstance(v, str) for k, v in inputs.items())
+        and all(isinstance(x, list) and all(isinstance(s, str) for s in x)
+                for x in (evidence, obligations))
+    ):  # fmt: skip
+        raise ValueError(refusal)
     return Entry(
-        name=document.get("frame", document.get("name", "unnamed")),
+        name=name,
         frame=document.get("hash", ""),
         category=overall["category"],
-        inputs=overall.get("inputs", {}),
-        evidence=list(overall.get("evidence", [])),
-        obligations=list(overall.get("obligations", [])),
+        inputs=inputs,
+        evidence=list(evidence),
+        obligations=list(obligations),
     )

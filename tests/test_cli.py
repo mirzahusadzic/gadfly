@@ -120,7 +120,18 @@ def test_run_refuses_a_bad_battery_or_folder_before_any_call(tmp_path, capsys, a
     assert err.startswith("gadfly: ") and message in err and "Traceback" not in err
 
 
-@pytest.mark.parametrize("document", ["[]", '{"overall": null}', '{"frame": "x"}'])
+@pytest.mark.parametrize(
+    "document",
+    [
+        "[]",
+        '{"overall": null}',
+        '{"frame": "x"}',
+        '{"frame": "a", "overall": {"category": "carried", "inputs": []}}',
+        '{"frame": "a", "overall": {"category": "carried", "evidence": "x"}}',
+        '{"frame": "a", "overall": {"category": "carried", "obligations": [3]}}',
+        '{"frame": 3, "overall": {"category": "carried"}}',
+    ],
+)
 def test_portfolio_refuses_a_report_that_is_not_one(tmp_path, capsys, document):
     report = tmp_path / "report.json"
     report.write_text(document)
