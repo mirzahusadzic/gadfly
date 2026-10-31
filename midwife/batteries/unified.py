@@ -249,7 +249,7 @@ class Unified:
                 f"{model} is an OpenAI slug: the router reaches OpenAI only with the "
                 "caller's Codex sign-in, which this battery does not send"
             )
-        if battery.get("tools"):
+        if "tools" in battery:  # any value, even an empty list: the critic sends none
             raise ValueError("the critic sends no tools")
         endpoints = battery.get("endpoints", ["any"])
         if not (

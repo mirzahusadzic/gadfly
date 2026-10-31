@@ -139,6 +139,8 @@ def test_check_refuses_tools_training_providers_wrong_kinds_and_no_token(
     critic.check(situate(raw))
     for change, message in [
         ({"tools": ["web_search"]}, "no tools"),
+        ({"tools": []}, "no tools"),
+        ({"tools": False}, "no tools"),
         ({"model": "ultra-spark/deepseek-v4.1-flash-1017"}, "trains on its inputs"),
         ({"model": " "}, "slug the router serves"),
         ({"kind": "other"}, "asks for the other battery"),
