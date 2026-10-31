@@ -10,7 +10,7 @@ reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
 - **Every run kept:** `examples/runs/` holds every record of every run.
 - **Nothing edited after:** a wrong prediction stays in, and so does a frame
   that turned out to be built wrong; a corrected frame is a new one beside it.
-- **Cheap to run:** 5,495 calls in all, across code review, contracts, access
+- **Cheap to run:** 5,705 calls in all, across code review, contracts, access
   rules, incidents, migrations and performance work, and not one failed
   (`examples/FINDINGS.md`).
 
@@ -34,6 +34,7 @@ and it teaches one more thing Gadfly does, on top of the steps before it.
 | [Several inputs](inputs.md) | 12 | one finding per input; `overall`; what one `allowed` cannot say | security, one grant, three requesters |
 | [Grain](grain.md) | 13, 13b | several anchors; the same evidence at two grains | data migration, a section, then one line |
 | [Paths](paths.md) | 14, 15 | inputs as paths to one goal; the result, not the route | optimizing; implementing |
+| [Inversion](inversion.md) | 16 | the inversion trial, a direction the answer must follow; a default no rule carries | access, one rule, two cases |
 | [Run your own](your-own.md) | yours | predictions first; plan, run, report; which trial answers which question | yours |
 
 ---

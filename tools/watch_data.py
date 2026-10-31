@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs/public/assets/watch"
 FRAMES = [
     "upgrade",
+    "16-restore-inversion",
     "07-sql-rule",
     "09-sync-sms",
     "10c2-incident-both",

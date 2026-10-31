@@ -47,6 +47,7 @@ const sidebar = [
       { text: 'Several inputs', link: '/examples/inputs' },
       { text: 'Grain', link: '/examples/grain' },
       { text: 'Paths', link: '/examples/paths' },
+      { text: 'Inversion', link: '/examples/inversion' },
       { text: 'Run your own', link: '/examples/your-own' },
     ],
   },

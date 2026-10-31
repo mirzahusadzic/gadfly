@@ -18,6 +18,7 @@
     sham: ["Sham", "Hide a harmless line instead.", "This should not change the answer."],
     presentation: ["Presentation", "Swap some names for others.", "This should not change the answer."],
     placement: ["Placement", "Move a line somewhere else.", "This should not change the answer."],
+    inversion: ["Inversion", "Turn the line's meaning around.", "The answer should turn too."],
     bypass: ["Bypass", "Keep the line, but hide the link that ties it to this case.", "Does the answer change too?"],
     control: ["Control", "Hide everything that matters.", "The answer should change now."],
   };
@@ -31,6 +32,7 @@
     { kind: "sham", ask: "Do harmless cuts leave it alone?", always: true },
     { kind: "presentation", ask: "Do new names leave it alone?", always: true },
     { kind: "placement", ask: "Does moving a line leave it alone?" },
+    { kind: "inversion", ask: "Does turning the line around turn the answer?" },
     { kind: "bypass", ask: "Does hiding the link change it too?", always: true },
     { kind: "cumulative", ask: "Does hiding more change it?" },
     { kind: "control", ask: "Can the reader change its mind at all?" },
@@ -173,6 +175,7 @@
         sham: "A harmless cut changed nothing, as it should.",
         presentation: "New names changed nothing, as they should.",
         placement: "Moving the line changed nothing, as it should.",
+        inversion: "Turning the line around did not turn the answer, which it should.",
         bypass: "So something else still carries the answer.",
         control: "Even with everything that matters hidden. Maybe it is not reading at all.",
       };
@@ -181,6 +184,9 @@
     const now = `${was} Now it says ${level}.`;
     if (trial.kind === "ablation" && Array.isArray(data.allowed.ablation) && !data.allowed.ablation.includes(level)) {
       return `${now} Hiding the line changed it, but to an answer the frame does not allow here.`;
+    }
+    if (trial.kind === "inversion" && Array.isArray(data.allowed.inversion) && !data.allowed.inversion.includes(level)) {
+      return `${now} It turned, but to an answer the frame does not allow here.`;
     }
     if (trial.kind === "bypass" && Array.isArray(data.allowed.bypass) && !data.allowed.bypass.includes(level)) {
       return `${now} It changed, but the frame expected ${data.allowed.bypass.join(" or ")}.`;
@@ -192,6 +198,7 @@
       sham: "A harmless cut changed it, which it should not.",
       presentation: "New names changed it, which they should not.",
       placement: "Moving a line changed it, which it should not.",
+      inversion: "Turning the line around turned the answer, as it should.",
       bypass: "Hiding the link changed it too.",
       control: "So Gemma does change its mind when it should.",
     };
@@ -216,6 +223,7 @@
       if (["sham", "presentation", "placement", "repeat"].includes(c.kind)) answer = changed.some(Boolean) ? "no" : "yes";
       else if (c.kind === "ablation" && changed[0] && !allowed("ablation", levels[0])) answer = "yes, the wrong way";
       else if (c.kind === "bypass" && changed[0] && !allowed("bypass", levels[0])) answer = "no";
+      else if (c.kind === "inversion") answer = changed[0] && allowed("inversion", levels[0]) ? "yes" : "no";
       else answer = changed.every(Boolean) ? "yes" : "no";
       return { ...c, answer: played.length < trials.length && answer === "yes" ? "so far yes" : answer };
     });

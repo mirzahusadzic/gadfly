@@ -69,6 +69,11 @@
     "name": "invoice-export",
     "hash": "183f425e452bcb3774a134eeb0238ce5e51ecc71f74a7bf5b6f4bced346f39f1"
   },
+  "16-restore-inversion": {
+    "path": "examples/16-restore-inversion.json",
+    "name": "restore-approval-inversion",
+    "hash": "43f144660597fce2a301e56f8b3aaeb72f8c5ad9bc0bf93fd0581b6ad7526f35"
+  },
   "rung1": {
     "path": "examples/rung1.json",
     "name": "quill-upgrade-rung-1",

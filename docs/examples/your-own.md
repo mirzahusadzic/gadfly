@@ -6,7 +6,7 @@
 > - **Teaches:** the method every example followed, and which trial answers
 >   which question.
 > - **Frame:** yours.
-> - **After:** [Paths](paths.md).
+> - **After:** [Inversion](inversion.md).
 
 ---
 
