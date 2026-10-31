@@ -1,0 +1,103 @@
+{
+  "name": "eu-clause",
+  "relation": "blocking the integration rests on the contract clause that keeps customer data in the EU",
+  "locus": "what the account and engineering teams know: the customer's agreement, the vendor, the request",
+  "role": "the engineer who turns integrations on for customers",
+  "grain": "one contract clause",
+  "purpose": "turn on only what the customer's agreement allows",
+  "trajectory": "the agreement, the request, the engineer's decision, the feature switch",
+  "crossing": "the feature switch for the customer",
+  "promise": "the engineer blocks the integration because the clause forbids storing data outside the EU; without the clause they enable it or say unclear",
+  "baseline": "the agreement, the vendor and the request as they stand; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "clause",
+        "kind": "contract",
+        "text": "Enterprise agreement §9.2: customer data is stored and processed only in the EU."
+      },
+      {
+        "id": "payment",
+        "kind": "contract",
+        "text": "Enterprise agreement §4.1: invoices are payable within 30 days."
+      },
+      {
+        "id": "ending",
+        "kind": "contract",
+        "text": "Enterprise agreement §11: either party may end the agreement with 90 days' notice."
+      },
+      {
+        "id": "support",
+        "kind": "contract",
+        "text": "Enterprise agreement §7.3: priority-1 tickets are answered within one hour."
+      },
+      {
+        "id": "account",
+        "kind": "account",
+        "text": "Acme GmbH signed the Enterprise agreement in March."
+      },
+      {
+        "id": "vendor",
+        "kind": "vendor",
+        "text": "ReplayCo, the session-replay vendor, records users' screens and stores the recordings in its US data centre."
+      },
+      {
+        "id": "ask",
+        "kind": "request",
+        "text": "Acme's product manager asked for session replay on their dashboard."
+      }
+    ]
+  },
+  "anchors": [
+    "clause"
+  ],
+  "inputs": [
+    {
+      "id": "enable",
+      "text": "Can we turn on ReplayCo session replay for Acme GmbH?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "enable",
+      "block",
+      "unclear"
+    ],
+    "instruction": "You decide whether an integration may be turned on for a customer. Use only the evidence given. Answer enable if it may be turned on as requested, block if it must not be, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2
+    },
+    "presentation": {
+      "ReplayCo": "ScreenTrail",
+      "Acme": "Borealis"
+    },
+    "bypass": [
+      "account"
+    ],
+    "control": [
+      "clause",
+      "vendor"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "enable",
+      "unclear"
+    ],
+    "bypass": [
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "materialized": true,
+  "battery": {
+    "kind": "egemma"
+  }
+}

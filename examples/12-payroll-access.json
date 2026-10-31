@@ -1,0 +1,113 @@
+{
+  "name": "payroll-access",
+  "relation": "allowing a payroll read rests on the grant to Finance",
+  "locus": "the access policy and the directory the access service reads",
+  "role": "the access service",
+  "grain": "one grant line, across three requesters",
+  "purpose": "grant exactly what the policy grants",
+  "trajectory": "the request, the policy and the directory, the decision, the database's permission",
+  "crossing": "the permission granted or refused",
+  "promise": "Dana is allowed because Finance is granted the table; without the grant Dana is denied or unclear. Sam and the backup job do not rest on it",
+  "baseline": "the policy and the directory as they stand; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "finance",
+        "kind": "grant",
+        "text": "Access policy: members of Finance may read the payroll table."
+      },
+      {
+        "id": "backup",
+        "kind": "job-grant",
+        "text": "Access policy: the nightly backup job may read every table."
+      },
+      {
+        "id": "wiki",
+        "kind": "grant",
+        "text": "Access policy: everyone may read the wiki."
+      },
+      {
+        "id": "tickets",
+        "kind": "grant",
+        "text": "Access policy: members of Support may read support tickets."
+      },
+      {
+        "id": "reports",
+        "kind": "grant",
+        "text": "Access policy: members of Sales may read the sales reports."
+      },
+      {
+        "id": "default",
+        "kind": "default",
+        "text": "Access policy: whatever is not granted above is denied."
+      },
+      {
+        "id": "directory",
+        "kind": "directory",
+        "text": "Directory: Dana is a member of Finance; Sam is a member of Support."
+      }
+    ]
+  },
+  "anchors": [
+    "finance"
+  ],
+  "inputs": [
+    {
+      "id": "dana",
+      "text": "Dana asks to read the payroll table."
+    },
+    {
+      "id": "sam",
+      "text": "Sam asks to read the payroll table."
+    },
+    {
+      "id": "backup-job",
+      "text": "The nightly backup job asks to read the payroll table."
+    }
+  ],
+  "observe": {
+    "labels": [
+      "allow",
+      "deny",
+      "unclear"
+    ],
+    "instruction": "You decide access requests against the access policy. Use only the evidence given. Answer allow if the policy grants the request, deny if it does not, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2
+    },
+    "presentation": {
+      "Dana": "Mira",
+      "Sam": "Leo",
+      "payroll": "salary"
+    },
+    "bypass": [
+      "directory"
+    ],
+    "control": [
+      "finance",
+      "backup",
+      "default"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "deny",
+      "unclear"
+    ],
+    "bypass": [
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "materialized": true,
+  "battery": {
+    "kind": "egemma"
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "name": "orders-latency",
+  "relation": "accepting each performance change rests on the goal it is measured against",
+  "locus": "the goal and the load-test results the performance review reads",
+  "role": "the reviewer of performance work",
+  "grain": "one goal, five paths to it",
+  "purpose": "accept any change that meets the goal, by whatever path, and only those",
+  "trajectory": "five paths to one goal: an index, a cache, a batched query, a read model, a longer timeout",
+  "crossing": "the review decision on each pull request",
+  "promise": "each change that meets the goal is accepted whatever its path, and the one that does not is rejected; without the goal the reviewer says unclear",
+  "baseline": "the goal and the five load tests as measured; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "goal",
+        "kind": "goal",
+        "text": "Goal: GET /orders answers within 200 ms at the 99th percentile under the Black Friday load test."
+      },
+      {
+        "id": "languages",
+        "kind": "goal",
+        "text": "Goal: the orders page is offered in English and German."
+      },
+      {
+        "id": "exports",
+        "kind": "goal",
+        "text": "Goal: order exports finish within one hour."
+      },
+      {
+        "id": "phone",
+        "kind": "goal",
+        "text": "Goal: the admin page works on a phone."
+      },
+      {
+        "id": "before",
+        "kind": "fact",
+        "text": "Before any change: load test p99 = 1.9 s; the endpoint runs one query per order line."
+      },
+      {
+        "id": "index",
+        "kind": "benchmark",
+        "text": "Pull request #501 (Ana added an index on orders.customer_id): load test p99 = 140 ms."
+      },
+      {
+        "id": "cache",
+        "kind": "benchmark",
+        "text": "Pull request #502 (Ben caches each customer's order list in Redis for 30 seconds): load test p99 = 95 ms."
+      },
+      {
+        "id": "batch",
+        "kind": "benchmark",
+        "text": "Pull request #503 (Chen loads the order lines in one query instead of one query per order): load test p99 = 180 ms."
+      },
+      {
+        "id": "readmodel",
+        "kind": "benchmark",
+        "text": "Pull request #504 (Dee moved GET /orders to a read model kept current by order events): load test p99 = 60 ms."
+      },
+      {
+        "id": "timeout",
+        "kind": "benchmark",
+        "text": "Pull request #505 (Eli raised the endpoint's timeout from 2 s to 5 s): load test p99 = 1.9 s."
+      }
+    ]
+  },
+  "anchors": [
+    "goal"
+  ],
+  "inputs": [
+    {
+      "id": "index",
+      "text": "Review pull request #501. Ana added an index on orders.customer_id: a one-line migration, done in an hour. Does it meet the goal?"
+    },
+    {
+      "id": "cache",
+      "text": "Review pull request #502. Ben caches each customer's order list in Redis for 30 seconds: two days of work. Does it meet the goal?"
+    },
+    {
+      "id": "batch",
+      "text": "Review pull request #503. Chen loads the order lines in one query instead of one query per order: a day of work. Does it meet the goal?"
+    },
+    {
+      "id": "readmodel",
+      "text": "Review pull request #504. Dee moved GET /orders to a read model kept current by order events: three weeks of work, 2,400 changed lines. Does it meet the goal?"
+    },
+    {
+      "id": "timeout",
+      "text": "Review pull request #505. Eli raised the endpoint's timeout from 2 s to 5 s: ten minutes of work. Does it meet the goal?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "accept",
+      "reject",
+      "unclear"
+    ],
+    "instruction": "You review performance work against its goal. Use only the evidence given. Answer accept if the change meets the goal, reject if it does not, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2
+    },
+    "presentation": {
+      "orders": "purchases",
+      "order": "purchase"
+    },
+    "bypass": [
+      "index",
+      "cache",
+      "batch",
+      "readmodel",
+      "timeout"
+    ],
+    "control": [
+      "goal",
+      "before",
+      "index",
+      "cache",
+      "batch",
+      "readmodel",
+      "timeout"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "unclear"
+    ],
+    "bypass": [
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "materialized": true,
+  "battery": {
+    "kind": "egemma"
+  }
+}

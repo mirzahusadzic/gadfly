@@ -18,9 +18,9 @@ command line a reader writes Python to keep records, then joins
 `evidence + obligations` in an ad-hoc print loop.
 
 ```bash
-uv run gadfly plan examples/refund.json
-uv run gadfly run examples/refund.json --battery examples.refund:RuleReader --calls 8 --out records.jsonl
-uv run gadfly report examples/refund.json records.jsonl
+uv run gadfly plan examples/upgrade.json
+uv run gadfly run examples/upgrade.json --battery gadfly.batteries.egemma:EGemma --calls 40 --out records.jsonl
+uv run gadfly report examples/upgrade.json records.jsonl
 ```
 
 `run` uses only the public pipeline, writes each `Record.as_dict()` as one JSON

@@ -1,0 +1,103 @@
+{
+  "name": "sync-sms-design",
+  "relation": "the request to revise the design rests on the checkout latency requirement",
+  "locus": "the evidence a design review has: the requirements, the provider's measured latency, the proposal",
+  "role": "the reviewer of system designs",
+  "grain": "one requirement",
+  "purpose": "let a design go ahead only when it meets the product's requirements",
+  "trajectory": "requirements, the proposal, the review, the build",
+  "crossing": "the review decision on the design document",
+  "promise": "the reviewer asks for a revision because the design breaks the latency requirement; without the requirement they approve or say unclear",
+  "baseline": "the design review's evidence as it stands; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "latency",
+        "kind": "requirement",
+        "text": "Requirement N-3: checkout answers the customer within 300 ms at the 99th percentile."
+      },
+      {
+        "id": "receipts",
+        "kind": "requirement",
+        "text": "Requirement N-1: receipts are kept for seven years."
+      },
+      {
+        "id": "languages",
+        "kind": "requirement",
+        "text": "Requirement N-2: the checkout page is offered in English and German."
+      },
+      {
+        "id": "cards",
+        "kind": "requirement",
+        "text": "Requirement N-4: card numbers never appear in logs."
+      },
+      {
+        "id": "provider",
+        "kind": "fact",
+        "text": "Measured: the SMS provider's API answers in 400 to 900 ms."
+      },
+      {
+        "id": "volume",
+        "kind": "fact",
+        "text": "Measured: checkout peaks at 40 orders a second."
+      },
+      {
+        "id": "design",
+        "kind": "design",
+        "text": "Proposal: the checkout handler sends the order confirmation by SMS, waits for the provider's answer, and only then answers the customer."
+      }
+    ]
+  },
+  "anchors": [
+    "latency"
+  ],
+  "inputs": [
+    {
+      "id": "review",
+      "text": "The notifications team asks for approval of this design. Can it go ahead?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "approve",
+      "revise",
+      "unclear"
+    ],
+    "instruction": "You review system designs. Use only the evidence given. Answer approve if the design can go ahead as proposed, revise if it must change first, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2
+    },
+    "presentation": {
+      "N-1": "Q-10",
+      "N-2": "Q-11",
+      "N-3": "Q-12",
+      "N-4": "Q-13",
+      "handler": "endpoint"
+    },
+    "bypass": [
+      "provider"
+    ],
+    "control": [
+      "design",
+      "provider"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "approve",
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "materialized": true,
+  "battery": {
+    "kind": "egemma"
+  }
+}

@@ -2,8 +2,9 @@
 
 A ```text block that opens with `$ ` lines is a transcript: each `$` line
 is run from the repository root, in order, and what the last one prints is
-what the block must show below it. A `.jsonl` argument is a records file in
-a fresh directory, so a transcript never writes into the repository.
+what the block must show below it. A `.jsonl` argument the repository does
+not hold is a new records file, made in a fresh directory, so a transcript
+never writes into the repository; one it holds is kept records, read in place.
 
     uv run python tools/doc_outputs.py          # report each transcript that differs
     uv run python tools/doc_outputs.py --write  # rewrite them from what the code prints
@@ -60,7 +61,9 @@ def printed(transcript: Transcript) -> str:
         out = ""
         for command in transcript.commands:
             argv = [
-                str(Path(scratch) / Path(arg).name) if arg.endswith(".jsonl") else arg
+                str(Path(scratch) / Path(arg).name)
+                if arg.endswith(".jsonl") and not (ROOT / arg).exists()
+                else arg
                 for arg in shlex.split(command.replace("\\\n", " "))
             ]
             if argv[:2] == ["uv", "run"]:

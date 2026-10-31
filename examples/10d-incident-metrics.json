@@ -1,0 +1,145 @@
+{
+  "name": "incident-both-metrics",
+  "relation": "the answer 'database' rests on the database's own metrics, with the rollback also present",
+  "locus": "the incident timeline the on-call engineer reads",
+  "role": "the on-call engineer for the API",
+  "grain": "two metrics, with a second route present",
+  "purpose": "find where the latency came from, and act on it",
+  "trajectory": "the timeline, either route: the rollback test or the database's metrics, the answer",
+  "crossing": "the answer posted to the incident channel",
+  "promise": "the engineer names the database while the evidence that points to it is there; without it they say unclear or still name it by the rollback, never the API",
+  "baseline": "the timeline as recorded; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "deploy",
+        "kind": "event",
+        "text": "14:02 the deploy of api v2.31 finished."
+      },
+      {
+        "id": "failover",
+        "kind": "event",
+        "text": "14:02 the primary database failed over to its replica."
+      },
+      {
+        "id": "latency",
+        "kind": "symptom",
+        "text": "14:03 API p99 latency rose from 180 ms to 2.4 s."
+      },
+      {
+        "id": "cache",
+        "kind": "metric",
+        "text": "14:04 the new primary's buffer cache hit rate fell from 99% to 61%."
+      },
+      {
+        "id": "slowq",
+        "kind": "metric",
+        "text": "14:05 queries slower than one second on the new primary rose from 3 a minute to 410 a minute."
+      },
+      {
+        "id": "requests",
+        "kind": "metric",
+        "text": "14:06 the API's request rate stayed near 1,200 a second."
+      },
+      {
+        "id": "disk",
+        "kind": "metric",
+        "text": "14:07 the database volume was 48% full."
+      },
+      {
+        "id": "queue",
+        "kind": "metric",
+        "text": "14:08 the message queue's backlog stayed under 50."
+      },
+      {
+        "id": "cron",
+        "kind": "metric",
+        "text": "14:09 the scheduler ran every job on time."
+      },
+      {
+        "id": "health",
+        "kind": "check",
+        "text": "14:12 the load balancer's health checks all passed."
+      },
+      {
+        "id": "dns",
+        "kind": "check",
+        "text": "14:14 DNS for the API resolved correctly from three regions."
+      },
+      {
+        "id": "cdn",
+        "kind": "check",
+        "text": "14:16 the CDN's error rate was normal."
+      },
+      {
+        "id": "rollback",
+        "kind": "check",
+        "text": "14:20 api was rolled back to v2.30; p99 latency stayed at 2.4 s."
+      }
+    ]
+  },
+  "anchors": [
+    "cache",
+    "slowq"
+  ],
+  "inputs": [
+    {
+      "id": "debug",
+      "text": "Debugging: which component caused the latency rise?"
+    },
+    {
+      "id": "fix",
+      "text": "Implementing the fix: the change goes into one component. Which one?"
+    },
+    {
+      "id": "optimize",
+      "text": "Optimizing: which component should we work on first to bring p99 back under 200 ms?"
+    },
+    {
+      "id": "alert",
+      "text": "Building: which component should get a new alert so this is caught sooner next time?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "api",
+      "database",
+      "unclear"
+    ],
+    "instruction": "You are the on-call engineer for the API. Use only the evidence given. Answer api if the evidence points to the API service, database if it points to the database, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "cumulative": [
+      "rollback"
+    ],
+    "sham": {
+      "draws": 2
+    },
+    "presentation": {
+      "v2.31": "v7.4",
+      "v2.30": "v7.3"
+    },
+    "control": [
+      "deploy",
+      "failover",
+      "cache",
+      "slowq",
+      "rollback"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "materialized": true,
+  "battery": {
+    "kind": "egemma"
+  }
+}

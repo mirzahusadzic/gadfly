@@ -1,0 +1,111 @@
+{
+  "name": "drop-table-reads",
+  "relation": "approving the drop rests on the line that shows no reads in 30 days",
+  "locus": "the migration tracker and the change request the database reviewer reads",
+  "role": "the database reviewer",
+  "grain": "one status line",
+  "purpose": "drop a table only when no data and no reader is lost",
+  "trajectory": "the migration tracker, the change request, the review, the production database",
+  "crossing": "the approval on the change request",
+  "promise": "the reviewer approves because no one reads the table; without that line they keep it or say unclear",
+  "baseline": "the tracker and the request as they stand; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "backfill",
+        "kind": "status",
+        "text": "Migration status: the backfill copied every orders_v1 row into orders_v2, and the row counts match."
+      },
+      {
+        "id": "dualwrite",
+        "kind": "status",
+        "text": "Migration status: writes to orders_v1 stopped on 1 October."
+      },
+      {
+        "id": "reads",
+        "kind": "status",
+        "text": "Migration status: the query log shows no reads of orders_v1 in the last 30 days."
+      },
+      {
+        "id": "invoices",
+        "kind": "status",
+        "text": "Migration status: invoices_v2 went live in August."
+      },
+      {
+        "id": "index",
+        "kind": "status",
+        "text": "Migration status: the customers index rebuild is set for November."
+      },
+      {
+        "id": "replica",
+        "kind": "status",
+        "text": "Migration status: the old reporting replica was retired in July."
+      },
+      {
+        "id": "sessions",
+        "kind": "status",
+        "text": "Migration status: sessions moved to Redis in June."
+      },
+      {
+        "id": "audit",
+        "kind": "status",
+        "text": "Migration status: the audit log table is now partitioned by month."
+      },
+      {
+        "id": "search",
+        "kind": "status",
+        "text": "Migration status: the search cluster was upgraded in September."
+      },
+      {
+        "id": "request",
+        "kind": "request",
+        "text": "Change request #77: DROP TABLE orders_v1."
+      }
+    ]
+  },
+  "anchors": [
+    "reads"
+  ],
+  "inputs": [
+    {
+      "id": "drop",
+      "text": "Can change request #77 go ahead?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "drop",
+      "keep",
+      "unclear"
+    ],
+    "instruction": "You review database change requests. Use only the evidence given. Answer drop if the table can be dropped now without losing data or breaking a reader, keep if it cannot, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2
+    },
+    "presentation": {
+      "orders_v1": "sales_old",
+      "orders_v2": "sales_new"
+    },
+    "control": [
+      "request"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "keep",
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "materialized": true,
+  "battery": {
+    "kind": "egemma"
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "name": "invoice-export",
+  "relation": "accepting the change rests on the passing test that checks it against the spec",
+  "locus": "the spec, the diff summary and the CI result the reviewer reads",
+  "role": "the reviewer of pull requests",
+  "grain": "one test result, four processes behind it",
+  "purpose": "accept a change that meets the spec, however it was made",
+  "trajectory": "four processes to one result: test first, a prototype first, an AI assistant, pairing",
+  "crossing": "the review decision on the pull request",
+  "promise": "the change is accepted because its test shows the spec is met, whichever process produced it; without the test result the reviewer says unclear",
+  "baseline": "the spec, the diff and the CI result as they stand; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "spec",
+        "kind": "spec",
+        "text": "Spec: the invoice export has one row per invoice of the chosen month, with the columns id, date, total, currency in that order."
+      },
+      {
+        "id": "diff",
+        "kind": "diff",
+        "text": "Diff: adds export_invoices(month) in src/billing/export.py, 46 lines, using Python's csv module."
+      },
+      {
+        "id": "tests",
+        "kind": "ci",
+        "text": "CI: test_export_invoices passed; it checks a month of 1,000 invoices row by row against the spec, column order included."
+      },
+      {
+        "id": "lint",
+        "kind": "ci",
+        "text": "CI: the linter found no problems."
+      },
+      {
+        "id": "types",
+        "kind": "ci",
+        "text": "CI: the type checker found no problems."
+      },
+      {
+        "id": "coverage",
+        "kind": "ci",
+        "text": "CI: coverage of src/billing stayed at 91%."
+      },
+      {
+        "id": "docs",
+        "kind": "ci",
+        "text": "CI: the documentation built without warnings."
+      }
+    ]
+  },
+  "anchors": [
+    "tests"
+  ],
+  "inputs": [
+    {
+      "id": "test-first",
+      "text": "Review pull request #601. Ana wrote the test first, then the code, in two hours. Can it be merged?"
+    },
+    {
+      "id": "prototype",
+      "text": "Review pull request #601. Ben first tried the export in a notebook over three days, then wrote the code and the test. Can it be merged?"
+    },
+    {
+      "id": "assistant",
+      "text": "Review pull request #601. Chen had an AI assistant write the code and the test in twenty minutes, then read both. Can it be merged?"
+    },
+    {
+      "id": "pairing",
+      "text": "Review pull request #601. Dee and Eli wrote it together over one afternoon. Can it be merged?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "accept",
+      "reject",
+      "unclear"
+    ],
+    "instruction": "You review pull requests against their spec. Use only the evidence given. Answer accept if the change meets the spec, reject if it does not, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2
+    },
+    "presentation": {
+      "invoice": "bill",
+      "invoices": "bills"
+    },
+    "control": [
+      "spec",
+      "tests"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "materialized": true,
+  "battery": {
+    "kind": "egemma"
+  }
+}

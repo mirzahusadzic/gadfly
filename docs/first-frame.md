@@ -1,168 +1,214 @@
 # Your first frame
 
-This tutorial tests one sentence from a cited source:
+Gadfly asks one question about one decision: **does the decision rest on the
+evidence you think it rests on?** It cannot look inside the reader, so it
+changes the evidence in fixed ways, asks again, and compares what comes back.
 
-> The cobalt manifest records 40 crates.
+This page climbs one real experiment a step at a time. A dependency bot opens a
+pull request that bumps a made-up library, quill, from 2.4.1 to 3.0.0. Our code
+calls `quill.retry_after()`, and quill 3.0.0's changelog removes it. The reviewer
+is Gemma 4 26B, served on this machine by eGemma. Does its decision to hold the
+upgrade rest on that changelog line?
 
-We want to know whether an answer's crate count rests on source `S-2`, rather
-than on the word *cobalt*. The complete frame is
-`examples/citation.json`; the deterministic scorers are in
-`examples/citation.py`.
+Each step below is a frame in `examples/` (`rung1.json` to `rung6.json`, each
+the one before with one more trial), read in five fresh runs by Gemma. The
+predictions were written in `examples/PREDICTIONS.md` before the first call, and
+every record is kept in `examples/runs/`. So every output on this page is read
+back from those records, and reading it needs no model.
 
-## 1. Declare the situation
+## 1. The evidence and the question
 
-The first nine keys say what is being tested and whose consequence matters.
-
-```json
-{
-  "name": "cited-source",
-  "relation": "the answer's crate count rests on cited source S-2",
-  "locus": "the answer, where the count is stated",
-  "role": "a reader checking the answer against its cited sources",
-  "grain": "one claim of the answer",
-  "purpose": "the stated count is traceable to the source the answer cites",
-  "trajectory": "sources and question, the answer, the reader's check",
-  "crossing": "the reader's check of the answer",
-  "promise": "the count is given only while S-2 is cited, however the source is worded",
-  "baseline": "the sources as written and one question; nothing changed"
-}
-```
-
-- **relation** is the premise under intervention.
-- **locus** is where it acts.
-- **grain** is the comparison unit. Do not mix answers and individual clauses.
-- **crossing** is the recipient boundary where the promise must remain true.
-- **promise** is the observable consequence, not a wish for the system overall.
-
-The `baseline` is everything pinned for this comparison. A model, revision,
-rubric hash or retrieval snapshot belongs here when the test depends on it.
-
-## 2. Put the relation in a body
+The frame is the whole experiment, written down before any call:
 
 ```json
-{
-  "body": {"spans": [
-    {"id": "s1", "text": "Source S-1: the harbor ledger lists arrivals by date.", "kind": "source"},
-    {"id": "s2", "text": "Source S-2: the cobalt manifest records 40 crates.", "kind": "source"},
-    {"id": "s3", "text": "Source S-3: the tide table gives high water at noon.", "kind": "source"},
-    {"id": "s4", "text": "Source S-4: the crew roll names twelve hands.", "kind": "source"},
-    {"id": "rule", "text": "Answer the question using the cited source.", "kind": "rule"},
-    {"id": "binding", "text": "These records decide every question.", "kind": "note"}
-  ]},
-  "anchors": ["s2"],
-  "inputs": [
-    {"id": "crates", "text": "How many crates does the cobalt manifest record?"}
-  ]
-}
+--8<-- "examples/upgrade.json"
 ```
 
-The anchor is the span whose removal tests the relation. Other spans of the same
-`kind` give the sham trial somewhere to cut. Do not pick an anchor that contains
-the whole answer; pick the smallest declared unit that could carry the promise.
+- **`body.spans`** is the evidence, one sentence per span. The `kind` groups
+  spans for the sham trial (section 4).
+- **`anchors`** names the span the decision is supposed to rest on: the changelog
+  line that removes `retry_after()`.
+- **`inputs`** is the question. **`observe`** is what the reader may answer and
+  what each answer means. Define every label in the instruction. A reader left to
+  guess what a label means answers a different question.
+- **`relation`**, **`grain`**, **`promise`** and the rest say what is being
+  claimed, at which unit, and for whom. They are hashed with the rest, so a
+  frame cannot be reworded after its runs: records from another wording are
+  refused.
 
-The input is the finite test case. Add inputs when the claim is meant to hold
-across cases; Gadfly will return one finding per input and an overall category.
+What Gemma receives per call is the instruction, then the spans one per line, a
+line `---`, and the question. It must answer with one label. Each trial is asked
+`quorum` times (5) and needs `agree` (4) answers alike; that answer is the
+trial's **level**.
 
-## 3. Say what the scorer can observe
+## 2. Cut the line: ablation
 
-```json
-{
-  "observe": {
-    "labels": ["grounded", "ungrounded"],
-    "instruction": "Answer the question from the cited source."
-  },
-  "allowed": {"ablation": ["ungrounded"], "bypass": ["ungrounded"]}
-}
-```
-
-The labels are the entire comparison vocabulary. The comparison is exact label
-equality: there is no undocumented similarity threshold and no hidden scalar.
-Ordered outcomes additionally use `observe.order` with `allowed: "lower"` or
-`"higher"`. The allowed relation says what a valid ablation may produce; a move
-outside it is `coupled but misaligned`, not carriage. `allowed.bypass` names
-the designated opening: what the reader must answer once the connection that
-makes the relation operative (here the binding line, "These records decide
-every question.") is cut. A reader that answers anything else there has a
-hidden fallback.
-
-## 4. Choose the interventions
-
-```json
-{
-  "interventions": {
-    "repeat": true,
-    "ablation": true,
-    "sham": {"draws": 2},
-    "presentation": {"cobalt": "verdigris"},
-    "bypass": ["binding"]
-  },
-  "standing": {"quorum": 1, "agree": 1},
-  "materialized": true,
-  "battery": {"kind": "citation-reader"}
-}
-```
-
-`ablation` is required. The others answer separate questions:
-
-| Question | Trial | If omitted |
-|---|---|---|
-| Is the level stable? | `repeat` | no stability comparison |
-| Does wording drive the result? | `presentation` | presentation invariance remains open, so the finding cannot be `carried` |
-| Does the structure drive it? | `placement` | nothing tests the span's place |
-| Is the change specific? | `sham` | specificity remains open |
-| Is there a hidden fallback? | `bypass` | no-hidden-fallback remains open |
-| Can the scorer move at all? | `control` | discrimination remains open, so the finding cannot be `cooled` |
-
-Under the default `carriage: all-checks`, a check left open keeps `carried` and
-`cooled` unresolved. A frame that says `"carriage": "listed"` names the category
-and lists the open checks beside it.
-
-`quorum` is the number of scorer calls per trial; `agree` is the number of
-identical observations needed for one level. Here one call is enough because the
-battery is deterministic. A sampled model normally needs three or more.
-
-## 5. Run the battery
-
-The frame names `citation-reader`, so only a battery whose `name` is exactly
-`citation-reader` may read it.
-
-```python
---8<-- "examples/first_frame.py:7:"
-```
+Rung 1 declares only the ablation, which removes the anchor.
 
 ```text
-$ uv run python examples/first_frame.py
-carried
-ablation moved it grounded -> ungrounded; held under presentation, 2 shams
-bypass moved it grounded -> ungrounded: no hidden fallback
+$ uv run python examples/read.py examples/rung1.json
+quill-upgrade-rung-1: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
+trial     pr
+baseline  hold 25
+ablation  merge 25
+run 1: unresolved
+run 2: unresolved
+run 3: unresolved
+run 4: unresolved
+run 5: unresolved
 ```
 
-The relation moved the observation in the allowed direction, presentation and
-the shams held, and cutting the binding line exposed the designated opening:
-the reader answers `ungrounded` once the records no longer decide the question,
-so it has no hidden fallback. Every carriage check passed, so the finding is
-`carried`, with no obligation left. The same frame read by `WordMatcher` instead
-becomes `coupled but misaligned`, because renaming *cobalt* changes its answer,
-and it lists the fallback it was not cleared of: it answers `grounded` with the
-binding line cut.
+Every call held while the line was there, and merged once it was gone. That
+move is necessary but not enough to call the line load-bearing. The verdict
+says so, and lists what it still needs:
 
-Run both scorers with:
+```text
+$ uv run python examples/read.py examples/rung1.json --verdict 1
+pr: unresolved
+  levels: baseline hold, ablation merge
+  evidence: ablation moved it hold -> merge
+  evidence: not carried while 3 carriage checks are open
+  open: no hidden fallback: no bypass trial was declared
+  open: presentation invariance: no presentation trial was declared
+  open: specificity: no sham trial was declared
+```
+
+Each `open:` line is a check no trial has made yet. Under the default
+`carriage: all-checks`, a finding is not carried while one is open.
+
+## 3. Ask again: repeat
+
+A level is worth comparing only if it is stable. Repeat asks the unchanged
+evidence again; if it gives another level, the verdict is unresolved before
+anything else is read.
+
+```text
+$ uv run python examples/read.py examples/rung2.json
+quill-upgrade-rung-2: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
+trial     pr
+baseline  hold 25
+repeat    hold 25
+ablation  merge 25
+run 1: unresolved
+run 2: unresolved
+run 3: unresolved
+run 4: unresolved
+run 5: unresolved
+```
+
+Gemma gave the same answer on all 25 calls. On clear evidence this reader is
+close to deterministic; [rung 9](examples.md#09-a-synchronous-call-in-checkout) shows where it is not.
+
+## 4. Cut something harmless: shams
+
+Perhaps any cut moves the reader. A sham removes a span of the anchor's kind
+instead (here another changelog line, the closest in length), which should
+change nothing. Two shams are drawn.
+
+```text
+$ uv run python examples/read.py examples/rung3.json
+quill-upgrade-rung-3: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
+trial     pr
+baseline  hold 25
+repeat    hold 25
+ablation  merge 25
+sham-1    hold 25
+sham-2    hold 25
+run 1: unresolved
+run 2: unresolved
+run 3: unresolved
+run 4: unresolved
+run 5: unresolved
+```
+
+Both held, so the move is specific to the line: two checks remain open.
+
+## 5. Rename: presentation
+
+A reader might react to names rather than meaning. Presentation renames
+`quill` to `heron`, `retry_after` to `wait_hint` and `backoff` to `pause`, in
+one pass, in the evidence and the question alike.
+
+```text
+$ uv run python examples/read.py examples/rung4.json
+quill-upgrade-rung-4: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
+trial         pr
+baseline      hold 25
+repeat        hold 25
+ablation      merge 25
+sham-1        hold 25
+sham-2        hold 25
+presentation  hold 25
+run 1: unresolved
+run 2: unresolved
+run 3: unresolved
+run 4: unresolved
+run 5: unresolved
+```
+
+It held. One check is left: whether something else would give the same answer
+without the line's connection to our code.
+
+## 6. Cut the connection: bypass
+
+The line matters only because our code calls the function it removes. The
+bypass cuts our call to `retry_after()` and keeps the line. A reader that reacts
+to the word "Breaking" would still hold, a hidden fallback; one that follows the
+connection would merge or say unclear.
+
+```text
+$ uv run python examples/read.py examples/rung5.json --verdict 1
+pr: carried
+  levels: baseline hold, repeat hold, ablation merge, sham-1 hold, sham-2 hold, presentation hold, bypass merge
+  evidence: ablation moved it hold -> merge; held under presentation, 2 shams
+  evidence: bypass moved it hold -> merge: no hidden fallback
+```
+
+The prediction was a fallback, at about 55%. It was wrong: Gemma merged on
+every call. Every carriage check has passed, so the finding is **carried**.
+
+## 7. Can it move at all: the control
+
+Carried does not need a control; cooled does. A reader that never moves would
+make every relation look cooled, so the control removes what any reader needs
+(here the line and our call together) to show that this one can move.
+
+```text
+$ uv run python examples/read.py examples/rung6.json --verdict 1
+pr: carried
+  levels: baseline hold, repeat hold, ablation merge, sham-1 hold, sham-2 hold, presentation hold, bypass merge, control merge
+  evidence: ablation moved it hold -> merge; held under presentation, 2 shams
+  evidence: bypass moved it hold -> merge: no hidden fallback
+  evidence: the control moved it hold -> merge
+```
+
+Rung 7 in the [examples](examples.md#07-08-a-rule-the-model-knows-and-one-it-cannot)
+is where a control decides a verdict.
+
+## 8. What "carried" says here
+
+On this evidence, at this grain, for this model at this revision, the decision
+to hold rests on the changelog line, through our call to the function it
+removes: cut the line or the call and the decision changes; cut a neighbour or
+rename the names and it does not. It does not say that Gemma reviews upgrades
+well, or that it would on other evidence.
+
+## 9. Read it fresh, and write your own
+
+With eGemma on this machine (its key in `EGEMMA_API_KEY` or
+`EGEMMA_API_KEY_FILE`):
 
 ```bash
-uv run python examples/citation.py
+uv run gadfly check-frame examples/upgrade.json   # the shape, then the parser; no call
+uv run gadfly plan examples/upgrade.json          # the trials and the call count; no call
+uv run gadfly run examples/upgrade.json --battery gadfly.batteries.egemma:EGemma \
+    --calls 40 --out my-run.jsonl
+uv run gadfly report examples/upgrade.json my-run.jsonl
 ```
 
-## 6. Read what is missing
-
-The first run is useful even when the category is not final. Check:
-
-1. `finding.levels`: did every trial reach one agreed level?
-2. `finding.evidence`: which rule produced the category?
-3. `finding.obligations`: which checks did not pass or did not run?
-4. `overall(findings)`: for several inputs, did the frame-level reading weaken?
-
-Do not concatenate evidence and obligations into one list in your own UI. They
-answer different questions.
+To test your own decision, copy `upgrade.json`, replace the situation, body,
+anchor, question and labels, and run `check-frame` until it is accepted. Then
+write down what you expect each trial to give, before the first call.
 
 ## Common refusals
 

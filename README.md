@@ -6,8 +6,8 @@ the relation under fixed interventions, has a scorer read each trial, and reads
 one verdict by fixed rules. The method is [When meaning is load-bearing](docs/load-bearing.md).
 
 Use Gadfly when you can name the premise and a consequence that should change
-when the premise is gone: a policy clause, a cited source, one line of a system
-prompt, a tool's permission, or a code invariant. Use an ordinary evaluation
+when the premise is gone: a changelog line, a contributing rule, a requirement,
+a contract clause, an access grant, a measurement. Use an ordinary evaluation
 when you need a score, a ranking, or a broad quality measurement.
 
 <!-- --8<-- [start:verdicts] -->
@@ -40,22 +40,55 @@ cd gadfly
 uv sync
 ```
 
+Every example is a real experiment: a frame, the predictions written before
+the first call, and the records of each run, read by Gemma 4 26B through eGemma.
+Reading them back needs no model:
+
 ```text
-$ uv run python examples/refund.py refund-records.jsonl
-phrase-matcher: coupled but misaligned
-  presentation moved it decline -> grant
-  no hidden fallback: bypass gave decline, not the designated opening (unclear)
-rule-reader: carried
-  ablation moved it decline -> grant; held under presentation, 2 shams
-  bypass moved it decline -> unclear: no hidden fallback
-  the control moved it decline -> grant
+$ uv run python examples/read.py examples/07-sql-rule.json
+sql-rule: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
+trial         review
+baseline      request-changes 25
+repeat        request-changes 25
+ablation      request-changes 25
+sham-1        request-changes 25
+sham-2        request-changes 25
+presentation  request-changes 25
+control       approve 25
+run 1: cooled
+run 2: cooled
+run 3: cooled
+run 4: cooled
+run 5: cooled
 ```
 
-The phrase matcher reads a word, and the presentation trial catches it; it
-also keeps declining with the binding line cut, a fallback it is not cleared
-of. The rule reader moves as the promise allows, holds under presentation and
-the shams, and with the binding line cut cannot decide: the opening the frame
-names. Every check passed, so it is carried.
+A pull request builds SQL by formatting a value into the query, and the
+repository's rules forbid it. Gemma asks for changes, and still does once the
+rule is cut: its training decides, not the rule, so the rule carries nothing
+here (`cooled`). The same experiment with a rule Gemma cannot know from
+training, "read the time only through `clock.now()`", moves the other way:
+
+```text
+$ uv run python examples/read.py examples/08-clock-rule.json
+clock-rule: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
+trial         review
+baseline      request-changes 25
+repeat        request-changes 25
+ablation      approve 25
+sham-1        request-changes 25
+sham-2        request-changes 25
+presentation  request-changes 25
+control       approve 24, request-changes 1
+run 1: unresolved
+run 2: unresolved
+run 3: unresolved
+run 4: unresolved
+run 5: unresolved
+```
+
+Only the bypass check is open there, so it is not yet `carried`. The
+[first-frame tutorial](docs/first-frame.md) climbs one frame a trial at a time
+to a carried verdict, and [the examples](docs/examples.md) cover the rest.
 
 The same test in Python:
 
@@ -64,20 +97,21 @@ The same test in Python:
 import json
 from pathlib import Path
 
-from examples.refund import RuleReader
+from gadfly.batteries.egemma import EGemma
+from gadfly.cli import load_records
 from gadfly.pipeline import calls_needed, judge, run, situate
 from gadfly.types import Budget
 
-frame = situate(json.loads(Path("examples/refund.json").read_text()))
-kept = []
-result = run(
-    frame,
-    RuleReader(),
-    Budget(calls=calls_needed(frame)),
-    on_record=kept.append,
-)
-[finding] = judge(frame, kept)
+frame = situate(json.loads(Path("examples/upgrade.json").read_text()))
+
+# a kept run, read back: no call
+[finding] = judge(frame, load_records("examples/runs/upgrade/1.jsonl"))
 print(finding.category, finding.evidence, finding.obligations)
+
+# a fresh run, through eGemma on this machine
+kept = []
+run(frame, EGemma(), Budget(calls=calls_needed(frame)), on_record=kept.append)
+[finding] = judge(frame, kept)
 ```
 <!-- --8<-- [end:use] -->
 
@@ -90,11 +124,11 @@ in `kept` are not made again.
 The same from the command line (also `uv run python -m gadfly`):
 
 ```bash
-uv run gadfly check-frame examples/refund.json  # the frame's shape, then the parser
-uv run gadfly plan examples/refund.json         # the trials and the call count, no call
-uv run gadfly run examples/refund.json --battery examples.refund:RuleReader \
-    --calls 8 --out records.jsonl               # each record kept as one JSON line
-uv run gadfly report examples/refund.json records.jsonl
+uv run gadfly check-frame examples/upgrade.json  # the frame's shape, then the parser
+uv run gadfly plan examples/upgrade.json         # the trials and the call count, no call
+uv run gadfly run examples/upgrade.json --battery gadfly.batteries.egemma:EGemma \
+    --calls 40 --out records.jsonl               # each record kept as one JSON line
+uv run gadfly report examples/upgrade.json records.jsonl
 ```
 
 <!-- --8<-- [start:model] -->
@@ -116,7 +150,7 @@ rows, or fixtures, but keep them.
 
 ## Write a frame
 
-Start from `examples/refund.json` or the [first-frame tutorial](docs/first-frame.md).
+Start from `examples/upgrade.json` or the [first-frame tutorial](docs/first-frame.md).
 
 <!-- --8<-- [start:frame] -->
 The top-level keys are all checked before a call:
@@ -187,9 +221,9 @@ class Battery(Protocol):
 ```
 <!-- --8<-- [end:protocol] -->
 
-Start with your own deterministic battery. It is the fastest way to test the
-frame and has no provider cost. `examples/refund.py` contains the smallest
-working template.
+A deterministic battery of your own is the fastest way to test a frame's
+mechanics, at no cost: `tests/fixtures/refund.py` holds two, ten lines each. It
+tests the frame, not a model; the examples use a live one.
 
 <!-- --8<-- [start:batteries] -->
 | Battery | Reads with | Guarantees and recorded provenance |
@@ -225,16 +259,26 @@ A critic with its own schema names where the label lives with a JSON pointer:
 
 ## Examples
 
+Each example is an experiment: a frame in `examples/`, its predictions written
+before the first call (`examples/PREDICTIONS.md`), and every run Gemma 4 26B
+gave through eGemma kept under `examples/runs/`. `uv run python
+examples/read.py examples/<frame>.json` reads one back without a model;
+[the examples page](docs/examples.md) walks through each, and
+`examples/FINDINGS.md` gathers what they showed.
+
 <!-- --8<-- [start:examples] -->
-| Example | Relation | What it teaches | Calls |
+| Example | Domain, grain | Does the decision rest on… | Read by Gemma, per run |
 |---|---|---|---|
-| `examples/refund.py` | a refund requires a receipt | a phrase matcher is misaligned by presentation; a rule reader carries, every check passed | 8 per battery |
-| `examples/review_handoff.py` | a failure reaches a review state; a grant bounds operations | the essay's worked example: the state projection carries both; dropped openings are misaligned; a "fix ready" summary, the same whatever it is given, cannot be told; a lost record is unresolved | 7–8 per system |
-| `examples/citation.py` | an answer rests on cited source S-2 | a word matcher is exposed by presentation; a source reader carries | 7 per battery |
-| `examples/system_prompt.py` | one system line governs a refusal | a scorer that can move is cooled by its control; an always-refuse scorer cannot tell | 6 per battery |
-| `examples/tool_permission.py` | a grant limits a tool to read-only | an eager tool permits a disallowed modification; a scope reader carries | 6 per battery |
-| `examples/code_invariant.py` | a sort line governs output order | a full run carries; a lost record is no evidence; an owner's exclusion is outside scope only once checked | 6 |
-| `examples/refund_live.py` | the refund relation through a routed model or eGemma | the same frame read by a sampled critic: carried, cooled (its control moved) or unresolved (it cannot tell), at real token cost | 24, to a model |
+| `upgrade.json`, `rung1`-`rung6` | dependencies, one changelog line | the line that removes a function our code calls? | carried; the rungs show each check closing |
+| `07-sql-rule.json` | code review, one repository rule | the rule against formatted SQL? | cooled: its training decides |
+| `08-clock-rule.json` | code review, one repository rule | the rule against `datetime.now()`? | the rule decides; unresolved, no bypass declared |
+| `09-sync-sms.json` | architecture, one requirement | the 300 ms requirement? | cooled in two runs of three |
+| `10a`-`10d` | debugging, fixing, optimizing, alerting; one test or two metrics | which of two routes to the cause? | the metrics decide every task; the rollback alone decides the fix, not the cause; with both, either can go (cooled) |
+| `11-eu-clause.json` | contract into engineering, one clause | the clause keeping data in the EU? | the clause carries; applied without the line that makes it the customer's |
+| `12-payroll-access.json` | security, one grant, three requesters | the grant to Finance? | Dana carried, Sam unresolved, the backup job cooled |
+| `13`, `13b` | data migration, a section, then one line | the status saying the table is unused? | the section carries; "no reads in 30 days" carries nothing |
+| `14-orders-latency.json` | optimizing, one goal, five paths | the latency goal? | four paths carried whatever their cost; the timeout rejected |
+| `15-invoice-export.json` | implementing, one test, four processes | the passing test? | the test decides, never the process |
 <!-- --8<-- [end:examples] -->
 
 ## Boundaries

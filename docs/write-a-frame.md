@@ -82,8 +82,9 @@ something).
 
 ## A minimal valid skeleton
 
-`examples/citation.json` is a complete working frame. For a new relation, keep
-the shape and replace the situation, body, anchor, input and observation labels.
+`examples/upgrade.json` is a complete working frame, and every other frame in
+`examples/` was read by a live model. For a new relation, keep the shape and
+replace the situation, body, anchor, input and observation labels.
 Run `situate()` before making any calls so parser errors cost nothing.
 
 ## Troubleshooting

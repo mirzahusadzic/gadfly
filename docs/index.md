@@ -19,8 +19,8 @@ no runtime dependencies and no hidden state.
 
     ---
 
-    A policy clause, prompt line, citation, permission or code invariant.
-    Start with [Your first frame](first-frame.md).
+    A changelog line, a contributing rule, a requirement, a contract clause or
+    an access grant. Start with [Your first frame](first-frame.md).
 
 -   **I have read the essay**
 
@@ -34,28 +34,39 @@ no runtime dependencies and no hidden state.
     ---
 
     Gadfly returns one of five categories, not a score. Read [Reading a verdict](reading-a-verdict.md),
-    then decide from the examples whether that vocabulary fits your question.
+    then decide from the [examples](examples.md) whether that vocabulary fits your question.
 
 </div>
 
 ## What a result looks like
 
-This is the deterministic refund example: two batteries read the same relation.
+A pull request builds SQL by formatting a value into the query, and the
+repository's rules forbid it. Gemma 4 26B, through eGemma, reviews it in five
+kept runs; reading them back calls no model.
 
 ```text
-$ uv run python examples/refund.py records.jsonl
-phrase-matcher: coupled but misaligned
-  presentation moved it decline -> grant
-  no hidden fallback: bypass gave decline, not the designated opening (unclear)
-rule-reader: carried
-  ablation moved it decline -> grant; held under presentation, 2 shams
-  bypass moved it decline -> unclear: no hidden fallback
-  the control moved it decline -> grant
+$ uv run python examples/read.py examples/07-sql-rule.json
+sql-rule: 5 kept runs, read by google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be
+trial         review
+baseline      request-changes 25
+repeat        request-changes 25
+ablation      request-changes 25
+sham-1        request-changes 25
+sham-2        request-changes 25
+presentation  request-changes 25
+control       approve 25
+run 1: cooled
+run 2: cooled
+run 3: cooled
+run 4: cooled
+run 5: cooled
 ```
 
-The category answers a narrow question. The evidence says why. An obligation
-says what is still open: here the phrase matcher keeps declining with the
-rules' binding line cut. The rule reader has nothing left open: carried.
+Gemma asks for changes with the rule and without it, while the control (the
+rule and the query both cut) moves it to approve: the reader can move, and the
+rule is not what moves it. Its training rejects formatted SQL anyway, so the
+rule carries nothing here: **cooled**. A rule Gemma cannot know from training
+moves the other way ([rung 8](examples.md#07-08-a-rule-the-model-knows-and-one-it-cannot)).
 
 --8<-- "README.md:verdicts"
 
@@ -65,7 +76,7 @@ rules' binding line cut. The rule reader has nothing left open: carried.
 git clone https://github.com/mirzahusadzic/gadfly.git
 cd gadfly
 uv sync
-uv run python examples/refund.py refund-records.jsonl
+uv run python examples/read.py examples/upgrade.json
 ```
 
 ## Where to go next
