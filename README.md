@@ -11,7 +11,7 @@ scorer read each trial, and reads one verdict by fixed rules. The method is
   still open, kept apart from the evidence.
 - **Kept records:** every answer is tied to its exact frame, and reading a run
   back calls no model.
-- **Small:** a Python 3.11 library with no runtime dependencies and no hidden
+- **Small:** a Python 3.13 library with no runtime dependencies and no hidden
   state.
 
 Use it when you can name the premise and a consequence that should change
@@ -53,7 +53,7 @@ carried, cooled and outside scope unresolved; a frame with
 
 ### Install
 
-Gadfly needs Python 3.11 or later and [uv](https://docs.astral.sh/uv/). These
+Gadfly needs Python 3.13 or later and [uv](https://docs.astral.sh/uv/). These
 commands clone it and install its environment:
 
 ```bash

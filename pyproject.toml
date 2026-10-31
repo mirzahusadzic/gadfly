@@ -3,7 +3,7 @@ name = "gadfly"
 version = "0.1.0"
 description = "Counterfactual load-bearing tests: situate a relation, intervene, observe, read the verdict by fixed rules."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 license = "Apache-2.0"
 license-files = ["LICENSE", "LICENSES/*"]
 dependencies = []
@@ -32,7 +32,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 # docs/ holds the site's pages and its VitePress theme.
 extend-exclude = ["docs"]
 line-length = 100

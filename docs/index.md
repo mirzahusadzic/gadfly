@@ -97,7 +97,7 @@ carried, cooled and outside scope unresolved; a frame with
 ### Install
 
 Gadfly is a small Python library with no runtime dependencies and no hidden
-state. It needs Python 3.11 or later and uv, and these commands install it and
+state. It needs Python 3.13 or later and uv, and these commands install it and
 read a kept example back:
 
 ```bash
