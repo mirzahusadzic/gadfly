@@ -22,62 +22,79 @@ back from those records, and reading it needs no model.
 ### 1. The evidence and the question
 
 The frame is the whole experiment, written down before any call. Here it is in
-words, each span linked to its line in the file:
+words, in the order a run uses it, each span linked to its line in the file:
 
 <!-- frame examples/upgrade.json -->
 
-**The relation**
+**The claim**
 
-- **Relation:** the decision to hold the upgrade rests on the changelog line that removes retry_after()
-- **Locus:** the evidence a reviewer has on the pull request: our code, the library's changelog, the CI result
-- **Role:** the reviewer of dependency upgrades
-- **Grain:** one changelog line
-- **Purpose:** merge an upgrade only when our code needs no change for it
-- **Trajectory:** pull request, evidence, the reviewer's decision, the merge button
-- **Crossing:** the decision posted on the pull request
-- **Promise:** the reviewer holds the upgrade while the changelog removes a function our code calls; without that line they merge or say unclear, never hold for another reason
-- **Baseline:** the pull request's evidence as it stands; nothing changed
+| Part | In this frame |
+|---|---|
+| Relation | the decision to hold the upgrade rests on the changelog line that removes retry_after() |
+| Grain | one changelog line |
+| Promise | the reviewer holds the upgrade while the changelog removes a function our code calls; without that line they merge or say unclear, never hold for another reason |
 
-**The evidence**, the anchor marked `*`:
+**What the reader is shown**, the anchor marked `*`:
 
 | Span | Kind | Text |
 |---|---|---|
 | [`use`](../examples/upgrade.json#L14) | code | src/billing/retry.py calls quill.retry_after(response) to wait before retrying a 429 response. |
 | [`get`](../examples/upgrade.json#L15) | code | src/billing/client.py calls quill.get(url, timeout=10) for every request. |
-| [`removed`](../examples/upgrade.json#L16) `*` | changelog | quill 3.0.0 changelog, Breaking: retry_after() is removed; use Response.backoff() instead. |
+| [`removed`](../examples/upgrade.json#L16)&nbsp;`*` | changelog | quill 3.0.0 changelog, Breaking: retry_after() is removed; use Response.backoff() instead. |
 | [`http3`](../examples/upgrade.json#L17) | changelog | quill 3.0.0 changelog, Added: HTTP/3 support. |
 | [`leak`](../examples/upgrade.json#L18) | changelog | quill 3.0.0 changelog, Fixed: a memory leak in the connection pool. |
 | [`typos`](../examples/upgrade.json#L19) | changelog | quill 3.0.0 changelog, Docs: corrected typos in the README. |
 | [`ci`](../examples/upgrade.json#L20) | ci | CI on this pull request: all 214 tests passed; no test exercises the retry path. |
 
-**The question**
+**What the reader is asked**
 
-- **Asked, `pr`:** Dependabot opened pull request #212: bump quill from 2.4.1 to 3.0.0 in requirements.txt. Can it be merged as is?
-- **Answers:** `merge`, `hold` or `unclear`
-- **Instruction:** You review dependency upgrade pull requests for this repository. Use only the evidence given. Answer merge if the upgrade can be merged without changing our code, hold if our code must change before it can be merged, unclear if the evidence does not decide.
+| Part | In this frame |
+|---|---|
+| Question | Dependabot opened pull request #212: bump quill from 2.4.1 to 3.0.0 in requirements.txt. Can it be merged as is? |
+| Answers | `merge`, `hold` or `unclear` |
+| Instruction | You review dependency upgrade pull requests for this repository. Use only the evidence given. Answer merge if the upgrade can be merged without changing our code, hold if our code must change before it can be merged, unclear if the evidence does not decide. |
 
 **The trials**, each asked 5 times, 40 calls in all:
 
-- **`baseline`:** asks the evidence as it is
-- **`repeat`:** asks the same again
-- **`ablation`:** cuts `removed`
-- **`sham-1`:** cuts `leak`
-- **`sham-2`:** cuts `typos`
-- **`presentation`:** renames `backoff` to `pause`, `quill` to `heron`, `retry_after` to `wait_hint`
-- **`bypass`:** cuts `use`
-- **`control`:** cuts `removed`, `use`
+| Trial | What changes | What it tests |
+|---|---|---|
+| `baseline` | nothing | the answer the others are read against |
+| `repeat` | nothing, asked again | whether that answer is stable |
+| `ablation` | cuts `removed` | whether the answer needs the anchor |
+| `sham-1` | cuts `leak` | whether any cut of the same kind moves it |
+| `sham-2` | cuts `typos` | whether any cut of the same kind moves it |
+| `presentation` | renames `backoff` to `pause`, `quill` to `heron`, `retry_after` to `wait_hint` | whether the wording, not the meaning, drives it |
+| `bypass` | cuts `use` | whether a hidden fallback still carries it |
+| `control` | cuts `removed`, `use` | whether the reader can move at all |
 
-**The reading**
+**How the answers are read**
 
-- **Without the anchor:** `merge` or `unclear` may come back
-- **A level:** 4 of 5 answers alike
-- **Carriage:** `all-checks`, so a category waits for the checks it needs
-- **Materialized:** the answer is the form the recipient receives
-- **Battery:** `egemma`
+| Rule | In this frame |
+|---|---|
+| Without the anchor | `merge` or `unclear` may come back |
+| A level | 4 of 5 answers alike |
+| Carriage | `all-checks`, so a category waits for the checks it needs |
+| Materialized | the answer is the form the recipient receives |
+| Battery | `egemma` |
+
+**The setting**, hashed with the rest:
+
+| Part | In this frame |
+|---|---|
+| Role | the reviewer of dependency upgrades |
+| Locus | the evidence a reviewer has on the pull request: our code, the library's changelog, the CI result |
+| Purpose | merge an upgrade only when our code needs no change for it |
+| Trajectory | pull request, evidence, the reviewer's decision, the merge button |
+| Crossing | the decision posted on the pull request |
+| Baseline | the pull request's evidence as it stands; nothing changed |
 
 [The frame as written ↗](../examples/upgrade.json)
 <!-- end frame -->
 
+- **The claim** (`relation`, `grain`, `promise`) says what is being claimed,
+  at which unit, and what should come back. It is hashed with everything
+  else, the setting included, so a frame cannot be reworded after its runs:
+  records from another wording are refused.
 - **The evidence** (`body.spans`) is one sentence per span. Its `kind` groups
   spans for the sham trial (section 4).
 - **The anchor** (`anchors`), marked `*`, is the span the decision is supposed
@@ -86,10 +103,6 @@ words, each span linked to its line in the file:
   the instruction (`observe`) say what each answer means. Define every label in
   the instruction. A reader left to guess what a label means answers a
   different question.
-- **The relation** and the words under it (`relation`, `grain`, `promise` and
-  the rest) say what is being claimed, at which unit, and for whom. They are
-  hashed with the rest, so a frame cannot be reworded after its runs: records
-  from another wording are refused.
 
 What Gemma receives per call is the instruction, then the spans one per line, a
 line `---`, and the question. It must answer with one label. Each trial is asked

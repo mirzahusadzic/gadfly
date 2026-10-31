@@ -286,7 +286,25 @@ def _does(frame, trial) -> str:
         return f"moves `{move['span']}` after `{move['after']}`"
     if trial.removed:
         return "cuts " + ", ".join(f"`{span}`" for span in trial.removed)
-    return "asks the same again" if trial.kind == "repeat" else "asks the evidence as it is"
+    return "nothing, asked again" if trial.kind == "repeat" else "nothing"
+
+
+# What each kind of trial tests, as docs/interventions.md says it
+TESTS = {
+    "baseline": "the answer the others are read against",
+    "repeat": "whether that answer is stable",
+    "ablation": "whether the answer needs {anchor}",
+    "cumulative": "whether support moved to the spans it may fall back on",
+    "sham": "whether any cut of the same kind moves it",
+    "presentation": "whether the wording, not the meaning, drives it",
+    "placement": "whether the place, not the meaning, drives it",
+    "bypass": "whether a hidden fallback still carries it",
+    "control": "whether the reader can move at all",
+}
+
+
+def _table(head: str, rows: list[tuple[str, str]]) -> list[str]:
+    return [f"| {head} | In this frame |", "|---|---|", *(f"| {k} | {v} |" for k, v in rows)]
 
 
 def _span_lines(lines: list[str]) -> dict[str, int]:
@@ -301,9 +319,10 @@ def _span_lines(lines: list[str]) -> dict[str, int]:
 
 
 def readable(source: str, page: str) -> str:
-    """A frame as a reader takes it in: the relation in words, the evidence,
-    the question, the trials as Gadfly plans them and how they are read, with
-    the file as written one link away and each span linked to its line."""
+    """A frame as a reader takes it in, in the order a run uses it: the claim,
+    the evidence, the question, the trials as Gadfly plans them, how the
+    answers are read and the setting, each a table, with every span linked to
+    its line and the file as written one link away."""
     import json
 
     from midwife.pipeline import calls_needed, plan, situate
@@ -313,56 +332,71 @@ def readable(source: str, page: str) -> str:
     raw = json.loads("\n".join(lines))
     frame = situate(raw)
     href = Path(os.path.relpath(path, (ROOT / page).parent)).as_posix()
-    situation = [
-        "relation", "locus", "role", "grain", "purpose",
-        "trajectory", "crossing", "promise", "baseline",
-    ]  # fmt: skip
-    out = ["", "**The relation**", ""]
-    out += [f"- **{key.capitalize()}:** {_text(str(raw[key]))}" for key in situation]
-    out += ["", "**The evidence**, the anchor marked `*`:", ""]
+    anchor = "the anchor" if len(frame.anchors) == 1 else "the anchors"
+
+    def said(*keys: str) -> list[tuple[str, str]]:
+        return [(key.capitalize(), _cell(str(raw[key]))) for key in keys]
+
+    out = ["", "**The claim**", ""]
+    out += _table("Part", said("relation", "grain", "promise"))
+    out += ["", f"**What the reader is shown**, {anchor} marked `*`:", ""]
     out += ["| Span | Kind | Text |", "|---|---|---|"]
     at = _span_lines(lines)
     for span in frame.spans:
-        mark = " `*`" if span.id in frame.anchors else ""
+        mark = "&nbsp;`*`" if span.id in frame.anchors else ""
         link = f"[`{span.id}`]({href}#L{at[span.id]})"
         out.append(f"| {link}{mark} | {span.kind} | {_cell(span.text)} |")
-    out += ["", "**The question**", ""]
-    out += [f"- **Asked, `{x['id']}`:** {_text(x['text'])}" for x in frame.inputs]
+
+    def asked(x: str) -> str:
+        # one question needs no name; several are told apart by theirs
+        return "Question" if len(frame.inputs) == 1 else f"Question&nbsp;`{x}`"
+
+    out += ["", "**What the reader is asked**", ""]
+    out += _table("Part", [
+        *((asked(x["id"]), _cell(x["text"])) for x in frame.inputs),
+        ("Answers", _words(list(frame.labels))),
+        ("Instruction", _cell(raw["observe"]["instruction"])),
+    ])  # fmt: skip
     out += [
-        f"- **Answers:** {_words(list(frame.labels))}",
-        f"- **Instruction:** {_text(raw['observe']['instruction'])}",
         "",
-    ]
-    trials = plan(frame)
-    out += [
         f"**The trials**, each asked {frame.quorum} times, {calls_needed(frame)} calls in all:",
         "",
+        "| Trial | What changes | What it tests |",
+        "|---|---|---|",
     ]
-    out += [f"- **`{trial.id}`:** {_does(frame, trial)}" for trial in trials]
-    out += ["", "**The reading**", ""]
-    out.append(f"- **Without the anchor:** {_words(raw['allowed']['ablation'])} may come back")
+    out += [
+        f"| `{trial.id}` | {_does(frame, trial)} | {TESTS[trial.kind].format(anchor=anchor)} |"
+        for trial in plan(frame)
+    ]
+    reading = [(f"Without {anchor}", f"{_words(raw['allowed']['ablation'])} may come back")]
     if "bypass" in raw["allowed"]:
-        out.append(f"- **Through the bypass:** {_words(raw['allowed']['bypass'])} must come back")
+        reading.append(("Through the bypass", f"{_words(raw['allowed']['bypass'])} must come back"))
     standing = raw["standing"]
     stable = ", and the repeat must agree with the baseline" if standing.get("stable") else ""
-    out.append(f"- **A level:** {standing['agree']} of {standing['quorum']} answers alike{stable}")
+    reading.append(
+        ("A level", f"{standing['agree']} of {standing['quorum']} answers alike{stable}")
+    )
     carriage = raw.get("carriage", "all-checks")
     held = (
         "a category waits for the checks it needs"
         if carriage == "all-checks"
         else ("the category is named with its open checks beside it")
     )
-    out.append(f"- **Carriage:** `{carriage}`, so {held}")
+    reading.append(("Carriage", f"`{carriage}`, so {held}"))
     materialized = "is" if raw.get("materialized") else "is not declared to be"
-    out.append(f"- **Materialized:** the answer {materialized} the form the recipient receives")
+    reading.append(("Materialized", f"the answer {materialized} the form the recipient receives"))
     if "outsideScope" in raw:
-        out.append(f"- **Outside scope:** {_text(raw['outsideScope'])}")
+        reading.append(("Outside scope", _cell(raw["outsideScope"])))
     battery = raw["battery"]
     extra = [f"`{k}` {v}" if not isinstance(v, dict | list) else f"`{k}`" for k, v in
              battery.items() if k != "kind"]  # fmt: skip
-    out.append(
-        f"- **Battery:** `{battery['kind']}`" + (f", with {', '.join(extra)}" if extra else "")
+    reading.append(
+        ("Battery", f"`{battery['kind']}`" + (f", with {', '.join(extra)}" if extra else ""))
     )
+    out += ["", "**How the answers are read**", ""]
+    out += _table("Rule", reading)
+    out += ["", "**The setting**, hashed with the rest:", ""]
+    out += _table("Part", said("role", "locus", "purpose", "trajectory", "crossing", "baseline"))
     out += ["", f"[The frame as written ↗]({href})", ""]
     return "\n".join(out)
 

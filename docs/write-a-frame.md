@@ -10,59 +10,72 @@ that works, and change one part at a time.
 ### A complete small frame
 
 This frame is the test suite's own: one policy rule, one request, every
-carriage trial, and a battery that needs no model. Here it is in words, each
-span linked to its line in the file; the tables below say what to write for
-each key:
+carriage trial, and a battery that needs no model. Here it is in words, in
+the order a run uses it, each span linked to its line in the file;
+[The keys](#the-keys) says what to write for each:
 
 <!-- frame tests/fixtures/refund.json -->
 
-**The relation**
+**The claim**
 
-- **Relation:** a refund requires a receipt
-- **Locus:** the refund policy, its receipt rule
-- **Role:** a support agent deciding a request
-- **Grain:** one rule of the policy
-- **Purpose:** decide a refund request under the policy
-- **Trajectory:** policy and request, the agent's decision, the reply to the customer
-- **Crossing:** the decision in the reply
-- **Promise:** a request without a receipt is declined, however the rule is worded
-- **Baseline:** the policy as written and one request; no rule changed
+| Part | In this frame |
+|---|---|
+| Relation | a refund requires a receipt |
+| Grain | one rule of the policy |
+| Promise | a request without a receipt is declined, however the rule is worded |
 
-**The evidence**, the anchor marked `*`:
+**What the reader is shown**, the anchor marked `*`:
 
 | Span | Kind | Text |
 |---|---|---|
 | [`days`](../tests/fixtures/refund.json#L14) | rule | Refunds are granted within 30 days of purchase. |
-| [`receipt`](../tests/fixtures/refund.json#L15) `*` | rule | A refund requires a receipt. |
+| [`receipt`](../tests/fixtures/refund.json#L15)&nbsp;`*` | rule | A refund requires a receipt. |
 | [`gift`](../tests/fixtures/refund.json#L16) | rule | Gift cards are never refunded. |
 | [`method`](../tests/fixtures/refund.json#L17) | rule | Refunds go back to the original payment. |
 | [`binding`](../tests/fixtures/refund.json#L18) | note | These rules decide every request. |
 
-**The question**
+**What the reader is asked**
 
-- **Asked, `no-receipt`:** A customer without a receipt asks for a refund on day 3.
-- **Answers:** `grant`, `decline` or `unclear`
-- **Instruction:** Decide the request under the policy.
+| Part | In this frame |
+|---|---|
+| Question | A customer without a receipt asks for a refund on day 3. |
+| Answers | `grant`, `decline` or `unclear` |
+| Instruction | Decide the request under the policy. |
 
 **The trials**, each asked 1 times, 8 calls in all:
 
-- **`baseline`:** asks the evidence as it is
-- **`repeat`:** asks the same again
-- **`ablation`:** cuts `receipt`
-- **`sham-1`:** cuts `gift`
-- **`sham-2`:** cuts `method`
-- **`presentation`:** renames `receipt` to `proof of purchase`
-- **`bypass`:** cuts `binding`
-- **`control`:** cuts `days`, `receipt`, `gift`, `method`
+| Trial | What changes | What it tests |
+|---|---|---|
+| `baseline` | nothing | the answer the others are read against |
+| `repeat` | nothing, asked again | whether that answer is stable |
+| `ablation` | cuts `receipt` | whether the answer needs the anchor |
+| `sham-1` | cuts `gift` | whether any cut of the same kind moves it |
+| `sham-2` | cuts `method` | whether any cut of the same kind moves it |
+| `presentation` | renames `receipt` to `proof of purchase` | whether the wording, not the meaning, drives it |
+| `bypass` | cuts `binding` | whether a hidden fallback still carries it |
+| `control` | cuts `days`, `receipt`, `gift`, `method` | whether the reader can move at all |
 
-**The reading**
+**How the answers are read**
 
-- **Without the anchor:** `grant` or `unclear` may come back
-- **Through the bypass:** `unclear` must come back
-- **A level:** 1 of 1 answers alike
-- **Carriage:** `all-checks`, so a category waits for the checks it needs
-- **Materialized:** the answer is the form the recipient receives
-- **Battery:** `rule-reader`
+| Rule | In this frame |
+|---|---|
+| Without the anchor | `grant` or `unclear` may come back |
+| Through the bypass | `unclear` must come back |
+| A level | 1 of 1 answers alike |
+| Carriage | `all-checks`, so a category waits for the checks it needs |
+| Materialized | the answer is the form the recipient receives |
+| Battery | `rule-reader` |
+
+**The setting**, hashed with the rest:
+
+| Part | In this frame |
+|---|---|
+| Role | a support agent deciding a request |
+| Locus | the refund policy, its receipt rule |
+| Purpose | decide a refund request under the policy |
+| Trajectory | policy and request, the agent's decision, the reply to the customer |
+| Crossing | the decision in the reply |
+| Baseline | the policy as written and one request; no rule changed |
 
 [The frame as written ↗](../tests/fixtures/refund.json)
 <!-- end frame -->
