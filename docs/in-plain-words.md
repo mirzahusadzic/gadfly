@@ -47,3 +47,17 @@ Anyone can re-read the kept answers later without the AI.
 - It drops a database table without the one line showing nobody reads it.
 
 [Your first frame](first-frame.md) builds one such test, a trial at a time.
+
+---
+
+### Why a gadfly and a midwife
+
+Socrates gave himself both names. In Plato's *Apology* (30e) he is the gadfly
+that stings a sluggish city awake with questions; in the *Theaetetus*
+(148e–151d) he is a midwife, like his mother, who brings forth no ideas of his
+own but helps others deliver theirs and tests whether each one holds.
+
+Gadfly is the sting: the fixed trials that disturb a decision's evidence to see
+whether the decision still stands. `midwife`, the library you install and
+import, is the help in drawing out the premise you already hold and stating it
+as a frame that can be tested.

@@ -59,9 +59,11 @@ lists its open checks beside it.
 
 ### Install
 
-Gadfly is the `midwife` package on PyPI, for Python 3.13 or later. Its
-command, `gadfly`, goes on your path with [uv](https://docs.astral.sh/uv/) or
-pipx, and `uvx` runs it once without installing it:
+Gadfly is the `midwife` package on PyPI
+([why](https://mirzahusadzic.github.io/gadfly/in-plain-words#why-a-gadfly-and-a-midwife)),
+for Python 3.13 or later. Its command, `gadfly`, goes on your path with
+[uv](https://docs.astral.sh/uv/) or pipx, and `uvx` runs it once without
+installing it:
 
 ```bash
 uv tool install midwife
