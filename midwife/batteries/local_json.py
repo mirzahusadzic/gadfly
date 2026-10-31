@@ -36,6 +36,7 @@ from ..frame import Frame
 from ..types import Observation
 from .critic import (
     MAX_RESPONSE_BYTES,
+    Late,
     check_output,
     label_at,
     loopback,
@@ -108,6 +109,8 @@ class LocalJSON:
         try:
             with opener().open(request, timeout=timeout) as response:
                 body = read_reply(response, deadline, self.clock)
+        except Late as late:  # what had arrived is kept, never read as an answer
+            return Observation(label=None, opening="the call passed its timeout", raw=late.text)
         except urllib.error.HTTPError as error:
             return Observation(label=None, opening=f"the evaluator answered {error.code}")
         except (TimeoutError, urllib.error.URLError, OSError) as error:
@@ -117,8 +120,6 @@ class LocalJSON:
             return Observation(
                 label=None, opening=f"the evaluator could not be reached: {type(reason).__name__}"
             )
-        if body is None:
-            return Observation(label=None, opening="the call passed its timeout")
         if len(body) > MAX_RESPONSE_BYTES:
             return Observation(label=None, opening="the answer exceeded the size cap")
         try:

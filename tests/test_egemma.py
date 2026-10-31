@@ -90,7 +90,9 @@ def test_a_call_past_its_deadline_is_an_opening(frame, key, server):
     fake = server(reply("decline"))
     clock = itertools.chain([0.0], itertools.repeat(999.0)).__next__
     battery = EGemma(fake.base + "/judge", timeout=10, clock=clock)
-    assert battery.observe(frame, "p", 32).opening == "the call passed its timeout"
+    late = battery.observe(frame, "p", 32)
+    assert late.opening == "the call passed its timeout" and late.label is None
+    assert late.raw  # what arrived before the deadline is kept, never read
 
 
 def test_a_reply_past_the_size_cap_is_an_opening(frame, key, server, monkeypatch):

@@ -43,6 +43,7 @@ from ..frame import Frame
 from ..types import Observation
 from .critic import (
     MAX_RESPONSE_BYTES,
+    Late,
     check_output,
     label_at,
     loopback,
@@ -199,6 +200,8 @@ class EGemma:
                 with opener().open(request, timeout=self.timeout) as response:
                     body = read_reply(response, deadline, self.clock)
                 break
+            except Late as late:  # what had arrived is kept, never read as an answer
+                return Observation(label=None, opening="the call passed its timeout", raw=late.text)
             except urllib.error.HTTPError as error:
                 if error.code not in BUSY or attempt == RETRIES:
                     tried = f" after {attempt} retries" if attempt else ""
@@ -211,8 +214,6 @@ class EGemma:
                 return Observation(
                     label=None, opening=f"eGemma could not be reached: {type(reason).__name__}"
                 )
-        if body is None:
-            return Observation(label=None, opening="the call passed its timeout")
         if len(body) > MAX_RESPONSE_BYTES:
             return Observation(label=None, opening="the answer exceeded the size cap")
         try:

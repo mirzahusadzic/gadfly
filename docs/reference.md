@@ -530,10 +530,24 @@ called. Built per call, so no environment read at import can linger.
 opener()
 ```
 
+#### Late
+
+A reply still coming at its deadline, with the bytes that had arrived:
+kept beside the opening, never read as an answer.
+
+```python
+class Late(TimeoutError)
+```
+
+Late has these properties:
+
+- **`text`:** `str`. What had arrived, as text, for the record's raw.
+
 #### read_reply
 
-A reply as it comes, until it ends or passes the size cap; None if it
-is still coming at the deadline (the socket's timeout waits per read).
+A reply as it comes, until it ends or passes the size cap; Late, with
+what had arrived, if it is still coming at the deadline (the socket's
+timeout waits per read).
 
 ```python
 read_reply(response, deadline, clock)

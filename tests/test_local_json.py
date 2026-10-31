@@ -113,7 +113,9 @@ def test_a_call_past_its_deadline_is_an_opening(raw, evaluator):
     fake = evaluator(reply("decline"))
     clock = itertools.chain([0.0], itertools.repeat(999.0)).__next__
     frame = frame_at(raw, fake.base + "/judge", timeout=10)
-    assert LocalJSON(clock=clock).observe(frame, "p", 32).opening == "the call passed its timeout"
+    late = LocalJSON(clock=clock).observe(frame, "p", 32)
+    assert late.opening == "the call passed its timeout" and late.label is None
+    assert '"decline"' in late.raw  # what arrived before the deadline is kept, never read
 
 
 def test_a_proxy_in_the_environment_is_not_used(raw, evaluator, monkeypatch):

@@ -41,16 +41,36 @@ def opener() -> urllib.request.OpenerDirector:
     return urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
 
-def read_reply(response, deadline: float, clock: Callable[[], float]) -> bytes | None:
-    """A reply as it comes, until it ends or passes the size cap; None if it
-    is still coming at the deadline (the socket's timeout waits per read)."""
+class Late(TimeoutError):
+    """A reply still coming at its deadline, with the bytes that had arrived:
+    kept beside the opening, never read as an answer."""
+
+    def __init__(self, received: bytes):
+        super().__init__("the call passed its timeout")
+        self.received = received
+
+    @property
+    def text(self) -> str:
+        """What had arrived, as text, for the record's raw."""
+        return self.received.decode("utf-8", errors="replace")
+
+
+def read_reply(response, deadline: float, clock: Callable[[], float]) -> bytes:
+    """A reply as it comes, until it ends or passes the size cap; Late, with
+    what had arrived, if it is still coming at the deadline (the socket's
+    timeout waits per read)."""
     body = bytearray()  # grown in place: an earlier chunk is never copied again
-    while chunk := response.read1(65_536):
-        body.extend(chunk)
-        if len(body) > MAX_RESPONSE_BYTES:
-            break
-        if clock() > deadline:
-            return None
+    try:
+        while chunk := response.read1(65_536):
+            body.extend(chunk)
+            if len(body) > MAX_RESPONSE_BYTES:
+                break
+            if clock() > deadline:
+                raise Late(bytes(body))
+    except Late:
+        raise
+    except TimeoutError:  # the socket's own wait ran out mid-reply
+        raise Late(bytes(body)) from None
     return bytes(body)
 
 
