@@ -42,6 +42,7 @@ REPORTED: dict[str, list[list[str]]] = {
         [CAR, CAR, UNR, CAR, UNR],
     ],
     "15-invoice-export": [[UNR, UNR, UNR, UNR]] * 3,
+    "16-restore-inversion": [[UNR, UNR]] * 3,
     "rung1": [[UNR]] * 5,
     "rung2": [[UNR]] * 5,
     "rung3": [[UNR]] * 5,

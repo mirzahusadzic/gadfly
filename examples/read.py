@@ -74,19 +74,21 @@ def table(path: Path) -> str:
 
 def cut(frame, trial) -> str:
     """What one trial does to the evidence, in a few words."""
+    if trial.kind == "inversion":
+        return "inverts " + ", ".join(f"{a} -> {b}" for a, b in trial.renamed)
     if trial.renamed:
         return "renames " + ", ".join(f"{a} -> {b}" for a, b in trial.renamed)
     if trial.kind == "placement":
         move = frame.interventions["placement"]
         return f"moves {move['span']} after {move['after']}"
     if trial.removed:
-        return "cuts " + ", ".join(trial.removed)
+        return "cuts " + ", ".join(trial.removed) if trial.spans else "cuts every span"
     return "asks it again" if trial.kind == "repeat" else "asks the evidence as it is"
 
 
 def described(path: Path) -> str:
     """The frame as Gadfly plans it: the evidence, the anchors, the question,
-    and what each trial cuts, renames or moves."""
+    and what each trial cuts, renames, inverts or moves."""
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
     trials = plan(frame)
     lines = [
@@ -105,7 +107,11 @@ def described(path: Path) -> str:
         for span in frame.spans
     ]
     ids = max(len(x["id"]) for x in frame.inputs)
-    lines += ["asked:"] + [f"  {x['id'].ljust(ids)}  {x['text']}" for x in frame.inputs]
+    # an input of several lines, such as a case and its question, keeps its column
+    gap = "\n" + " " * (ids + 4)
+    lines += ["asked:"] + [
+        f"  {x['id'].ljust(ids)}  {x['text'].replace(chr(10), gap)}" for x in frame.inputs
+    ]
     lines += [f"labels: {', '.join(frame.labels)}", "trials:"]
     lines += [f"  {t.id.ljust(12)}  {cut(frame, t)}" for t in trials]
     allowed = "; ".join(

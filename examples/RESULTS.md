@@ -1,7 +1,7 @@
 # Results, against PREDICTIONS.md
 
 Every run is kept under `runs/<frame>/`: five per frame for rungs 1-8 and the full
-upgrade frame, three for rungs 9-15. Each trial is asked 5 times, with 4 to agree.
+upgrade frame, three for rungs 9-16. Each trial is asked 5 times, with 4 to agree.
 The reader is eGemma's google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be.
 
 ## Rungs 1-6: one pull request, one trial added at a time (`upgrade.json`)
@@ -183,3 +183,32 @@ an AI assistant, pairing. Gemma treated them identically on every call: accept
 with the passing test, unclear without it (predicted, 55%). The process carried
 nothing and the test result carried the decision. No bypass was declared, so each
 is unresolved with only that check open.
+
+## Rung 16: inversion, where the answer must move
+
+**16**, "May Jordan, the database administrator, restore the database from a
+backup?" on Tendora's demo statements, with the incident commander's approval and
+without. Calls per trial over the three runs:
+
+| trial | approved | not approved |
+|---|---|---|
+| baseline | Yes 14, No 1 | No 15 |
+| repeat | Yes 13, No 2 | No 15 |
+| ablation (the restore rule) | No 15 | No 15 |
+| sham-1 (Jordan may fail over) | Yes 15 | No 15 |
+| sham-2 (Jordan keeps break-glass credentials) | Yes 10, No 5 | No 15 |
+| inversion | No 15 | Yes 15 |
+| control (every statement) | Yes 15 | No 15 |
+
+The inversion turned both answers on every call, as predicted (approved No,
+medium-high; not approved Yes, medium): Gemma follows the rule's sense when the
+rule is turned around. The verdicts did not reach it. Approved read unresolved in
+every run: sham-2 had no agreed level in runs 1 and 2 (cutting the break-glass
+credentials, which share the anchor's role, moved it to No on 5 of 15 calls), and
+run 3's baseline and repeat split. Its ablation went to No, not open as predicted,
+still a move; its control stayed at Yes, answering from the case alone (the
+predicted alternative), so monotonicity is open beside it. Not approved read
+unresolved in every run: the ablation kept No, and so did the control, so the
+scorer cannot tell; the No rests on the absence of leave, not on the rule. Its
+inversion still moved it to Yes, read as evidence. Predicted: approved carried and
+not approved carried or cooled; both wrong.

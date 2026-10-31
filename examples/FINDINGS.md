@@ -6,13 +6,14 @@ can be read back with `read.py`, without a model.
 
 ## The reader: Gemma 4 26B through eGemma
 
-1. **On clear evidence it gives one answer.** 158 of 5,495 calls differed
+1. **On clear evidence it gives one answer.** 166 of 5,705 calls differed
    from their trial's majority, at eGemma's default temperature of 0.7. 134
    of them are in the incident frames (10), most on the trials where the cause
    rests on an elimination or on nothing at all. The rest sit where the
    evidence leaves room: the SMS design without the provider's latency (09
    bypass), a batched query at 180 ms against a 200 ms goal (14), a drop request
-   with no change request in view (13b control). A trial with no agreed level is
+   with no change request in view (13b control), a restore without the
+   break-glass credentials (16 sham-2). A trial with no agreed level is
    that room showing, not a fault.
 
 2. **The same prompt in another frame gets the same answers.** Some trials in
@@ -64,6 +65,15 @@ can be read back with `read.py`, without a model.
    first, a prototype, an AI assistant, pairing) was read identically on every
    call (15). The one path-dependent spread is a result near its threshold.
 
+8. **It follows a rule's sense, and answers a permission from the case
+   alone.** Turn the restore rule around ("only after the incident commander
+   does not approve the restore") and every answer turns: approved Yes to No,
+   not approved No to Yes, 30 of 30 calls (16). With every statement cut it
+   still answers from the case, Yes with approval and No without, so the
+   refusal is a default that rests on no statement; only the approval's Yes
+   rests on the rule. A sham of the anchor's own role is not always harmless:
+   cutting the break-glass credentials moved a restore to No on 5 of 15 calls.
+
 A caveat on the incident frames' alert task (10). "Which component should get a
 new alert so this is caught sooner next time?" has two defensible answers: an
 alert on the database's failover and cache, or one on the API's latency, the
@@ -74,7 +84,7 @@ later frame should ask a question with one answer.
 
 ## The service: eGemma
 
-- **No call failed.** 5,495 calls: no error, no
+- **No call failed.** 5,705 calls: no error, no
   refusal and no answer outside the schema. Every raw answer was the one-key JSON
   object the schema allows, in three whitespace variants (`{ "label": "…"}` on
   93%).
