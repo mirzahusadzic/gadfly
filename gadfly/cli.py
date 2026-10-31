@@ -1,7 +1,8 @@
 """The command line: plan, run, report, check-frame, portfolio.
 
     uv run gadfly plan examples/upgrade.json
-    uv run gadfly run examples/upgrade.json --battery gadfly.batteries.egemma:EGemma \
+    uv run gadfly run examples/upgrade.json \\
+        --battery gadfly.batteries.egemma:EGemma \\
         --calls 40 --out records.jsonl
     uv run gadfly report examples/upgrade.json records.jsonl
     uv run gadfly check-frame my-frame.json

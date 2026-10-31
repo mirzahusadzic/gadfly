@@ -1,5 +1,6 @@
-"""The moved text keeps its license, the pages read on GitHub, and the docs
-site renders what GitHub shows: its math, its alerts and the reference."""
+"""The moved text keeps its license, the pages read on GitHub, the docs site
+renders what GitHub shows, its math and its alerts, and the reference is what
+the code declares."""
 
 import importlib
 import inspect
@@ -9,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from hooks import github_alerts, reference
+from hooks import github_alerts
 from hooks.github_math import on_page_markdown
 from tools import watch_data
 
@@ -38,9 +39,9 @@ def test_github_math_becomes_arithmatex_math():
 
 
 def test_every_public_name_in_the_reference_has_a_docstring():
-    # mkdocstrings leaves out what has none, so the reference would not show it
+    # the reference is written from docstrings, so a name without one shows nothing
     page = (ROOT / "docs/reference.md").read_text()
-    modules = re.findall(r"^<!-- ::: (\S+) -->$", page, re.M)
+    modules = re.findall(r"^<!-- api (\S+) -->$", page, re.M)
     assert modules
     missing = []
     for name in modules:
@@ -102,11 +103,6 @@ def test_a_github_alert_becomes_an_admonition_with_its_title():
     assert github_alerts.on_page_markdown(quote, None, None, None) == quote
 
 
-def test_the_reference_unwraps_each_module_for_mkdocstrings():
-    rendered = reference.on_page_markdown("<!-- ::: gadfly.pipeline -->\n", None, None, None)
-    assert rendered == "::: gadfly.pipeline\n"
-
-
 # Syntax only MkDocs reads, which GitHub would show as it is written.
 SITE_ONLY = {
     "an admonition": re.compile(r"^(!!!|\?\?\?\+?) ", re.M),
@@ -121,8 +117,8 @@ SITE_ONLY = {
     "page", ["README.md", *(str(p.relative_to(ROOT)) for p in sorted(ROOT.glob("docs/**/*.md")))]
 )
 def test_every_page_reads_on_github(page):
-    # a callout is a GitHub alert, an included text is a copy, a module is named
-    # in a comment: the hooks turn them into what the site needs
+    # a callout is a GitHub alert, which a hook turns into what the site needs;
+    # an included text is a copy; a module's reference is written from its docstrings
     text = (ROOT / page).read_text()
     text = re.sub(r"```.*?```", "", text, flags=re.S)  # code shows as written anyway
     found = [what for what, pattern in SITE_ONLY.items() if pattern.search(text)]
@@ -149,3 +145,17 @@ def test_the_watch_view_plays_the_kept_runs(stem):
     # refuses a prompt its records' digest does not name
     kept = (watch_data.OUT / f"{stem}.json").read_text(encoding="utf-8")
     assert kept == watch_data.encoded(stem)
+
+
+def _references():
+    from tools.doc_outputs import PAGES, apis
+
+    return [a for page in PAGES for a in apis(page)]
+
+
+@pytest.mark.parametrize("block", _references(), ids=lambda a: a.where())
+def test_every_reference_is_its_docstrings(block):
+    # `uv run python tools/doc_outputs.py --write` brings a page back in line
+    from tools.doc_outputs import documented
+
+    assert documented(block.source) == block.quoted

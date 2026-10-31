@@ -5,10 +5,12 @@ Responses API on loopback and maps a model slug to its provider:
 `anthropic/...` runs on Anthropic's API; `openrouter/...`, `deepseek/...`
 and `ultra-spark/...` run on OpenRouter (DeepSeek's models through it), each
 with the router's own key. `ultra-spark/` is training-tier: it is sent only
-when the frame names its exact slug under `trainsOnInputs`. One battery covers
-them all; calling a provider's own endpoint is a different battery (a native
-one). An unprefixed slug is OpenAI's, which the router reaches only with the
-caller's Codex sign-in: this battery refuses it.
+when the frame names its exact slug under `trainsOnInputs`.
+
+One battery covers them all; calling a provider's own endpoint is a
+different battery (a native one). An unprefixed slug is OpenAI's, which the
+router reaches only with the caller's Codex sign-in: this battery refuses
+it.
 
 The critic answers in JSON to a schema, by default `{"label": <one of the
 frame's labels>}`. A critic of your own (its output schema, as your project

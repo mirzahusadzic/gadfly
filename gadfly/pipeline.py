@@ -4,12 +4,13 @@
     trials = plan(frame)
     result = run(frame, battery, Budget(calls=60))
     findings = judge(frame, result.records)
-    verdict = overall(findings)  # one category over all the inputs
+    verdict = overall(findings)
 
-`run` is the only stage that calls out. It never starts a call the budget
-cannot cover, stops between calls when the caller says so, and hands each
-record to `on_record` as soon as it exists, so the caller keeps what was spent
-even if the run stops early.
+`overall` names one category over all the inputs. `run` is the only stage
+that calls out. It never starts a call the budget cannot cover, stops
+between calls when the caller says so, and hands each record to `on_record`
+as soon as it exists, so the caller keeps what was spent even if the run
+stops early.
 """
 
 from __future__ import annotations

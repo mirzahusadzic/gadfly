@@ -81,20 +81,10 @@ markdown_extensions:
 hooks:
   - hooks/github_alerts.py
   - hooks/github_math.py
-  - hooks/reference.py
   - hooks/schema.py
 
 plugins:
   - search
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: [.]
-          options:
-            show_source: false
-            show_root_heading: true
-            members_order: source
-            heading_level: 2
 
 extra_css:
   - stylesheets/house.css

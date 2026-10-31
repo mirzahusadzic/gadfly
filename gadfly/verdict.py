@@ -17,16 +17,22 @@ scripts/load_bearing.py, https://github.com/mirzahusadzic/after-the-poem):
    the scorer cannot tell;
 5. unresolved: a sham moves it (the change is not specific to the relation);
 6. carried: otherwise.
+
 Outside scope only when the frame declares the exclusion; never inferred.
 
 What the trials do not settle is recorded as an open obligation beside the
-category. Carried: no hidden fallback (a bypass trial), presentation
-invariance and specificity when their trials were not run, and
-materialization (whether the observation is the form the recipient
-receives, which the frame must say). Cooled: discrimination, unless a
-control moved it. Outside scope: the independent scope check, which only
-the receiving owner can make. Traceability rests on the records: each
-names its frame, battery, body, prompt and what served it.
+category:
+
+- carried: no hidden fallback (a bypass trial), presentation invariance and
+  specificity when their trials were not run, and materialization (whether
+  the observation is the form the recipient receives, which the frame must
+  say);
+- cooled: discrimination, unless a control moved it;
+- outside scope: the independent scope check, which only the receiving
+  owner can make.
+
+Traceability rests on the records: each names its frame, battery, body,
+prompt and what served it.
 """
 
 from __future__ import annotations
