@@ -2,7 +2,7 @@
    IMPORTANT: The @import rule must be at the very top of the CSS file.
    Ensure these fonts are hosted by Google Fonts.
 */
-@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Public+Sans:wght@400;500;700&family=JetBrains+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;600&family=Fraunces:opsz,wght@9..144,400&display=swap');
 
 /*
    Define your core custom variables here.
@@ -30,10 +30,9 @@
   --gray-950: #0a0e10;
 
   /* Font Family Definitions (used by the theme variables below) */
-  --font-family-headings-custom: "Lora", serif;
-  --font-family-body-custom: "Public Sans", sans-serif;
-  --font-jetbrains-mono: "JetBrains Mono", monospace;
-  --font-inter: "Inter", sans-serif;
+  --font-family-headings-custom: "Fraunces", Georgia, serif;
+  --font-family-body-custom: "Albert Sans", "Helvetica Neue", system-ui, sans-serif;
+  --font-jetbrains-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
 /*
@@ -136,7 +135,7 @@
 
 /* Increase the overall size and spacing of admonitions */
 .md-typeset .admonition {
-  font-size: 1.01em;      /* Makes all text inside larger than body text */
+  font-size: inherit;
 }
 
 /* ======================================== */
@@ -144,9 +143,6 @@
 /* ======================================== */
 
 .md-typeset blockquote {
-  font-family: var(--font-family-headings-custom);
-  font-size: 1.05em; /* Makes all text inside larger than body text */
-  font-style: bold;  /* Makes the text italic, a common style for quotes */
   margin-left: 0;    /* Ensures it aligns correctly */
   
   /* Use a slightly different background to make it stand out */
@@ -157,17 +153,6 @@
 /* 3. Use Monospace Font in Navigation      */
 /* ======================================== */
 
-/* Target the main navigation tabs in the header */
-.md-tabs__link {
-  font-family: var(--font-jetbrains-mono);
-  text-transform: none; /* Optional: Removes the default ALL CAPS styling */
-}
-
-/* Target all navigation links in the left and right sidebars */
-.md-nav__link {
-  font-family: var(--font-jetbrains-mono);
-  font-size: 0.85rem;
-}
 
 /* ======================================== */
 /* 3. Header                                */
@@ -185,7 +170,6 @@
 
 /* Target the main navigation tabs in the header */
 .md-footer__title {
-  font-family: var(--font-jetbrains-mono);
   text-transform: none; /* Optional: Removes the default ALL CAPS styling */
 }
 
@@ -222,10 +206,6 @@
 }
 */
 
-/* Sidebar and TOC titles */
-.md-nav__title {
-  font-size: 1.5em;
-}
 
 /*
    Applying custom font families to HTML elements for stronger control.
@@ -252,13 +232,8 @@ body {
   font-family: var(--font-family-body-custom);
 }
 
-/*
-   This rule sets the font for the root HTML element, prioritizing 'Inter'.
-   This is often a base fallback. Ensure this aligns with your overall font strategy,
-   especially if 'Public Sans' (from --font-family-body-custom) is intended as the primary text font.
-*/
 html {
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-family: var(--font-family-body-custom);
   scroll-padding-top: 3.6rem;
 }
 
@@ -267,10 +242,6 @@ html {
   border-color: var(--gray-200);
 }
 
-/* Increase base font size for readability */
-.md-typeset {
-  font-size: 0.90rem;
-}
 
 /* Adjust sidebar width */
 .md-sidebar {
@@ -296,7 +267,6 @@ html {
 /* ======================================== */
 
 .md-typeset table:not([class]) {
-  font-size: .85rem;
   border: none;
   border-collapse: collapse;
   width: 100%;
@@ -392,3 +362,40 @@ html {
 [data-md-color-scheme="slate"] .mermaid-house svg :is(.nodeLabel, .nodeLabel *, .cluster-label span) {
   color: #eef1f5 !important;
 }
+
+/* ======================================== */
+/* Type                                     */
+/* ======================================== */
+/* One body size, one caption voice, headings at 400 and never bold, mono only
+   for code. Material's rem is 20px, so 0.85rem is 17px. Sizes in use: 13px
+   captions, 15px sidebar and tables, 17px body, 19/25/34px headings. Weights
+   400 and 600 only. Prose, code and tables share the content column's width. */
+.md-typeset { font-size: 0.85rem; line-height: 1.6; }
+.md-typeset :is(h1, h2, h3, h4) {
+  font-family: var(--font-family-headings-custom);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  font-optical-sizing: auto;
+  color: var(--md-typeset-heading-color);
+  background: none;
+}
+.md-typeset h1 { font-size: 1.7rem; line-height: 1.12; margin-bottom: 0.8em; }
+.md-typeset h2 { font-size: 1.25rem; line-height: 1.2; margin-top: 1.8em; }
+.md-typeset h3 { font-size: 0.95rem; line-height: 1.3; }
+.md-typeset h4 { font-family: var(--font-family-body-custom); font-size: 0.85rem; font-weight: 600; letter-spacing: 0; }
+.md-typeset strong, .md-typeset b { font-weight: 600; }
+.md-typeset code { font-size: 0.85em; }
+.md-typeset pre > code { font-size: 0.7rem; line-height: 1.6; }
+.md-typeset table:not([class]) { font-size: 0.75rem; }
+.md-typeset table:not([class]) thead th { font-weight: 600; }
+
+/* the sidebar and contents: the body face, one size; the section titles are
+   the caption voice */
+.md-nav { font-size: 0.75rem; }
+.md-nav__link { font-family: var(--font-family-body-custom); }
+.md-nav__item--active > .md-nav__link, .md-nav__link--active { font-weight: 400; }
+.md-nav__title, .md-nav__item--section > .md-nav__link {
+  font-size: 0.65rem; font-weight: 600; color: var(--md-default-fg-color--light);
+}
+.md-footer__title, .md-footer__direction { font-family: var(--font-family-body-custom); }
+.md-typeset :is(.admonition-title, summary) { font-weight: 600; }
