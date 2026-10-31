@@ -10,16 +10,17 @@ and `gadfly --version` its version.
 
 ### Commands
 
-Every command but `portfolio` also takes `--json`, which prints the same as
-JSON. A refusal, such as a missing file, an existing `--out` file or a battery
-that cannot be imported, prints `gadfly:` and the reason, and exits with 2.
+Every command also takes `--json`, which prints the same as JSON. A refusal,
+such as a missing file, an existing `--out` file, a battery that cannot be
+imported or a budget below the plan, prints `gadfly:` and the reason, and exits
+with 2.
 Results go to standard output, and messages to standard error.
 
 | Command | Calls a model | Prints | Exit status |
 | --- | --- | --- | --- |
 | `check-frame FRAME` | no | `ok`, the frame's hash and its calls, or each problem and where it is | 0 when accepted, 1 when not |
 | `plan FRAME` | no | each trial, its kind and its body's hash, and the call count | 0 |
-| `run FRAME` | yes, up to `--calls` | the calls written, how many came back as openings and why, why it stopped early, and how to read the verdict | 0, or 130 when stopped by Ctrl-C |
+| `run FRAME` | yes, up to `--calls` | the calls written, how many came back as openings and why, why it stopped early, and how to read the verdict | 0; 1 when every call came back as an opening; 130 when stopped by Ctrl-C |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0 |
 | `portfolio REPORT...` | no | frames counted by category, the obligations they share, and frames whose inputs disagree | 0 |
 
@@ -150,4 +151,5 @@ uv run gadfly portfolio a.json b.json
 ```
 
 It counts the frames by category, lists the obligations two or more of them
-share, and names the frames whose inputs disagree.
+share, and names the frames whose inputs disagree; `--json` prints the same as
+JSON.

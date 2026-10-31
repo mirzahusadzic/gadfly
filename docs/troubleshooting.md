@@ -14,7 +14,7 @@ without an answer is an opening, which `run` counts and names.
 | `gadfly: EGEMMA_API_KEY_FILE names an empty file` | The file is there but holds no key. Write the key into it. |
 | `gadfly: [Errno 2] No such file or directory: ...` | `EGEMMA_API_KEY_FILE` names a file that does not exist. Check the path. |
 | `gadfly: no router token: set CODEX_ROUTER_TOKEN or install the router` | The `unified` battery found no token in `CODEX_ROUTER_TOKEN` or in the router's settings file, `~/.codex/unified-router/openrouter.env`. Install the router, or set the variable. |
-| `openings: 10 of 10 calls, most often "eGemma could not be reached: ConnectionRefusedError" (10)` | Nothing answers at `EGEMMA_URL`, by default `http://127.0.0.1:8000`. Start eGemma, or point the variable at it. The calls were spent, so run again into a new file. |
+| `openings: 10 of 10 calls, most often "eGemma could not be reached: ConnectionRefusedError" (10)` | Nothing answers at `EGEMMA_URL`, by default `http://127.0.0.1:8000`. Start eGemma, or point the variable at it. The calls were spent, and `run` exits with 1, so run again into a new file. |
 | `"the router could not be reached: ..."` or `"the evaluator could not be reached: ..."` | The same for the router, at `http://127.0.0.1:18766`, or for your evaluator, at the frame's `battery.url`. |
 | `"eGemma answered 401"` or `"the router answered 401"` | The key or the token is wrong. |
 | `"eGemma answered 503 after 3 retries"` | eGemma stayed busy or has no model loaded; the battery waits and retries before it gives up. Check eGemma's own log. |
@@ -33,7 +33,7 @@ without an answer is an opening, which `run` counts and names.
 | `gadfly: tests.fixtures.refund has no NoSuchReader` | The module was found, but not the class named after the colon. Check its spelling and case. |
 | `gadfly: No module named '...'` | The battery's module is imported from the current directory. Run from the folder that holds it, or check its name. |
 | `gadfly: this frame asks for the egemma battery, not unified` | A frame names its battery in `battery.kind`, and another battery is another frame. Pass the one it names. |
-| `stopped: the plan needs 40 calls; the budget allows 10` | `--calls` is below what the plan needs, and nothing was spent. `gadfly plan` shows the count. |
+| `gadfly: the plan needs 40 calls; the budget allows 10` | `--calls` is below what the plan needs, so nothing was spent and no file made. `gadfly plan` shows the count. |
 | `gadfly: runs is not a folder: make it, or choose another --out` | The folder `--out` names does not exist, and nothing was spent. Make it first. |
 | `gadfly: records.jsonl exists: kept records are never written over` | Choose a new `--out`. To finish a stopped run, pass its file as `--kept` with a new `--out`. |
 | `gadfly: stopped by Ctrl-C after 12 calls; they are in records.jsonl; finish with --kept records.jsonl and a new --out` | Every record made so far is in its file. Run again with that file as `--kept` and a new `--out`: only the missing calls are made, and the new file holds the whole run, to report as one. A crash leaves the file the same way. |

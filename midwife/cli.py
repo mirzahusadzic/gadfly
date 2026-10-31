@@ -169,9 +169,12 @@ def command_run(args) -> int:
             file.close()
         if progress and made:
             print(file=sys.stderr)
+    if not result.records and result.stopped:  # nothing was spent: a refusal, not a run
+        raise ValueError(result.stopped)
     # a service that is down answers every call with an opening: say so, so a
     # run that spent its calls on nothing does not read as a finished one
     openings = Counter(r.opening for r in result.records if r.opening is not None)
+    status = 1 if result.records and sum(openings.values()) == len(result.records) else 0
     if args.json:
         payload = {
             "frame": frame.name,
@@ -199,7 +202,7 @@ def command_run(args) -> int:
             print(f"stopped: {result.stopped}")
         if files:
             print(f"to read the verdict: gadfly report {args.frame} {out}")
-    return 0
+    return status
 
 
 def command_report(args) -> int:
@@ -254,7 +257,21 @@ def command_check_frame(args) -> int:
 def command_portfolio(args) -> int:
     """`gadfly portfolio`: several reports counted side by side."""
     documents = [json.loads(Path(path).read_text(encoding="utf-8")) for path in args.reports]
-    print(json.dumps(summarize([entry_from(document) for document in documents]), indent=2))
+    summary = summarize([entry_from(document) for document in documents])
+    if args.json:
+        print(json.dumps(summary, indent=2))
+        return 0
+    print(f"{summary['frames']} frame{'s' * (summary['frames'] != 1)}")
+    for category, names in summary["by_category"].items():
+        print(f"{category}: {', '.join(names)}")
+    if summary["shared_obligations"]:
+        print("open in several frames:")
+        for obligation, names in summary["shared_obligations"].items():
+            print(f"  {obligation} ({', '.join(names)})")
+    if summary["input_disagreements"]:
+        print("frames whose inputs disagree:")
+        for name, inputs in summary["input_disagreements"].items():
+            print(f"  {name}: " + ", ".join(f"{x} {c}" for x, c in inputs.items()))
     return 0
 
 
@@ -299,6 +316,7 @@ def parser() -> argparse.ArgumentParser:
 
     portfolio = commands.add_parser("portfolio", help="count verdicts across report files")
     portfolio.add_argument("reports", nargs="+", help="documents from `gadfly report --json`")
+    portfolio.add_argument("--json", action="store_true", help="print JSON instead of text")
     portfolio.set_defaults(func=command_portfolio)
     return root
 

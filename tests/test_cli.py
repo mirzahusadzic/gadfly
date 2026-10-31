@@ -67,12 +67,12 @@ def test_run_says_when_its_calls_came_back_as_openings(tmp_path, capsys):
     # so, instead of only counting the calls it wrote
     out = tmp_path / "records.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Unreachable", "--calls", "8"]
-    assert main([*argv, "--out", str(out)]) == 0
+    assert main([*argv, "--out", str(out)]) == 1  # every call opened: nothing was read
     assert capsys.readouterr().out.splitlines()[1] == (
         "openings: 8 of 8 calls, most often "
         '"the reader could not be reached: ConnectionRefused" (8)'
     )
-    assert main([*argv, "--out", str(tmp_path / "again.jsonl"), "--json"]) == 0
+    assert main([*argv, "--out", str(tmp_path / "again.jsonl"), "--json"]) == 1
     assert json.loads(capsys.readouterr().out)["openings"] == {
         "the reader could not be reached: ConnectionRefused": 8
     }
@@ -81,13 +81,14 @@ def test_run_says_when_its_calls_came_back_as_openings(tmp_path, capsys):
     assert status == 0 and "openings" not in capsys.readouterr().out
 
 
-def test_run_says_when_the_budget_stopped_it(tmp_path, capsys):
+def test_a_budget_below_the_plan_is_a_refusal(tmp_path, capsys):
+    # nothing was spent and no file made: a refusal, not a run
     out = tmp_path / "records.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "3"]
-    assert main([*argv, "--out", str(out)]) == 0
-    assert capsys.readouterr().out.splitlines()[1] == (
-        "stopped: the plan needs 8 calls; the budget allows 3"
-    )
+    assert main([*argv, "--out", str(out)]) == 2
+    captured = capsys.readouterr()
+    assert captured.err == "gadfly: the plan needs 8 calls; the budget allows 3\n"
+    assert captured.out == "" and not out.exists()
 
 
 def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
@@ -138,6 +139,8 @@ def test_portfolio_counts_categories_and_never_names_one(tmp_path, capsys):
         reports.append(tmp_path / f"{name}.json")
         reports[-1].write_text(json.dumps(document))
     assert main(["portfolio", *map(str, reports)]) == 0
+    assert capsys.readouterr().out.splitlines()[:2] == ["2 frames", "carried: a, b"]
+    assert main(["portfolio", *map(str, reports), "--json"]) == 0
     summary = json.loads(capsys.readouterr().out)
     assert summary["categories"] == {"carried": 2} and "category" not in summary
     assert summary["by_category"] == {"carried": ["a", "b"]}
