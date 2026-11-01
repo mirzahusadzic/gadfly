@@ -74,8 +74,9 @@ and discrimination for cooled.
 Monotonicity is open when the control removes the anchors and more, yet left
 the level where the ablation moved it from: cutting more moved it less, so
 the ablation's move may be the scorer's spread. Of the kept examples, only
-the approved case of [Inversion](examples/inversion.md) raises it, in every
-run: with every statement cut, Gemma answers Yes from the case alone.
+the approved restore raises it, in every run of
+[Inversion](examples/inversion.md) and in two of rung 18c's three: with every
+statement cut, Gemma answers Yes from the case alone.
 
 - **Under the default `carriage: all-checks`:** a category is named only when
   the checks it needs have passed, every carriage check for carried and a

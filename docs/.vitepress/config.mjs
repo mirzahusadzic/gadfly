@@ -48,6 +48,8 @@ const sidebar = [
       { text: 'Grain', link: '/examples/grain' },
       { text: 'Paths', link: '/examples/paths' },
       { text: 'Inversion', link: '/examples/inversion' },
+      { text: 'Asked', link: '/examples/asked' },
+      { text: 'Each anchor alone', link: '/examples/each-anchor' },
       { text: 'Run your own', link: '/examples/your-own' },
     ],
   },

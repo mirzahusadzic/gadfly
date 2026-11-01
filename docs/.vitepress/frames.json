@@ -74,6 +74,31 @@
     "name": "restore-approval-inversion",
     "hash": "43f144660597fce2a301e56f8b3aaeb72f8c5ad9bc0bf93fd0581b6ad7526f35"
   },
+  "17-clock-asked": {
+    "path": "examples/17-clock-asked.json",
+    "name": "clock-asked",
+    "hash": "153f8c201dcbfb4c87e8ea2036f927e0e12b817da993a08d3a85495b455b538d"
+  },
+  "18-notify-chain": {
+    "path": "examples/18-notify-chain.json",
+    "name": "notify-chain",
+    "hash": "bf3e5d51f747c3f9c7f064248eb19bd57082ef195d0b595afdf3fdce5aa2d747"
+  },
+  "18b-access-logs": {
+    "path": "examples/18b-access-logs.json",
+    "name": "access-logs",
+    "hash": "b7dc8df6cb9f8fabe4c8d4e67263b33d159c1718fb15d22c3f019f0a269fcc31"
+  },
+  "18b2-access-logs-both": {
+    "path": "examples/18b2-access-logs-both.json",
+    "name": "access-logs-both",
+    "hash": "65d1696b7e6e7990c48fc8079728b2747e506a38505d1b67868e579d0b8cb4b1"
+  },
+  "18c-restore-cited": {
+    "path": "examples/18c-restore-cited.json",
+    "name": "restore-cited",
+    "hash": "4713844abfdae2bbedb8cc6e1b554c26bbf4ba1ca0ac55209e45cf1384bb15a5"
+  },
   "rung1": {
     "path": "examples/rung1.json",
     "name": "quill-upgrade-rung-1",

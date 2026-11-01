@@ -28,6 +28,8 @@ OUT = ROOT / "docs/public/assets/watch"
 FRAMES = [
     "upgrade",
     "16-restore-inversion",
+    "17-clock-asked",
+    "18c-restore-cited",
     "07-sql-rule",
     "09-sync-sms",
     "10c2-incident-both",

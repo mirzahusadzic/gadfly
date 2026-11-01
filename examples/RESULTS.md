@@ -212,3 +212,67 @@ unresolved in every run: the ablation kept No, and so did the control, so the
 scorer cannot tell; the No rests on the absence of leave, not on the rule. Its
 inversion still moved it to Yes, read as evidence. Predicted: approved carried and
 not approved carried or cooled; both wrong.
+
+## Rung 17: the clock rule, with the diff asked about
+
+**17**, rung 8's review with the diff moved into the question, and its
+`datetime.now()` turned into `clock.now()` by the input inversion. Calls per
+trial over the three runs:
+
+| trial | review |
+|---|---|
+| baseline | request-changes 15 |
+| repeat | request-changes 15 |
+| ablation (the clock rule) | approve 12, unclear 3 |
+| sham-1, sham-2 (another contributing rule) | request-changes 15 each |
+| presentation | request-changes 15 |
+| input-inversion (`clock.now()` in the diff) | approve 14, unclear 1 |
+| control (every span) | unclear 15 |
+
+The input inversion turned the review to approve, as predicted
+(medium-high): the answer follows the change under review. Carried in runs 2
+and 3, as predicted; run 1 read unresolved, its ablation split approve 3 to
+unclear 2. The control said unclear, not approve: with the pull request's
+description cut, Gemma will not review the diff alone, the alternative
+predicted. Moving the diff into the question did not move the baseline.
+
+## Rung 18: each anchor alone
+
+Four frames over rung 16's statements, each declaring `eachAnchor`. Calls per
+trial over the three runs of each:
+
+| trial | 18, chain | 18b, two routes | 18b2, with a case | 18c, idle citation |
+|---|---|---|---|---|
+| baseline | Sam 15 | No 15 | Yes 12, No 3 | Yes 13, No 2 |
+| repeat | Sam 15 | No 15 | Yes 11, No 4 | Yes 13, No 2 |
+| ablation (both anchors) | Sam 9, open 6 | No 15 | No 15 | No 15 |
+| first anchor alone | Sam 15 (s22) | No 15 (s16) | No 9, Yes 6 (s16) | No 15 (s15) |
+| second anchor alone | Sam 15 (s23) | No 15 (s24) | Yes 13, No 2 (s24) | Yes 9, No 6 (s14) |
+| sham-1 | Sam 15 | No 15 | No 9, Yes 6 | Yes 15 |
+| sham-2 | Sam 15 | No 15 | Yes 10, No 5 | (one draw) |
+| control (every statement) | open 15 | No 15 | No 15 | Yes 15 |
+| per run | unresolved, unresolved, cooled | unresolved in all three | unresolved in all three | unresolved, unresolved, carried |
+
+**18, the chain.** Predicted carried, with each anchor carrying it; wrong.
+Either rule cut alone left Sam on every call, and both cut left Sam on 9 of
+15: Gemma reaches Sam another way, through "Sam posts customer updates", the
+alternative the prediction named. Runs 1 and 2 had no agreed ablation; run 3
+agreed on Sam and read cooled, the control moving it to open.
+
+**18b, two routes.** Predicted carried, with either route enough; wrong.
+Gemma answered No on all 120 calls, whatever was cut, so the control could
+not move it and every run read unresolved: the scorer cannot tell. No is its
+default for a question with no case.
+
+**18b2, with a case both routes reach.** Predicted carried, with either
+route enough; wrong. Its Yes is not steady: the baseline and repeat split
+in every run, and so did a sham. Cutting Priya's route moved it to No on 9
+of 15 calls, cutting Alex's on 2: Gemma leans on the route the exposed key
+reaches.
+
+**18c, an idle citation.** Predicted carried with "s15 carries it; s14 adds
+nothing alone" where the baseline holds, unresolved where it splits, and
+monotonicity open: right on all three. Run 3 carried, reading "s15 carries
+it" and "s14 alone has no agreed level" (Yes 3 to No 2 in that run); runs 1
+and 2 split at the baseline or repeat. Monotonicity is open in runs 1 and 3,
+the control answering Yes from the case alone.

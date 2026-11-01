@@ -10,7 +10,7 @@ reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
 - **Every run kept:** `examples/runs/` holds every record of every run.
 - **Nothing edited after:** a wrong prediction stays in, and so does a frame
   that turned out to be built wrong; a corrected frame is a new one beside it.
-- **Cheap to run:** 5,705 calls in all, across code review, contracts, access
+- **Cheap to run:** 6,290 calls in all, across code review, contracts, access
   rules, incidents, migrations and performance work, and not one failed
   (`examples/FINDINGS.md`).
 
@@ -35,6 +35,8 @@ and it teaches one more thing Gadfly does, on top of the steps before it.
 | [Grain](grain.md) | 13, 13b | several anchors; the same evidence at two grains | data migration, a section, then one line |
 | [Paths](paths.md) | 14, 15 | inputs as paths to one goal; the result, not the route | optimizing; implementing |
 | [Inversion](inversion.md) | 16 | the inversion trial, a direction the answer must follow; a default no rule carries | access, one rule, two cases |
+| [Asked](asked.md) | 17 | the input inversion, a change to what is asked the answer must follow | code review, one rule, the diff in the question |
+| [Each anchor alone](each-anchor.md) | 18, 18b, 18b2, 18c | each anchor cut alone, evidence after a moved ablation; a default no cut moves | access and incidents, two statements each |
 | [Run your own](your-own.md) | yours | predictions first; plan, run, report; which trial answers which question | yours |
 
 ---
@@ -78,3 +80,6 @@ and Gadfly.
 | `13`, `13b` | data migration, a section, then one line | the status saying the table is unused? | the section carries; "no reads in 30 days" carries nothing |
 | `14-orders-latency.json` | optimizing, one goal, five paths | the latency goal? | four paths carried whatever their cost; the timeout rejected |
 | `15-invoice-export.json` | implementing, one test, four processes | the passing test? | the test decides, never the process |
+| `16-restore-inversion.json` | access, one rule, two cases | the approval rule, and does the answer turn with it? | the answer turns every time; unresolved, a sham of the anchor's role and a default refusal |
+| `17-clock-asked.json` | code review, one rule, the diff asked about | the clock rule, and does the review turn with the diff? | carried in two runs of three; the review turns to approve |
+| `18`, `18b`, `18b2`, `18c` | access and incidents, two statements each | each of two statements, alone? | the restore rule carries it and the cited break-glass line has no agreed level (one run); elsewhere another route, a default or a split comes first |

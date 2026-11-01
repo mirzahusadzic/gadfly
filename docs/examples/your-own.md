@@ -6,7 +6,7 @@
 > - **Teaches:** the method every example followed, and which trial answers
 >   which question.
 > - **Frame:** yours.
-> - **After:** [Inversion](inversion.md).
+> - **After:** [Each anchor alone](each-anchor.md).
 
 ---
 

@@ -4,7 +4,7 @@ Gemma gave through eGemma, kept under examples/runs/."""
 
 import json
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import pytest
@@ -43,6 +43,11 @@ REPORTED: dict[str, list[list[str]]] = {
     ],
     "15-invoice-export": [[UNR, UNR, UNR, UNR]] * 3,
     "16-restore-inversion": [[UNR, UNR]] * 3,
+    "17-clock-asked": [[UNR], [CAR], [CAR]],
+    "18-notify-chain": [[UNR], [UNR], [COO]],
+    "18b-access-logs": [[UNR]] * 3,
+    "18b2-access-logs-both": [[UNR]] * 3,
+    "18c-restore-cited": [[UNR], [UNR], [CAR]],
     "rung1": [[UNR]] * 5,
     "rung2": [[UNR]] * 5,
     "rung3": [[UNR]] * 5,
@@ -74,8 +79,8 @@ def test_each_kept_run_reads_as_reported(stem):
     assert read == REPORTED[stem]
 
 
-def test_only_the_restore_rules_approved_case_raises_monotonicity():
-    # as docs/reading-a-verdict.md says it, in every run
+def test_only_the_approved_restore_raises_monotonicity():
+    # as docs/reading-a-verdict.md says it: every run of 16, two of 18c's
     raised = Counter()
     for path in FRAMES:
         frame = situate(json.loads(path.read_text(encoding="utf-8")))
@@ -83,7 +88,7 @@ def test_only_the_restore_rules_approved_case_raises_monotonicity():
             for f in judge(frame, load_records(str(run))):
                 if any(o.startswith("monotonicity") for o in f.obligations):
                     raised[path.stem, f.input] += 1
-    assert raised == {("16-restore-inversion", "approved"): 3}
+    assert raised == {("16-restore-inversion", "approved"): 3, ("18c-restore-cited", "x"): 2}
 
 
 def test_every_frame_has_its_reported_verdicts():
@@ -130,6 +135,27 @@ def test_the_counts_the_results_quote_are_the_kept_runs():
     alert_cooled = next(i for i, run in enumerate(runs) if run[3] == COO)
     assert f"fix cooled (two runs; the {ordinal[fix_odd]} had no agreed cumulative)" in prose
     assert f"though its {ordinal[alert_cooled]} run agreed on database and read cooled" in prose
+
+
+def test_the_totals_the_docs_quote_are_the_kept_runs():
+    # every call kept, and those that differ from their trial's majority in
+    # their own run, recounted from the records
+    total, off, incident = 0, 0, 0
+    for path in FRAMES:
+        for run in runs_of(path):
+            answers = defaultdict(list)
+            for record in load_records(str(run)):
+                answers[record["input"], record["trial"]].append(record["observation"])
+            total += sum(len(a) for a in answers.values())
+            odd = sum(len(a) - Counter(a).most_common(1)[0][1] for a in answers.values())
+            off += odd
+            incident += odd if path.stem.startswith("10") else 0
+    findings = " ".join((EXAMPLES / "FINDINGS.md").read_text(encoding="utf-8").split())
+    ladder = " ".join((EXAMPLES.parent / "docs/examples/index.md").read_text().split())
+    assert f"{off} of {total:,} calls differed from their trial's majority" in findings
+    assert f"{incident} of them are in the incident frames" in findings
+    assert f"**No call failed.** {total:,} calls: no error" in findings
+    assert f"{total:,} calls in all" in ladder
 
 
 def test_the_rung_generator_never_changes_a_kept_frame(tmp_path, monkeypatch):

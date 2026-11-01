@@ -7,7 +7,7 @@ at a time: on the left, exactly what Gemma read in that trial; on the right,
 what it answered, what that shows, and the checks filling in until the
 verdict. Press play, or click any trial.
 
-<div class="gadfly-watch" data-frames="upgrade,16-restore-inversion,07-sql-rule,09-sync-sms,11-eu-clause,12-payroll-access,10c2-incident-both"></div>
+<div class="gadfly-watch" data-frames="upgrade,16-restore-inversion,17-clock-asked,18c-restore-cited,07-sql-rule,09-sync-sms,11-eu-clause,12-payroll-access,10c2-incident-both"></div>
 
 The view plays the runs kept in `examples/runs/`, written for it by
 `tools/watch_data.py`, and every prompt it shows is checked against the digest
