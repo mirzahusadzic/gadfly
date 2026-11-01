@@ -223,3 +223,34 @@ def test_the_parallel_queue_is_made_without_a_sort(monkeypatch):
     result = run(frame, Quick(), Budget(calls=calls_needed(frame)), parallel=2)
     assert len(result.records) == calls_needed(frame)
     assert max(sizes) <= 2  # the calls that just ended, never the queue
+
+
+def test_settling_grows_with_the_quorum_not_its_square():
+    # a trial that settles only near its end is checked before every call;
+    # the check keeps counts rather than counting every answer again (pass 4, R10)
+    from midwife.pipeline import run
+    from midwife.types import Budget, Observation
+
+    class Alternating:
+        name = "rules"
+
+        def __init__(self):
+            self.n = 0
+
+        def check(self, frame):
+            pass
+
+        def observe(self, frame, prompt, cap):
+            self.n += 1
+            return Observation(label="grant" if self.n % 2 else "decline")
+
+    def settled_run(quorum):
+        raw = copy.deepcopy(REFUND)
+        raw["battery"] = {"kind": "rules"}
+        raw["standing"] = {"quorum": quorum, "agree": quorum // 2 + 1}
+        frame = situate(raw)
+        budget = Budget(calls=quorum)
+        return lambda: run(frame, Alternating(), budget, only={"ablation"}, settle=True)
+
+    small, large = (instructions(settled_run(q)) for q in (100, 400))
+    assert large < 5 * small, (small, large)

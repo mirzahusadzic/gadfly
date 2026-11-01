@@ -134,10 +134,18 @@ def settled(observations: list[str | None], quorum: int, agree: int, labels: Ite
     """Whether a trial's level can no longer change: whatever its remaining
     calls answer, `level` gives what it gives now. One label at `agree` that
     no other can still reach settles it; so does no label able to reach it."""
-    remaining = quorum - len(observations)
+    counts = Counter(o for o in observations if o is not None)
+    return _fixed(counts, len(observations), quorum, agree, labels)
+
+
+def _fixed(
+    counts: Counter[str], answered: int, quorum: int, agree: int, labels: Iterable[str]
+) -> bool:
+    """`settled`, from each label's count and how many calls answered, so a
+    run can keep the counts as it goes instead of counting again."""
+    remaining = quorum - answered
     if remaining <= 0:
         return True
-    counts = Counter(o for o in observations if o is not None)
     reach = {label: counts[label] + remaining for label in labels}
     leaders = [label for label in reach if counts[label] >= agree]
     if len(leaders) > 1:  # two already agree: no level, whatever comes

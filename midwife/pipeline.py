@@ -20,7 +20,7 @@ import itertools
 import re
 import signal
 import threading
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 from collections.abc import Callable, Iterable
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, replace
@@ -29,7 +29,7 @@ from .frame import Frame, digest, parse
 from .interventions import Trial, prompt, trial_ids
 from .interventions import plan as plan_trials
 from .types import Battery, Budget, Observation, Record
-from .verdict import Finding, _check_shape, check_records, settled
+from .verdict import Finding, _check_shape, _fixed, check_records
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
 
@@ -133,10 +133,18 @@ def run(
         for index in range(frame.quorum)
         if (x["id"], trial.id, index) not in done
     ]
-    # each trial's answers so far, kept ones included, so a trial can settle
-    seen: dict[tuple[str, str], list[str | None]] = defaultdict(list)
+    # each trial's answers so far, kept ones included, counted as they come,
+    # so a trial can settle without counting them again
+    tally: dict[tuple[str, str], Counter[str]] = defaultdict(Counter)
+    answered: Counter[tuple[str, str]] = Counter()
+
+    def count(x: str, trial: str, observation: str | None) -> None:
+        answered[x, trial] += 1
+        if observation is not None:
+            tally[x, trial][observation] += 1
+
     for record in made:
-        seen[record["input"], record["trial"]].append(record["observation"])
+        count(record["input"], record["trial"], record["observation"])
     whole = {"baseline", "repeat"} if frame.raw["standing"].get("stable") else set()
     cap = budget.output_tokens_per_call
     records: list[Record] = []
@@ -144,11 +152,11 @@ def run(
 
     def needless(x: dict[str, str], trial: Trial) -> bool:
         # asked to settle, a trial whose level can no longer change asks no more
-        answers = seen[x["id"], trial.id]
+        key = (x["id"], trial.id)
         return (
             settle
             and trial.id not in whole
-            and settled(answers, frame.quorum, frame.agree, frame.labels)
+            and _fixed(tally[key], answered[key], frame.quorum, frame.agree, frame.labels)
         )
 
     def blocked(running: int) -> str | None:
@@ -168,7 +176,7 @@ def run(
         spent += used
         record = _record(frame, battery, x["id"], trial, index, text, o)
         records.append(record)
-        seen[x["id"], trial.id].append(record.observation)
+        count(x["id"], trial.id, record.observation)
         on_record(record)
         if used > cap:  # the budget holds only while every call keeps its cap
             return f"the battery reported {used} output tokens for a call capped at {cap}"
