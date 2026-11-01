@@ -361,3 +361,48 @@ def test_an_input_with_blank_words_or_a_carriage_return_is_not_asked(raw, text):
     raw["inputs"][0]["text"] = text
     with pytest.raises(ValueError, match="is not 'Case: …' then 'Question: …'"):
         Tendora().check(at(raw, "http://127.0.0.1:1"))
+
+
+SERVED = {"tendora": "0.3.0", "revision": "578493dc7d85" * 4, "packs": "sha256:a423"}
+
+
+def answered(answers, **fields):
+    return {"status": "supported", "answers": answers, **fields}
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        answered(5),
+        answered([{}]),
+        answered([{"text": None}]),
+        answered([{"text": "   "}]),
+        answered([{"text": "Sam"}, "junk"]),
+        answered([{"text": "Sam", "conditional": "yes"}]),
+        {"status": 5, "answers": []},
+    ],
+)
+def test_an_answer_out_of_the_engines_form_is_an_opening(raw, reply):
+    # a reply the engine would not give is a fault, never a label: not Sam,
+    # not conditional, not another answer, and not an exception (pass 5, R06)
+    label, opening = label_of(reply, situate(raw).labels)
+    assert label is None and opening.startswith("the engine's")
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b"\xffabc",  # not UTF-8
+        json.dumps(answered([{"text": "Sam"}, "junk"], served=SERVED)).encode(),
+        json.dumps(answered([{"text": "Sam"}])).encode(),  # no served
+        json.dumps(answered([{"text": "Sam"}], served={"tendora": "0.3.0"})).encode(),
+    ],
+)
+def test_a_run_keeps_a_reply_out_of_form_open(raw, server, body):
+    # through run, a malformed reply, one not in UTF-8, or one that does not
+    # say what served it is an opening in every trial (pass 5, R06, R07)
+    fake = server((200, {"content-type": "application/json"}, body))
+    frame = at(raw, fake.base)
+    result = run(frame, Tendora(), Budget(calls=calls_needed(frame)), only=["baseline"])
+    [record] = result.records
+    assert record.observation is None and record.opening.startswith("the engine's")

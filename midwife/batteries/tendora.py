@@ -60,6 +60,7 @@ RULE = "\n\n---\n\n"  # between the body and the input, as interventions.prompt 
 OPEN, CONDITIONAL, ANOTHER = "open", "conditional", "another answer"
 # the engine's outcomes a frame may observe under their own names
 OUTCOMES = (OPEN, CONDITIONAL, "ambiguous", "conflict")
+SERVED = ("tendora", "revision", "packs")  # what a reply says served it
 AMBIGUOUS = object()  # a turned input two declared inputs give: no one basis
 
 
@@ -149,11 +150,32 @@ def _turned(texts: tuple[str, ...], mappings: tuple) -> dict[str, tuple[str, ...
     return {into: tuple(source) for into, source in sources.items()}
 
 
+def malformed(reply: dict) -> str | None:
+    """Why a reply is not an answer in the engine's form, or None: a status
+    in words, and answers, if any, a list of objects, each with words for its
+    text and true or false for its condition, when it says one."""
+    if not isinstance(reply.get("status"), str):
+        return "the engine's reply has no status"
+    answers = reply.get("answers", [])
+    if not isinstance(answers, list) or not all(
+        isinstance(a, dict)
+        and isinstance(a.get("text"), str)
+        and a["text"].strip()
+        and isinstance(a.get("conditional", False), bool)
+        for a in answers
+    ):
+        return "the engine's answers are not in its form"
+    return None
+
+
 def label_of(reply: dict, labels: tuple[str, ...]) -> tuple[str | None, str | None]:
     """The label the engine's answer gives, or the opening that says why it
-    gives none."""
-    status = reply.get("status")
-    answers = [a for a in reply.get("answers") or [] if isinstance(a, dict)]
+    gives none; a reply out of the engine's form gives none."""
+    wrong = malformed(reply)
+    if wrong:
+        return None, wrong
+    status = reply["status"]
+    answers = reply.get("answers", [])
     if status == "supported" and any(a.get("conditional") for a in answers):
         status = CONDITIONAL  # an answer that holds only on a condition
     if status in OUTCOMES:
@@ -173,7 +195,8 @@ def label_of(reply: dict, labels: tuple[str, ...]) -> tuple[str | None, str | No
 
 def answer_line(reply: dict) -> dict:
     """The answer alone: its status, and each answer's text and condition."""
-    answers = [a for a in reply.get("answers") or [] if isinstance(a, dict)]
+    answers = reply.get("answers")
+    answers = [a for a in answers if isinstance(a, dict)] if isinstance(answers, list) else []
     return {
         "status": reply.get("status"),
         "answers": [
@@ -294,7 +317,7 @@ class Tendora:
             return Observation(label=None, opening="the answer exceeded the size cap")
         try:
             reply = json.loads(body)
-        except json.JSONDecodeError:
+        except (ValueError, RecursionError):  # not JSON, not UTF-8, or nested past reading
             return Observation(label=None, opening="the engine's reply is not JSON")
         if not isinstance(reply, dict):
             return Observation(label=None, opening="the engine's reply is not a JSON object")
@@ -310,6 +333,12 @@ class Tendora:
             "usage": {"output_tokens": 0},  # the engine reasons; it writes no tokens
             "served": served_by(reply),
         }
+        served = reply.get("served")
+        if not (
+            isinstance(served, dict)
+            and all(isinstance(served.get(k), str) and served[k] for k in SERVED)
+        ):  # a label is kept only with the engine that gave it
+            return Observation(label=None, opening="the engine's reply names no version", **seen)
         label, opening = label_of(reply, frame.labels)
         if label is None:
             return Observation(label=None, opening=opening, **seen)
