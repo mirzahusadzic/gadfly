@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from midwife.frame import FrameError
 from midwife.pipeline import calls_needed, judge, run, situate
 from midwife.types import Budget, Observation
 from midwife.verdict import CARRIED, MISALIGNED
@@ -119,3 +120,22 @@ def test_an_engine_that_drops_what_is_asked_is_misaligned(fixture):
     assert findings[0].evidence[-1] == (
         "input inversion left it at Yes: the answer does not follow what is asked"
     )
+
+
+APPROVES = "the incident commander approves the restore"
+
+
+@pytest.mark.parametrize(
+    "fixture, key, mapping, message",
+    [
+        ("restore-inversion", "inversion", {APPROVES: APPROVES}, "inversion changes no anchor"),
+        ("restore-case-inversion", "inputInversion",
+         {"has approved": "has approved"}, "inputInversion changes no input"),
+    ],
+)  # fmt: skip
+def test_an_inversion_that_changes_nothing_is_refused(fixture, key, mapping, message):
+    # it would be the baseline asked again, read as a turn (pass 4, R05)
+    raw = json.loads((FRAME.parent / f"{fixture}.json").read_text())
+    raw["interventions"][key] = mapping
+    with pytest.raises(FrameError, match=message):
+        situate(raw)

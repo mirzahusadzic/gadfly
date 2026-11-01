@@ -483,6 +483,9 @@ def _check_interventions(
                 raise FrameError(
                     f"inversion's '{phrase}' is also in {elsewhere[0]}, which is not an anchor"
                 )
+        inverting = renamer(tuple(sorted(inversion.items())))
+        if all(inverting(s.text) == s.text for s in spans if s.id in anchored):
+            raise FrameError("inversion changes no anchor: each phrase stays as it is")
     asked = interventions.get("inputInversion")
     if asked is not None:
         if not (
@@ -498,3 +501,6 @@ def _check_interventions(
             found = re.compile(rf"(?<!\w){re.escape(phrase)}(?!\w)", re.IGNORECASE)
             if not any(found.search(x["text"]) for x in inputs):
                 raise FrameError(f"inputInversion's '{phrase}' is in no input")
+        turning = renamer(tuple(sorted(asked.items())))
+        if all(turning(x["text"]) == x["text"] for x in inputs):
+            raise FrameError("inputInversion changes no input: each phrase stays as it is")
