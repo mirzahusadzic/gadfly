@@ -147,14 +147,14 @@
   }
 
   // ---- what one trial's answers say, against the first answer
-  // How the calls of one trial answered, as one line: the answer word itself,
-  // in its colour, and how many times it came.
+  // How the calls of one trial answered in this run, as one line: the answer
+  // word itself, in its colour, and how many of the run's asks gave it.
   function agreement(calls, level, agree, slot) {
     const tally = new Map();
     for (const c of calls) tally.set(c.answer, (tally.get(c.answer) || 0) + 1);
     const line = el("p", "w-agree");
     if (level == null) {
-      line.append("The answers split, ");
+      line.append("In this run the answers split, ");
       [...tally].sort((a, b) => b[1] - a[1]).forEach(([label, n], i, all) => {
         line.append(word(label, slot), ` ${n} ${n === 1 ? "time" : "times"}${i < all.length - 1 ? " and " : ". "}`);
       });
@@ -162,7 +162,12 @@
       return line;
     }
     const n = tally.get(level);
-    line.append(word(level, slot), n === calls.length ? ` all ${n} times.` : ` ${n} times out of ${calls.length}, enough to count.`);
+    line.append(
+      word(level, slot),
+      n === calls.length
+        ? ` all ${n} times it was asked in this run.`
+        : ` ${n} of the ${calls.length} times it was asked in this run, enough to count.`,
+    );
     return line;
   }
 

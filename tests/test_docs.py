@@ -200,6 +200,16 @@ def test_the_watch_view_plays_the_kept_runs(stem):
     assert kept == watch_data.encoded(stem)
 
 
+def test_the_watch_view_counts_the_asks_of_one_run():
+    # a trial is asked quorum times in each run; three runs are kept, so a
+    # count without "in this run" reads as a count of runs
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    told = re.search(r"function agreement\(.*?\n  \}\n", watch, re.S).group(0)
+    assert "In this run the answers split, " in told
+    assert " all ${n} times it was asked in this run." in told
+    assert " ${n} of the ${calls.length} times it was asked in this run" in told
+
+
 def test_every_kind_of_trial_is_told_in_words():
     # a frame that declares every intervention plans every kind of trial
     from midwife.interventions import plan
