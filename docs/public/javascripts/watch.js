@@ -320,7 +320,6 @@
     frameSelect.addEventListener("change", () => load(frameSelect.value));
     inputSelect.addEventListener("change", () => {
       state.input = inputSelect.value;
-      steady();
       compare();
     });
     back.addEventListener("click", () => {
@@ -359,7 +358,6 @@
       state.run = Math.min(Math.max(run, 0), d.runs.length - 1);
       inputSelect.replaceChildren(...d.inputs.map((x) => new Option(x.id, x.id)));
       caseField.hidden = d.inputs.length < 2;
-      steady();
       const readers = d.runs.every((r) => r.reader);
       runField.querySelector(".w-field-name").textContent = readers ? "Reader" : "Run";
       runs.setAttribute("aria-label", readers ? "Reader" : "Run");
@@ -468,27 +466,6 @@
       drawSide(trial, d, run, finding, slot, first, played);
     }
 
-    // the question and its answer key take the height of the tallest run's
-    // key, so switching runs or readers never moves the trials below
-    function steady() {
-      const d = state.data;
-      if (!d) return;
-      const slot = slots(d.labels, d.neutral);
-      ask.style.minHeight = "";
-      let tallest = 0;
-      for (const run of d.runs) {
-        drawAsk(d, slot, run);
-        tallest = Math.max(tallest, ask.offsetHeight);
-      }
-      ask.style.minHeight = `${tallest}px`;
-      drawAsk(d, slot, d.runs[state.run]);
-    }
-    let resized;
-    addEventListener("resize", () => {
-      clearTimeout(resized);
-      resized = setTimeout(() => root.isConnected && steady(), 150);
-    });
-
     // the question, and the words the reader may answer with and what each means
     function drawAsk(d, slot, run) {
       const question = d.inputs.find((x) => x.id === state.input).text;
@@ -536,14 +513,13 @@
         el("p", "w-asked", plain(question, marks)),
       );
       // a long list keeps the view's height and scrolls itself, never the
-      // page, to what this trial changed, or else to the line under test
+      // page, so that its top line is the one this trial changed, or else
+      // the line under test
       const focus =
         lines.querySelector(".is-hidden, .is-moved") ??
         lines.querySelector("mark.w-renamed")?.closest(".w-line") ??
         lines.querySelector(".is-anchor");
-      if (focus && lines.scrollHeight > lines.clientHeight) {
-        lines.scrollTop = focus.offsetTop - (lines.clientHeight - focus.offsetHeight) / 2;
-      }
+      if (focus) lines.scrollTop = focus.offsetTop;
     }
 
     // the right panel: this trial's answers and what they show, then the checks

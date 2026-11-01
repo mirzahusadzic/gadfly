@@ -100,8 +100,9 @@
 .w-doc { padding: 0.9375rem 1.0625rem; border-radius: 0.625rem; background: var(--w-panel); }
 .gadfly-watch .w-lines {
   position: relative; /* the lines' offsets are the list's own, for its scroll */
+  /* as tall as the other examples' lists, so a long one keeps the view's size */
   margin: 0.25rem 0 0; display: grid; gap: 0.125rem;
-  max-height: 30rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+  max-height: 19.5rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
 }
 .gadfly-watch .w-line {
   display: flex; flex-wrap: wrap; gap: 0.1875rem 0.625rem; align-items: baseline;
