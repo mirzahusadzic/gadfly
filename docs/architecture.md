@@ -63,11 +63,13 @@ flowchart TB
             UN["<b>unified</b><br/>an LLM critic"]
             EB["<b>egemma</b><br/>Gemma 4"]
             LJ["<b>local-json</b><br/>your evaluator"]
+            TD["<b>tendora</b><br/>Tendora's engine"]
             OW["<b>your own</b><br/>an eval, an engine"]
         end
         RT["<b>Unified router</b><br/>loopback, no tools,<br/>deny unless consented"]
         ES["<b>eGemma /judge</b><br/>loopback, no persona,<br/>paced to its budget"]
         LE["<b>Your evaluator</b><br/>loopback, JSON,<br/>no credentials"]
+        TS["<b>Tendora /ask</b><br/>loopback, read-only,<br/>saves nothing"]
     end
     PV["<b>Providers</b><br/>Anthropic; OpenRouter,<br/>DeepSeek's models through it"]
     subgraph K["Key"]
@@ -83,6 +85,7 @@ flowchart TB
     UN --> RT --> PV
     EB --> ES
     LJ --> LE
+    TD --> TS
     RU -->|"each record"| ST
     ST --> JU
     JU -->|"finding"| YOU
@@ -96,8 +99,8 @@ flowchart TB
     classDef group fill:#8a96a814,stroke:#8a96a8,stroke-width:2px,stroke-dasharray:6 4
     class YOU person
     class SI,PL,RU,JU engine
-    class UN,EB,LJ,OW interface
-    class RT,ES,LE service
+    class UN,EB,LJ,TD,OW interface
+    class RT,ES,LE,TS service
     class ST kept
     class M,G,B,K group
     class K1 person

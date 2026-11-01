@@ -15,8 +15,8 @@ and on GitHub. For narrative guidance start with
   obligations.
 - **[`midwife.interventions`](#midwifeinterventions):** trial planning,
   prompts and presentation renaming.
-- **`midwife.batteries.*`:** the shipped loopback batteries, two critics and
-  `local-json`.
+- **`midwife.batteries.*`:** the shipped loopback batteries, two critics,
+  `local-json` and `tendora`.
 - **[`midwife.cli`](#midwifecli):** the `gadfly` command, with plan, run,
   report, check-frame and portfolio.
 - **[`midwife.portfolio`](#midwifeportfolio):** several frames' verdicts

@@ -58,7 +58,7 @@ battery to add as it needs.
 
 ### The shipped batteries
 
-Three batteries come with Gadfly, and the guarantees in this section are
+Four batteries come with Gadfly, and the guarantees in this section are
 theirs, not the protocol's. A battery of your own may do anything its code
 does.
 
@@ -67,6 +67,7 @@ does.
 | `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router): `anthropic/`, `openrouter/`, `deepseek/`, `ultra-spark/` | loopback, no tools, no proxy, no redirects, `data_collection: deny` unless the exact model slug is listed under `trainsOnInputs`; refuses OpenAI slugs; `endpoints` pins OpenRouter endpoints; records the model and endpoint that served |
 | `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced |
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
+| `tendora` | [Tendora](https://github.com/mirzahusadzic/tendora)'s engine server, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
 | your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
 
 #### Addresses and keys
@@ -79,6 +80,8 @@ Each shipped battery finds its service and its key on this machine:
 - **`unified`:** the router at `http://127.0.0.1:18766`, and its token from
   `CODEX_ROUTER_TOKEN`, else the router's own settings file.
 - **`local-json`:** the frame's `battery.url`, and no key at all.
+- **`tendora`:** the frame's `battery.url`, the engine server's address, and
+  no key.
 
 #### The answer's shape
 
@@ -101,21 +104,42 @@ keeps it, and names where the label lives with a JSON pointer:
 }
 ```
 
+#### Tendora's engine
+
+The `tendora` battery asks a saved question again against exactly the
+trial's statements, through the engine server's `POST /ask`, and nothing is
+saved there. Each input is the saved check's own case and question:
+
+```text
+Case: A certificate expires.
+Question: Who notifies the customers?
+```
+
+The case line is left out when the check had none, and `battery.scope`
+names the check's scope when it has one. `battery.offline` keeps the engine
+from reading a new text, such as a statement presentation renamed.
+
+The label is the engine's answer: one supported answer whose text is a
+label gives that label, and several answers or another text give `another
+answer`. Open, conditional, ambiguous and conflict give the label of the
+same name. A label the frame does not list is an opening, and so are
+`limited` and `needs-reading`, always.
+
 #### Privacy and routing
 
 The shipped batteries keep these promises, and a battery of your own owns its
 consent, retention, credential and recording rules.
 
-| Promise | `unified` | `egemma` | `local-json` | your own |
-|---|---|---|---|---|
-| destination | a router on loopback over plain HTTP | eGemma on loopback over plain HTTP | `battery.url` on loopback over plain HTTP | unknown |
-| proxy | disabled in the opener | disabled in the opener | disabled in the opener | unknown |
-| redirects | refused | refused | refused | unknown |
-| tools | never sent | no persona or cache fields added | never sent | unknown |
-| provider collection | `data_collection: deny` unless the exact model slug is in `trainsOnInputs` | stays on this machine by contract | stays on this machine | unknown |
-| credentials | router token from environment or its env file; never placed in a request body or record | key from environment/file; sent only as an Authorization header | none sent | unknown |
-| deadline | whole call, `timeout` seconds, even mid-line | whole call, per attempt | whole call, `battery.timeout` (30 s, at most an hour) | unknown |
-| verification | model and endpoint recorded when the router reports them | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | unknown |
+| Promise | `unified` | `egemma` | `local-json` | `tendora` | your own |
+|---|---|---|---|---|---|
+| destination | a router on loopback over plain HTTP | eGemma on loopback over plain HTTP | `battery.url` on loopback over plain HTTP | the engine server at `battery.url`, on loopback over plain HTTP | unknown |
+| proxy | disabled in the opener | disabled in the opener | disabled in the opener | disabled in the opener | unknown |
+| redirects | refused | refused | refused | refused | unknown |
+| tools | never sent | no persona or cache fields added | never sent | never sent | unknown |
+| provider collection | `data_collection: deny` unless the exact model slug is in `trainsOnInputs` | stays on this machine by contract | stays on this machine | stays on this machine; the engine reads a new text through eGemma unless offline | unknown |
+| credentials | router token from environment or its env file; never placed in a request body or record | key from environment/file; sent only as an Authorization header | none sent | none sent | unknown |
+| deadline | whole call, `timeout` seconds, even mid-line | whole call, per attempt | whole call, `battery.timeout` (30 s, at most an hour) | whole call, `battery.timeout` (60 s, at most an hour) | unknown |
+| verification | model and endpoint recorded when the router reports them | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | the engine's version, revision and packs, from its reply | unknown |
 
 #### Costs
 

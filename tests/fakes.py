@@ -8,7 +8,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 class Fake:
     """A loopback server that records each request and replies as told: one
-    reply for every request, or a list taken in order (the last one repeats)."""
+    reply for every request, a list taken in order (the last one repeats), or
+    a function of the request's body."""
 
     def __init__(self, reply, routes=None):
         self.requests, self.reply, self.routes = [], reply, dict(routes or {})
@@ -27,7 +28,9 @@ class Fake:
                 length = int(self.headers.get("content-length") or 0)
                 headers = {k.lower(): v for k, v in self.headers.items()}
                 fake.requests.append((headers, json.loads(self.rfile.read(length) or b"null")))
-                if isinstance(fake.reply, list):
+                if callable(fake.reply):  # a reply worked out from the request
+                    reply = fake.reply(fake.requests[-1][1])
+                elif isinstance(fake.reply, list):
                     reply = fake.reply.pop(0) if len(fake.reply) > 1 else fake.reply[0]
                 else:
                     reply = fake.reply

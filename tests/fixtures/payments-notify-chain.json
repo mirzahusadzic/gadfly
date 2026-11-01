@@ -1,0 +1,244 @@
+{
+  "name": "payments-notify-chain",
+  "relation": "an expired certificate reaches the customers through two rules: expiry makes Priya renew it, the renewal makes Sam notify them",
+  "locus": "the engine's check of one question at the Incident Commander role, with one case",
+  "role": "a person asking the workbench who acts in a case",
+  "grain": "one statement of the corpus",
+  "purpose": "know who notifies the customers when a certificate expires, and what that answer rests on",
+  "trajectory": "the statements in scope and the case, the engine's check, the answer the workbench shows with the statements it rests on",
+  "crossing": "the check's answer line: its status and its text",
+  "promise": "the answer is Sam only while both rules are in scope; without them the question stays open, never another answer",
+  "baseline": {
+    "corpus": "Payments On-Call, the bundled demo, all thirty statements in scope",
+    "revision": "578493dc7d8554f1a985f1d9eff11e85e8425c5ae7a093830fc1719a6bd4d051",
+    "packs": "sha256:a423f1940bab11d3faf30daad832b3f0750c365e9a005904d92dafe91d61b8e2",
+    "engine": "tendora 0.3.0",
+    "confirmations": "none added"
+  },
+  "body": {
+    "spans": [
+      {
+        "id": "maya-declares",
+        "text": "Maya, the incident commander, declares a major incident when payment failures last more than ten minutes.",
+        "kind": "rule"
+      },
+      {
+        "id": "maya-may-approve-rollback",
+        "text": "Maya, the incident commander, may approve a rollback of the payments service.",
+        "kind": "fact"
+      },
+      {
+        "id": "maya-must-close",
+        "text": "Maya, the incident commander, must close a major incident after the release manager confirms that payments are healthy.",
+        "kind": "fact"
+      },
+      {
+        "id": "alex-acknowledges",
+        "text": "Alex, the on-call engineer, acknowledges every page within five minutes.",
+        "kind": "fact"
+      },
+      {
+        "id": "alex-checks-rate",
+        "text": "Alex, the on-call engineer, checks the payment error rate after acknowledging a page.",
+        "kind": "fact"
+      },
+      {
+        "id": "alex-may-restart",
+        "text": "Alex, the on-call engineer, may restart the payments service when the error rate stays above five percent.",
+        "kind": "fact"
+      },
+      {
+        "id": "morgan-freezes",
+        "text": "Morgan, the release manager, freezes deployments during a major incident.",
+        "kind": "fact"
+      },
+      {
+        "id": "morgan-may-roll-back",
+        "text": "Morgan, the release manager, may roll back the latest payments release after the incident commander approves the rollback.",
+        "kind": "fact"
+      },
+      {
+        "id": "morgan-confirms",
+        "text": "Morgan, the release manager, confirms that payments are healthy before the incident commander closes a major incident.",
+        "kind": "fact"
+      },
+      {
+        "id": "sam-posts-updates",
+        "text": "Sam, the support lead, posts customer updates after the incident commander declares a major incident.",
+        "kind": "fact"
+      },
+      {
+        "id": "sam-must-not-promise",
+        "text": "Sam, the support lead, must not promise a recovery time before the on-call engineer identifies the cause.",
+        "kind": "fact"
+      },
+      {
+        "id": "sam-collects-reports",
+        "text": "Sam, the support lead, collects affected customer reports in the incident channel.",
+        "kind": "fact"
+      },
+      {
+        "id": "jordan-may-fail-over",
+        "text": "Jordan, the database administrator, may fail over the primary database after the on-call engineer confirms replication lag.",
+        "kind": "fact"
+      },
+      {
+        "id": "jordan-keeps-credentials",
+        "text": "Jordan, the database administrator, keeps break-glass credentials in the password vault.",
+        "kind": "fact"
+      },
+      {
+        "id": "jordan-may-restore",
+        "text": "Jordan, the database administrator, may restore the database from a backup only after the incident commander approves the restore.",
+        "kind": "fact"
+      },
+      {
+        "id": "priya-reviews-logs",
+        "text": "Priya, the security engineer, reviews access logs when a payment key is exposed.",
+        "kind": "fact"
+      },
+      {
+        "id": "priya-must-rotate",
+        "text": "Priya, the security engineer, must rotate a leaked payment key before the incident commander closes the incident.",
+        "kind": "fact"
+      },
+      {
+        "id": "priya-reports-key",
+        "text": "Priya, the security engineer, reports a leaked payment key to the incident commander.",
+        "kind": "fact"
+      },
+      {
+        "id": "maya-approves-invoice",
+        "text": "Maya, the incident commander, approves the database vendor invoice.",
+        "kind": "fact"
+      },
+      {
+        "id": "deployment-is-change",
+        "text": "A deployment is a change.",
+        "kind": "rule"
+      },
+      {
+        "id": "incident-no-release",
+        "text": "If a major incident is open, Morgan, the release manager, does not ship a release.",
+        "kind": "rule"
+      },
+      {
+        "id": "expiry-renew",
+        "text": "If a certificate expires, Priya, the security engineer, renews the certificate.",
+        "kind": "rule"
+      },
+      {
+        "id": "renewal-notify",
+        "text": "If Priya renews the certificate, Sam, the support lead, notifies the customers.",
+        "kind": "rule"
+      },
+      {
+        "id": "alex-reviews-logs",
+        "text": "Alex, the on-call engineer, reviews access logs after every rollback.",
+        "kind": "fact"
+      },
+      {
+        "id": "jordan-tests-backup",
+        "text": "Jordan, the database administrator, tests a backup before restoring it.",
+        "kind": "fact"
+      },
+      {
+        "id": "leak-ship",
+        "text": "If a payment key leaks, Morgan, the release manager, ships a release.",
+        "kind": "rule"
+      },
+      {
+        "id": "leak-renew",
+        "text": "If a payment key leaks, Priya, the security engineer, renews the certificate.",
+        "kind": "rule"
+      },
+      {
+        "id": "expiry-or-leak",
+        "text": "Either a certificate expires or a payment key leaks.",
+        "kind": "fact"
+      },
+      {
+        "id": "logs-audit-note",
+        "text": "If Priya reviews access logs, she files an audit note.",
+        "kind": "rule"
+      },
+      {
+        "id": "friday-no-declare",
+        "text": "On Friday payment failures lasted more than ten minutes, and Maya, the incident commander, did not declare a major incident.",
+        "kind": "fact"
+      }
+    ]
+  },
+  "anchors": [
+    "expiry-renew",
+    "renewal-notify"
+  ],
+  "inputs": [
+    {
+      "id": "expiry",
+      "text": "Case: A certificate expires.\nQuestion: Who notifies the customers?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "Maya",
+      "Alex",
+      "Morgan",
+      "Sam",
+      "Jordan",
+      "Priya",
+      "conditional",
+      "another answer",
+      "open"
+    ],
+    "instruction": "Answer the question for the case from the statements above and nothing else. Give the one person the statements make the answer; 'conditional' if they give one only under a condition the case does not settle; 'another answer' for several people or any other kind of answer; 'open' if the statements do not settle it."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2
+    },
+    "presentation": {
+      "renews": "replaces"
+    },
+    "placement": {
+      "span": "expiry-renew",
+      "after": "renewal-notify"
+    },
+    "bypass": [
+      "renewal-notify"
+    ],
+    "control": [
+      "sam-posts-updates",
+      "sam-must-not-promise",
+      "sam-collects-reports",
+      "priya-reviews-logs",
+      "priya-must-rotate",
+      "priya-reports-key",
+      "expiry-renew",
+      "renewal-notify",
+      "leak-renew",
+      "logs-audit-note"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "open"
+    ],
+    "bypass": [
+      "open"
+    ]
+  },
+  "standing": {
+    "quorum": 1,
+    "agree": 1,
+    "stable": true
+  },
+  "materialized": true,
+  "battery": {
+    "kind": "tendora",
+    "url": "http://127.0.0.1:8791",
+    "timeout": 60
+  }
+}
