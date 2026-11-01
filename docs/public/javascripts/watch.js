@@ -464,6 +464,7 @@
       drawAsk(d, slot, run);
       drawDoc(trial, d, run.reader || "Gemma");
       drawSide(trial, d, run, finding, slot, first, played);
+      follow();
     }
 
     // the question, and the words the reader may answer with and what each means
@@ -512,15 +513,26 @@
         lines,
         el("p", "w-asked", plain(question, marks)),
       );
-      // a long list keeps the view's height and scrolls itself, never the
-      // page, so that its top line is the one this trial changed, or else
-      // the line under test
+    }
+
+    // a long list fills the left panel and scrolls itself, never the page, so
+    // that its top line is the one this trial changed, or else the line under
+    // test; room after the last line lets a line near the end come up too
+    function follow() {
+      const lines = doc.querySelector(".w-lines");
+      if (!lines) return;
+      lines.style.paddingBottom = "";
       const focus =
         lines.querySelector(".is-hidden, .is-moved") ??
         lines.querySelector("mark.w-renamed")?.closest(".w-line") ??
         lines.querySelector(".is-anchor");
-      if (focus) lines.scrollTop = focus.offsetTop;
+      if (!focus || lines.scrollHeight <= lines.clientHeight) return;
+      const short = lines.clientHeight - (lines.scrollHeight - focus.offsetTop);
+      if (short > 0) lines.style.paddingBottom = `${short}px`;
+      lines.scrollTop = focus.offsetTop;
     }
+    // the panel follows the right column's height and the window's width
+    new ResizeObserver(follow).observe(doc);
 
     // the right panel: this trial's answers and what they show, then the checks
     function drawSide(trial, d, run, finding, slot, first, played) {
