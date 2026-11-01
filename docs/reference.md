@@ -437,7 +437,9 @@ settled(observations, quorum, agree, labels)
 #### judge
 
 One finding per input, from the records of one run of one frame.
-Every planned trial is read; one without records has no level.
+Every planned trial is read; one without records has no level, and one
+with fewer than `quorum` has a level only once it is settled, so a
+stopped run never reads a level its missing calls could change.
 
 ```python
 judge(frame, records)

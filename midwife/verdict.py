@@ -147,7 +147,9 @@ def settled(observations: list[str | None], quorum: int, agree: int, labels: Ite
 
 def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:
     """One finding per input, from the records of one run of one frame.
-    Every planned trial is read; one without records has no level."""
+    Every planned trial is read; one without records has no level, and one
+    with fewer than `quorum` has a level only once it is settled, so a
+    stopped run never reads a level its missing calls could change."""
     from .interventions import plan
 
     trials = plan(frame)
@@ -156,12 +158,24 @@ def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:
     seen: dict[tuple[str, str], list[str | None]] = defaultdict(list)
     for record in records:  # one pass, in record order
         seen[record["input"], record["trial"]].append(record["observation"])
+    # under `stable` a split is read across every baseline and repeat call,
+    # so those two settle only when whole
+    whole = {"baseline", "repeat"} if _read_once(frame)["standing"].get("stable") else set()
     findings = []
     for x in frame.inputs:
         samples = {t: seen.get((x["id"], t), []) for t in planned}
-        levels = {t: level(s, frame.agree) for t, s in samples.items()}
+        levels = {t: _level_of(frame, s, t in whole) for t, s in samples.items()}
         findings.append(_finding(frame, x["id"], levels, samples))
     return findings
+
+
+def _level_of(frame: Frame, samples: list[str | None], whole: bool) -> str | None:
+    """A trial's level, read only when its missing calls could not change it."""
+    if len(samples) < frame.quorum and (
+        whole or not settled(samples, frame.quorum, frame.agree, frame.labels)
+    ):
+        return None
+    return level(samples, frame.agree)
 
 
 def _check_shape(record: Any) -> None:

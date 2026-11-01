@@ -164,7 +164,9 @@ refused.
 A run made with `settle` skips the calls a trial no longer needed: four alike
 of five, with four to agree, fix its level whatever the fifth would say. Such
 a trial reads exactly as it would with every call, and `gadfly report` counts
-the calls it did not make (`settled early: 8 calls not made`).
+the calls it did not make (`settled early: 8 calls not made`). Any trial a
+stopped run left short has a level only once its missing calls could not
+change it, and under `stable` the baseline and repeat need every call.
 
 ---
 

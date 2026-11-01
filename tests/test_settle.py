@@ -213,3 +213,31 @@ def test_ctrl_c_keeps_every_call_already_out(raw):
             on_record=kept.append,
         )
     assert len(kept) == sum(battery.asked.values()) >= 3
+
+
+def test_a_short_trial_has_no_level_until_it_is_settled(raw):
+    # with 2 of 5 to agree, two alike decide nothing: three more calls can
+    # make a second label agree too (pass 4, R01)
+    raw["standing"] = {"quorum": 5, "agree": 2}
+
+    def drift(prompt, n):  # decline, decline, then grant, grant, unclear
+        label = ["decline", "decline", "grant", "grant", "unclear"][n - 1]
+        return Observation(label=label, usage={"output_tokens": 1})
+
+    frame = situate(raw)
+    records = run(frame, Rules(answer=drift), Budget(calls=calls_needed(frame))).records
+    short = [r for r in records if r.run < 2]
+    [whole], [partial] = judge(frame, records), judge(frame, short)
+    assert whole.levels["baseline"] is None  # two labels agree: no level
+    assert set(partial.levels.values()) == {None} and partial.category == "unresolved"
+
+
+def test_a_short_stable_baseline_has_no_level(raw):
+    # under stable a fifth call could split the baseline, so four alike are not enough
+    raw["standing"]["stable"] = True
+    frame = situate(raw)
+    records = run(frame, Rules(), Budget(calls=calls_needed(frame))).records
+    short = [r for r in records if not (r.trial == "baseline" and r.run == 4)]
+    [finding] = judge(frame, short)
+    assert finding.levels["baseline"] is None and finding.levels["ablation"] == "grant"
+    assert finding.evidence[0] == "no agreed level in: baseline"
