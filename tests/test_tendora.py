@@ -261,3 +261,67 @@ def test_a_presentation_that_renames_the_question_names_its_basis(raw):
         "question": "Who notifies the customers?",
         "case": "A certificate expires.",
     }
+
+
+def two_inputs(presentation):
+    # a frame whose two declared checks a presentation renames
+    raw = json.loads(FRAME.read_text(encoding="utf-8"))
+    raw["inputs"] = [
+        {"id": "a", "text": "Case: first\nQuestion: Who is alpha?"},
+        {"id": "b", "text": "Case: second\nQuestion: Who is beta?"},
+    ]
+    raw["interventions"]["presentation"] = presentation
+    return at(raw, "http://127.0.0.1:1")
+
+
+def test_check_refuses_two_inputs_turned_into_one_question():
+    # the engine is asked the turned text against one saved check: two
+    # inputs that turn into it leave it no one check (pass 5, R04)
+    same = {"alpha": "it", "beta": "it", "first": "same", "second": "same"}
+    with pytest.raises(ValueError, match="inputs a, b turn into the same question"):
+        Tendora().check(two_inputs(same))
+    frame = two_inputs(same)
+    trial = next(t for t in plan(frame) if t.id == "presentation")
+    assert request_body(frame, prompt(frame, trial, frame.inputs[0])) is None
+    Tendora().check(two_inputs({"alpha": "gamma", "beta": "delta"}))  # one each is fine
+
+
+@pytest.mark.parametrize(
+    "presentation", [{"Question": "Query"}, {"first": "one\ntwo", "second": "2nd"}]
+)
+def test_check_refuses_a_rename_that_turns_an_input_out_of_its_form(presentation):
+    # every turned input must still read Case: …, then Question: …, or the
+    # trial could never be asked (pass 5, R08)
+    with pytest.raises(ValueError, match="input a turns out of the form"):
+        Tendora().check(two_inputs(presentation))
+
+
+def test_an_unchecked_input_out_of_form_is_no_crash(raw):
+    # request_body before check: a declared input the battery cannot read
+    # gives no basis, not a TypeError (pass 5, R10)
+    raw["inputs"] = [{"id": "bad", "text": "aaa"}]
+    raw["interventions"]["presentation"] = {"aaa": "Question: Who?"}
+    frame = at(raw, "http://127.0.0.1:1")
+    assert request_body(frame, "a statement\n\n---\n\nQuestion: Who?") is None
+
+
+@pytest.mark.parametrize("n", [8, 32])
+def test_a_run_turns_each_input_once_not_once_per_prompt(server, monkeypatch, n):
+    # the basis of every turned prompt comes from one map per frame: the
+    # renames grow with the inputs, not with their square (pass 5, R12)
+    from midwife import interventions
+
+    raw = json.loads(FRAME.read_text(encoding="utf-8"))
+    raw["inputs"] = [
+        {"id": f"x{i}", "text": f"Case: before{i}\nQuestion: Who is case{i}?"} for i in range(n)
+    ]
+    raw["interventions"]["presentation"] = {
+        **{f"before{i}": f"after{i}" for i in range(n)},
+        **{f"case{i}": f"turned{i}" for i in range(n)},
+    }
+    frame = at(raw, server(reply("open")).base)
+    calls, rename = [], interventions.rename
+    monkeypatch.setattr(interventions, "rename", lambda *a: calls.append(1) or rename(*a))
+    result = run(frame, Tendora(), Budget(calls=n), only=["presentation"])
+    assert len(result.records) == n
+    assert len(calls) <= 3 * n, len(calls)

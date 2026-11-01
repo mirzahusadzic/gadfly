@@ -47,6 +47,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable
+from functools import lru_cache
 
 from ..frame import Frame
 from ..types import Observation
@@ -59,6 +60,7 @@ RULE = "\n\n---\n\n"  # between the body and the input, as interventions.prompt 
 OPEN, CONDITIONAL, ANOTHER = "open", "conditional", "another answer"
 # the engine's outcomes a frame may observe under their own names
 OUTCOMES = (OPEN, CONDITIONAL, "ambiguous", "conflict")
+AMBIGUOUS = object()  # a turned input two declared inputs give: no one basis
 
 
 def asked(text: str) -> tuple[str, str | None] | None:
@@ -87,6 +89,8 @@ def request_body(frame: Frame, prompt: str) -> dict | None:
     if case is not None:
         sent["case"] = case
     basis = _basis(frame, given)
+    if basis is AMBIGUOUS:
+        return None  # no one saved check to ask it against
     if basis is not None:
         sent["basis"] = basis
     battery = frame.battery
@@ -97,24 +101,47 @@ def request_body(frame: Frame, prompt: str) -> dict | None:
     return sent
 
 
-def _basis(frame: Frame, given: str) -> dict | None:
+def _basis(frame: Frame, given: str) -> dict | object | None:
     """The saved check a turned input is asked against: the declared input
     whose input inversion, or presentation, gives what the prompt asks.
     None when the prompt asks a declared input as it stands, even one another
-    input turned into (a swap): that is its own saved check, asked again."""
+    input turned into (a swap): that is its own saved check, asked again.
+    AMBIGUOUS when two declared inputs turn into it (`check` refuses that)."""
+    sources = turned(frame).get(given)
+    if not sources:
+        return None
+    where = asked(sources[0]) if len(sources) == 1 else None
+    if where is None:
+        return AMBIGUOUS
+    question, case = where
+    return {"question": question, **({"case": case} if case is not None else {})}
+
+
+def turned(frame: Frame) -> dict[str, tuple[str, ...]]:
+    """Each text a declared input turns into, through the frame's input
+    inversion or presentation, and the declared inputs that turn into it. A
+    text some declared input already is is left out: a swap asks that
+    input's own saved check. Worked out once for a frame."""
+    iv = frame.interventions
+    mappings = tuple(
+        tuple(sorted((iv.get(key) or {}).items())) for key in ("inputInversion", "presentation")
+    )
+    return _turned(tuple(x["text"] for x in frame.inputs), mappings)
+
+
+@lru_cache(maxsize=64)
+def _turned(texts: tuple[str, ...], mappings: tuple) -> dict[str, tuple[str, ...]]:
     from ..interventions import rename
 
-    texts = [x["text"] for x in frame.inputs]
-    if given in texts:
-        return None
-    iv = frame.interventions
-    for key in ("inputInversion", "presentation"):
-        mapping = tuple(sorted((iv.get(key) or {}).items()))
+    declared, sources = set(texts), {}
+    for mapping in mappings:
+        if not mapping:
+            continue
         for text in texts:
-            if mapping and rename(text, mapping) == given:
-                question, case = asked(text)
-                return {"question": question, **({"case": case} if case is not None else {})}
-    return None
+            into = rename(text, mapping)
+            if into not in declared:
+                sources.setdefault(into, {})[text] = None
+    return {into: tuple(source) for into, source in sources.items()}
 
 
 def label_of(reply: dict, labels: tuple[str, ...]) -> tuple[str | None, str | None]:
@@ -172,8 +199,10 @@ class Tendora:
         """Refuse, before any call, a frame this battery must not serve:
         another battery's, an unknown key, an address off this machine, a
         timeout that is not a positive number of seconds, a scope or offline
-        flag of the wrong type, no `open` among the labels, or an input not
-        in the form `Case: …` then `Question: …`."""
+        flag of the wrong type, no `open` among the labels, an input not in
+        the form `Case: …` then `Question: …`, an input inversion or
+        presentation that turns an input out of that form, or two inputs
+        turned into one question."""
         battery = frame.battery
         if battery.get("kind") != self.name:
             raise ValueError(f"this frame asks for the {battery.get('kind')} battery")
@@ -200,6 +229,18 @@ class Tendora:
             if asked(x["text"]) is None:
                 raise ValueError(
                     f"input {x['id']} is not 'Case: …' then 'Question: …', as the check asked it"
+                )
+        ids = {x["text"]: x["id"] for x in frame.inputs}
+        for into, sources in turned(frame).items():
+            if len(sources) > 1:
+                raise ValueError(
+                    f"inputs {', '.join(ids[s] for s in sources)} turn into the same question, "
+                    "so the engine could not tell which saved check to ask it against"
+                )
+            if asked(into) is None:
+                raise ValueError(
+                    f"input {ids[sources[0]]} turns out of the form 'Case: …' then "
+                    "'Question: …', so the engine could not be asked it"
                 )
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
