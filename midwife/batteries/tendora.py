@@ -65,7 +65,10 @@ AMBIGUOUS = object()  # a turned input two declared inputs give: no one basis
 
 def asked(text: str) -> tuple[str, str | None] | None:
     """The question and the case an input holds, or None when it is not in
-    the form `Case: …` (optional, first) then `Question: …`."""
+    the form `Case: …` (optional, first) then `Question: …`, each with words
+    in it, and no carriage return."""
+    if "\r" in text:
+        return None
     lines = text.split("\n")
     case = None
     if lines and lines[0].startswith("Case: "):
@@ -73,7 +76,9 @@ def asked(text: str) -> tuple[str, str | None] | None:
     if len(lines) != 1 or not lines[0].startswith("Question: "):
         return None
     question = lines[0].removeprefix("Question: ")
-    return (question, case) if question and case != "" else None
+    if not question.strip() or (case is not None and not case.strip()):
+        return None
+    return question, case
 
 
 def request_body(frame: Frame, prompt: str) -> dict | None:
@@ -199,7 +204,8 @@ class Tendora:
         """Refuse, before any call, a frame this battery must not serve:
         another battery's, an unknown key, an address off this machine, a
         timeout that is not a positive number of seconds, a scope or offline
-        flag of the wrong type, no `open` among the labels, an input not in
+        flag of the wrong type, no `open` among the labels, a statement with a
+        line break in any trial, an input not in
         the form `Case: …` then `Question: …`, an input inversion or
         presentation that turns an input out of that form, or two inputs
         turned into one question."""
@@ -230,6 +236,16 @@ class Tendora:
                 raise ValueError(
                     f"input {x['id']} is not 'Case: …' then 'Question: …', as the check asked it"
                 )
+        from ..interventions import plan
+
+        for trial in plan(frame):  # the engine is sent one statement a line
+            for span in trial.spans:
+                if "\n" in span.text or "\r" in span.text:
+                    where = "" if trial.id == "baseline" else f" in the {trial.id} trial"
+                    raise ValueError(
+                        f"span {span.id} holds a line break{where}, but the engine is sent "
+                        "one statement a line"
+                    )
         ids = {x["text"]: x["id"] for x in frame.inputs}
         for into, sources in turned(frame).items():
             if len(sources) > 1:

@@ -325,3 +325,39 @@ def test_a_run_turns_each_input_once_not_once_per_prompt(server, monkeypatch, n)
     result = run(frame, Tendora(), Budget(calls=n), only=["presentation"])
     assert len(result.records) == n
     assert len(calls) <= 3 * n, len(calls)
+
+
+@pytest.mark.parametrize(
+    "change, where",
+    [
+        (lambda raw: raw["body"]["spans"][0].update(text="Maya declares.\nAlex pages."), ","),
+        (
+            lambda raw: raw["interventions"].update(presentation={"Maya": "Maya\nand Alex"}),
+            " in the presentation trial",
+        ),
+    ],
+)
+def test_check_refuses_a_statement_with_a_line_break(raw, change, where):
+    # the engine is sent one statement a line: a span that holds a line
+    # break, as written or as a trial renames it, would reach it as two
+    # (pass 5, R03)
+    change(raw)
+    with pytest.raises(ValueError, match=f"span maya-declares holds a line break{where}"):
+        Tendora().check(at(raw, "http://127.0.0.1:1"))
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Question:    ",
+        "Case:    \nQuestion: Who notifies the customers?",
+        "Case: A certificate expires.\r\nQuestion: Who notifies the customers?",
+    ],
+)
+def test_an_input_with_blank_words_or_a_carriage_return_is_not_asked(raw, text):
+    # the engine finds a saved check by its words exactly: blank ones name
+    # none, and a carriage return would be sent as part of them (pass 5, R09)
+    assert asked(text) is None
+    raw["inputs"][0]["text"] = text
+    with pytest.raises(ValueError, match="is not 'Case: …' then 'Question: …'"):
+        Tendora().check(at(raw, "http://127.0.0.1:1"))
