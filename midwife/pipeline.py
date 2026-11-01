@@ -194,8 +194,14 @@ def run(
         return ended()
 
     # At once: each trial's first calls before any trial's next, so a trial
-    # can settle before its later calls start.
-    queue = deque(sorted(calls, key=lambda call: call[2]))
+    # can settle before its later calls start; made in that order, not sorted.
+    queue = deque(
+        (x, trial, index)
+        for index in range(frame.quorum)
+        for x in frame.inputs
+        for trial in trials
+        if (x["id"], trial.id, index) not in done
+    )
     order = itertools.count()
     started: dict[int, tuple[dict[str, str], Trial, int, str]] = {}  # each call made, until kept
     ended_at: dict[int, Observation] = {}  # each call's observation, set by its worker

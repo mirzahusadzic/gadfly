@@ -190,3 +190,36 @@ def test_the_examples_table_reads_each_record_once(tmp_path, monkeypatch):
 
     small, large = work(30), work(60)
     assert large < 2.6 * small, (small, large)
+
+
+def test_the_parallel_queue_is_made_without_a_sort(monkeypatch):
+    # the calls go out a quorum wave at a time; the queue is built in that
+    # order, so no sort ever sees every call (pass 4, R13)
+    import midwife.pipeline as pipeline
+    from midwife.pipeline import calls_needed, run
+    from midwife.types import Budget, Observation
+
+    class Quick:
+        name, concurrent = "rules", True
+
+        def check(self, frame):
+            pass
+
+        def observe(self, frame, prompt, cap):
+            return Observation(label="decline")
+
+    sizes = []
+
+    def counted(items, **how):
+        items = list(items)
+        sizes.append(len(items))
+        return sorted(items, **how)
+
+    monkeypatch.setattr(pipeline, "sorted", counted, raising=False)
+    raw = copy.deepcopy(REFUND)
+    raw["battery"] = {"kind": "rules"}
+    raw["inputs"] = [{"id": f"x{i}", "text": f"case {i}"} for i in range(20)]
+    frame = situate(raw)
+    result = run(frame, Quick(), Budget(calls=calls_needed(frame)), parallel=2)
+    assert len(result.records) == calls_needed(frame)
+    assert max(sizes) <= 2  # the calls that just ended, never the queue
