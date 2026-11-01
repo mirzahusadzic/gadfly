@@ -505,17 +505,21 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
     if moved and base is not None:
         open_.append(f"specificity: {', '.join(moved)} moved it too; the change is not specific")
     # Cutting more should not move it less: a control that cuts the anchors and
-    # more, yet holds where the ablation moved, leaves the ablation's move in doubt.
-    control = set(_read_once(frame)["interventions"].get("control") or [])
-    if (
-        control >= set(frame.anchors)
-        and base is not None
-        and levels.get("ablation") not in (None, base)
-        and levels.get("control") == base
-    ):
-        open_.append(
-            f"monotonicity: the control removes the anchors and more, yet left it at {base}"
-        )
+    # more, or the cumulative (always the anchors and more), yet holds where the
+    # ablation moved, leaves the ablation's move in doubt.
+    declared = _read_once(frame)["interventions"]
+    wider = {"control": set(declared.get("control") or []) >= set(frame.anchors),
+             "cumulative": bool(declared.get("cumulative"))}  # fmt: skip
+    for trial, cuts_more in wider.items():
+        if (
+            cuts_more
+            and base is not None
+            and levels.get("ablation") not in (None, base)
+            and levels.get(trial) == base
+        ):
+            open_.append(
+                f"monotonicity: the {trial} removes the anchors and more, yet left it at {base}"
+            )
     for trial, _, _ in TURNS:
         if trial in levels and levels[trial] is None:
             open_.append(f"direction: the {trial.replace('-', ' ')} has no agreed level")

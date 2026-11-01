@@ -71,12 +71,12 @@ fallback, presentation invariance, specificity, monotonicity and
 materialization, direction when an inversion or input inversion is declared,
 and discrimination for cooled.
 
-Monotonicity is open when the control removes the anchors and more, yet left
-the level where the ablation moved it from: cutting more moved it less, so
-the ablation's move may be the scorer's spread. Of the kept examples, only
-the approved restore raises it, in every run of
-[Inversion](examples/inversion.md) and in two of rung 18c's three: with every
-statement cut, Gemma answers Yes from the case alone.
+Monotonicity is open when the control, or the cumulative trial, removes the
+anchors and more, yet left the level where the ablation moved it from:
+cutting more moved it less, so the ablation's move may be the scorer's
+spread. Of the kept examples, only the approved restore raises it, in every
+run of [Inversion](examples/inversion.md) and in two of rung 18c's three:
+with every statement cut, Gemma answers Yes from the case alone.
 
 - **Under the default `carriage: all-checks`:** a category is named only when
   the checks it needs have passed, every carriage check for carried and a

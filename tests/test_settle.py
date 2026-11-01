@@ -241,3 +241,22 @@ def test_a_short_stable_baseline_has_no_level(raw):
     [finding] = judge(frame, short)
     assert finding.levels["baseline"] is None and finding.levels["ablation"] == "grant"
     assert finding.evidence[0] == "no agreed level in: baseline"
+
+
+def test_a_cumulative_that_holds_where_the_ablation_moved_opens_monotonicity(raw):
+    # the cumulative cuts the anchors and more, so holding where the ablation
+    # moved is the control's contradiction too (pass 4, R02)
+    def odd(prompt, n):  # declines with the rule, or without the payment line
+        rule = "requires a receipt" in prompt or "requires a proof of purchase" in prompt
+        label = "decline" if rule or "original payment" not in prompt else "grant"
+        return Observation(label=label, usage={"output_tokens": 1})
+
+    raw["interventions"]["cumulative"] = ["r4"]
+    opened = "monotonicity: the cumulative removes the anchors and more, yet left it at decline"
+    [listed] = judge(situate(raw), run(situate(raw), Rules(answer=odd), Budget(calls=99)).records)
+    assert listed.levels["ablation"] == "grant" and listed.levels["cumulative"] == "decline"
+    assert listed.category == "carried" and opened in listed.obligations
+    raw["carriage"] = "all-checks"
+    frame = situate(raw)
+    [held] = judge(frame, run(frame, Rules(answer=odd), Budget(calls=99)).records)
+    assert held.category == "unresolved" and opened in held.obligations
