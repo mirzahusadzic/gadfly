@@ -262,3 +262,27 @@ Predicted: carried with `s15 carries it; s14 adds nothing alone` where the
 baseline and repeat hold, unresolved in a run where they split (`stable`);
 monotonicity open in every run, as in rung 16. Where s14 alone has no agreed
 level, the evidence says so and the category does not change.
+
+### Rung 18b2: the two routes, with a case both reach
+
+Written after rung 18b's runs and before any call of this frame. 18b asked
+"Are access logs reviewed?" with no case, and Gemma answered No on all 120
+calls, with the rules, without them and with every statement cut: a
+default, so the frame could not tell. This frame asks the demo's question
+with a case the demo does not ask, one that both routes reach.
+
+Frame: `examples/18b2-access-logs-both.json` (65d1696b…), 3 runs of 40 calls.
+The case is "A payment key is exposed, and the payments service is rolled
+back."
+
+| trial | cuts | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | Yes | high |
+| ablation | s16 and s24 | No, as in 18b; open if Gemma reads s29 ("If Priya reviews access logs…") as leaving it unsettled | medium |
+| ablation-s16 | Priya's route | Yes, through Alex after the rollback | medium-high |
+| ablation-s24 | Alex's route | Yes, through Priya and the exposed key | medium-high |
+| sham-1, sham-2 | statements of the anchors' roles | Yes | high |
+| control | every statement | No | medium-high |
+
+Predicted: carried, with `the anchors carry it independently; either
+suffices`.
