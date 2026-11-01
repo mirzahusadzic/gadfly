@@ -53,7 +53,15 @@ from pathlib import Path
 
 from ..frame import Frame
 from ..types import Observation
-from .critic import MAX_RESPONSE_BYTES, check_output, loopback, opener, output_schema, read_label
+from .critic import (
+    MAX_RESPONSE_BYTES,
+    check_output,
+    loopback,
+    opener,
+    output_schema,
+    read_label,
+    wait_at_most,
+)
 
 DEFAULT_URL = "http://127.0.0.1:18766/v1/responses"
 ENV_FILE = Path.home() / ".codex" / "unified-router" / "openrouter.env"
@@ -138,7 +146,7 @@ def _lines(response, deadline: float | None = None, clock=time.monotonic):
             left = deadline - clock()
             if left <= 0:
                 raise TimeoutError("the call passed its timeout")
-            _wait_at_most(response, left)
+            wait_at_most(response, left)
         chunk = response.read1(CHUNK)
         if not chunk:
             break
@@ -151,13 +159,6 @@ def _lines(response, deadline: float | None = None, clock=time.monotonic):
             return
     if pending:
         yield bytes(pending)
-
-
-def _wait_at_most(response, seconds: float) -> None:
-    """Let the next read on the response's socket wait at most `seconds`."""
-    sock = getattr(getattr(getattr(response, "fp", None), "raw", None), "_sock", None)
-    if sock is not None:
-        sock.settimeout(max(seconds, 0.001))
 
 
 def parse_stream(

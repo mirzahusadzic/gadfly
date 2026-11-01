@@ -55,13 +55,24 @@ class Late(TimeoutError):
         return self.received.decode("utf-8", errors="replace")
 
 
+def wait_at_most(response, seconds: float) -> None:
+    """Let the next read on the response's socket wait at most `seconds`."""
+    sock = getattr(getattr(getattr(response, "fp", None), "raw", None), "_sock", None)
+    if sock is not None:
+        sock.settimeout(max(seconds, 0.001))
+
+
 def read_reply(response, deadline: float, clock: Callable[[], float]) -> bytes:
     """A reply as it comes, until it ends or passes the size cap; Late, with
-    what had arrived, if it is still coming at the deadline (the socket's
-    timeout waits per read)."""
+    what had arrived, if it is still coming at the deadline. Each read waits
+    only what is left of the deadline, so a stall never runs past it."""
     body = bytearray()  # grown in place: an earlier chunk is never copied again
     try:
-        while chunk := response.read1(65_536):
+        while True:
+            wait_at_most(response, deadline - clock())  # what has arrived is still read
+            chunk = response.read1(65_536)
+            if not chunk:
+                break
             body.extend(chunk)
             if len(body) > MAX_RESPONSE_BYTES:
                 break

@@ -135,3 +135,40 @@ def test_a_whole_run_through_the_battery(raw, evaluator):
     assert result.stopped is None and len(fake.requests) == calls_needed(frame)
     [finding] = judge(frame, result.records)
     assert finding.category == "cooled"  # a scorer that always declines
+
+
+def test_a_reply_that_stalls_after_its_first_chunk_ends_at_the_deadline(raw):
+    # the first chunk comes just before the deadline and the rest never does:
+    # the next read waits only what is left, not a whole timeout again (pass 4, R09)
+    import threading
+    import time
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    class Stalling(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers["content-length"]))
+            self.send_response(200)
+            self.send_header("content-length", "1000")
+            self.end_headers()
+            self.wfile.flush()
+            time.sleep(0.4)
+            self.wfile.write(b'{"answer": ')
+            self.wfile.flush()
+            time.sleep(1.5)
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Stalling)
+    server.daemon_threads = True
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        frame = frame_at(raw, f"http://127.0.0.1:{server.server_port}/judge", timeout=0.6)
+        began = time.monotonic()
+        late = LocalJSON().observe(frame, "p", 32)
+        took = time.monotonic() - began
+    finally:
+        server.shutdown()
+        server.server_close()
+    assert late.opening == "the call passed its timeout" and late.raw == '{"answer": '
+    assert took < 0.9, took  # one deadline, not a deadline and a timeout more

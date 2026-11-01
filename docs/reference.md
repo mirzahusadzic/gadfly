@@ -616,11 +616,19 @@ Late has these properties:
 
 - **`text`:** `str`. What had arrived, as text, for the record's raw.
 
+#### wait_at_most
+
+Let the next read on the response's socket wait at most `seconds`.
+
+```python
+wait_at_most(response, seconds)
+```
+
 #### read_reply
 
 A reply as it comes, until it ends or passes the size cap; Late, with
-what had arrived, if it is still coming at the deadline (the socket's
-timeout waits per read).
+what had arrived, if it is still coming at the deadline. Each read waits
+only what is left of the deadline, so a stall never runs past it.
 
 ```python
 read_reply(response, deadline, clock)
