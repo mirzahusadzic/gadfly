@@ -98,7 +98,11 @@
 
 /* left: the prompt as the reader got it, in mono */
 .w-doc { padding: 0.9375rem 1.0625rem; border-radius: 0.625rem; background: var(--w-panel); }
-.gadfly-watch .w-lines { margin: 0.25rem 0 0; display: grid; gap: 0.125rem; }
+.gadfly-watch .w-lines {
+  position: relative; /* the lines' offsets are the list's own, for its scroll */
+  margin: 0.25rem 0 0; display: grid; gap: 0.125rem;
+  max-height: 30rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+}
 .gadfly-watch .w-line {
   display: flex; flex-wrap: wrap; gap: 0.1875rem 0.625rem; align-items: baseline;
   margin: 0; padding: 0.3125rem 0.625rem; border-radius: 0.375rem; border-left: 3px solid transparent;
