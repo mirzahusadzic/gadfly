@@ -621,11 +621,13 @@ def test_the_site_splits_nothing_with_a_dot():
 
 
 def test_the_version_badge_reads_the_release_tags():
-    # shields keeps a PyPI badge for six hours, a tag's for five minutes; the
-    # tag names the published version, as publish.yml checks before it uploads
-    first = (ROOT / "README.md").read_text(encoding="utf-8").split("\n")[2]
-    assert "img.shields.io/github/v/tag/mirzahusadzic/gadfly?sort=semver" in first
-    assert first.endswith("(https://pypi.org/project/midwife/)")
+    # CI's badge leads; shields keeps a PyPI badge for six hours, a tag's for
+    # five minutes; the tag names the published version, as publish.yml
+    # checks before it uploads
+    ci, version = (ROOT / "README.md").read_text(encoding="utf-8").split("\n")[2:4]
+    assert ci.startswith("[![CI](")
+    assert "img.shields.io/github/v/tag/mirzahusadzic/gadfly?sort=semver" in version
+    assert version.endswith("(https://pypi.org/project/midwife/)")
 
 
 def test_the_local_json_page_promises_only_what_the_battery_checks():
