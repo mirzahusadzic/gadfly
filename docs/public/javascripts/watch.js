@@ -260,6 +260,35 @@
     });
   }
 
+  // Where the statements list starts, from its lines' tops and bottoms and
+  // the height it shows, so the line under test is always in view: at the
+  // first of every line under test and the changed line nearest them, when
+  // they all fit; else at the first line under test, when every one fits;
+  // else at a line under test the trial changed; else at the higher of a
+  // line under test and the changed line nearest it, when the two fit
+  // together; else at that line under test.
+  function settle(rows, height) {
+    const tests = rows.filter((r) => r.test);
+    const changed = rows.filter((r) => r.changed);
+    const top = (group) => Math.min(...group.map((r) => r.top));
+    const tall = (group) => Math.max(...group.map((r) => r.bottom)) - top(group);
+    const every = changed.map((line) => [...tests, line]).sort((a, b) => tall(a) - tall(b))[0] ?? tests;
+    if (tests.length && tall(every) <= height) return top(every);
+    if (tests.length && tall(tests) <= height) return top(tests);
+    const touched = tests.find((r) => r.changed);
+    if (touched) return touched.top;
+    if (!tests.length) return changed.length ? changed[0].top : 0;
+    let best = { test: tests[0], top: tests[0].top, span: Infinity };
+    for (const test of tests) {
+      for (const line of changed) {
+        const top = Math.min(test.top, line.top);
+        const span = Math.max(test.bottom, line.bottom) - top;
+        if (span < best.span) best = { test, top, span };
+      }
+    }
+    return best.span <= height ? best.top : best.test.top;
+  }
+
   function why(category, list, reader) {
     if (category !== "unresolved") return null;
     if (list.some((c) => c.answer === "can't tell")) return "Some answers split, so a check cannot be read.";
@@ -515,21 +544,30 @@
       );
     }
 
-    // a long list fills the left panel and scrolls itself, never the page, so
-    // that its top line is the one this trial changed, or else the line under
-    // test; room after the last line lets a line near the end come up too
+    // a long list fills the left panel and scrolls itself, never the page, to
+    // where settle() starts it in the part of the list the window shows below
+    // the site's top bars (all of it when the window shows none); room after
+    // the last line lets a line near the end come up to the top
     function follow() {
       const lines = doc.querySelector(".w-lines");
       if (!lines) return;
       lines.style.paddingBottom = "";
-      const focus =
-        lines.querySelector(".is-hidden, .is-moved") ??
-        lines.querySelector("mark.w-renamed")?.closest(".w-line") ??
-        lines.querySelector(".is-anchor");
-      if (!focus || lines.scrollHeight <= lines.clientHeight) return;
-      const short = lines.clientHeight - (lines.scrollHeight - focus.offsetTop);
+      if (lines.scrollHeight <= lines.clientHeight) return;
+      const rows = [...lines.children].map((li) => ({
+        top: li.offsetTop,
+        bottom: li.offsetTop + li.offsetHeight,
+        test: li.classList.contains("is-anchor"),
+        changed: li.matches(".is-hidden, .is-moved") || li.querySelector("mark.w-renamed") !== null,
+      }));
+      const box = lines.getBoundingClientRect();
+      const bars = [".VPNav", ".VPLocalNav"].map((s) => document.querySelector(s)?.getBoundingClientRect().bottom ?? 0);
+      const from = Math.max(box.top, 0, ...bars);
+      const shown = Math.min(box.top + lines.clientHeight, window.innerHeight) - from;
+      const [skip, height] = shown > 0 ? [from - box.top, shown] : [0, lines.clientHeight];
+      const top = Math.max(0, settle(rows, height) - skip);
+      const short = lines.clientHeight - (lines.scrollHeight - top);
       if (short > 0) lines.style.paddingBottom = `${short}px`;
-      lines.scrollTop = focus.offsetTop;
+      lines.scrollTop = top;
     }
     // the panel follows the right column's height and the window's width
     new ResizeObserver(follow).observe(doc);

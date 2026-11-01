@@ -8,6 +8,7 @@ import itertools
 import json
 import math
 import re
+import subprocess
 from collections import Counter
 from pathlib import Path
 
@@ -208,6 +209,38 @@ def test_the_watch_view_counts_the_asks_of_one_run():
     assert "In this run the answers split, " in told
     assert " all ${n} times it was asked in this run." in told
     assert " ${n} of the ${calls.length} times it was asked in this run" in told
+
+
+@pytest.mark.parametrize(
+    ("tests", "changed", "shown", "start"),
+    [
+        ({6, 19}, set(), 480, 6),  # nothing changed: the first line under test
+        ({6, 19}, {6, 19}, 480, 6),  # ablation: the line under test it hid
+        ({6, 19}, set(range(30)), 480, 6),  # control: every line hidden
+        ({18, 19}, {19}, 480, 18),  # placement: both lines under test in view
+        ({18, 19}, {19}, 60, 19),  # the same, when only the moved one fits
+        ({21, 22}, {26}, 480, 21),  # two lines under test, then a sham line
+        ({21, 22}, {15}, 441, 21),  # a sham line too far for both and the two
+        ({21, 22}, {15}, 480, 15),  # the same, when all three fit
+        ({6, 19}, {20, 25}, 480, 19),  # a sham line just after a line under test
+        ({13}, {12}, 480, 12),  # a sham line just before it: both in view
+        ({3}, {23}, 480, 3),  # a sham line too far to share the view
+        ({13}, {7}, 480, 7),  # six lines before it, in a view of eight
+        ({13}, {7}, 300, 13),  # the same, when the window shows five
+    ],
+)
+def test_the_watch_view_keeps_the_line_under_test_in_view(tests, changed, shown, start):
+    # 30 lines of 60px: a sham trial once scrolled to the line it hid and
+    # left the line under test out of the list, or below the window's edge
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    settle = re.search(r"  function settle\(.*?\n  \}\n", watch, re.S).group(0)
+    rows = [
+        {"top": 60 * i, "bottom": 60 * i + 56, "test": i in tests, "changed": i in changed}
+        for i in range(30)
+    ]
+    run = f"{settle}\nprocess.stdout.write(String(settle({json.dumps(rows)}, {shown})));"
+    done = subprocess.run(["node", "-e", run], capture_output=True, text=True, check=True)
+    assert int(done.stdout) == 60 * start
 
 
 def test_every_kind_of_trial_is_told_in_words():
