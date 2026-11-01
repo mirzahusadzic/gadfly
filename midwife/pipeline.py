@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import itertools
 import re
+import signal
+import threading
 from collections import defaultdict, deque
 from collections.abc import Callable, Iterable
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
@@ -81,7 +83,9 @@ def run(
     their split is read across all their calls. `parallel` makes up to that
     many calls at once, for a battery that says it takes them (a
     `concurrent` attribute that is true); records are handed on as each
-    call ends, and a call already started is always kept."""
+    call ends, and a call already started is always kept: a first Ctrl-C
+    starts no more calls, keeps those already out, then goes on as
+    KeyboardInterrupt, and a second stops at once."""
     named = frame.battery["kind"]
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise ValueError(f"this frame asks for the {named} battery, not {battery.name}")
@@ -193,36 +197,64 @@ def run(
     # can settle before its later calls start.
     queue = deque(sorted(calls, key=lambda call: call[2]))
     order = itertools.count()
-    running: dict[Future[Observation], tuple[int, dict[str, str], Trial, int, str]] = {}
+    started: dict[int, tuple[dict[str, str], Trial, int, str]] = {}  # each call made, until kept
+    ended_at: dict[int, Observation] = {}  # each call's observation, set by its worker
+    running: dict[Future[None], int] = {}
+
+    def ask(seq: int, text: str) -> None:
+        ended_at[seq] = _observe(battery, frame, text, cap)
+
+    def keep_call(seq: int) -> str | None:
+        x, trial, index, text = started.pop(seq)
+        return keep(x, trial, index, text, ended_at.pop(seq))
+
+    # A first Ctrl-C lets the calls already out end and keeps them, then goes
+    # on as KeyboardInterrupt; a second stops at once.
+    interrupted: list[int] = []
+    held = threading.current_thread() is threading.main_thread()
+    previous = (signal.getsignal(signal.SIGINT) if held else None) or signal.default_int_handler
+
+    def hold(signum: int, _frame: object) -> None:
+        interrupted.append(signum)
+        signal.signal(signal.SIGINT, previous)
+
+    if held:
+        signal.signal(signal.SIGINT, hold)
     stopped = None
-    with ThreadPoolExecutor(max_workers=parallel) as pool:
-        try:
-            while queue or running:
-                while stopped is None and queue and len(running) < parallel:
-                    x, trial, index = queue[0]
-                    if needless(x, trial):
+    try:
+        with ThreadPoolExecutor(max_workers=parallel) as pool:
+            try:
+                while queue or running:
+                    while stopped is None and queue and len(running) < parallel:
+                        x, trial, index = queue[0]
+                        if needless(x, trial):
+                            queue.popleft()
+                            skipped += 1
+                            continue
+                        stopped = "cancelled" if interrupted else blocked(len(running))
+                        if stopped:
+                            break
                         queue.popleft()
-                        skipped += 1
-                        continue
-                    stopped = blocked(len(running))
-                    if stopped:
+                        seq, text = next(order), prompt(frame, trial, x)
+                        started[seq] = (x, trial, index, text)
+                        running[pool.submit(ask, seq, text)] = seq
+                    if not running:
                         break
-                    queue.popleft()
-                    text = prompt(frame, trial, x)
-                    started = pool.submit(_observe, battery, frame, text, cap)
-                    running[started] = (next(order), x, trial, index, text)
-                if not running:
-                    break
-                finished, _ = wait(running, return_when=FIRST_COMPLETED)
-                for call in sorted(finished, key=lambda future: running[future][0]):
-                    _, x, trial, index, text = running.pop(call)
-                    stopped = keep(x, trial, index, text, call.result()) or stopped
-        except KeyboardInterrupt:
-            # the calls already out are spent: keep each before stopping
-            for call in sorted(running, key=lambda future: running[future][0]):
-                _, x, trial, index, text = running[call]
-                keep(x, trial, index, text, call.result())
-            raise
+                    finished, _ = wait(running, return_when=FIRST_COMPLETED)
+                    for seq in sorted(running.pop(call) for call in finished):
+                        stopped = keep_call(seq) or stopped
+            except KeyboardInterrupt:
+                # raised here, not held: every call made is spent, so keep each
+                pool.shutdown(wait=True)
+                for seq in sorted(started):
+                    if seq in ended_at:
+                        keep_call(seq)
+                raise
+    finally:
+        if held and signal.getsignal(signal.SIGINT) is hold:
+            signal.signal(signal.SIGINT, previous)
+    if interrupted:
+        raise KeyboardInterrupt
     return ended(stopped)
 
 

@@ -99,7 +99,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | `--only` | a trial id, repeatable | Runs only those trials: a partial run, for diagnosis. |
 | `--kept` | a records file | Records already made, whose calls are not made again, so a stopped run finishes. The new file holds them first, so it is the whole run. |
 | `--settle` | flag | Stops asking a trial once its level cannot change, such as after four alike of five with four to agree. The verdict reads as a whole run's; under `stable` the baseline and repeat always run whole. |
-| `--parallel` | a whole number, 1 by default | Makes that many calls at once, for a battery that takes them (the unified battery does; eGemma, with its rate limit, does not). |
+| `--parallel` | a whole number, 1 by default | Makes that many calls at once, for a battery that takes them (the unified battery does; eGemma, with its rate limit, does not). A first Ctrl-C lets the calls already out end and keeps them; a second stops at once. |
 | `--json` | flag | Prints the calls planned and made, the openings by reason, and why it stopped, as JSON. |
 
 #### Run in slices

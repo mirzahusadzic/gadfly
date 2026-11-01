@@ -129,7 +129,9 @@ Under `standing.stable` the baseline and repeat always run whole, as
 their split is read across all their calls. `parallel` makes up to that
 many calls at once, for a battery that says it takes them (a
 `concurrent` attribute that is true); records are handed on as each
-call ends, and a call already started is always kept.
+call ends, and a call already started is always kept: a first Ctrl-C
+starts no more calls, keeps those already out, then goes on as
+KeyboardInterrupt, and a second stops at once.
 
 #### judge
 
