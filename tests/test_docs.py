@@ -249,6 +249,17 @@ def test_every_reference_is_its_docstrings(block):
     assert documented(block.source) == block.quoted
 
 
+def test_every_shipped_battery_has_its_reference():
+    # a battery's promises live in its docstrings, and the reference shows
+    # them: one added without its block is a battery no page documents
+    shipped = {
+        f"midwife.batteries.{path.stem}"
+        for path in (ROOT / "midwife" / "batteries").glob("*.py")
+        if path.stem != "__init__"
+    }
+    assert shipped <= {block.source for block in _references()}
+
+
 def _frames():
     from tools.doc_outputs import PAGES, frames
 

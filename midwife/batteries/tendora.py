@@ -1,8 +1,8 @@
 """The tendora battery: Tendora's engine, asked again against a trial's statements.
 
-Tendora's engine server (`node tools/serve.mjs --project P --port N`) answers
-`POST /ask` with `statements` against exactly the statements given, in their
-order, and saves nothing. This battery splits a trial's prompt by its
+Tendora's engine server (in its demo package, `npm run serve -- --project P
+--port N`) answers `POST /ask` with `statements` against exactly the
+statements given, in their order, and saves nothing. This battery splits a trial's prompt by its
 documented form (the statements one per line, a line `---` between blank
 lines, then the input), asks the frame's saved question and case again
 against those statements, and reads the label from the engine's answer.
@@ -23,21 +23,31 @@ The label, from the engine's answer:
   answers or another text: `another answer` when the frame lists it;
 - open, conditional, ambiguous and conflict: the label of the same name when
   the frame lists it (a proposal one confirmation away is still open);
-- limited, needs-reading, a refusal, and any status or answer the frame
-  does not list are openings, never labels.
+- limited, needs-reading, a refusal, any status or answer the frame does
+  not list, and a reply out of the engine's form (answers that are not
+  objects with words and a true or false condition, or no `served`) are
+  openings, never labels.
+
+Before any call, `check` refuses what the battery could not ask: no `open`
+among the labels, an input not in the form above, a statement with a line
+break in any trial (the engine is sent one a line), a rename that turns an
+input out of the form, and two inputs turned into one question.
 
 What this battery promises, whatever the frame says:
 - it talks only to the address named, on this machine (loopback), over
   plain http, through no proxy and no redirect, and sends no credentials;
-- it sends the question, the case, the scope, the statements and the
-  offline flag, and nothing else; the trial's id is never among them;
-- each call has a deadline (`timeout` seconds for the whole reply, 60 by
-  default) and a cap on what it reads back;
+- it sends the question, the case, the scope, the statements, the offline
+  flag and, for a turned input, the saved check it came from (`basis`), and
+  nothing else; the trial's id is never among them;
+- each call has a deadline (`timeout` seconds for the whole reply, its
+  head included, 60 by default) and a cap on what it reads back: a reply
+  past the cap is an opening, and nothing of it is kept;
 - each record names the engine version, revision and packs that served it;
 - each record keeps the answer, its status and each answer's text and
   condition, on its first line, then the reply as it came but for its echo
-  of the statements: a long reply is cut at the record's cap, its answer
-  line is not.
+  of the statements: a long reply is cut at the record's cap, and the
+  answer line holds as many answers as fit in half of it, with `more`
+  saying how many were left out, so it is always whole JSON.
 """
 
 from __future__ import annotations
@@ -217,6 +227,8 @@ def answer_line(reply: dict) -> dict:
 
 
 def served_by(reply: dict) -> str:
+    """What a record names as having served the reply: the engine's version,
+    the first 16 characters of its revision, and its packs."""
     served = reply.get("served") if isinstance(reply.get("served"), dict) else {}
     parts = [
         f"tendora {served.get('tendora', '')}".strip(),

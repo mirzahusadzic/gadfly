@@ -963,6 +963,167 @@ observe(frame, prompt, max_output_tokens)
 ```
 <!-- end api -->
 
+<!-- api midwife.batteries.tendora -->
+
+---
+
+### midwife.batteries.tendora
+
+The tendora battery: Tendora's engine, asked again against a trial's statements.
+
+Tendora's engine server (in its demo package, `npm run serve -- --project P
+--port N`) answers `POST /ask` with `statements` against exactly the
+statements given, in their order, and saves nothing. This battery splits a trial's prompt by its
+documented form (the statements one per line, a line `---` between blank
+lines, then the input), asks the frame's saved question and case again
+against those statements, and reads the label from the engine's answer.
+
+```json
+"battery": {"kind": "tendora", "url": "http://127.0.0.1:8791",
+            "timeout": 60, "scope": "...", "offline": true}
+```
+
+Each input reads `Case: …` on its first line when there is a case, then
+`Question: …`, exactly as the saved check asked it. The engine finds the
+saved check by the question, the case and the scope, so all three must be
+the check's own. When a trial has turned what is asked (an input inversion,
+or a presentation that renames the input's words), the battery finds the
+declared input that turned into it and names it as the `basis`, the saved
+check to ask it against; it never learns the trial or the input's id.
+
+The label, from the engine's answer:
+- supported, with one answer whose text is a label: that label; several
+  answers or another text: `another answer` when the frame lists it;
+- open, conditional, ambiguous and conflict: the label of the same name when
+  the frame lists it (a proposal one confirmation away is still open);
+- limited, needs-reading, a refusal, any status or answer the frame does
+  not list, and a reply out of the engine's form (answers that are not
+  objects with words and a true or false condition, or no `served`) are
+  openings, never labels.
+
+Before any call, `check` refuses what the battery could not ask: no `open`
+among the labels, an input not in the form above, a statement with a line
+break in any trial (the engine is sent one a line), a rename that turns an
+input out of the form, and two inputs turned into one question.
+
+What this battery promises, whatever the frame says:
+- it talks only to the address named, on this machine (loopback), over
+  plain http, through no proxy and no redirect, and sends no credentials;
+- it sends the question, the case, the scope, the statements, the offline
+  flag and, for a turned input, the saved check it came from (`basis`), and
+  nothing else; the trial's id is never among them;
+- each call has a deadline (`timeout` seconds for the whole reply, its
+  head included, 60 by default) and a cap on what it reads back: a reply
+  past the cap is an opening, and nothing of it is kept;
+- each record names the engine version, revision and packs that served it;
+- each record keeps the answer, its status and each answer's text and
+  condition, on its first line, then the reply as it came but for its echo
+  of the statements: a long reply is cut at the record's cap, and the
+  answer line holds as many answers as fit in half of it, with `more`
+  saying how many were left out, so it is always whole JSON.
+
+#### asked
+
+The question and the case an input holds, or None when it is not in
+the form `Case: …` (optional, first) then `Question: …`, each with words
+in it, and no carriage return.
+
+```python
+asked(text)
+```
+
+#### request_body
+
+What the engine is sent for one prompt, or None when the prompt is not
+in Gadfly's form: the question, the case and the scope, the statements in
+their order, and the offline flag.
+
+```python
+request_body(frame, prompt)
+```
+
+#### turned
+
+Each text a declared input turns into, through the frame's input
+inversion or presentation, and the declared inputs that turn into it. A
+text some declared input already is is left out: a swap asks that
+input's own saved check. Worked out once for a frame.
+
+```python
+turned(frame)
+```
+
+#### malformed
+
+Why a reply is not an answer in the engine's form, or None: a status
+in words, and answers, if any, a list of objects, each with words for its
+text and true or false for its condition, when it says one.
+
+```python
+malformed(reply)
+```
+
+#### label_of
+
+The label the engine's answer gives, or the opening that says why it
+gives none; a reply out of the engine's form gives none.
+
+```python
+label_of(reply, labels)
+```
+
+#### answer_line
+
+The answer alone: its status, and each answer's text and condition,
+as many as fit in half the record's cap, and how many more there were
+(`more`), so the line a record keeps first is always whole JSON.
+
+```python
+answer_line(reply)
+```
+
+#### served_by
+
+What a record names as having served the reply: the engine's version,
+the first 16 characters of its revision, and its packs.
+
+```python
+served_by(reply)
+```
+
+#### Tendora
+
+`battery: {"kind": "tendora", "url": "http://127.0.0.1:8791"}`
+
+```python
+class Tendora
+```
+
+##### Tendora.check
+
+Refuse, before any call, a frame this battery must not serve:
+another battery's, an unknown key, an address off this machine, a
+timeout that is not a positive number of seconds, a scope or offline
+flag of the wrong type, no `open` among the labels, a statement with a
+line break in any trial, an input not in
+the form `Case: …` then `Question: …`, an input inversion or
+presentation that turns an input out of that form, or two inputs
+turned into one question.
+
+```python
+check(frame)
+```
+
+##### Tendora.observe
+
+One ask of the engine: the label its answer gives, or an opening
+that says why there is none.
+
+```python
+observe(frame, prompt, max_output_tokens)
+```
+<!-- end api -->
+
 <!-- api midwife.cli -->
 
 ---

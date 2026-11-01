@@ -123,7 +123,12 @@ The label is the engine's answer: one supported answer whose text is a
 label gives that label, and several answers or another text give `another
 answer`. Open, conditional, ambiguous and conflict give the label of the
 same name. A label the frame does not list is an opening, and so are
-`limited` and `needs-reading`, always.
+`limited`, `needs-reading` and a reply out of the engine's form, always.
+
+The frame must list `open`, and its statements must hold no line break,
+since the engine is sent one statement a line. The battery refuses either
+before any call, as it does a rename that turns an input out of its form
+or two inputs into one question.
 
 #### Privacy and routing
 
