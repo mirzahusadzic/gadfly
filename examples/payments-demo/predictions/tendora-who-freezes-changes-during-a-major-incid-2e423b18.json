@@ -1,0 +1,13 @@
+{
+  "frame": "tendora-who-freezes-changes-during-a-major-incid-2e423b18",
+  "levels": {
+    "baseline": "Morgan",
+    "repeat": "Morgan",
+    "ablation": "open",
+    "sham-1": "Morgan",
+    "sham-2": "Morgan",
+    "placement": "Morgan",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

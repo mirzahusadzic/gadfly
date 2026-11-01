@@ -1,0 +1,12 @@
+{
+  "frame": "tendora-who-approves-the-database-vendor-invoice-9f2dad27",
+  "levels": {
+    "baseline": "Maya",
+    "repeat": "Maya",
+    "ablation": "open",
+    "sham-1": "Maya",
+    "sham-2": "Maya",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

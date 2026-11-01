@@ -1,0 +1,12 @@
+{
+  "frame": "gemma-where-does-the-support-lead-collect-affe-deadf9f3",
+  "levels": {
+    "baseline": "incident channel",
+    "repeat": "incident channel",
+    "ablation": "open",
+    "sham-1": "incident channel",
+    "sham-2": "incident channel",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

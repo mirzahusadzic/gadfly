@@ -1,0 +1,12 @@
+{
+  "frame": "gemma-does-jordan-test-a-backup-before-restori-dd0e6c1f",
+  "levels": {
+    "baseline": "Yes",
+    "repeat": "Yes",
+    "ablation": "open",
+    "sham-1": "Yes",
+    "sham-2": "Yes",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

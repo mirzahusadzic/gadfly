@@ -1,0 +1,12 @@
+{
+  "frame": "tendora-who-freezes-deployments-during-a-major-i-c2fd69b6",
+  "levels": {
+    "baseline": "Morgan",
+    "repeat": "Morgan",
+    "ablation": "open",
+    "sham-1": "Morgan",
+    "sham-2": "Morgan",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

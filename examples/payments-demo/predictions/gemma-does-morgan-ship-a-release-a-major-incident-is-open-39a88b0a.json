@@ -1,0 +1,12 @@
+{
+  "frame": "gemma-does-morgan-ship-a-release-a-major-incident-is-open-39a88b0a",
+  "levels": {
+    "baseline": "No",
+    "repeat": "No",
+    "ablation": "open",
+    "sham-1": "No",
+    "sham-2": "No",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

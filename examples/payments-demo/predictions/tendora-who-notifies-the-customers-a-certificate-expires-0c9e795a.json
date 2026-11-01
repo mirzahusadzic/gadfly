@@ -1,0 +1,13 @@
+{
+  "frame": "tendora-who-notifies-the-customers-a-certificate-expires-0c9e795a",
+  "levels": {
+    "baseline": "Sam",
+    "repeat": "Sam",
+    "ablation": "open",
+    "sham-1": "Sam",
+    "sham-2": "Sam",
+    "placement": "Sam",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

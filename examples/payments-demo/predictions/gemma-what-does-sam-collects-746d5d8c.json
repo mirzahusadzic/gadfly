@@ -1,0 +1,12 @@
+{
+  "frame": "gemma-what-does-sam-collects-746d5d8c",
+  "levels": {
+    "baseline": "conditional",
+    "repeat": "conditional",
+    "ablation": "open",
+    "sham-1": "conditional",
+    "sham-2": "conditional",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

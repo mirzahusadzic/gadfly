@@ -1,0 +1,12 @@
+{
+  "frame": "gemma-what-does-the-on-call-engineer-check-aft-9e796fe9",
+  "levels": {
+    "baseline": "conditional",
+    "repeat": "conditional",
+    "ablation": "open",
+    "sham-1": "conditional",
+    "sham-2": "conditional",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

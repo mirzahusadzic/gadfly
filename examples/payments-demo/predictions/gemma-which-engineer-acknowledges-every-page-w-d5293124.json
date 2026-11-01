@@ -1,0 +1,12 @@
+{
+  "frame": "gemma-which-engineer-acknowledges-every-page-w-d5293124",
+  "levels": {
+    "baseline": "Alex",
+    "repeat": "Alex",
+    "ablation": "open",
+    "sham-1": "Alex",
+    "sham-2": "Alex",
+    "control": "open"
+  },
+  "verdict": "carried"
+}

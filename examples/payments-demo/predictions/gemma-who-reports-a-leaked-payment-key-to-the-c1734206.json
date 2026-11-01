@@ -1,0 +1,12 @@
+{
+  "frame": "gemma-who-reports-a-leaked-payment-key-to-the-c1734206",
+  "levels": {
+    "baseline": "Priya",
+    "repeat": "Priya",
+    "ablation": "open",
+    "sham-1": "Priya",
+    "sham-2": "Priya",
+    "control": "open"
+  },
+  "verdict": "carried"
+}
