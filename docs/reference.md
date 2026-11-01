@@ -600,7 +600,19 @@ No proxy from the environment, no redirect: only the address named is
 called. Built per call, so no environment read at import can linger.
 
 ```python
-opener()
+opener(*handlers)
+```
+
+#### opened
+
+The response to a request, opened through `opener()`, its status line
+and headers in within `timeout` seconds of the call: a server still
+sending the answer's head then is cut off, and the call raises
+TimeoutError. The body is `read_reply`'s to bound, and a refusal's
+`read_error`'s, both by the same deadline.
+
+```python
+opened(request, timeout)
 ```
 
 #### Late
@@ -632,6 +644,15 @@ only what is left of the deadline, so a stall never runs past it.
 
 ```python
 read_reply(response, deadline, clock)
+```
+
+#### read_error
+
+Up to 4,096 bytes of a refusal's body, read by the deadline: what had
+arrived by then, or nothing. Each read waits only what is left.
+
+```python
+read_error(error, deadline, clock)
 ```
 
 #### check_output

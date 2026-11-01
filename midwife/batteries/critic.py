@@ -4,7 +4,11 @@ and one way to read a label from a JSON answer (the frame's observation map).
 
 from __future__ import annotations
 
+import http.client
 import json
+import socket
+import threading
+import urllib.error
 import urllib.request
 from collections.abc import Callable
 from urllib.parse import urlparse
@@ -35,10 +39,62 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def opener() -> urllib.request.OpenerDirector:
+def opener(*handlers: urllib.request.BaseHandler) -> urllib.request.OpenerDirector:
     """No proxy from the environment, no redirect: only the address named is
     called. Built per call, so no environment read at import can linger."""
-    return urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+    return urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect(), *handlers)
+
+
+class _Watched(urllib.request.HTTPHandler):
+    # opens each connection where a watchdog can reach its socket
+    def __init__(self):
+        super().__init__()
+        self.connections: list[http.client.HTTPConnection] = []
+
+    def http_open(self, req):
+        def connection(*args, **kwargs):
+            self.connections.append(http.client.HTTPConnection(*args, **kwargs))
+            return self.connections[-1]
+
+        return self.do_open(connection, req)
+
+
+def opened(request: urllib.request.Request, timeout: float):
+    """The response to a request, opened through `opener()`, its status line
+    and headers in within `timeout` seconds of the call: a server still
+    sending the answer's head then is cut off, and the call raises
+    TimeoutError. The body is `read_reply`'s to bound, and a refusal's
+    `read_error`'s, both by the same deadline."""
+    watched = _Watched()
+    cut = threading.Event()
+
+    def at_deadline():
+        cut.set()
+        for connection in watched.connections:
+            sock = connection.sock  # None once the head is in: urllib lets go of it
+            if sock is not None:
+                try:
+                    sock.shutdown(socket.SHUT_RDWR)  # wakes a read waiting on it
+                except OSError:
+                    pass
+
+    timer = threading.Timer(timeout, at_deadline)  # real seconds, as the socket's own
+    timer.daemon = True
+    timer.start()
+    try:
+        response = opener(watched).open(request, timeout=timeout)
+    except urllib.error.HTTPError:
+        raise  # the head came in time; the refusal's body is read_error's
+    except Exception:
+        if cut.is_set():
+            raise TimeoutError("the call passed its timeout") from None
+        raise
+    finally:
+        timer.cancel()
+    if cut.is_set():  # the deadline came with the head: nothing after it is read
+        response.close()
+        raise TimeoutError("the call passed its timeout")
+    return response
 
 
 class Late(TimeoutError):
@@ -82,6 +138,22 @@ def read_reply(response, deadline: float, clock: Callable[[], float]) -> bytes:
         raise
     except TimeoutError:  # the socket's own wait ran out mid-reply
         raise Late(bytes(body)) from None
+    return bytes(body)
+
+
+def read_error(error: urllib.error.HTTPError, deadline: float, clock: Callable[[], float]) -> bytes:
+    """Up to 4,096 bytes of a refusal's body, read by the deadline: what had
+    arrived by then, or nothing. Each read waits only what is left."""
+    body = bytearray()
+    try:
+        while len(body) < 4096 and clock() < deadline:
+            wait_at_most(error.fp, deadline - clock())
+            chunk = error.read1(4096 - len(body))
+            if not chunk:
+                break
+            body.extend(chunk)
+    except (OSError, ValueError, AttributeError):  # a wait run out, or no body to read
+        pass
     return bytes(body)
 
 

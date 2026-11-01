@@ -36,6 +36,7 @@ import urllib.error
 import urllib.request
 from collections import deque
 from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -47,8 +48,10 @@ from .critic import (
     check_output,
     label_at,
     loopback,
+    opened,
     opener,
     output_schema,
+    read_error,
     read_reply,
 )
 
@@ -72,10 +75,11 @@ def _key() -> str:
     return key
 
 
-def _wait(error: urllib.error.HTTPError) -> float:
+def _wait(error: urllib.error.HTTPError, body: Callable[[], bytes]) -> float:
     """How long eGemma asks a busy caller to wait: its Retry-After header, or
-    the seconds its rate limiter names in the detail, or a second; at most
-    MAX_WAIT. A wait that is not a finite, non-negative number is not one."""
+    the seconds its rate limiter names in the detail (the refusal's `body`,
+    read only when needed), or a second; at most MAX_WAIT. A wait that is not
+    a finite, non-negative number is not one."""
     header = error.headers.get("retry-after") if error.headers else None
     seconds = None
     if header is not None:
@@ -87,7 +91,7 @@ def _wait(error: urllib.error.HTTPError) -> float:
             seconds = None
     if seconds is None:
         try:
-            detail = str(json.loads(error.read(4096) or b"{}").get("detail", ""))
+            detail = str(json.loads(body() or b"{}").get("detail", ""))
         except (ValueError, AttributeError):
             detail = ""
         found = re.search(r"Try again in (\d+(?:\.\d+)?) seconds?", detail)
@@ -197,7 +201,7 @@ class EGemma:
             self.pace()  # a retry is a call too: eGemma's limiter counts it
             deadline = self.clock() + self.timeout  # waits for eGemma's pace are not the call's
             try:
-                with opener().open(request, timeout=self.timeout) as response:
+                with opened(request, self.timeout) as response:
                     body = read_reply(response, deadline, self.clock)
                 break
             except Late as late:  # what had arrived is kept, never read as an answer
@@ -206,7 +210,7 @@ class EGemma:
                 if error.code not in BUSY or attempt == RETRIES:
                     tried = f" after {attempt} retries" if attempt else ""
                     return Observation(label=None, opening=f"eGemma answered {error.code}{tried}")
-                self.sleep(_wait(error))
+                self.sleep(_wait(error, partial(read_error, error, deadline, self.clock)))
             except (TimeoutError, urllib.error.URLError, OSError) as error:
                 reason = getattr(error, "reason", error)
                 if isinstance(reason, TimeoutError):

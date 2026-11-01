@@ -40,7 +40,7 @@ from .critic import (
     check_output,
     label_at,
     loopback,
-    opener,
+    opened,
     output_schema,
     read_reply,
 )
@@ -107,7 +107,7 @@ class LocalJSON:
         )
         deadline = self.clock() + timeout
         try:
-            with opener().open(request, timeout=timeout) as response:
+            with opened(request, timeout) as response:
                 body = read_reply(response, deadline, self.clock)
         except Late as late:  # what had arrived is kept, never read as an answer
             return Observation(label=None, opening="the call passed its timeout", raw=late.text)

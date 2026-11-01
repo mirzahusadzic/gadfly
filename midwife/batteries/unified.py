@@ -57,7 +57,7 @@ from .critic import (
     MAX_RESPONSE_BYTES,
     check_output,
     loopback,
-    opener,
+    opened,
     output_schema,
     read_label,
     wait_at_most,
@@ -286,7 +286,7 @@ class Unified:
         )
         deadline = self.clock() + self.timeout
         try:
-            with opener().open(request, timeout=self.timeout) as response:
+            with opened(request, self.timeout) as response:
                 if response.headers.get("x-codex-router-diagnostic"):
                     diagnostic = response.headers["x-codex-router-diagnostic"][:200]
                     if diagnostic == NO_ENDPOINT_WITHOUT_DATA:

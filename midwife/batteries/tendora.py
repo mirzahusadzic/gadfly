@@ -50,7 +50,7 @@ from collections.abc import Callable
 
 from ..frame import Frame
 from ..types import Observation
-from .critic import MAX_RESPONSE_BYTES, Late, loopback, opener, read_reply
+from .critic import MAX_RESPONSE_BYTES, Late, loopback, opened, read_error, read_reply
 
 BATTERY_KEYS = {"kind", "url", "timeout", "scope", "offline"}
 DEFAULT_TIMEOUT = 60.0
@@ -219,12 +219,12 @@ class Tendora:
         )
         deadline = self.clock() + timeout
         try:
-            with opener().open(request, timeout=timeout) as response:
+            with opened(request, timeout) as response:
                 body = read_reply(response, deadline, self.clock)
         except Late as late:  # what had arrived is kept, never read as an answer
             return Observation(label=None, opening="the call passed its timeout", raw=late.text)
         except urllib.error.HTTPError as error:
-            said = _said(error)
+            said = _said(read_error(error, deadline, self.clock))
             return Observation(label=None, opening=f"the engine answered {error.code}{said}")
         except (TimeoutError, urllib.error.URLError, OSError) as error:
             reason = getattr(error, "reason", error)
@@ -259,10 +259,10 @@ class Tendora:
         return Observation(label=label, **seen)
 
 
-def _said(error: urllib.error.HTTPError) -> str:
+def _said(body: bytes) -> str:
     # the engine's own reason for a refusal (409, 422), short and on one line
     try:
-        said = json.loads(error.read(4096) or b"{}")
+        said = json.loads(body or b"{}")
     except (json.JSONDecodeError, OSError, ValueError):
         return ""
     message = said.get("error") if isinstance(said, dict) else None
