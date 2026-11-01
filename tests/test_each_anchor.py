@@ -6,6 +6,7 @@ that answers from the anchors it still sees. No engine is called."""
 
 import copy
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -214,3 +215,23 @@ def test_the_plan_says_which_anchor_each_trial_cuts(tmp_path, capsys):
         "each-anchor",
         "cuts s23",
     )
+
+
+def test_each_anchor_alone_is_read_only_once_the_ablation_is(tmp_path):
+    # a split baseline is read first, and the cut-alone line is then not said,
+    # as Reading a verdict says (pass 4, R04: the page had promised it always)
+    raw = framed(["s15", "s14"], RESTORE)
+    raw["standing"] = {"quorum": 3, "agree": 2, "stable": True}
+    frame = situate(raw)
+    asked = Counter()
+
+    def wavering(seen):
+        asked["n"] += 1
+        return "No" if asked["n"] == 2 else ("Yes" if "s15" in seen else "open")
+
+    result = run(frame, Present(wavering), Budget(calls=calls_needed(frame)))
+    [finding] = judge(frame, result.records)
+    assert finding.evidence[0].startswith("the baseline and repeat sessions split")
+    assert not any("carries it" in line or "alone" in line for line in finding.evidence)
+    page = (Path(__file__).parent.parent / "docs/reading-a-verdict.md").read_text()
+    assert "With `eachAnchor`, once the ablation is read, the evidence ends" in page

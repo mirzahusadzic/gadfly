@@ -114,11 +114,12 @@ print(finding.obligations)
 - **`obligations`:** what did not run or did not pass, such as
   `no hidden fallback: bypass left it at decline`.
 
-With `eachAnchor`, the evidence ends with how the anchors carry it, read
-from each one cut alone: `each anchor carries it`, `the anchors carry it
-independently; either suffices`, or `s1 carries it; s2 adds nothing alone`.
-These lines never change the category ([Interventions](interventions.md)
-lists them all).
+With `eachAnchor`, once the ablation is read, the evidence ends with how the
+anchors carry it, read from each one cut alone: `each anchor carries it`,
+`the anchors carry it independently; either suffices`, or `s1 carries it; s2
+adds nothing alone`. A split baseline or a moved presentation is read first,
+and then no such line is said. These lines never change the category
+([Interventions](interventions.md) lists them all).
 
 A UI must not merge the two lists, or show an obligation as a warning on an
 otherwise unconditional success. Of the essay's five carriage checks, required
