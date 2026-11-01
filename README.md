@@ -103,10 +103,11 @@ Gadfly its key; the address has a default.
   and the router's `GET /v1/models` lists the ones it serves.
 - **`local-json`, for an evaluator of your own:** a service on this machine at
   the frame's `battery.url` that answers JSON, with no key.
-- **Tendora's engine, for a Tendora project's own answers:** start
-  [Tendora](https://github.com/mirzahusadzic/tendora)'s engine server on a project, as its README
-  says. A frame names it as `"battery": {"kind": "tendora", "url": ...}`,
-  with no key, and each input is a saved check's own case and question.
+- **Tendora's engine, for a Tendora project's own answers:** start the
+  engine server from Tendora's demo package on a project, as the package's
+  README says. A frame names it as `"battery": {"kind": "tendora", "url":
+  ...}`, with no key, and each input is a saved check's own case and
+  question.
 - **Your own class:** any class whose `name` is the frame's `battery.kind`,
   passed to `run` as `--battery module:Class`.
 
