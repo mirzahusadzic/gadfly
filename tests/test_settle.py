@@ -188,7 +188,9 @@ def test_the_command_line_settles_and_the_report_says_so(tmp_path, capsys):
     ]
     assert main(["report", str(path), str(out)]) == 0
     report = capsys.readouterr().out.splitlines()
-    assert report[1] == "records: 16  planned calls: 24  settled early: 8 calls not made"
+    assert report[1] == (
+        "records: 16  planned calls: 24  8 calls missing, none able to change a level"
+    )
     assert report[2] == "overall: carried"
 
 
@@ -310,3 +312,21 @@ def test_a_first_ctrl_c_lets_the_calls_out_end_and_a_second_stops(raw):
         assert len(kept) == sum(battery.asked.values()) < calls_needed(frame)
         assert len({(r.trial, r.run) for r in kept}) == len(kept)
         assert signal.getsignal(signal.SIGINT) is before
+
+
+def test_a_short_stable_baseline_is_not_counted_as_settled(tmp_path, capsys):
+    # under stable a missing baseline call could split it, so the report never
+    # counts it among the calls that could change nothing (pass 4, R11)
+    frame = json.loads(REFUND.read_text())
+    frame["standing"] = {"quorum": 3, "agree": 2, "stable": True}
+    path, records = tmp_path / "frame.json", tmp_path / "records.jsonl"
+    path.write_text(json.dumps(frame))
+    reader = "tests.fixtures.refund:RuleReader"
+    argv = ["run", str(path), "--battery", reader, "--calls", "24", "--out", str(records)]
+    assert main(argv) == 0
+    rows = records.read_text().splitlines()
+    short = [r for r in rows if not ('"trial": "baseline"' in r and '"run": 2' in r)]
+    records.write_text("\n".join(short) + "\n")
+    capsys.readouterr()
+    assert main(["report", str(path), str(records)]) == 0
+    assert capsys.readouterr().out.splitlines()[1] == "records: 23  planned calls: 24"

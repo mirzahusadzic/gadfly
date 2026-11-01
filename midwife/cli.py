@@ -86,7 +86,7 @@ def render_report(frame, records: list[dict[str, Any]]) -> str:
     rows = [
         f"frame: {frame.name} ({frame.hash})",
         f"records: {len(records)}  planned calls: {calls_needed(frame)}"
-        + (f"  settled early: {unasked} calls not made" if unasked else ""),
+        + (f"  {unasked} calls missing, none able to change a level" if unasked else ""),
         f"overall: {combined.category}",
     ]
     rows.extend(f"  {line}" for line in combined.evidence)
@@ -100,14 +100,18 @@ def render_report(frame, records: list[dict[str, Any]]) -> str:
 
 
 def _settled_calls(frame, records: list[dict[str, Any]]) -> int:
-    # the calls a settled trial did not make, told from the records alone
+    # the calls missing from settled trials: what the records show, not why
+    # they are missing; under stable the baseline and repeat never settle short
+    whole = {"baseline", "repeat"} if frame.raw["standing"].get("stable") else set()
     seen: dict[tuple[str, str], list[str | None]] = defaultdict(list)
     for record in records:
         seen[record["input"], record["trial"]].append(record["observation"])
     return sum(
         frame.quorum - len(answers)
-        for answers in seen.values()
-        if len(answers) < frame.quorum and settled(answers, frame.quorum, frame.agree, frame.labels)
+        for (_, trial), answers in seen.items()
+        if len(answers) < frame.quorum
+        and trial not in whole
+        and settled(answers, frame.quorum, frame.agree, frame.labels)
     )
 
 
