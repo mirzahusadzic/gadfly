@@ -74,6 +74,18 @@ def test_each_kept_run_reads_as_reported(stem):
     assert read == REPORTED[stem]
 
 
+def test_only_the_restore_rules_approved_case_raises_monotonicity():
+    # as docs/reading-a-verdict.md says it, in every run
+    raised = Counter()
+    for path in FRAMES:
+        frame = situate(json.loads(path.read_text(encoding="utf-8")))
+        for run in runs_of(path):
+            for f in judge(frame, load_records(str(run))):
+                if any(o.startswith("monotonicity") for o in f.obligations):
+                    raised[path.stem, f.input] += 1
+    assert raised == {("16-restore-inversion", "approved"): 3}
+
+
 def test_every_frame_has_its_reported_verdicts():
     assert sorted(REPORTED) == [p.stem for p in FRAMES]
 
