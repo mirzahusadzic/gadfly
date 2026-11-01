@@ -191,6 +191,7 @@ Gadfly refuses a trial that would repeat another before it spends a call.
 |---|---|---|
 | `repeat` | true or false | it is not true or false |
 | `ablation` | `true` | it is missing or not true |
+| `eachAnchor` | true or false | it is not true or false, or the frame has one anchor |
 | `cumulative` | a list of span ids | it adds no span to the anchors |
 | `sham` | `true`, or `{"draws": n}` with `n >= 1` | `n` is not a whole number of at least 1 |
 | `presentation` | words mapped to their replacements | a word repeats in any case, or it renames nothing the reader reads |

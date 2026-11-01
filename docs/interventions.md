@@ -17,6 +17,7 @@ call.
 | `baseline` | nothing | the level being explained | `quorum` calls |
 | `repeat` | nothing | whether that level is stable enough to compare | `quorum` calls |
 | `ablation` | the anchors are removed | required influence | `quorum` calls |
+| `ablation-<anchor>` | one anchor removed, the others kept (`eachAnchor`) | how several anchors carry it, as evidence only | one `quorum` per anchor |
 | `cumulative` | anchors plus the spans they may fall back on | support carried elsewhere | `quorum` calls |
 | `sham-*` | as much text of the anchors' kinds, never an anchor, a bypassed span or a declared fallback | specificity of the change | one `quorum` per draw |
 | `presentation` | mapped words renamed in one pass, body and input | whether wording rather than meaning drives the scorer | `quorum` calls |
@@ -48,6 +49,7 @@ holds, and neither settles everything.
 | `baseline` | the starting level | nothing yet: it is what the others are read against | that the relation matters |
 | `repeat` | a split level is unstable at this quorum | the observed level recurred | that the input is representative |
 | `ablation` | the anchors influenced the outcome | no operative influence here | that another span is not a fallback |
+| `ablation-<anchor>` | that anchor is needed on its own | the other anchors carry it without this one | a category: it is evidence only |
 | `cumulative` | support moved elsewhere | the initial cut removed the effect | carriage on its own |
 | `sham` | the scorer responds to irrelevant same-kind text | the ablation's change is more specific | that every possible irrelevant change is controlled |
 | `presentation` | wording drives the observation | the tested wording change is invariant | that all paraphrases are |
@@ -162,6 +164,39 @@ a question open, which the frame allows by listing `open`.
 
 ---
 
+### Each anchor alone says how several carry it
+
+With several anchors, the ablation cuts them all at once, so it cannot tell
+a chain from two routes. `eachAnchor` also cuts each anchor alone, right
+after the ablation, as trials named `ablation-<anchor>`:
+
+```json
+"interventions": {"ablation": true, "eachAnchor": true}
+```
+
+What they show is evidence only, never a category. Once the ablation has
+moved the answer, one line says how the anchors carry it:
+
+| Each anchor cut alone | The evidence |
+|---|---|
+| every one moves it | `each anchor carries it` |
+| neither of two moves it | `the anchors carry it independently; either suffices` |
+| none of three or more moves it | `no anchor alone is needed: the others carry it without it` |
+| some do, some do not | `s1 carries it; s2 adds nothing alone` |
+| one has no agreed level | `s2 alone has no agreed level` |
+
+Where the ablation left the answer, an anchor that moves it alone is named
+as the oddity it is, since cutting more should not move it less. An anchor
+that adds nothing alone is cited but not needed while the others stand,
+which is worth seeing before it is worth a rule.
+
+A frame with one anchor that declares `eachAnchor` is refused, as its one
+trial would be the ablation again. A bypass that cuts one anchor alone reads
+the same body as that anchor's trial, and both are asked: the bypass settles
+no hidden fallback, while the anchor's trial is evidence.
+
+---
+
 ### Cost
 
 For one input the call count is the planned trials times `quorum`, and a sham
@@ -181,7 +216,8 @@ print("full run:", calls_needed(frame), "calls")
 
 `run(..., only={"baseline", "ablation"})` runs a subset. A planned trial left
 out makes the finding unresolved, so use a partial run for diagnosis, never
-for a final carried verdict.
+for a final carried verdict. A one-anchor trial left out is only said to have
+no agreed level, since it is evidence.
 
 ---
 

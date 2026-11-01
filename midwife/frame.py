@@ -24,6 +24,7 @@ SITUATION = ("relation", "locus", "role", "grain", "purpose", "trajectory", "cro
 INTERVENTIONS = (
     "repeat",
     "ablation",
+    "eachAnchor",
     "cumulative",
     "sham",
     "presentation",
@@ -137,8 +138,8 @@ OPTIONAL = {
     "observe": ("order",),
     "standing": ("stable",),
     "allowed": ("bypass", "inversion", "inputInversion"),
-    "interventions": ("repeat", "cumulative", "sham", "presentation", "placement", "inversion",
-                      "inputInversion", "bypass", "control"),
+    "interventions": ("repeat", "eachAnchor", "cumulative", "sham", "presentation", "placement",
+                      "inversion", "inputInversion", "bypass", "control"),
 }  # fmt: skip
 
 
@@ -408,6 +409,11 @@ def _check_interventions(
                 raise FrameError(f"{key} names a span not in the body: {span_id}")
         if len(set(value)) != len(value):
             raise FrameError(f"{key} names a span twice")
+    each = interventions.get("eachAnchor", False)
+    if not isinstance(each, bool):
+        raise FrameError("eachAnchor is true or false")
+    if each and len(anchors) < 2:
+        raise FrameError("eachAnchor cuts each of several anchors alone: one is the ablation again")
     for key in ("bypass", "control"):
         if set(interventions.get(key) or []) == set(anchors):
             raise FrameError(f"{key} removes exactly the anchors: it is the ablation again")

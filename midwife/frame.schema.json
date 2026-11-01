@@ -159,6 +159,9 @@
         "ablation": {
           "const": true
         },
+        "eachAnchor": {
+          "type": "boolean"
+        },
         "cumulative": {
           "$ref": "#/$defs/ids"
         },

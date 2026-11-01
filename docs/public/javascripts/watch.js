@@ -14,6 +14,7 @@
     baseline: ["Baseline", "Ask with everything there.", "What does Gemma say?"],
     repeat: ["Repeat", "Ask again, with nothing changed.", "Is it the same answer?"],
     ablation: ["Ablation", "Hide the line under test.", "Does the answer change?"],
+    "each-anchor": ["One line alone", "Hide one line under test, keep the others.", "Is this line needed on its own?"],
     cumulative: ["Cumulative", "Hide that line, and more.", "Does the answer change now?"],
     sham: ["Sham", "Hide a harmless line instead.", "This should not change the answer."],
     presentation: ["Presentation", "Swap some names for others.", "This should not change the answer."],
@@ -26,7 +27,7 @@
 
   // The checks a verdict needs, each answered by one kind of trial. Those
   // marked `always` are needed for "carried", so they show even when the
-  // frame never ran their trial.
+  // frame never ran their trial. One line alone is evidence, never a check.
   const CHECKS = [
     { kind: "repeat", ask: "Same answer when asked twice?" },
     { kind: "ablation", ask: "Does hiding the line change the answer?" },
@@ -173,6 +174,7 @@
       const still = {
         repeat: "Asked again, it says the same.",
         ablation: "The line was not needed for this answer.",
+        "each-anchor": "The other lines carry it without this one.",
         cumulative: "Even with more hidden, it holds.",
         sham: "A harmless cut changed nothing, as it should.",
         presentation: "New names changed nothing, as they should.",
@@ -200,6 +202,7 @@
     const moved = {
       repeat: "Asked again, it changed, so the answer is not steady.",
       ablation: "Hiding the line changed the answer.",
+      "each-anchor": "This line is needed on its own.",
       cumulative: "Hiding more changed it.",
       sham: "A harmless cut changed it, which it should not.",
       presentation: "New names changed it, which they should not.",

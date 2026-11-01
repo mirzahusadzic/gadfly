@@ -335,6 +335,11 @@ scripts/load_bearing.py, https://github.com/mirzahusadzic/after-the-poem):
 
 Outside scope only when the frame declares the exclusion; never inferred.
 
+With `eachAnchor`, each anchor is also cut alone. Those trials are evidence
+only and never change a category: after the ablation moved it, they say
+whether each anchor carries it, either suffices, or one adds nothing alone;
+where the ablation left it, they name any anchor that moved it alone.
+
 What the trials do not settle is recorded as an open obligation beside the
 category:
 

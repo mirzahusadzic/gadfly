@@ -24,7 +24,7 @@ from .frame import Frame, Span, digest
 class Trial:
     """One intervention, applied: the body the scorer will read."""
 
-    id: str  # baseline, repeat, ablation, cumulative, sham-1, presentation, placement, ...
+    id: str  # baseline, repeat, ablation, ablation-<anchor>, cumulative, sham-1, ...
     kind: str
     removed: tuple[str, ...]
     renamed: tuple[tuple[str, str], ...]
@@ -147,6 +147,8 @@ def trial_ids(frame: Frame) -> list[str]:
     trial's body: what a budget is counted from."""
     iv = frame.interventions
     ids = ["baseline", *(["repeat"] if iv.get("repeat") else []), "ablation"]
+    if iv.get("eachAnchor"):
+        ids += [f"ablation-{anchor}" for anchor in frame.anchors]
     if iv.get("cumulative"):
         ids.append("cumulative")
     sham = iv.get("sham")
@@ -166,6 +168,11 @@ def plan(frame: Frame) -> list[Trial]:
         trials.append(Trial("repeat", "repeat", (), (), spans))
     removed = tuple(frame.anchors)
     trials.append(Trial("ablation", "ablation", removed, (), without(spans, set(removed))))
+    if iv.get("eachAnchor"):
+        # each anchor cut alone: how the anchors carry what the ablation moved
+        for anchor in removed:
+            cut = without(spans, {anchor})
+            trials.append(Trial(f"ablation-{anchor}", "each-anchor", (anchor,), (), cut))
     if iv.get("cumulative"):
         more = tuple(sorted(set(removed) | set(iv["cumulative"])))
         trials.append(Trial("cumulative", "cumulative", more, (), without(spans, set(more))))

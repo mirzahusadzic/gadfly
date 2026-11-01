@@ -46,10 +46,10 @@ For each input, a trial's observations reduce to one level when exactly one
 label has at least `agree` of them. The first rule that matches names the
 category:
 
-1. **unresolved:** a planned trial has no agreed level. With `stable`, the
-   baseline and repeat sessions must not split, and a repeat level that
-   differs from the baseline is unresolved too: the grain cannot tell the
-   levels apart.
+1. **unresolved:** a planned trial has no agreed level, except a one-anchor
+   trial, which is evidence only. With `stable`, the baseline and repeat
+   sessions must not split, and a repeat level that differs from the
+   baseline is unresolved too: the grain cannot tell the levels apart.
 2. **coupled but misaligned:** presentation moved the observation, or
    placement did.
 3. **coupled but misaligned:** ablation moved it outside `allowed`, or, for
@@ -112,6 +112,12 @@ print(finding.obligations)
   `ablation moved it decline -> grant`.
 - **`obligations`:** what did not run or did not pass, such as
   `no hidden fallback: bypass left it at decline`.
+
+With `eachAnchor`, the evidence ends with how the anchors carry it, read
+from each one cut alone: `each anchor carries it`, `the anchors carry it
+independently; either suffices`, or `s1 carries it; s2 adds nothing alone`.
+These lines never change the category ([Interventions](interventions.md)
+lists them all).
 
 A UI must not merge the two lists, or show an obligation as a warning on an
 otherwise unconditional success. Of the essay's five carriage checks, required

@@ -73,6 +73,9 @@ with its cost:
 - **Baseline trial:** the evidence as it is, giving the level to explain.
 - **Repeat:** the same evidence again, to show the level is stable.
 - **Ablation:** the anchors cut, to show whether the decision needs them.
+- **Each anchor alone:** with `eachAnchor`, each anchor cut by itself, to
+  show whether several anchors carry it as a chain, as routes either of which
+  suffices, or with one that adds nothing alone.
 - **Sham:** a harmless span of the anchors' kind cut instead, to show the
   change is specific.
 - **Presentation:** names renamed in one pass, to show the reader follows

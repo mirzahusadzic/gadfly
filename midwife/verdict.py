@@ -20,6 +20,11 @@ scripts/load_bearing.py, https://github.com/mirzahusadzic/after-the-poem):
 
 Outside scope only when the frame declares the exclusion; never inferred.
 
+With `eachAnchor`, each anchor is also cut alone. Those trials are evidence
+only and never change a category: after the ablation moved it, they say
+whether each anchor carries it, either suffices, or one adds nothing alone;
+where the ablation left it, they name any anchor that moved it alone.
+
 What the trials do not settle is recorded as an open obligation beside the
 category:
 
@@ -293,7 +298,8 @@ def _read(
 ) -> None:
     """The rules, in order: the first that matches names the category."""
     say = finding.evidence.append
-    missing = [t for t, v in levels.items() if v is None]
+    # each anchor alone is evidence only: its level is read after the ablation
+    missing = [t for t, v in levels.items() if v is None and not t.startswith("ablation-")]
     if missing:
         say(f"no agreed level in: {', '.join(missing)}")
         return
@@ -315,6 +321,13 @@ def _read(
         finding.category = MISALIGNED
         say(f"placement moved it {base} -> {levels['placement']}")
         return
+    _ablated(frame, finding, levels, base)
+    finding.evidence += _alone(frame, levels, base)
+
+
+def _ablated(frame: Frame, finding: Finding, levels: dict[str, str | None], base: str) -> None:
+    """The rules from the ablation on, once the answer is stable enough to read."""
+    say = finding.evidence.append
     ablated = levels["ablation"]
     if ablated != base and ablated not in allowed_for(frame, base):
         finding.category = MISALIGNED
@@ -384,6 +397,35 @@ def _read(
             if control != base
             else f"the control left it at {base}"
         )
+
+
+def _alone(frame: Frame, levels: dict[str, str | None], base: str) -> list[str]:
+    """How the anchors carry it, read from each cut alone: evidence only, said
+    once the ablation is read."""
+    if not _read_once(frame)["interventions"].get("eachAnchor"):
+        return []
+    alone = {anchor: levels.get(f"ablation-{anchor}") for anchor in frame.anchors}
+    lines = [f"{anchor} alone has no agreed level" for anchor, v in alone.items() if v is None]
+    if levels["ablation"] == base:  # cutting more should not move it less
+        return lines + [
+            f"{anchor} alone moved it {base} -> {v}, though cutting every anchor did not"
+            for anchor, v in alone.items()
+            if v not in (None, base)
+        ]
+    moving = [anchor for anchor, v in alone.items() if v not in (None, base)]
+    idle = [anchor for anchor, v in alone.items() if v == base]
+    if len(moving) == len(alone):
+        return ["each anchor carries it"]
+    if len(idle) == len(alone):
+        if len(alone) == 2:
+            return ["the anchors carry it independently; either suffices"]
+        return ["no anchor alone is needed: the others carry it without it"]
+    parts = (
+        [f"{', '.join(moving)} {'carries' if len(moving) == 1 else 'carry'} it"] if moving else []
+    )
+    if idle:
+        parts.append(f"{', '.join(idle)} {'adds' if len(idle) == 1 else 'add'} nothing alone")
+    return lines + (["; ".join(parts)] if parts else [])
 
 
 def _fallback(frame: Frame, levels: dict[str, str | None], base: str | None) -> str | None:

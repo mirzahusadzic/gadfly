@@ -200,6 +200,31 @@ def test_the_watch_view_plays_the_kept_runs(stem):
     assert kept == watch_data.encoded(stem)
 
 
+def test_every_kind_of_trial_is_told_in_words():
+    # a frame that declares every intervention plans every kind of trial
+    from midwife.interventions import plan
+    from midwife.pipeline import situate
+    from tools.doc_outputs import TESTS
+
+    raw = json.loads((ROOT / "tests/fixtures/restore-inversion.json").read_text())
+    raw["anchors"] = ["s15", "s14"]
+    raw["interventions"].update(
+        eachAnchor=True,
+        cumulative=["s19"],
+        sham=True,
+        presentation={"Jordan": "Casey"},
+        placement={"span": "s15", "after": "s30"},
+        inputInversion={"has approved": "has not approved"},
+        bypass=["s30"],
+    )
+    raw["allowed"]["inputInversion"] = ["No"]
+    kinds = {trial.kind for trial in plan(situate(raw))}
+    assert kinds == set(TESTS)
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    told = re.search(r"const TRIALS = \{(.*?)\n  \};", watch, re.S).group(1)
+    assert kinds == set(re.findall(r'^\s+"?([\w-]+)"?: \[', told, re.M))
+
+
 def _references():
     from tools.doc_outputs import PAGES, apis
 

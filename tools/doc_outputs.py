@@ -343,6 +343,7 @@ TESTS = {
     "baseline": "the answer the others are read against",
     "repeat": "whether that answer is stable",
     "ablation": "whether the answer needs {anchor}",
+    "each-anchor": "whether that one is needed, or the others carry it",
     "cumulative": "whether support moved to the spans it may fall back on",
     "sham": "whether any cut of the same kind moves it",
     "presentation": "whether the wording, not the meaning, drives it",
