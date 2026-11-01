@@ -10,6 +10,8 @@ each answering one need and keeping its contracts.
 | Portfolio summary | `gadfly portfolio` | no verdict across frames |
 | `placement` intervention | `"placement": {"span": id, "after": id}` | old frames' hashes and categories |
 | `local-json` battery | `"battery": {"kind": "local-json", "url": ...}` | loopback, no credentials, a whole-call deadline |
+| Settled trials | `gadfly run --settle` | every level, category and evidence line of a whole run |
+| Calls at once | `gadfly run --parallel N` | the budget, and every call already made |
 
 ---
 
@@ -32,6 +34,10 @@ details.
 - **[Local JSON battery](breadth/local-json-battery.md):** a local evaluator
   gets the shipped batteries' privacy and deadline treatment without an
   adapter of its own.
+- **Settled trials:** a trial whose level was already fixed still spent its
+  remaining calls; with four of five to agree, four alike decide it.
+- **Calls at once:** a battery that can serve several calls, such as a
+  router, waited on one at a time.
 
 ---
 
@@ -51,8 +57,8 @@ The examples point at these, most useful first. None is built yet.
    reviewers, which makes the essay's handoff measurable.
 4. **Changes beyond cutting:** change a value (400 ms becomes 100 ms) or add
    contrary evidence, which tests direction, not only dependence.
-5. **Better statistics:** report counts with ranges, stop early once a level
-   is clear, and keep the temperature with the answers.
+5. **Better statistics:** report counts with ranges, and keep the
+   temperature with the answers.
 6. **Help writing frames:** for example, a warning when a control leaves a
    line that still points to the answer, as in
    [A frame built wrong](examples/built-wrong.md). It flags problems and never

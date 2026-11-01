@@ -10,20 +10,24 @@
 that calls out. It never starts a call the budget cannot cover, stops
 between calls when the caller says so, and hands each record to `on_record`
 as soon as it exists, so the caller keeps what was spent even if the run
-stops early.
+stops early. Asked to, it skips the calls a settled trial no longer needs,
+and makes several calls at once for a battery that takes them.
 """
 
 from __future__ import annotations
 
+import itertools
 import re
+from collections import defaultdict, deque
 from collections.abc import Callable, Iterable
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, replace
 
 from .frame import Frame, digest, parse
 from .interventions import Trial, prompt, trial_ids
 from .interventions import plan as plan_trials
 from .types import Battery, Budget, Observation, Record
-from .verdict import Finding, _check_shape, check_records
+from .verdict import Finding, _check_shape, check_records, settled
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
 
@@ -37,12 +41,14 @@ RAW_LIMIT = 2_000
 
 @dataclass(frozen=True)
 class RunResult:
-    """What a run made: its records, the calls it planned, and why it stopped
-    early (None when every planned call was made)."""
+    """What a run made: its records, the calls it planned, why it stopped
+    early (None when it reached the end of its plan), and how many planned
+    calls it skipped because their trial had settled."""
 
     records: tuple[Record, ...]
     planned: int
-    stopped: str | None  # None when every planned call was made
+    stopped: str | None  # None when it reached the end of its plan
+    settled: int = 0  # calls not made: their trial's level could no longer change
 
 
 def calls_needed(frame: Frame) -> int:
@@ -60,15 +66,29 @@ def run(
     on_record: Callable[[Record], None] = lambda record: None,
     only: Iterable[str] | None = None,
     kept: Iterable[Record | dict] = (),
+    settle: bool = False,
+    parallel: int = 1,
 ) -> RunResult:
     """Every planned trial of every input, `quorum` times each, in a fixed
     order. `only` limits the run to some trial ids (a partial run); the
     verdict then reads what is there. `kept` finishes a run that stopped:
     the calls those records made are not made again (drop a record from it
-    to make its call again), and the verdict reads the two runs together."""
+    to make its call again), and the verdict reads the two runs together.
+
+    `settle` makes no more calls for a trial whose level can no longer
+    change (`settled`); the verdict reads it as it would read every call.
+    Under `standing.stable` the baseline and repeat always run whole, as
+    their split is read across all their calls. `parallel` makes up to that
+    many calls at once, for a battery that says it takes them (a
+    `concurrent` attribute that is true); records are handed on as each
+    call ends, and a call already started is always kept."""
     named = frame.battery["kind"]
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise ValueError(f"this frame asks for the {named} battery, not {battery.name}")
+    if not isinstance(parallel, int) or isinstance(parallel, bool) or parallel < 1:
+        raise ValueError("parallel is a whole number of calls, at least 1")
+    if parallel > 1 and getattr(battery, "concurrent", False) is not True:
+        raise ValueError(f"the {battery.name} battery does not take calls at once")
     battery.check(frame)
     ids = trial_ids(frame)
     wanted = set(ids) if only is None else set(only)
@@ -102,46 +122,108 @@ def run(
         planned_prompt = prompt(frame, by_trial[record["trial"]], by_input[record["input"]])
         if record["prompt"] != digest(planned_prompt):
             raise ValueError(f"a kept {record['trial']} record was made from another prompt")
-    inputs = frame.inputs
-    calls = (
+    calls = [
         (x, trial, index)
-        for x in inputs
+        for x in frame.inputs
         for trial in trials
         for index in range(frame.quorum)
         if (x["id"], trial.id, index) not in done
-    )
+    ]
+    # each trial's answers so far, kept ones included, so a trial can settle
+    seen: dict[tuple[str, str], list[str | None]] = defaultdict(list)
+    for record in made:
+        seen[record["input"], record["trial"]].append(record["observation"])
+    whole = {"baseline", "repeat"} if frame.raw["standing"].get("stable") else set()
     cap = budget.output_tokens_per_call
     records: list[Record] = []
-    spent = 0
-    for x, trial, index in calls:
+    spent = skipped = 0
+
+    def needless(x: dict[str, str], trial: Trial) -> bool:
+        # asked to settle, a trial whose level can no longer change asks no more
+        answers = seen[x["id"], trial.id]
+        return (
+            settle
+            and trial.id not in whole
+            and settled(answers, frame.quorum, frame.agree, frame.labels)
+        )
+
+    def blocked(running: int) -> str | None:
+        # why no further call may start while `running` calls are still out
         if cancelled():
-            return RunResult(tuple(records), planned, "cancelled")
-        if budget.tokens is not None and spent + cap > budget.tokens:
-            return RunResult(
-                tuple(records), planned, f"the token budget ({budget.tokens}) is spent"
-            )
-        text = prompt(frame, trial, x)
-        observation = _observe(battery, frame, text, cap)
+            return "cancelled"
+        if budget.tokens is not None and spent + (running + 1) * cap > budget.tokens:
+            return f"the token budget ({budget.tokens}) is spent"
+        return None
+
+    def keep(x: dict[str, str], trial: Trial, index: int, text: str, o: Observation) -> str | None:
+        # one call's record, handed on; why the run must stop after it, if it must
+        nonlocal spent
         # What the battery reports, or the cap when it reports nothing.
-        used = observation.usage.get("output_tokens")
+        used = o.usage.get("output_tokens")
         used = cap if not isinstance(used, int) or isinstance(used, bool) else used
         spent += used
-        record = _record(frame, battery, x["id"], trial, index, text, observation)
+        record = _record(frame, battery, x["id"], trial, index, text, o)
         records.append(record)
+        seen[x["id"], trial.id].append(record.observation)
         on_record(record)
         if used > cap:  # the budget holds only while every call keeps its cap
-            return RunResult(
-                tuple(records),
-                planned,
-                f"the battery reported {used} output tokens for a call capped at {cap}",
-            )
+            return f"the battery reported {used} output tokens for a call capped at {cap}"
         if used < 0:  # a negative report would buy back budget it never had
-            return RunResult(
-                tuple(records),
-                planned,
-                f"the battery reported {used} output tokens, which no call spends",
-            )
-    return RunResult(tuple(records), planned, None)
+            return f"the battery reported {used} output tokens, which no call spends"
+        return None
+
+    def ended(stopped: str | None = None) -> RunResult:
+        return RunResult(tuple(records), planned, stopped, skipped)
+
+    if parallel == 1:
+        for x, trial, index in calls:
+            if needless(x, trial):
+                skipped += 1
+                continue
+            stopped = blocked(0)
+            if stopped:
+                return ended(stopped)
+            text = prompt(frame, trial, x)
+            stopped = keep(x, trial, index, text, _observe(battery, frame, text, cap))
+            if stopped:
+                return ended(stopped)
+        return ended()
+
+    # At once: each trial's first calls before any trial's next, so a trial
+    # can settle before its later calls start.
+    queue = deque(sorted(calls, key=lambda call: call[2]))
+    order = itertools.count()
+    running: dict[Future[Observation], tuple[int, dict[str, str], Trial, int, str]] = {}
+    stopped = None
+    with ThreadPoolExecutor(max_workers=parallel) as pool:
+        try:
+            while queue or running:
+                while stopped is None and queue and len(running) < parallel:
+                    x, trial, index = queue[0]
+                    if needless(x, trial):
+                        queue.popleft()
+                        skipped += 1
+                        continue
+                    stopped = blocked(len(running))
+                    if stopped:
+                        break
+                    queue.popleft()
+                    text = prompt(frame, trial, x)
+                    started = pool.submit(_observe, battery, frame, text, cap)
+                    running[started] = (next(order), x, trial, index, text)
+                if not running:
+                    break
+                finished, _ = wait(running, return_when=FIRST_COMPLETED)
+                for call in sorted(finished, key=lambda future: running[future][0]):
+                    _, x, trial, index, text = running.pop(call)
+                    stopped = keep(x, trial, index, text, call.result()) or stopped
+        except KeyboardInterrupt:
+            # the calls already out are spent: keep each before stopping
+            for call in sorted(running, key=lambda future: running[future][0]):
+                _, x, trial, index, text = running[call]
+                keep(x, trial, index, text, call.result())
+            raise
+    return ended(stopped)
 
 
 def judge(frame: Frame, records: Iterable[Record | dict]) -> list[Finding]:

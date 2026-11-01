@@ -42,7 +42,8 @@ verdict = overall(findings)
 that calls out. It never starts a call the budget cannot cover, stops
 between calls when the caller says so, and hands each record to `on_record`
 as soon as it exists, so the caller keeps what was spent even if the run
-stops early.
+stops early. Asked to, it skips the calls a settled trial no longer needs,
+and makes several calls at once for a battery that takes them.
 
 #### situate
 
@@ -81,8 +82,9 @@ overall = midwife.verdict.overall
 
 #### RunResult
 
-What a run made: its records, the calls it planned, and why it stopped
-early (None when every planned call was made).
+What a run made: its records, the calls it planned, why it stopped
+early (None when it reached the end of its plan), and how many planned
+calls it skipped because their trial had settled.
 
 ```python
 @dataclass(frozen=True)
@@ -116,8 +118,18 @@ run(
     on_record=lambda record: None,
     only=None,
     kept=(),
+    settle=False,
+    parallel=1,
 )
 ```
+
+`settle` makes no more calls for a trial whose level can no longer
+change (`settled`); the verdict reads it as it would read every call.
+Under `standing.stable` the baseline and repeat always run whole, as
+their split is read across all their calls. `parallel` makes up to that
+many calls at once, for a battery that says it takes them (a
+`concurrent` attribute that is true); records are handed on as each
+call ends, and a call already started is always kept.
 
 #### judge
 
@@ -269,7 +281,9 @@ as_dict()
 #### Battery
 
 A scorer: given the frame and the exact text it must read, one
-observation. It never sees which trial it is serving.
+observation. It never sees which trial it is serving. A battery that
+can serve several calls at once says so with a class attribute
+`concurrent = True`; without it, `run` makes one call at a time.
 
 ```python
 @runtime_checkable
@@ -408,6 +422,16 @@ The observation at least `agree` runs gave, if exactly one did.
 
 ```python
 level(observations, agree)
+```
+
+#### settled
+
+Whether a trial's level can no longer change: whatever its remaining
+calls answer, `level` gives what it gives now. One label at `agree` that
+no other can still reach settles it; so does no label able to reach it.
+
+```python
+settled(observations, quorum, agree, labels)
 ```
 
 #### judge

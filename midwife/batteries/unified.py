@@ -221,6 +221,7 @@ class Unified:
     """`battery: {"kind": "unified", "model": "anthropic/claude-sonnet-5-5"}`"""
 
     name = "unified"
+    concurrent = True  # each call builds its own connection; the router takes several
 
     def __init__(
         self,

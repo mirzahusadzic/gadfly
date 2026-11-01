@@ -30,6 +30,9 @@ class Battery(Protocol):
   battery's kind or a missing model. `run` calls it once before the first
   call, so a refusal spends nothing.
 - **`observe`:** reads one prompt and returns one label or one opening.
+- **`concurrent`:** an optional class attribute. A battery that can serve
+  several calls at once sets it to `True`, and only then does
+  `run(parallel=N)` make calls side by side; the unified battery sets it.
 
 The protocol's invariant is **trial blindness**: a battery sees the changed
 body and the input, never `baseline`, `sham-1` or `ablation`. A scorer that
@@ -127,6 +130,8 @@ every output token it spent in `usage`, so set `--output-tokens`
 (`Budget.output_tokens_per_call`) to what a whole call may spend: a call that
 reports more stops the run after it. A cap of your own, on money or time,
 goes through `run(cancelled=...)`, which is asked before every call.
+`run(settle=True)` spends fewer calls: a trial stops once its level can no
+longer change, and the verdict reads as it would over every call.
 
 #### Record provenance
 

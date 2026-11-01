@@ -43,6 +43,7 @@ prompt and what served it.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -127,6 +128,21 @@ def level(observations: list[str | None], agree: int) -> str | None:
     counts = Counter(o for o in observations if o is not None)
     winners = [label for label, n in counts.items() if n >= agree]
     return winners[0] if len(winners) == 1 else None
+
+
+def settled(observations: list[str | None], quorum: int, agree: int, labels: Iterable[str]) -> bool:
+    """Whether a trial's level can no longer change: whatever its remaining
+    calls answer, `level` gives what it gives now. One label at `agree` that
+    no other can still reach settles it; so does no label able to reach it."""
+    remaining = quorum - len(observations)
+    if remaining <= 0:
+        return True
+    counts = Counter(o for o in observations if o is not None)
+    reach = {label: counts[label] + remaining for label in labels}
+    leaders = [label for label in reach if counts[label] >= agree]
+    if len(leaders) > 1:  # two already agree: no level, whatever comes
+        return True
+    return all(n < agree for label, n in reach.items() if label not in leaders)
 
 
 def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:

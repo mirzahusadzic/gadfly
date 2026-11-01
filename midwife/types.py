@@ -55,7 +55,9 @@ class Record:
 @runtime_checkable
 class Battery(Protocol):
     """A scorer: given the frame and the exact text it must read, one
-    observation. It never sees which trial it is serving."""
+    observation. It never sees which trial it is serving. A battery that
+    can serve several calls at once says so with a class attribute
+    `concurrent = True`; without it, `run` makes one call at a time."""
 
     name: str
 

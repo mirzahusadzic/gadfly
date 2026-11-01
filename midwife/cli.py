@@ -23,7 +23,7 @@ import importlib
 import json
 import os
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +32,7 @@ from .frame import FrameError, schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
 from .types import Battery, Budget, Record
+from .verdict import settled
 
 EXAMPLES = """\
 examples:
@@ -81,9 +82,11 @@ def render_report(frame, records: list[dict[str, Any]]) -> str:
     levels, evidence and open obligations, each on its own line."""
     findings = judge(frame, records)
     combined = overall(findings)
+    unasked = _settled_calls(frame, records)
     rows = [
         f"frame: {frame.name} ({frame.hash})",
-        f"records: {len(records)}  planned calls: {calls_needed(frame)}",
+        f"records: {len(records)}  planned calls: {calls_needed(frame)}"
+        + (f"  settled early: {unasked} calls not made" if unasked else ""),
         f"overall: {combined.category}",
     ]
     rows.extend(f"  {line}" for line in combined.evidence)
@@ -94,6 +97,18 @@ def render_report(frame, records: list[dict[str, Any]]) -> str:
         rows.extend(f"  evidence: {line}" for line in finding.evidence)
         rows.extend(f"  obligation: {line}" for line in finding.obligations)
     return "\n".join(rows)
+
+
+def _settled_calls(frame, records: list[dict[str, Any]]) -> int:
+    # the calls a settled trial did not make, told from the records alone
+    seen: dict[tuple[str, str], list[str | None]] = defaultdict(list)
+    for record in records:
+        seen[record["input"], record["trial"]].append(record["observation"])
+    return sum(
+        frame.quorum - len(answers)
+        for answers in seen.values()
+        if len(answers) < frame.quorum and settled(answers, frame.quorum, frame.agree, frame.labels)
+    )
 
 
 def _change(frame, trial) -> str:
@@ -181,6 +196,8 @@ def command_run(args) -> int:
             on_record=keep,
             only=args.only,
             kept=kept,
+            settle=args.settle,
+            parallel=args.parallel,
         )
     except KeyboardInterrupt:
         # every record made so far is already in its file: say how to finish
@@ -214,6 +231,7 @@ def command_run(args) -> int:
             "planned": result.planned,
             "made": len(result.records),
             "kept": len(kept) if files else 0,
+            "settled": result.settled,
             "stopped": result.stopped,
             "openings": dict(openings.most_common()),
         }
@@ -223,6 +241,8 @@ def command_run(args) -> int:
             f", after {len(kept)} kept record{'s' * (len(kept) != 1)}" if kept and files else ""
         )
         print(f"wrote {len(result.records)}/{result.planned} calls to {out}{before}")
+        if result.settled:
+            print(f"settled: {result.settled} calls not made, their trials' levels already fixed")
         if openings:
             reason, count = openings.most_common(1)[0]
             total = sum(openings.values())
@@ -331,6 +351,12 @@ def parser() -> argparse.ArgumentParser:
     execute.add_argument("--token-budget", type=int, help="the most output tokens in all")
     execute.add_argument("--only", action="append", help="a trial id; may repeat")
     execute.add_argument("--kept", help="records already made: their calls are not made again")
+    execute.add_argument(
+        "--settle", action="store_true", help="stop a trial once its level cannot change"
+    )
+    execute.add_argument(
+        "--parallel", type=int, default=1, help="calls at once, for a battery that takes them"
+    )
     execute.add_argument("--json", action="store_true", help="print JSON instead of text")
     execute.set_defaults(func=command_run)
 
