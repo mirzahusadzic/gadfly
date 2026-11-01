@@ -35,7 +35,7 @@ export default {
       nextTick(() => {
         if (!document.querySelector('.gadfly-watch')) return;
         const script = document.createElement('script');
-        script.src = withBase('/javascripts/watch.js');
+        script.src = withBase(`/javascripts/watch.js?v=${__WATCH_VERSION__}`); // eslint-disable-line no-undef
         script.onload = () => script.remove();
         document.body.append(script);
       });

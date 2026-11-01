@@ -1,7 +1,8 @@
 /** Gadfly's documentation site. The pages are docs/, written to read on
  * GitHub: this file gives each its place in the sidebar, and the Markdown
  * rules make them read on the site as they do there. */
-import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { copyFileSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createCssVariablesTheme } from 'shiki';
 import { defineConfig } from 'vitepress';
@@ -91,6 +92,18 @@ const sidebar = [
   },
 ];
 
+// The watch view's script and data keep their names, and the host lets a
+// browser keep them for ten minutes: a version from their content, in the
+// address the page asks for, makes every change a new address.
+const watchFiles = [
+  'public/javascripts/watch.js',
+  ...readdirSync(new URL('../public/assets/watch/', import.meta.url)).sort().map((f) => `public/assets/watch/${f}`),
+];
+const watchVersion = createHash('sha256')
+  .update(watchFiles.map((f) => readFileSync(new URL(`../${f}`, import.meta.url))).join('\0'))
+  .digest('hex')
+  .slice(0, 12);
+
 export default defineConfig({
   title: 'Gadfly',
   description,
@@ -153,5 +166,6 @@ export default defineConfig({
     // Mermaid's ELK layout is one chunk of about 2 MB, loaded only by a page
     // with a chart.
     build: { chunkSizeWarningLimit: 2500 },
+    define: { __WATCH_VERSION__: JSON.stringify(watchVersion) },
   },
 });

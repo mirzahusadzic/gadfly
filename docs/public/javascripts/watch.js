@@ -6,6 +6,7 @@
 (() => {
   const script = document.currentScript;
   const base = new URL("../assets/watch/", script.src);
+  const version = new URL(script.src).search; // the page's version of this script and its data
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const STEP_MS = 3800;
 
@@ -133,7 +134,7 @@
     if (!cache.has(stem)) {
       cache.set(
         stem,
-        fetch(new URL(`${stem}.json`, base)).then((r) => {
+        fetch(new URL(`${stem}.json${version}`, base)).then((r) => {
           if (!r.ok) throw new Error(`${stem} (${r.status})`);
           return r.json();
         }),
