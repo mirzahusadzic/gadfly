@@ -20,7 +20,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 | What every critic shares: the loopback call, the label pointer | `midwife/batteries/critic.py` |
 | The shipped batteries | `midwife/batteries/unified.py` (the model router), `egemma.py`, `local_json.py`, `tendora.py` (Tendora's engine; its live test runs only with `TENDORA_PACKAGE`) |
 | Example frames and their kept runs | `examples/*.json`, `examples/runs/<frame>/` |
-| The payments demo's kept runs (Tendora's engine and Gemma, copied from the tendora repository) | `examples/payments-demo/`, played by `docs/demo.md` |
+| The payments demo's kept runs (Tendora's engine and Gemma, copied from the tendora repository) | `examples/payments-demo/`, played by the watch view, `docs/examples/watch.md` |
 | Predictions, results, findings | `examples/PREDICTIONS.md`, `examples/RESULTS.md`, `examples/FINDINGS.md` |
 | Reading kept runs back; running a frame against eGemma | `examples/read.py`; `examples/climb.py` |
 | Quoted outputs, copies, the API page, frames shown in words | `tools/doc_outputs.py` |

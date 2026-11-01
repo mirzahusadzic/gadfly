@@ -38,7 +38,6 @@ const sidebar = [
     items: [
       { text: 'The ladder', link: '/examples/' },
       { text: 'Watch a run', link: '/examples/watch' },
-      { text: 'The payments demo', link: '/demo' },
       { text: 'Cooled', link: '/examples/cooled' },
       { text: 'Quorum', link: '/examples/quorum' },
       { text: 'Misaligned', link: '/examples/misaligned' },

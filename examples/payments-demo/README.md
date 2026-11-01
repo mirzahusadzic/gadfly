@@ -18,4 +18,4 @@ copied: Gadfly reads each verdict again from the frame and its runs.
 
 Like every kept run here, they never change. `gadfly report FRAME RECORDS`
 reads any verdict back with no engine, model or network, and
-[the demo page](../../docs/demo.md) plays them.
+[the watch view](../../docs/examples/watch.md#the-payments-demo) plays them.

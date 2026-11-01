@@ -8,7 +8,6 @@
   const base = new URL("../assets/watch/", script.src);
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const STEP_MS = 3800;
-  const PACE = 1900; // the compare view: one trial, across the readers
 
   // What each kind of trial does, and what it asks, in plain words.
   const TRIALS = {
@@ -275,14 +274,15 @@
 
   function mount(root) {
     const stems = root.dataset.frames.split(",").map((s) => s.trim());
-    const titles = (root.dataset.titles || "").split("|").map((s) => s.trim());
     const state = { data: null, input: null, run: 0, step: 0, timer: null };
+    // a link may open one example and one of its runs: ?example=stem&run=n
+    const asked = new URLSearchParams(location.search);
 
     // ---- pickers
     const bar = el("div", "w-bar");
     const frameSelect = el("select", "w-select");
     frameSelect.setAttribute("aria-label", "Example");
-    stems.forEach((stem, i) => frameSelect.append(new Option(titles[i] || stem, stem)));
+    for (const stem of stems) frameSelect.append(new Option(stem, stem));
     const inputSelect = el("select", "w-select");
     inputSelect.setAttribute("aria-label", "Case");
     const runs = el("div", "w-runs");
@@ -333,7 +333,15 @@
 
     const last = () => state.data.trials.length; // the step after the last trial is the verdict
 
-    async function load(stem) {
+    // the address says what is shown, so a reader can link to it
+    function remember() {
+      const url = new URL(location.href);
+      url.searchParams.set("example", frameSelect.value);
+      url.searchParams.set("run", String(state.run + 1));
+      history.replaceState(history.state, "", url);
+    }
+
+    async function load(stem, run = 0) {
       stop();
       root.classList.add("is-loading");
       try {
@@ -346,7 +354,7 @@
       }
       const d = state.data;
       state.input = d.inputs[0].id;
-      state.run = 0;
+      state.run = Math.min(Math.max(run, 0), d.runs.length - 1);
       inputSelect.replaceChildren(...d.inputs.map((x) => new Option(x.id, x.id)));
       caseField.hidden = d.inputs.length < 2;
       const readers = d.runs.every((r) => r.reader);
@@ -368,6 +376,7 @@
 
     function restart() {
       stop();
+      remember();
       [...runs.children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === state.run)));
       show(0, true);
       start();
@@ -433,7 +442,11 @@
           return b;
         })(),
       );
-      strip.querySelector('[aria-current="step"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const current = strip.querySelector('[aria-current="step"]');
+      if (current) {
+        const [box, at] = [strip.getBoundingClientRect(), current.getBoundingClientRect()];
+        if (at.left < box.left || at.right > box.right) strip.scrollLeft += at.left - box.left - (box.width - at.width) / 2;
+      }
 
       const trial = atVerdict ? null : d.trials[step];
       drawAsk(d, slot, run);
@@ -560,130 +573,23 @@
       side.replaceChildren(...parts);
     }
 
-    load(stems[0]);
-  }
-
-  // ---- the compare view: one question, every reader's trials side by side,
-  // filling in a trial at a time, then each reader's verdict
-  function compare(root) {
-    const state = { data: null, question: 0, step: 0, timer: null };
-    const bar = el("div", "w-bar");
-    const pick = el("select", "w-select");
-    pick.setAttribute("aria-label", "Question");
-    const player = el("div", "w-player");
-    const back = el("button", "w-btn", "Back");
-    const play = el("button", "w-btn w-play", "Play");
-    const next = el("button", "w-btn", "Next");
-    for (const b of [back, play, next]) b.type = "button";
-    player.append(back, play, next);
-    const field = el("label", "w-field");
-    field.append(el("span", "w-field-name", "Question"), pick);
-    bar.append(field, player);
-    const ask = el("div", "w-ask");
-    const grid = el("div", "w-grid");
-    const say = el("p", "w-compare");
-    root.replaceChildren(bar, ask, grid, say);
-    root.classList.toggle("no-motion", reduced);
-
-    const last = () => state.data.questions[state.question].trials.length; // then the verdicts
-    const stop = () => {
-      clearTimeout(state.timer);
-      state.timer = null;
-      play.textContent = state.data && state.step >= last() ? "Play again" : "Play";
-    };
-    const start = () => {
-      if (state.step >= last()) show(0);
-      play.textContent = "Pause";
-      state.timer = setTimeout(function tick() {
-        if (state.step >= last()) return stop();
-        show(state.step + 1);
-        state.timer = setTimeout(tick, PACE);
-      }, PACE);
-    };
-    back.addEventListener("click", () => (stop(), show(Math.max(0, state.step - 1))));
-    next.addEventListener("click", () => (stop(), show(Math.min(last(), state.step + 1))));
-    play.addEventListener("click", () => (state.timer ? stop() : start()));
-    pick.addEventListener("change", () => {
-      state.question = Number(pick.value);
-      stop();
-      show(0);
-      start();
-    });
-
-    function show(step) {
-      state.step = step;
-      const q = state.data.questions[state.question];
-      const slot = slots(q.labels, state.data.neutral);
-      const atVerdict = step >= q.trials.length;
-      back.disabled = step === 0;
-      next.disabled = atVerdict;
-      ask.replaceChildren(
-        ...(q.case ? [el("p", "w-caption", "The case"), el("p", "w-question", q.case)] : []),
-        el("p", "w-caption", q.over ? `The question, asked over ${q.over}` : "The question"),
-        el("p", "w-question", q.question),
-      );
-      // the trials down, the readers across: each trial's row fills in at once
-      const table = el("table", "w-table");
-      const head = el("tr");
-      head.append(el("th", null, "Trial"));
-      for (const r of q.reads) {
-        const th = el("th", null, r.reader);
-        th.scope = "col";
-        head.append(th);
-      }
-      table.append(el("thead", null, head));
-      const body = el("tbody");
-      q.trials.forEach((t, i) => {
-        const row = el("tr", i === step ? "is-now" : null);
-        const name = el("th", null, trialName(t));
-        name.scope = "row";
-        row.append(name);
-        for (const r of q.reads) {
-          const cell = el("td");
-          cell.append(i <= step ? word(r.levels[t.id], slot) : el("span", "w-step-answer is-pending", "…"));
-          row.append(cell);
-        }
-        body.append(row);
+    const group = root.dataset.group
+      ? fetchFrame(root.dataset.group).then((index) => {
+          const options = el("optgroup");
+          options.label = index.group;
+          for (const x of index.examples) options.append(new Option(x.title, x.stem));
+          frameSelect.append(options);
+        })
+      : Promise.resolve();
+    group
+      .catch(() => {}) // the page's own examples still play
+      .then(() => {
+        const wanted = asked.get("example");
+        const known = [...frameSelect.options].some((o) => o.value === wanted);
+        frameSelect.value = known ? wanted : stems[0];
+        load(frameSelect.value, known ? Number(asked.get("run") || 1) - 1 : 0);
       });
-      const end = el("tr", atVerdict ? "is-now w-verdict-row" : "w-verdict-row");
-      const name = el("th", null, "Verdict");
-      name.scope = "row";
-      end.append(name);
-      for (const r of q.reads) {
-        const cell = el("td");
-        cell.append(atVerdict ? el("span", "w-category-small", r.category) : el("span", "w-step-answer is-pending", "…"));
-        end.append(cell);
-      }
-      body.append(end);
-      table.append(body);
-      grid.replaceChildren(table);
-      if (atVerdict) {
-        say.textContent =
-          "Each verdict is read from that reader's own answers by the same rules. Carried here means carried under the trials run: the bypass and presentation checks were not run, and Gadfly lists them as still open.";
-      } else {
-        const t = q.trials[step];
-        const [, does, asks] = TRIALS[t.kind] || [t.kind, "", ""];
-        say.textContent = `${does} ${asks.replace("{reader}", "each reader")}`;
-      }
-    }
-
-    fetchFrame(root.dataset.compare)
-      .then((data) => {
-        state.data = data;
-        const only = (root.dataset.questions || "").split(",").map((s) => s.trim()).filter(Boolean);
-        const shown = only.length ? only.map((id) => data.questions.findIndex((q) => q.id === id)) : data.questions.map((_, i) => i);
-        for (const i of shown) {
-          const q = data.questions[i];
-          const said = [q.case, q.over].filter(Boolean).join("; ");
-          pick.append(new Option(said ? `${q.question} (${said})` : q.question, String(i)));
-        }
-        state.question = shown[0];
-        show(0);
-        start();
-      })
-      .catch((error) => grid.replaceChildren(el("p", "w-error", `Could not load ${error.message}.`)));
   }
 
-  for (const root of document.querySelectorAll(".gadfly-watch:not(.gadfly-compare)")) mount(root);
-  for (const root of document.querySelectorAll(".gadfly-compare")) compare(root);
+  for (const root of document.querySelectorAll(".gadfly-watch")) mount(root);
 })();

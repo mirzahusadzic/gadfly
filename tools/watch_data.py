@@ -121,15 +121,12 @@ READERS = [
     ("Gemma 4 at 0.7", DEMO, "gemma-"),
     ("Gemma 4 at 0", DEMO / "gemma-temperature-0", "gemma-"),
 ]
-# the questions the watch view plays, each with all three readers
-FEATURED = {
-    "payments-who-notifies": "who-notifies-the-customers-a-certificate-expires-0c9e795a",
-    "payments-which-key": "which-key-must-the-security-engineer-rot-ac7eb56a",
-    "payments-on-call-check": "what-does-the-on-call-engineer-check-aft-9e796fe9",
-    "payments-which-manager": "which-manager-freezes-deployments-during-29215a81",
-    "payments-morgan-ships": "does-morgan-ship-a-release-a-major-incident-is-open-39a88b0a",
-}
-COMPARE = "payments-demo"
+# every demo question, played with its three readers in place of runs
+QUESTIONS = sorted(
+    path.stem.removeprefix("tendora-") for path in (DEMO / "frames").glob("tendora-*.json")
+)
+FEATURED = {f"payments-{question}": question for question in QUESTIONS}
+INDEX = "payments-demo"  # the demo's questions, for the widget's picker
 # answers that are not a decision: no answer, or one no saved check gives
 NEUTRAL = ["open", "another answer"]
 
@@ -201,66 +198,49 @@ def demo_watched(name: str) -> dict:
     return data
 
 
-def compared() -> dict:
-    """Every demo question, each reader's level in each trial and its
-    verdict: what the compare view plays."""
-    questions = []
-    for path in sorted((DEMO / "frames").glob("tendora-*.json")):
-        read = reads(path.stem.removeprefix("tendora-"))
-        _, frame, _ = read[0]
+def titled() -> dict:
+    """The demo's questions as the widget's picker lists them, in one group:
+    each question with its case, and, for a question asked twice, the
+    statements it was asked over."""
+    rows = []
+    for question in QUESTIONS:
+        _, frame, _ = reads(question)[0]
         [x] = frame.inputs
         lines = x["text"].split("\n")
         case = lines[0].removeprefix("Case: ") if len(lines) > 1 else None
-        rows = []
-        for reader, mine, records in read:
-            [finding] = judge(mine, records)
-            rows.append({"reader": reader, "levels": finding.levels, "category": finding.category})
-        questions.append(
-            {
-                "id": path.stem.removeprefix("tendora-"),
-                "question": lines[-1].removeprefix("Question: "),
-                "case": case,
-                "trials": [{"id": t.id, "kind": t.kind} for t in plan(frame)],
-                "labels": _answers(read),
-                "reads": rows,
-                "statements": len(frame.spans),
-                "kinds": sorted({span.kind for span in frame.spans}),
-            }
-        )
-    # a question asked twice, over different statements, says which it was
-    asked = Counter((q["question"], q["case"]) for q in questions)
-    corpus = max(q["statements"] for q in questions)
-    for q in questions:
-        n, kinds = q.pop("statements"), q.pop("kinds")
-        if asked[q["question"], q["case"]] < 2:
-            q["over"] = None
-        elif n == corpus:
-            q["over"] = f"all {n} statements"
-        elif len(kinds) == 1:
-            q["over"] = f"the {kinds[0].replace('-', ' ')}'s {n} statements"
-        else:
-            q["over"] = f"{n} statements"
-    questions.sort(key=lambda q: (q["question"], q["case"] or "", q["over"] or ""))
-    return {
-        "readers": [reader for reader, _, _ in READERS],
-        "neutral": NEUTRAL,
-        "questions": questions,
-    }
+        kinds = sorted({span.kind for span in frame.spans})
+        rows.append([question, lines[-1].removeprefix("Question: "), case, len(frame.spans), kinds])
+    asked = Counter((q, case) for _, q, case, _, _ in rows)
+    corpus = max(n for *_, n, _ in rows)
+    listed = []
+    for question, text, case, n, kinds in rows:
+        said = [case] if case else []
+        if asked[text, case] > 1:
+            if n == corpus:
+                said.append(f"all {n} statements")
+            elif len(kinds) == 1:
+                said.append(f"the {kinds[0].replace('-', ' ')}'s {n} statements")
+            else:
+                said.append(f"{n} statements")
+        title = f"{text} ({'; '.join(said)})" if said else text
+        listed.append({"stem": f"payments-{question}", "title": title})
+    listed.sort(key=lambda q: q["title"])
+    return {"group": "Payments demo, Tendora and Gemma", "examples": listed}
 
 
 def encoded(stem: str) -> str:
     """The file's text, as it is kept."""
     if stem in FEATURED:
         data = demo_watched(stem)
-    elif stem == COMPARE:
-        data = compared()
+    elif stem == INDEX:
+        data = titled()
     else:
         data = watched(stem)
     return json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
 # every file the watch view reads
-FILES = [*FRAMES, *FEATURED, COMPARE]
+FILES = [*FRAMES, *FEATURED, INDEX]
 
 
 def main(write: bool) -> int:

@@ -1,7 +1,7 @@
 """The payments demo's kept runs (examples/payments-demo/, copied from the
 tendora repository): each reader's records name their frame, the readers
 were asked the same prompts, every frame was predicted before its calls, and
-the demo page's totals are what the records read."""
+the watch page's totals are what the records read."""
 
 import json
 import re
@@ -64,12 +64,12 @@ def test_every_frame_was_predicted_to_carry_before_its_calls():
         assert told["frame"] == path.stem and told["verdict"] == "carried"
 
 
-def test_the_demo_pages_totals_are_what_the_records_read():
+def test_the_watch_pages_totals_are_what_the_records_read():
     counted = {reader: Counter() for reader, _, _ in READERS}
     for question in QUESTIONS:
         for reader, _, frame, records in read(question):
             counted[reader][overall(judge(frame, records)).category] += 1
-    page = (ROOT / "docs" / "demo.md").read_text()
+    page = (ROOT / "docs" / "examples" / "watch.md").read_text()
     row = r"^\| (Tendora's engine|Gemma 4 at temperature [0-9.]+) \| (.+) \|$"
     rows = re.findall(row, page, re.M)
     names = {"Tendora's engine": "Tendora", "Gemma 4 at temperature 0.7": "Gemma 4 at 0.7"}

@@ -28,12 +28,12 @@ export default {
   },
   setup() {
     // The watch view (docs/public/javascripts/watch.js) builds itself into
-    // each .gadfly-watch and .gadfly-compare on the page when it runs. Pages change here without
+    // each .gadfly-watch on the page when it runs. Pages change here without
     // a page load, so it runs again each time a page with one is shown.
     const route = useRoute();
     const mount = () =>
       nextTick(() => {
-        if (!document.querySelector('.gadfly-watch, .gadfly-compare')) return;
+        if (!document.querySelector('.gadfly-watch')) return;
         const script = document.createElement('script');
         script.src = withBase('/javascripts/watch.js');
         script.onload = () => script.remove();
