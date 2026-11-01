@@ -27,7 +27,7 @@ each reader's answers.
 | Reader | Carried | Unresolved | Coupled but misaligned | Cooled |
 |---|---|---|---|---|
 | Tendora's engine | 31 | 0 | 0 | 0 |
-| Gemma 4 at temperature 0.7 | 12 | 15 | 3 | 1 |
+| Gemma 4 at temperature 0.7 | 10 | 18 | 1 | 2 |
 | Gemma 4 at temperature 0 | 14 | 11 | 3 | 3 |
 
 Carried here means carried under the trials run: the cited statements cut,

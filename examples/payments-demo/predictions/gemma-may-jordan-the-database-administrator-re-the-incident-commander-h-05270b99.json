@@ -1,0 +1,13 @@
+{
+  "frame": "gemma-may-jordan-the-database-administrator-re-the-incident-commander-h-05270b99",
+  "levels": {
+    "baseline": "No",
+    "repeat": "No",
+    "ablation": "open",
+    "sham-1": "No",
+    "sham-2": "No",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

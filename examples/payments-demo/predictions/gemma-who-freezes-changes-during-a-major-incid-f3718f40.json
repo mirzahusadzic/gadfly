@@ -1,0 +1,14 @@
+{
+  "frame": "gemma-who-freezes-changes-during-a-major-incid-f3718f40",
+  "levels": {
+    "baseline": "Morgan",
+    "repeat": "Morgan",
+    "ablation": "open",
+    "sham-1": "Morgan",
+    "sham-2": "Morgan",
+    "placement": "Morgan",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

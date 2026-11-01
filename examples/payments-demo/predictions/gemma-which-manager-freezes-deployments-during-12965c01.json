@@ -1,0 +1,13 @@
+{
+  "frame": "gemma-which-manager-freezes-deployments-during-12965c01",
+  "levels": {
+    "baseline": "conditional",
+    "repeat": "conditional",
+    "ablation": "open",
+    "sham-1": "conditional",
+    "sham-2": "conditional",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

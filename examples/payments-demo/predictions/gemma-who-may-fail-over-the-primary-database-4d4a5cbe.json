@@ -1,0 +1,13 @@
+{
+  "frame": "gemma-who-may-fail-over-the-primary-database-4d4a5cbe",
+  "levels": {
+    "baseline": "conditional",
+    "repeat": "conditional",
+    "ablation": "open",
+    "sham-1": "conditional",
+    "sham-2": "conditional",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

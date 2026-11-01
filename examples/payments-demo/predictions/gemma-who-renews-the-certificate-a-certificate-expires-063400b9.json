@@ -1,0 +1,13 @@
+{
+  "frame": "gemma-who-renews-the-certificate-a-certificate-expires-063400b9",
+  "levels": {
+    "baseline": "Priya",
+    "repeat": "Priya",
+    "ablation": "open",
+    "sham-1": "Priya",
+    "sham-2": "Priya",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

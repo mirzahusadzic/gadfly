@@ -1,0 +1,13 @@
+{
+  "frame": "gemma-who-freezes-deployments-during-a-major-i-341fecde",
+  "levels": {
+    "baseline": "Morgan",
+    "repeat": "Morgan",
+    "ablation": "open",
+    "sham-1": "Morgan",
+    "sham-2": "Morgan",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

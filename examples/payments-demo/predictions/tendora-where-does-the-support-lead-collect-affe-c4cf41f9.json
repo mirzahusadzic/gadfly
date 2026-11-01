@@ -1,0 +1,13 @@
+{
+  "frame": "tendora-where-does-the-support-lead-collect-affe-c4cf41f9",
+  "levels": {
+    "baseline": "incident channel",
+    "repeat": "incident channel",
+    "ablation": "open",
+    "sham-1": "incident channel",
+    "sham-2": "incident channel",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

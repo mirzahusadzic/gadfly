@@ -1,0 +1,13 @@
+{
+  "frame": "gemma-what-does-the-release-manager-freeze-dur-5efdde6d",
+  "levels": {
+    "baseline": "deployments",
+    "repeat": "deployments",
+    "ablation": "open",
+    "sham-1": "deployments",
+    "sham-2": "deployments",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

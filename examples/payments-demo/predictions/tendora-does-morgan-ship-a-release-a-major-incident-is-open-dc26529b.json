@@ -1,0 +1,13 @@
+{
+  "frame": "tendora-does-morgan-ship-a-release-a-major-incident-is-open-dc26529b",
+  "levels": {
+    "baseline": "No",
+    "repeat": "No",
+    "ablation": "open",
+    "sham-1": "No",
+    "sham-2": "No",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

@@ -1,0 +1,13 @@
+{
+  "frame": "gemma-which-engineer-must-rotate-a-leaked-paym-2510f5c1",
+  "levels": {
+    "baseline": "conditional",
+    "repeat": "conditional",
+    "ablation": "open",
+    "sham-1": "conditional",
+    "sham-2": "conditional",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}

@@ -1,0 +1,13 @@
+{
+  "frame": "gemma-when-does-the-release-manager-freeze-dep-7e3973f9",
+  "levels": {
+    "baseline": "major incident",
+    "repeat": "major incident",
+    "ablation": "open",
+    "sham-1": "major incident",
+    "sham-2": "major incident",
+    "control": "open"
+  },
+  "verdict": "carried",
+  "keyed": false
+}
