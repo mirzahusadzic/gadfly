@@ -57,8 +57,11 @@ def rename(text: str, mapping: tuple[tuple[str, str], ...]) -> str:
     renamed once (a swap stays a swap), and a phrase wins over a word inside
     it. A capital is kept, and so is a word written in capitals. A word may
     begin or end in a sign, such as 20% or C++; it is never part of a longer
-    word."""
+    word, nor of a longer run of its edge's sign (C++ is not in C+++)."""
     return renamer(mapping)(text) if mapping else text
+
+
+_SIGN = re.compile(r"[^\w\s]")  # a character that is neither a word's nor a space
 
 
 @lru_cache(maxsize=64)
@@ -73,7 +76,12 @@ def renamer(mapping: tuple[tuple[str, str], ...]) -> Callable[[str], str]:
     pattern = re.compile(rf"(?<!\w)(?:{words})(?!\w)", flags=re.IGNORECASE)
 
     def swap(match: re.Match[str]) -> str:
-        word = match.group(0)
+        word, text, start, end = match.group(0), match.string, match.start(), match.end()
+        # a sign at an edge that the text goes on repeating is inside a longer word
+        if (_SIGN.match(word[-1]) and text[end : end + 1] == word[-1]) or (
+            _SIGN.match(word[0]) and start and text[start - 1] == word[0]
+        ):
+            return word
         new = table.get(word.lower())
         if new is None:  # the pattern folds case wider than lower(), as "ſ" for "s"
             same = (k for k in keys if re.fullmatch(re.escape(k), word, re.IGNORECASE))

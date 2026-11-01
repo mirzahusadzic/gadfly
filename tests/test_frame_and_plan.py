@@ -395,3 +395,19 @@ def test_an_input_inversion_is_refused_unless_it_turns_an_input(raw, change, mes
         raw["allowed"]["inputInversion"] = ["grant"]
     with pytest.raises(FrameError, match=message):
         parse(raw)
+
+
+@pytest.mark.parametrize(
+    "text, renamed",
+    [
+        ("C+++ draft", "C+++ draft"),  # a longer run of the edge's sign: another word
+        ("..env file", "..env file"),
+        ("C++ draft", "Rust draft"),
+        ("use C++.", "use Rust."),  # another sign after it ends it
+        ("(C++)", "(Rust)"),
+        ("a .env file", "a .cfg file"),
+    ],
+)
+def test_a_sign_edged_word_is_not_part_of_a_longer_run_of_its_sign(text, renamed):
+    # pass 4, R14: "C++" was renamed inside "C+++", leaving "Rust+"
+    assert rename(text, (("C++", "Rust"), (".env", ".cfg"))) == renamed
