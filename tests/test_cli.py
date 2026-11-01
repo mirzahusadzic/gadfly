@@ -282,3 +282,20 @@ def test_a_battery_that_is_not_one_is_refused(tmp_path, capsys):
     argv = ["run", REFUND, "--battery", "midwife.frame:parse", "--calls", "8"]
     assert main([*argv, "--out", str(tmp_path / "r.jsonl")]) == 2
     assert "is not a battery" in capsys.readouterr().err
+
+
+def test_a_kept_record_no_file_can_hold_is_refused_before_a_call(tmp_path, capsys):
+    # valid JSON, but its escaped lone surrogate cannot be written back: found
+    # out before the first new call, not after it is spent (pass 4, R08)
+    status, first = run_refund(tmp_path, "--only", "baseline")
+    assert status == 0
+    row = json.loads(first.read_text().splitlines()[0])
+    row["raw"] = "\ud800"
+    kept = tmp_path / "kept.jsonl"
+    kept.write_text(json.dumps(row) + "\n")  # ascii: the surrogate stays escaped
+    out = tmp_path / "rest.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    capsys.readouterr()
+    assert main([*argv, "--kept", str(kept), "--out", str(out)]) == 2
+    assert "a kept record holds a lone surrogate" in capsys.readouterr().err
+    assert not out.exists()

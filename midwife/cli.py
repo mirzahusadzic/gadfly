@@ -164,6 +164,13 @@ def command_run(args) -> int:
     frame = load_frame(args.frame)
     battery = load_battery(args.battery)
     kept = load_records(args.kept) if args.kept else []
+    for old in kept:  # the new file starts with them: found out before a call is spent
+        try:
+            json.dumps(old, ensure_ascii=False).encode("utf-8")
+        except UnicodeEncodeError:
+            raise ValueError(
+                f"{args.kept}: a kept record holds a lone surrogate, which no file can hold"
+            ) from None
     out = Path(args.out)
     if out.exists():  # a new file: never another run's
         raise FileExistsError(f"{out} exists: kept records are never written over")
