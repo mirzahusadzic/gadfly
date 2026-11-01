@@ -406,3 +406,20 @@ def test_a_run_keeps_a_reply_out_of_form_open(raw, server, body):
     result = run(frame, Tendora(), Budget(calls=calls_needed(frame)), only=["baseline"])
     [record] = result.records
     assert record.observation is None and record.opening.startswith("the engine's")
+
+
+def test_the_answer_line_stays_whole_json_under_the_records_cap(raw, server):
+    # the record keeps its first 2,000 characters, and a caller parses its
+    # first line: a reply with many long answers keeps as many as fit, and
+    # says how many more there were; a short one is kept as it came (pass 5,
+    # R01)
+    names = [f"engineer number {i} " + "x" * 40 for i in range(100)]
+    for answers in (names, ["Sam"]):
+        frame = at(json.loads(json.dumps(raw)), server(reply("supported", *answers)).base)
+        result = run(frame, Tendora(), Budget(calls=calls_needed(frame)), only=["baseline"])
+        [record] = result.records
+        first = json.loads(record.raw.split("\n", 1)[0])
+        kept = [a["text"] for a in first["answers"]]
+        assert first["status"] == "supported" and kept == answers[: len(kept)]
+        assert len(kept) + first.get("more", 0) == len(answers)
+    assert first == {"status": "supported", "answers": [{"text": "Sam", "conditional": False}]}

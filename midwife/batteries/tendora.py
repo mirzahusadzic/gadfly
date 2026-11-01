@@ -50,6 +50,7 @@ from collections.abc import Callable
 from functools import lru_cache
 
 from ..frame import Frame
+from ..pipeline import RAW_LIMIT
 from ..types import Observation
 from .critic import MAX_RESPONSE_BYTES, Late, loopback, opened, read_error, read_reply
 
@@ -61,6 +62,7 @@ OPEN, CONDITIONAL, ANOTHER = "open", "conditional", "another answer"
 # the engine's outcomes a frame may observe under their own names
 OUTCOMES = (OPEN, CONDITIONAL, "ambiguous", "conflict")
 SERVED = ("tendora", "revision", "packs")  # what a reply says served it
+LINE = RAW_LIMIT // 2  # characters: the answer line a record keeps first, whole
 AMBIGUOUS = object()  # a turned input two declared inputs give: no one basis
 
 
@@ -194,15 +196,24 @@ def label_of(reply: dict, labels: tuple[str, ...]) -> tuple[str | None, str | No
 
 
 def answer_line(reply: dict) -> dict:
-    """The answer alone: its status, and each answer's text and condition."""
+    """The answer alone: its status, and each answer's text and condition,
+    as many as fit in half the record's cap, and how many more there were
+    (`more`), so the line a record keeps first is always whole JSON."""
     answers = reply.get("answers")
     answers = [a for a in answers if isinstance(a, dict)] if isinstance(answers, list) else []
-    return {
-        "status": reply.get("status"),
-        "answers": [
-            {"text": a.get("text"), "conditional": bool(a.get("conditional"))} for a in answers
-        ],
-    }
+    status = reply.get("status")
+    line: dict = {"status": status[:100] if isinstance(status, str) else status, "answers": []}
+    room = LINE - len(json.dumps({**line, "more": len(answers)}, ensure_ascii=False))
+    for a in answers:
+        said = {"text": a.get("text"), "conditional": bool(a.get("conditional"))}
+        size = len(json.dumps(said, ensure_ascii=False)) + 2  # and its comma
+        if size > room:
+            break
+        line["answers"].append(said)
+        room -= size
+    if len(line["answers"]) < len(answers):
+        line["more"] = len(answers) - len(line["answers"])
+    return line
 
 
 def served_by(reply: dict) -> str:
