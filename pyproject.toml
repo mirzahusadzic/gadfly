@@ -1,6 +1,6 @@
 [project]
 name = "midwife"
-version = "0.5.0"
+version = "0.6.0"
 description = "Test whether a decision rests on the evidence you think it does: cut or change one declared line in fixed ways, ask again, and read the verdict by fixed rules."
 readme = "README.md"
 requires-python = ">=3.13"
