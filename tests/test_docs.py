@@ -192,7 +192,7 @@ def test_every_copy_is_its_source(copy):
     assert copied(copy.source) == copy.quoted
 
 
-@pytest.mark.parametrize("stem", watch_data.FRAMES)
+@pytest.mark.parametrize("stem", watch_data.FILES)
 def test_the_watch_view_plays_the_kept_runs(stem):
     # `uv run python -m tools.watch_data --write` brings a file back in line; it
     # refuses a prompt its records' digest does not name

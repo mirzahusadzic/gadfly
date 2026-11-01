@@ -170,6 +170,24 @@
 .w-case[aria-pressed="true"] { border-color: var(--w-accent); color: var(--w-accent); }
 .w-error { color: var(--w-b); }
 
+/* the compare view: the trials down, the readers across, a row filling in
+   as its trial plays; the table scrolls inside the view on a narrow phone */
+.w-grid { margin: 0 0 1rem; padding: 0.5rem; border-radius: 0.625rem; background: var(--w-panel); overflow-x: auto; scrollbar-width: thin; }
+.gadfly-watch .w-table { display: table; width: 100%; margin: 0; border-collapse: collapse; font-size: var(--w-ui); }
+.gadfly-watch .w-table :is(th, td) { padding: 0.4375rem 0.75rem; border: none; border-bottom: 1px solid var(--w-rule); background: none; text-align: left; white-space: nowrap; }
+.gadfly-watch .w-table tr { background: none; border: none; }
+.gadfly-watch .w-table thead th { color: var(--w-ink); font-weight: 600; }
+.gadfly-watch .w-table tbody th { color: var(--w-muted); font-weight: 400; }
+.gadfly-watch .w-table tr.is-now :is(th, td) { background: var(--vp-c-bg); }
+.gadfly-watch .w-table tr.is-now th { color: var(--w-accent); font-weight: 600; }
+.gadfly-watch .w-table tbody tr:last-child :is(th, td) { border-bottom: none; }
+.gadfly-watch .w-table .w-verdict-row :is(th, td) { border-top: 1px solid var(--w-rule); }
+.w-category-small { font-weight: 600; }
+.gadfly-compare .w-compare { margin: 0; color: var(--w-muted); }
+.gadfly-compare .w-table tr.is-now .w-word { animation: w-arrive 0.35s ease-out both; }
+.gadfly-watch .w-field { min-width: 0; max-width: 100%; }
+.gadfly-watch .w-select { min-width: 0; max-width: 100%; text-overflow: ellipsis; }
+
 /* motion only where it carries something: a line hidden, words renamed, a line moved */
 @keyframes w-strike { from { text-decoration-color: transparent; } to { text-decoration-color: currentColor; } }
 @keyframes w-arrive { from { transform: translateY(-1.2rem); opacity: 0; } to { transform: none; opacity: 1; } }

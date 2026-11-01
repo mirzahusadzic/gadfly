@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 from examples.read import cut, runs_of
@@ -41,7 +42,6 @@ FRAMES = [
 def watched(stem: str) -> dict:
     path = ROOT / "examples" / f"{stem}.json"
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
-    texts = {span.id: span.text for span in frame.spans}  # each span's own words, by id
     trials = plan(frame)
     prompts = {(x["id"], t.id): prompt(frame, t, x) for x in frame.inputs for t in trials}
     digests = {key: digest(text) for key, text in prompts.items()}  # each prompt's, once
@@ -68,9 +68,17 @@ def watched(stem: str) -> dict:
                 "overall": overall(findings).category,
             }
         )
+    return {**watched_frame(frame, trials, prompts, f"examples/{stem}.json"), "runs": runs}
+
+
+def watched_frame(frame, trials, prompts, file: str) -> dict:
+    """What the watch view shows of a frame before any run: the evidence,
+    the questions, each trial as planned, and the prompt of every input and
+    trial."""
+    texts = {span.id: span.text for span in frame.spans}  # each span's own words, by id
     return {
         "name": frame.name,
-        "file": f"examples/{stem}.json",
+        "file": file,
         "relation": frame.raw["relation"],
         "grain": frame.raw["grain"],
         "instruction": frame.instruction,
@@ -98,7 +106,6 @@ def watched(stem: str) -> dict:
             for t in trials
         ],
         "prompts": {f"{x}/{t}": text for (x, t), text in prompts.items()},
-        "runs": runs,
     }
 
 
@@ -106,14 +113,159 @@ def _placed(frame, trial, key: str) -> str | None:
     return frame.interventions["placement"][key] if trial.kind == "placement" else None
 
 
+# The payments demo: each question read once by each reader, its records kept
+# in examples/payments-demo/ as the tendora repository published them
+DEMO = ROOT / "examples" / "payments-demo"
+READERS = [
+    ("Tendora", DEMO, "tendora-"),
+    ("Gemma 4 at 0.7", DEMO, "gemma-"),
+    ("Gemma 4 at 0", DEMO / "gemma-temperature-0", "gemma-"),
+]
+# the questions the watch view plays, each with all three readers
+FEATURED = {
+    "payments-who-notifies": "who-notifies-the-customers-a-certificate-expires-0c9e795a",
+    "payments-which-key": "which-key-must-the-security-engineer-rot-ac7eb56a",
+    "payments-on-call-check": "what-does-the-on-call-engineer-check-aft-9e796fe9",
+    "payments-which-manager": "which-manager-freezes-deployments-during-29215a81",
+    "payments-morgan-ships": "does-morgan-ship-a-release-a-major-incident-is-open-39a88b0a",
+}
+COMPARE = "payments-demo"
+# answers that are not a decision: no answer, or one no saved check gives
+NEUTRAL = ["open", "another answer"]
+
+
+def reads(question: str) -> list[tuple[str, object, list[dict]]]:
+    """Each reader's frame of one demo question and its records, every
+    record checked against its frame's hash."""
+    out = []
+    for reader, folder, prefix in READERS:
+        path = folder / "frames" / f"{prefix}{question}.json"
+        frame = situate(json.loads(path.read_text(encoding="utf-8")))
+        records = load_records(str(folder / "runs" / f"{prefix}{question}.jsonl"))
+        if any(r["frame"] != frame.hash for r in records):
+            raise SystemExit(f"{path.name}: a record names another frame")
+        out.append((reader, frame, records))
+    return out
+
+
+def _answers(read: list[tuple[str, object, list[dict]]]) -> list[str]:
+    # the decisions given, in the order the readers first gave them, then the
+    # answers that decide nothing: each keeps one colour across the readers
+    seen = [r["observation"] for _, _, records in read for r in records if r["observation"]]
+    decided = [a for a in dict.fromkeys(seen) if a not in NEUTRAL]
+    return decided + NEUTRAL
+
+
+def demo_watched(name: str) -> dict:
+    """One demo question for the watch view: the evidence and trials as the
+    first reader's frame plans them, and each reader's run of it. The readers
+    read the same prompts, each checked against the digest its records
+    carry."""
+    read = reads(FEATURED[name])
+    _, frame, _ = read[0]
+    trials = plan(frame)
+    prompts = {(x["id"], t.id): prompt(frame, t, x) for x in frame.inputs for t in trials}
+    digests = {key: digest(text) for key, text in prompts.items()}
+    source = (DEMO / "frames" / f"tendora-{FEATURED[name]}.json").relative_to(ROOT)
+    data = watched_frame(frame, trials, prompts, str(source))
+    data["labels"] = _answers(read)
+    data["neutral"] = NEUTRAL
+    data["runs"] = []
+    for reader, mine, records in read:
+        for r in records:
+            if digests.get((r["input"], r["trial"])) != r["prompt"]:
+                raise SystemExit(f"{reader}: {r['input']}/{r['trial']} was asked another prompt")
+        findings = judge(mine, records)
+        engine = mine.battery["kind"] == "tendora"
+        data["runs"].append(
+            {
+                "reader": reader,
+                # what the reader was told to answer: Gemma reads the
+                # frame's instruction, the engine answers by its own rules
+                "instruction": None if engine else mine.instruction,
+                "calls": [
+                    {
+                        "input": r["input"],
+                        "trial": r["trial"],
+                        "n": r["run"],
+                        "answer": r["observation"],
+                        # the engine's answer line, never the reply after it
+                        "raw": r["raw"].split("\n", 1)[0] if engine else r["raw"],
+                    }
+                    for r in records
+                ],
+                "findings": [f.as_dict() for f in findings],
+                "overall": overall(findings).category,
+            }
+        )
+    return data
+
+
+def compared() -> dict:
+    """Every demo question, each reader's level in each trial and its
+    verdict: what the compare view plays."""
+    questions = []
+    for path in sorted((DEMO / "frames").glob("tendora-*.json")):
+        read = reads(path.stem.removeprefix("tendora-"))
+        _, frame, _ = read[0]
+        [x] = frame.inputs
+        lines = x["text"].split("\n")
+        case = lines[0].removeprefix("Case: ") if len(lines) > 1 else None
+        rows = []
+        for reader, mine, records in read:
+            [finding] = judge(mine, records)
+            rows.append({"reader": reader, "levels": finding.levels, "category": finding.category})
+        questions.append(
+            {
+                "id": path.stem.removeprefix("tendora-"),
+                "question": lines[-1].removeprefix("Question: "),
+                "case": case,
+                "trials": [{"id": t.id, "kind": t.kind} for t in plan(frame)],
+                "labels": _answers(read),
+                "reads": rows,
+                "statements": len(frame.spans),
+                "kinds": sorted({span.kind for span in frame.spans}),
+            }
+        )
+    # a question asked twice, over different statements, says which it was
+    asked = Counter((q["question"], q["case"]) for q in questions)
+    corpus = max(q["statements"] for q in questions)
+    for q in questions:
+        n, kinds = q.pop("statements"), q.pop("kinds")
+        if asked[q["question"], q["case"]] < 2:
+            q["over"] = None
+        elif n == corpus:
+            q["over"] = f"all {n} statements"
+        elif len(kinds) == 1:
+            q["over"] = f"the {kinds[0].replace('-', ' ')}'s {n} statements"
+        else:
+            q["over"] = f"{n} statements"
+    questions.sort(key=lambda q: (q["question"], q["case"] or "", q["over"] or ""))
+    return {
+        "readers": [reader for reader, _, _ in READERS],
+        "neutral": NEUTRAL,
+        "questions": questions,
+    }
+
+
 def encoded(stem: str) -> str:
     """The file's text, as it is kept."""
-    return json.dumps(watched(stem), ensure_ascii=False, separators=(",", ":")) + "\n"
+    if stem in FEATURED:
+        data = demo_watched(stem)
+    elif stem == COMPARE:
+        data = compared()
+    else:
+        data = watched(stem)
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
+
+
+# every file the watch view reads
+FILES = [*FRAMES, *FEATURED, COMPARE]
 
 
 def main(write: bool) -> int:
     differ = 0
-    for stem in FRAMES:
+    for stem in FILES:
         target = OUT / f"{stem}.json"
         data = encoded(stem)
         if not target.exists() or target.read_text(encoding="utf-8") != data:
