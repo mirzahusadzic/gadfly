@@ -174,3 +174,91 @@ Predicted verdicts.
   moved (a model answering from the case alone).
 - Overall: carried only in runs where both inputs carry, otherwise unresolved by
   "carried on some inputs and cooled on others".
+
+## Rungs 17 and 18: what is asked turned, and each anchor alone
+
+Written before the first call of either rung. Each frame runs 3 times, each
+trial asked 5 times with 4 to agree.
+
+### Rung 17: the clock rule, with the diff asked about
+
+Frame: `examples/17-clock-asked.json` (153f8c20…), 3 runs of 40 calls. The
+clock rule of rung 8, with the diff moved out of the evidence into what is
+asked, so the ablation still cuts the rule and the call stays in view. The
+input inversion turns the diff's `datetime.now()` into `clock.now()`: the
+change then follows the rule, and the review should turn to approve.
+
+| trial | cuts or changes | predicted | confidence |
+|---|---|---|---|
+| baseline | nothing | request-changes | high (rung 8: 25 of 25) |
+| repeat | nothing, asked again | request-changes | high |
+| ablation | the clock rule | approve | high (rung 8: 25 of 25) |
+| sham-1, sham-2 | another contributing rule | request-changes | high |
+| presentation | three names renamed | request-changes | high |
+| input-inversion | the diff calls `clock.now()` instead | approve | medium-high: Gemma may still ask for changes on another ground, such as the `.date()` call or a missing test |
+| control | every span, leaving the question and the diff | approve; unclear if Gemma will not review without the pull request's description | medium |
+
+Predicted verdict: carried in every run, the input inversion moving it
+request-changes -> approve, with no hidden fallback open (no bypass is
+declared; `carriage: listed`). Moving the diff into the question may move
+the baseline itself; if it does, that is the result.
+
+### Rung 18: each anchor alone
+
+Three frames over the same 30 statements as rung 16, Tendora's demo
+(Apache-2.0), each question asked as the demo's own saved checks ask it.
+Each declares two anchors and `eachAnchor`, so each anchor is also cut
+alone.
+
+**18, the notify chain** (`examples/18-notify-chain.json`, bf3e5d51…, 3 runs
+of 40 calls). "Who notifies the customers?" with the case "A certificate
+expires.": expiry makes Priya renew the certificate (s22), and the renewal
+makes Sam notify the customers (s23).
+
+| trial | cuts | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | Sam | high |
+| ablation | s22 and s23 | open; Sam if Gemma reads "Sam posts customer updates" (s10) as notifying | medium |
+| ablation-s22 | expiry makes Priya renew | open: nothing ties the expiry to a renewal | medium; Gemma may assume a renewal |
+| ablation-s23 | the renewal makes Sam notify | open, or Priya (the one who acts) | medium |
+| sham-1, sham-2 | statements of the anchors' roles | Sam | high |
+| control | every statement | open | high |
+
+Predicted: carried, with `each anchor carries it`. If s10 keeps Sam, the
+ablation leaves it and the frame reads cooled: carried elsewhere.
+
+**18b, two routes** (`examples/18b-access-logs.json`, b7dc8df6…, 3 runs of 40
+calls). "Are access logs reviewed?", with no case: Priya reviews them when a
+payment key is exposed (s16), and Alex after every rollback (s24).
+
+| trial | cuts | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | conditional | medium; Yes is as likely if Gemma reads a rule that reviews them as a yes |
+| ablation | s16 and s24 | open; conditional if Gemma leans on "If Priya reviews access logs, she files an audit note" (s29) | medium |
+| ablation-s16 | Priya's route | the baseline's answer, through Alex's route | medium |
+| ablation-s24 | Alex's route | the baseline's answer, through Priya's route | medium |
+| sham-1, sham-2 | statements of the anchors' roles | the baseline's answer | high |
+| control | every statement | open | high |
+
+Predicted: carried, with `the anchors carry it independently; either
+suffices`.
+
+**18c, an idle citation built on purpose** (`examples/18c-restore-cited.json`,
+4713844a…, 3 runs of 35 calls). Rung 16's approved case, with the
+break-glass line (s14) declared an anchor beside the restore rule (s15) on
+purpose: the demo's own saved check of this question cites s15 alone. In
+rung 16, cutting s14 as a sham moved Gemma's Yes 5 times of 15.
+
+| trial | cuts | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | Yes | high, though rung 16 split once in 15 and twice in 15 |
+| ablation | s15 and s14 | No | high (rung 16: No 15 of 15 without s15) |
+| ablation-s15 | the restore rule | No | high |
+| ablation-s14 | the break-glass line | Yes in most runs; no agreed level in a run where it moves twice | medium |
+| sham-1 | two more of Jordan's statements | Yes | medium-high |
+| control | every statement | Yes, from the case alone | high (rung 16: 15 of 15) |
+
+Predicted: carried with `s15 carries it; s14 adds nothing alone` where the
+baseline and repeat hold, unresolved in a run where they split (`stable`);
+monotonicity open in every run, as in rung 16. Where s14 alone has no agreed
+level, the evidence says so and the category does not change.
