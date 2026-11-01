@@ -66,14 +66,18 @@ def renamer(mapping: tuple[tuple[str, str], ...]) -> Callable[[str], str]:
     """`rename` with its map built once: the table and the pattern are made
     here, and the function returned applies them to any text."""
     table = {old.lower(): new for old, new in mapping}
-    words = "|".join(re.escape(old) for old in sorted(table, key=len, reverse=True))
+    keys = sorted(table, key=len, reverse=True)  # the order the pattern tries them
+    words = "|".join(re.escape(old) for old in keys)
     # whole words: no letter, digit or underscore just before or after, which
     # holds at a sign as well as at a letter (\b would need one beyond "%")
     pattern = re.compile(rf"(?<!\w)(?:{words})(?!\w)", flags=re.IGNORECASE)
 
     def swap(match: re.Match[str]) -> str:
         word = match.group(0)
-        new = table[word.lower()]
+        new = table.get(word.lower())
+        if new is None:  # the pattern folds case wider than lower(), as "ſ" for "s"
+            same = (k for k in keys if re.fullmatch(re.escape(k), word, re.IGNORECASE))
+            new = table[next(same)]
         if word.isupper() and sum(c.isalpha() for c in word) > 1:
             return new.upper()
         return new[:1].upper() + new[1:] if word[:1].isupper() else new

@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from midwife.frame import FrameError
+from midwife.interventions import rename
 from midwife.pipeline import calls_needed, judge, run, situate
 from midwife.types import Budget, Observation
 from midwife.verdict import CARRIED, MISALIGNED
@@ -139,3 +140,15 @@ def test_an_inversion_that_changes_nothing_is_refused(fixture, key, mapping, mes
     raw["interventions"][key] = mapping
     with pytest.raises(FrameError, match=message):
         situate(raw)
+
+
+def test_a_case_match_wider_than_lower_is_renamed_not_a_crash():
+    # the pattern matches "ſ" for "s", though "ſ".lower() is "ſ": an input
+    # inversion met it mid-run, after calls were spent (pass 4, R06)
+    assert rename("ſ and S and s", (("s", "x"),)) == "x and X and x"
+    raw = json.loads((FRAME.parent / "restore-case-inversion.json").read_text())
+    raw["inputs"][0]["text"] += " ſ"
+    raw["interventions"]["inputInversion"] = {"has approved": "has not approved", "s": "z"}
+    frame = situate(raw)
+    result = run(frame, Asked(), Budget(calls=calls_needed(frame)))
+    assert len(result.records) == calls_needed(frame) and result.stopped is None
