@@ -582,3 +582,11 @@ def test_the_version_badge_reads_the_release_tags():
     first = (ROOT / "README.md").read_text(encoding="utf-8").split("\n")[2]
     assert "img.shields.io/github/v/tag/mirzahusadzic/gadfly?sort=semver" in first
     assert first.endswith("(https://pypi.org/project/midwife/)")
+
+
+def test_the_local_json_page_promises_only_what_the_battery_checks():
+    # the battery checks JSON and the label pointer; the answer's schema is
+    # the evaluator's (pass 4, R12: the page had promised a schema check)
+    page = " ".join((ROOT / "docs/breadth/local-json-battery.md").read_text().split())
+    assert "invalid JSON/schema" not in page
+    assert "held to its schema by the evaluator, not here" in page

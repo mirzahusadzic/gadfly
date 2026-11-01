@@ -71,7 +71,9 @@ cap, so set `--output-tokens` to what a whole call may spend.
 - no environment proxy and no redirects, reusing `critic.opener()`;
 - one whole-call deadline and the same read-back size cap as the shipped batteries;
 - `check` validates `kind`, URL, timeout, schema pointer and keys before a call;
-- `observe` returns an opening for transport failure or invalid JSON/schema;
+- `observe` returns an opening for a transport failure, a reply that is not
+  JSON, or an answer whose label pointer finds no label of the frame; the
+  rest of the answer is held to its schema by the evaluator, not here;
 - no credentials in the frame; a deployment that needs auth should provide a
   separate battery with an explicit credential contract;
 - records use the existing `Observation` and `Record` fields, including `served`.
