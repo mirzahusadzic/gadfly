@@ -485,20 +485,30 @@ def command_check_frame(args) -> int:
             found = []
         for error in found:
             where = "/" + "/".join(str(part) for part in error.absolute_path)
-            problems.append({"at": where, "problem": error.message})
+            problems.append({"at": where, "problem": error.message, "notes": []})
     try:
         frame = situate(raw)
     except FrameError as error:
-        frame, problems = None, [*problems, {"at": "/", "problem": str(error)}]
-    if args.json:
-        result = {"ok": not problems, "checked": checked, "problems": problems}
-        if frame and not problems:
-            result.update(frame=frame.name, hash=frame.hash, calls=calls_needed(frame))
-        print(json.dumps(result, indent=2))
+        notes = list(getattr(error, "__notes__", []))
+        frame, problems = None, [*problems, {"at": "/", "problem": str(error), "notes": notes}]
+    if problems and args.json:  # one FrameError, as every refusal is, listing them all
+        said = {"type": "FrameError", "exit": FrameError.exit, "message": problems[0]["problem"]}
+        said |= {"notes": problems[0]["notes"], "help": f"{TROUBLESHOOTING}#frameerror"}
+        said |= {"checked": checked, "problems": problems}
+        print(json.dumps({"error": said}, indent=2), file=sys.stderr)
     elif problems:  # each a FrameError, gathered rather than raised at the first
         for problem in problems:
             at = "" if problem["at"] == "/" else f" at {problem['at']}"
-            print(f"FrameError: {problem['problem']}{at}", file=sys.stderr)
+            print(
+                f"FrameError: {problem['problem']}{at}",
+                *problem["notes"],
+                sep="\n",
+                file=sys.stderr,
+            )
+    elif args.json:
+        result = {"ok": True, "checked": checked, "problems": []}
+        result.update(frame=frame.name, hash=frame.hash, calls=calls_needed(frame))
+        print(json.dumps(result, indent=2))
     else:
         print(f"ok ({checked}): {frame.name} ({frame.hash}), {calls_needed(frame)} calls")
     return FrameError.exit if problems else 0
