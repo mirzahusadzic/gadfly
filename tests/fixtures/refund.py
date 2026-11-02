@@ -143,3 +143,16 @@ class Separated(RuleReader):
     def observe(self, frame, prompt, max_output_tokens):
         observation = super().observe(frame, prompt, max_output_tokens)
         return Observation(label=observation.label, raw="a b c\x85d")
+
+
+class UnreachableThenInterrupted(Unreachable):
+    """The rule reader's service down for two calls, then Ctrl-C."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def observe(self, frame, prompt, max_output_tokens):
+        self.calls += 1
+        if self.calls == 3:
+            raise KeyboardInterrupt
+        return super().observe(frame, prompt, max_output_tokens)

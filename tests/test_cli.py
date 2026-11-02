@@ -735,3 +735,13 @@ def test_records_holding_line_separators_are_read_back(tmp_path, capsys):
     assert main([*argv, "--out", str(out)]) == 0
     assert main(["report", REFUND, str(out)]) == 0
     assert "records: 8 of 8 planned calls" in capsys.readouterr().out
+
+
+def test_openings_before_a_ctrl_c_are_said_too(tmp_path, capsys):
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:UnreachableThenInterrupted"]
+    assert main([*argv, "--calls", "8", "--out", str(out)]) == 130
+    assert capsys.readouterr().err.splitlines()[-1] == (
+        "2 of them came back as openings, most often "
+        "'the reader could not be reached (ConnectionRefused)'"
+    )

@@ -357,6 +357,11 @@ def command_run(args) -> int:
                 KeyboardInterrupt(f"{stopped}; they are in file {str(out)!r}"),
                 f"finish with --kept {str(out)!r} and a new --out",
             )
+        openings = Counter(r.opening for r in made if r.opening is not None)
+        if openings:  # nothing passes in silence, a Ctrl-C's calls included
+            reason, _ = openings.most_common(1)[0]
+            many = sum(openings.values())
+            said.add_note(f"{many} of them came back as openings, most often {reason!r}")
         said.running = getattr(interrupt, "running", 0)  # calls hung, left to their threads
         if said.running:
             said.add_note(f"{said.running} calls still out were left unanswered")
