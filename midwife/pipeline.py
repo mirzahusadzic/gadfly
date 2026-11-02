@@ -249,20 +249,24 @@ def run(
         return _warned(RunResult(tuple(records), planned, stopped, skipped, unasked), level=4)
 
     if parallel == 1:
-        for x, trial, index in calls:
-            if needless(x, trial):
-                skipped += 1
-                continue
-            if done_with(x, trial):
-                unasked += 1
-                continue
-            stopped = blocked(0)
-            if stopped:
-                return ended(stopped)
-            text = prompt(frame, trial, x)
-            stopped = keep(x, trial, index, text, _observe(battery, frame, text, cap))
-            if stopped:
-                return ended(stopped)
+        try:
+            for x, trial, index in calls:
+                if needless(x, trial):
+                    skipped += 1
+                    continue
+                if done_with(x, trial):
+                    unasked += 1
+                    continue
+                stopped = blocked(0)
+                if stopped:
+                    return ended(stopped)
+                text = prompt(frame, trial, x)
+                stopped = keep(x, trial, index, text, _observe(battery, frame, text, cap))
+                if stopped:
+                    return ended(stopped)
+        except (KeyboardInterrupt, SystemExit) as interrupt:
+            interrupt.running = 0  # the one call out was this thread's, and it ended with it
+            raise
         return ended()
 
     # At once: each trial's first calls before any trial's next, so a trial

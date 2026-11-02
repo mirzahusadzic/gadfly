@@ -317,6 +317,24 @@ def test_a_first_ctrl_c_lets_the_calls_out_end_and_a_second_stops(raw):
         assert signal.getsignal(signal.SIGINT) is before
 
 
+def test_a_ctrl_c_in_a_run_one_call_at_a_time_leaves_none_running(raw):
+    # run() marks its KeyboardInterrupt with the calls still out on either path
+    class Interrupted:
+        name = "rule-reader"
+
+        def check(self, frame):
+            pass
+
+        def observe(self, frame, prompt, max_output_tokens):
+            raise KeyboardInterrupt
+
+    raw["battery"] = {"kind": "rule-reader"}
+    frame = situate(raw)
+    with pytest.raises(KeyboardInterrupt) as raised:
+        run(frame, Interrupted(), Budget(calls=calls_needed(frame)))
+    assert raised.value.running == 0
+
+
 def test_a_short_stable_baseline_is_not_counted_as_settled(tmp_path, capsys):
     # under stable a missing baseline call could split it, so the report never
     # counts it among the calls that could change nothing (pass 4, R11)
