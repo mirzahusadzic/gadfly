@@ -580,7 +580,7 @@ def test_a_battery_that_refuses_to_be_made_is_a_battery_error(
     assert main(argv) == 6
     assert capsys.readouterr().err.splitlines() == [
         "BatteryError: battery 'refusing_battery:Reader' could not be made",
-        "no setting for the evaluator",
+        "it said 'no setting for the evaluator'",
     ]
     sys.modules.pop("refusing_battery", None)
 
@@ -685,3 +685,38 @@ def test_out_through_a_file_or_at_a_folder_says_which(tmp_path, capsys, monkeypa
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, "--out", place]) == 7
     assert capsys.readouterr().err.startswith(said)
+
+
+@pytest.mark.parametrize(
+    ("source", "said"),
+    [
+        ("import no_such_module_anywhere\n", "BatteryError: module 'refusing_import' could not"),
+        (
+            "class Reader:\n    def __init__(self):\n        import no_such_module_anywhere\n",
+            "BatteryError: battery 'refusing_import:Reader' could not be made",
+        ),
+    ],
+)
+def test_a_battery_that_lacks_a_module_is_a_battery_error(
+    tmp_path, capsys, monkeypatch, source, said
+):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    Path("refusing_import.py").write_text(source)
+    argv = [
+        "run",
+        REFUND,
+        "--battery",
+        "refusing_import:Reader",
+        "--calls",
+        "8",
+        "--out",
+        "r.jsonl",
+    ]
+    assert main(argv) == 6
+    lines = capsys.readouterr().err.splitlines()
+    assert (
+        lines[0].startswith(said)
+        and lines[1] == "it said \"No module named 'no_such_module_anywhere'\""
+    )
+    sys.modules.pop("refusing_import", None)

@@ -79,12 +79,16 @@ def load_battery(spec: str):
         sys.path.insert(0, os.getcwd())
     try:
         module = importlib.import_module(module_name)
-    except ImportError as error:
-        raise BatteryError(str(error)) from None
+    except ImportError as error:  # its words quoted: a battery's are not Gadfly's
+        raise BatteryError(
+            f"module {module_name!r} could not be imported", f"it said {str(error)!r}"
+        ) from None
     except GadflyError:
         raise
     except ValueError as error:  # a battery refuses with a ValueError, as in check
-        raise BatteryError(f"battery {spec!r} could not be made", str(error)) from error
+        raise BatteryError(
+            f"battery {spec!r} could not be made", f"it said {str(error)!r}"
+        ) from error
     target = getattr(module, attribute, None)
     if target is None:
         raise BatteryError(f"module {module_name!r} has no {attribute!r}")
@@ -92,8 +96,14 @@ def load_battery(spec: str):
         battery = target() if isinstance(target, type) else target
     except GadflyError:
         raise
-    except (TypeError, ValueError) as error:  # it needs arguments, or refuses as in check
-        raise BatteryError(f"battery {spec!r} could not be made", str(error)) from None
+    except (
+        TypeError,
+        ValueError,
+        ImportError,
+    ) as error:  # it needs arguments, refuses, or lacks a module
+        raise BatteryError(
+            f"battery {spec!r} could not be made", f"it said {str(error)!r}"
+        ) from None
     if not isinstance(battery, Battery):
         raise BatteryError(
             f"{spec!r} is not a battery", "a battery has a name, check() and observe()"

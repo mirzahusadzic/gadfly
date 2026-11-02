@@ -68,7 +68,7 @@ def test_a_battery_that_refuses_with_a_value_error_is_a_battery_error(raw):
         name = raw["battery"]["kind"]
 
         def check(self, frame):
-            raise ValueError("this battery serves no refunds: none")  # as the protocol says
+            raise ValueError("this battery serves no refunds:\nnone")  # as the protocol says
 
         def observe(self, frame, prompt, max_output_tokens):
             raise AssertionError("never asked")
@@ -78,7 +78,7 @@ def test_a_battery_that_refuses_with_a_value_error_is_a_battery_error(raw):
         run(framed, Picky(), Budget(calls=calls_needed(framed)))
     # Gadfly's words in the message, the battery's own in a note
     assert str(refused.value) == f"battery {raw['battery']['kind']!r} refused this frame"
-    assert refused.value.__notes__ == ["this battery serves no refunds: none"]
+    assert refused.value.__notes__ == ["it said 'this battery serves no refunds:\\nnone'"]
 
 
 def said(path: Path):
@@ -178,6 +178,8 @@ def test_every_value_a_refusal_or_an_opening_names_is_quoted():
     for path in sorted((ROOT / "midwife").rglob("*.py")):
         source = path.read_text(encoding="utf-8")
         for words in worded(path):
+            if isinstance(words, ast.Call) and getattr(words.func, "id", "") == "str":
+                stray.append(f"{path.relative_to(ROOT)}:{words.lineno} str(...) unquoted")
             for part in ast.walk(words):
                 if isinstance(part, ast.FormattedValue) and part.conversion != ord("r"):
                     value = ast.get_source_segment(source, part.value)

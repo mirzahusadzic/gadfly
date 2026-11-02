@@ -98,7 +98,7 @@ reach what it needs, and no call was made.
 | `BatteryError: this frame asks for battery 'egemma', not 'unified'` | A frame names its battery in `battery.kind`, and another battery is another frame. Pass the one it names. |
 | `BatteryError: 'midwife.frame:parse' is not a battery` | `a battery has a name, check() and observe()`. The name after the colon is found, but it is not a battery class or object. |
 | `BatteryError: module 'tests.fixtures.refund' has no 'NoSuchReader'` | The module was found, but not the class named after the colon. Check its spelling and case. |
-| `BatteryError: No module named '...'` | The battery's module is imported from the current directory. Run from the folder that holds it, or check its name. |
+| `BatteryError: module 'mine' could not be imported` | `it said "No module named 'mine'"`. The battery's module is imported from the current directory. Run from the folder that holds it, or check its name. |
 | `BatteryError: the evaluator's address must not hold a user or password` | A battery's address names a user or a password. Gadfly refuses it without repeating it; take the credentials out of the address. |
 | `BatteryError: the evaluator's address 'http://127.0.0.1:99999' has no valid port` | `a port is a number from 0 to 65535`. |
 | `BatteryError: battery.timeout is a number of seconds, up to 3600` | The `local-json` battery's whole-call deadline is missing a positive number, or asks for more than an hour. |

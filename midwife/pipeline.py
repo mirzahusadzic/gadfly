@@ -120,7 +120,8 @@ def run(
     except GadflyError:
         raise
     except ValueError as error:  # a battery refuses as the protocol says, with a ValueError
-        raise BatteryError(f"battery {battery.name!r} refused this frame", str(error)) from error
+        said = f"it said {str(error)!r}"  # its words quoted: a battery's are not Gadfly's
+        raise BatteryError(f"battery {battery.name!r} refused this frame", said) from error
     ids = trial_ids(frame)
     wanted = set(ids) if only is None else set(only)
     unknown = wanted - set(ids)
