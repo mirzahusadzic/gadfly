@@ -332,7 +332,7 @@ def run(
             pool.shutdown(wait=True)  # every call handed to a worker, tracked or not
         for seq in sorted(set(started) & set(ended_at)):
             keep_call(seq)
-        interrupt.running = len(started)  # made, and not kept: still out
+        interrupt.running = sum(not call.done() for call in running)  # still out
         raise
     finally:
         pool.shutdown(wait=False, cancel_futures=True)

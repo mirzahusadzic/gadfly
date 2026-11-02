@@ -104,3 +104,19 @@ class Slow(RuleReader):
     def observe(self, frame, prompt, max_output_tokens):
         time.sleep(0.05)
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class InterruptingAtOnce(RuleReader):
+    """The rule reader taking calls at once, its third call raising Ctrl-C
+    in its worker's thread."""
+
+    concurrent = True
+
+    def __init__(self):
+        self.calls = 0
+
+    def observe(self, frame, prompt, max_output_tokens):
+        self.calls += 1
+        if self.calls == 3:
+            raise KeyboardInterrupt
+        return super().observe(frame, prompt, max_output_tokens)

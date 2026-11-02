@@ -649,3 +649,15 @@ def test_a_reader_that_stops_reading_ends_the_command_quietly():
             child.kill()
             child.wait()
     assert status == -signal.SIGPIPE and child.stderr.read() == b""
+
+
+def test_a_battery_s_own_ctrl_c_at_once_ends_the_command_as_one(tmp_path, capsys, monkeypatch):
+    # its call has ended, so nothing is left running: no exit past the caller
+    import os
+
+    monkeypatch.setattr(os, "_exit", lambda status: pytest.fail(f"os._exit({status})"))
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:InterruptingAtOnce", "--calls", "8"]
+    assert main([*argv, "--parallel", "2", "--out", str(out)]) == 130
+    err = capsys.readouterr().err
+    assert err.startswith("KeyboardInterrupt: stopped by Ctrl-C") and "unanswered" not in err
