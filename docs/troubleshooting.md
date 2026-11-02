@@ -1,11 +1,11 @@
 # Troubleshooting
 
 Each problem is listed by what Gadfly prints. A refusal prints what the last
-line of a Python traceback would, its class and what went wrong, and on the
-next line, when it can, what to do; a warning, for what a run did not do as
-asked though it went on, prints the same way. The class says what to fix and
-gives the exit status, and with `--json` each is one object on standard error,
-as each table below can show on the site.
+line of a Python traceback would, its class, which says what to fix and gives
+the exit status, and what went wrong, then on the next line what to do; a
+warning, for what a run did not do as asked though it went on, prints the same
+way. With `--json` a refusal is one object on standard error and a warning sits
+under `warnings` in the run's result, as each table below can show on the site.
 
 ---
 

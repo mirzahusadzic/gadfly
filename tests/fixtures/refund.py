@@ -156,3 +156,16 @@ class UnreachableThenInterrupted(Unreachable):
         if self.calls == 3:
             raise KeyboardInterrupt
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class OnceUnreachable(RuleReader):
+    """The rule reader whose service is down for its first call only."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def observe(self, frame, prompt, max_output_tokens):
+        self.calls += 1
+        if self.calls == 1:
+            return Unreachable().observe(frame, prompt, max_output_tokens)
+        return super().observe(frame, prompt, max_output_tokens)

@@ -1410,13 +1410,13 @@ give its exit status: a GadflyError's own, 7 for a file, 130 for Ctrl-C.
 refused(error, as_json)
 ```
 
-#### warned
+#### described
 
-Say a warning as Python's own line for it, `Type: message`, then its
-notes, or as JSON; give its exit status.
+A refusal or a warning as JSON: its type, the exit status it gives, its
+message and notes, and its troubleshooting section.
 
 ```python
-warned(warning, as_json)
+described(problem, status, message="", anchor="")
 ```
 
 #### Parser

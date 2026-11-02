@@ -230,10 +230,10 @@ def test_run_says_when_its_calls_came_back_as_openings(tmp_path, capsys):
     ]
     assert main([*argv, "--out", str(tmp_path / "again.jsonl"), "--json"]) == 1
     told = capsys.readouterr()
-    assert json.loads(told.out)["openings"] == {
-        "the reader could not be reached (ConnectionRefused)": 8
-    }
-    warning = json.loads(told.err)["warning"]
+    result = json.loads(told.out)  # one document: the run, its warnings within
+    assert result["openings"] == {"the reader could not be reached (ConnectionRefused)": 8}
+    [warning] = result["warnings"]
+    assert told.err == "" and result["exit"] == 1
     assert (warning["type"], warning["exit"]) == ("OpeningWarning", 1)
     assert warning["help"].endswith("troubleshooting#openingwarning")
     (tmp_path / "fine").mkdir()
@@ -745,3 +745,22 @@ def test_openings_before_a_ctrl_c_are_said_too(tmp_path, capsys):
         "2 of them came back as openings, most often "
         "'the reader could not be reached (ConnectionRefused)'"
     )
+
+
+def test_with_json_a_run_s_warnings_are_in_its_one_result(tmp_path, capsys):
+    # some calls opened and the budget cut it short: two warnings, one document,
+    # each warning with the status it gives (1 only when every call opened)
+    from tests.fixtures.refund import UnreachableThenInterrupted
+
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:OnceUnreachable", "--calls", "8"]
+    budget = ["--output-tokens", "10", "--token-budget", "30", "--json"]
+    assert main([*argv, *budget, "--out", str(out)]) == 3
+    told = capsys.readouterr()
+    result = json.loads(told.out)
+    assert told.err == "" and result["exit"] == 3
+    assert [(w["type"], w["exit"]) for w in result["warnings"]] == [
+        ("OpeningWarning", 0),
+        ("StoppedWarning", 3),
+    ]
+    assert UnreachableThenInterrupted  # the fixtures load

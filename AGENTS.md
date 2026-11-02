@@ -43,7 +43,7 @@ The command line follows [clig.dev](https://clig.dev/), and its errors are Pytho
 
 - Results go to standard output or the file named, messages to standard error. Any file may be `-`, read once and refused at a terminal; every command takes `--json`; flags are matched in full only.
 - A refusal is a class for what to fix, its exit status an attribute: `UsageError` 2, `FrameError` 4, `RecordsError` 5, `BatteryError` 6, Python's own file errors 7, `KeyboardInterrupt` 130. It prints as a traceback's last line, `Type: message`, then each note; with `--json`, `{"error": {"type", "exit", "message", "notes", "help"}}` on standard error. Anything else raised is a bug: its traceback, and 70.
-- What a run did not do as asked, though it went on, is a warning raised with `warnings.warn`, printed the same way (`{"warning": ...}`): `OpeningWarning` 1, `StoppedWarning` 3. Nothing passes in silence, and an empty result means only "none".
+- What a run did not do as asked, though it went on, is a warning raised with `warnings.warn`, printed the same way, or with `--json` listed under `warnings` in `run`'s one result: `OpeningWarning` 1 (only when every call opened), `StoppedWarning` 3. Nothing passes in silence, and an empty result means only "none".
 - A message names the kind of thing and quotes its value, as Python's own do, then says what went wrong and where (`file 'kept.jsonl' holds a lone surrogate at line 3`); a note says why and what to do. Outside a quoted value, no line Gadfly prints holds a second colon. `tests/test_errors.py` reads the source to hold all of this.
 
 ---

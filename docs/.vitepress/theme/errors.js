@@ -37,9 +37,10 @@ function said(row, exits, anchor) {
     const [, type, message] = code.textContent.match(/^(\w+): ([\s\S]*)$/) || [];
     if (!(type in exits)) continue;
     const said = { type, exit: exits[type], message, notes: notes(row.cells[1]), help: HELP + anchor };
-    // a refusal prints {"error": ...}, a warning {"warning": ...}, as the command does
-    const key = type.endsWith('Warning') ? 'warning' : 'error';
-    objects.push(JSON.stringify({ [key]: said }, null, 2));
+    // a refusal prints {"error": ...} on standard error; a warning sits in
+    // run's own result, under "warnings", as the command prints them
+    const object = type.endsWith('Warning') ? { warnings: [said] } : { error: said };
+    objects.push(JSON.stringify(object, null, 2));
   }
   return objects;
 }
@@ -70,8 +71,10 @@ export function showErrors(page) {
     const head = document.createElement('th');
     head.className = 'gf-json';
     head.colSpan = 2;
-    head.append('As ', Object.assign(document.createElement('code'), { textContent: '--json' }));
-    head.append(' prints it, on standard error');
+    const warned = heading.id.endsWith('warning');
+    const flag = warned ? 'run --json' : '--json';
+    head.append('As ', Object.assign(document.createElement('code'), { textContent: flag }));
+    head.append(warned ? ' prints it, in its result' : ' prints it, on standard error');
     table.tHead.rows[0].append(head);
     for (const [row, objects] of rows) {
       if (!objects.length) {

@@ -400,7 +400,20 @@ def command_run(args) -> int:
         if result.stopped
         else 0
     )
-    if args.json:
+    # what the run did not do as asked: its warnings, with what to do, and the
+    # status each gives (an OpeningWarning gives 1 only when every call opened)
+    raised = []
+    for warning in (w.message for w in caught if issubclass(w.category, GadflyWarning)):
+        gives = warning.exit
+        if isinstance(warning, OpeningWarning):
+            gives = OpeningWarning.exit if status == OpeningWarning.exit else 0
+            if gives:
+                warning.add_note("nothing was read; run again into a new file once it answers")
+        if isinstance(warning, StoppedWarning):
+            kept_as = "them" if streamed else repr(str(out))
+            warning.add_note(f"finish with --kept {kept_as} and a new --out")
+        raised.append((warning, gives))
+    if args.json:  # one document: the run, and its warnings within it
         payload = {
             "frame": frame.name,
             "hash": frame.hash,
@@ -412,6 +425,8 @@ def command_run(args) -> int:
             "unasked": result.unasked,
             "stopped": result.stopped,
             "openings": dict(openings.most_common()),
+            "exit": status,
+            "warnings": [described(warning, gives) for warning, gives in raised],
         }
         print(json.dumps(payload, indent=2))
     else:
@@ -436,14 +451,9 @@ def command_run(args) -> int:
             else f"gadfly report {args.frame} {out}"
         )
         print(f"to read the verdict: {read}", file=say)
-    # what the run did not do as asked: its warnings, with what to do
-    for warning in (w.message for w in caught if issubclass(w.category, GadflyWarning)):
-        if isinstance(warning, OpeningWarning) and status == OpeningWarning.exit:
-            warning.add_note("nothing was read; run again into a new file once it answers")
-        if isinstance(warning, StoppedWarning):
-            kept_as = "them" if streamed else repr(str(out))
-            warning.add_note(f"finish with --kept {kept_as} and a new --out")
-        warned(warning, args.json)
+        for warning, _ in raised:
+            notes = list(getattr(warning, "__notes__", []))
+            print(f"{type(warning).__name__}: {warning}", *notes, sep="\n", file=sys.stderr)
     return status
 
 
@@ -653,25 +663,28 @@ def refused(error: BaseException, as_json: bool) -> int:
     else:
         status, anchor = errors.INTERRUPTED, "keyboardinterrupt"
         message = str(error) or "stopped by Ctrl-C"
-    return _said("error", error, status, message, anchor, as_json)
-
-
-def warned(warning: GadflyWarning, as_json: bool) -> int:
-    """Say a warning as Python's own line for it, `Type: message`, then its
-    notes, or as JSON; give its exit status."""
-    anchor = type(warning).__name__.lower()
-    return _said("warning", warning, warning.exit, str(warning), anchor, as_json)
-
-
-def _said(key: str, said: BaseException, status: int, message: str, anchor: str, as_json: bool):
-    kind, notes = type(said).__name__, list(getattr(said, "__notes__", []))
     if as_json:
-        body = {"type": kind, "exit": status, "message": message, "notes": notes}
-        body["help"] = f"{TROUBLESHOOTING}#{anchor}"
-        print(json.dumps({key: body}, indent=2), file=sys.stderr)
+        print(
+            json.dumps({"error": described(error, status, message, anchor)}, indent=2),
+            file=sys.stderr,
+        )
     else:
-        print(f"{kind}: {message}", *notes, sep="\n", file=sys.stderr)
+        notes = list(getattr(error, "__notes__", []))
+        print(f"{type(error).__name__}: {message}", *notes, sep="\n", file=sys.stderr)
     return status
+
+
+def described(problem: BaseException, status: int, message: str = "", anchor: str = "") -> dict:
+    """A refusal or a warning as JSON: its type, the exit status it gives, its
+    message and notes, and its troubleshooting section."""
+    kind = type(problem).__name__
+    return {
+        "type": kind,
+        "exit": status,
+        "message": message or str(problem),
+        "notes": list(getattr(problem, "__notes__", [])),
+        "help": f"{TROUBLESHOOTING}#{anchor or kind.lower()}",
+    }
 
 
 def _plain(error: OSError) -> str:
