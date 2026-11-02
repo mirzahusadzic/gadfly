@@ -975,7 +975,9 @@ instruction, with no persona added, and a grammar holds its answer to the
 schema: by default `{"label": <one of the frame's labels>}`, or a critic's own
 schema with the label's place named, as for the unified battery. Nothing
 leaves this machine, and nothing is cached, so the quorum's runs are fresh
-samples; at `temperature: 0` the battery is close to deterministic.
+samples; at `temperature: 0` the battery is close to deterministic. With
+`reasoning: true`, Gemma thinks before every answer, and only the answer is
+held to the schema.
 
 ```json
 "battery": {"kind": "egemma", "temperature": 0.7}
@@ -985,7 +987,11 @@ What this battery promises, whatever the frame says:
 - it talks only to an eGemma on this machine (loopback), through no proxy
   and no redirect;
 - each call has a deadline (`timeout` seconds for the whole reply), the
-  budget's cap on output tokens, and a cap on what it reads back;
+  budget's cap on output tokens, and a cap on what it reads back; with
+  reasoning, the cap is the thought's and the answer's together: the answer
+  keeps ANSWER_TOKENS of it and the thought gets the rest, up to
+  MAX_THOUGHT_TOKENS, and a cap with no room left for a thought is an
+  opening;
 - it calls one at a time and paces itself to the judge budget eGemma
   publishes at GET /rate-limits (read once, before the first call); when
   eGemma is busy anyway (429 or 503) it waits as long as eGemma asks, at most
@@ -999,7 +1005,8 @@ What this battery promises, whatever the frame says:
 #### payload
 
 The /judge request: the instruction, the text, the schema, the answer's
-cap, and the frame's temperature if it names one.
+cap, and the frame's temperature if it names one. With reasoning, the call's
+cap is split: the answer keeps ANSWER_TOKENS and the thought the rest.
 
 ```python
 payload(frame, text, max_output_tokens)
@@ -1033,7 +1040,8 @@ pace()
 
 Refuse, before any call, a frame this battery must not serve:
 another battery's, an unknown key, a temperature outside 0 to 2, an
-empty pin, or no key; then read the budget eGemma publishes.
+empty pin, reasoning that is not true or false, or no key; then read the
+budget eGemma publishes.
 
 ```python
 check(frame)

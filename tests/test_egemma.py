@@ -62,6 +62,42 @@ def test_the_payload_is_the_instruction_the_text_and_the_schema_alone(frame):
     assert body["max_tokens"] == 32 and body["temperature"] == 0
 
 
+def test_without_reasoning_no_thought_is_asked_for(frame):
+    for battery in ({"kind": "egemma"}, {"kind": "egemma", "reasoning": False}):
+        body = payload(situate({**frame.raw, "battery": battery}), "p", 4160)
+        assert "reasoning" not in body and "max_reasoning_tokens" not in body
+        assert body["max_tokens"] == 4160
+
+
+def test_with_reasoning_the_calls_cap_is_split_between_thought_and_answer(frame):
+    thinking = situate({**frame.raw, "battery": {"kind": "egemma", "reasoning": True}})
+    body = payload(thinking, "p", 1000)
+    assert body["reasoning"] is True and body["max_tokens"] == egemma.ANSWER_TOKENS
+    assert body["max_reasoning_tokens"] == 1000 - egemma.ANSWER_TOKENS
+    whole = payload(thinking, "p", 100_000)
+    assert whole["max_reasoning_tokens"] == egemma.MAX_THOUGHT_TOKENS
+
+
+def test_a_cap_with_no_room_for_a_thought_is_an_opening_and_no_call(frame, key, server):
+    fake = server(reply("decline"))
+    thinking = situate({**frame.raw, "battery": {"kind": "egemma", "reasoning": True}})
+    observation = EGemma(fake.base + "/judge").observe(thinking, "p", egemma.ANSWER_TOKENS)
+    assert observation.label is None and observation.opening == (
+        "a cap of 64 output tokens leaves no room for a thought beside the answer's 64"
+    )
+    assert fake.requests == []
+
+
+def test_a_thought_is_counted_in_the_records_usage(frame, key, server):
+    usage = {"input_tokens": 41, "output_tokens": 412, "reasoning_tokens": 405}
+    fake = server(reply("decline", usage=usage, reasoning={"text": "...", "truncated": False}))
+    thinking = situate({**frame.raw, "battery": {"kind": "egemma", "reasoning": True}})
+    observation = EGemma(fake.base + "/judge").observe(thinking, "the prompt", 4160)
+    assert observation.label == "decline" and observation.usage == usage
+    [(_, body)] = fake.requests
+    assert body["reasoning"] is True and body["max_reasoning_tokens"] == 4096
+
+
 def test_a_call_sends_the_key_and_reads_the_label(frame, key, server):
     fake = server(reply("decline"))
     observation = EGemma(fake.base + "/judge").observe(frame, "the prompt", 32)
@@ -121,6 +157,8 @@ def test_check_refuses_unknown_keys_bad_temperatures_and_no_key(raw, monkeypatch
         ({"kind": "egemma", "model": ""}, "model and revision"),
         ({"kind": "egemma", "temperature": 3}, "between 0 and 2"),
         ({"kind": "egemma", "temperature": True}, "between 0 and 2"),
+        ({"kind": "egemma", "reasoning": "yes"}, "true or false"),
+        ({"kind": "egemma", "reasoning": 1}, "true or false"),
         ({"kind": "egemma", "output": {"schema": {}, "label": "x"}}, "JSON pointer"),
         ({"kind": "unified"}, "asks for battery 'unified'"),
     ]:

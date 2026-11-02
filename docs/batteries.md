@@ -65,7 +65,7 @@ does.
 | Battery | Reads with | Guarantees and recorded provenance |
 |---|---|---|
 | `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/codex-unified-model-router): `anthropic/`, `openrouter/`, `deepseek/`, `ultra-spark/` | loopback, no tools, no proxy, no redirects, `data_collection: deny` unless the exact model slug is listed under `trainsOnInputs`; refuses OpenAI slugs; `endpoints` pins OpenRouter endpoints; records the model and endpoint that served |
-| `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced |
+| `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced; Gemma thinks first with `reasoning: true` |
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 | `tendora` | Tendora's engine server, from its demo package, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
 | your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
@@ -103,6 +103,23 @@ keeps it, and names where the label lives with a JSON pointer:
   }
 }
 ```
+
+#### Gemma, thinking first
+
+Gemma 4 has no reasoning levels: its thinking is on or off. With
+`reasoning: true` in the battery line, eGemma lets Gemma think before every
+answer, and only the answer is held to the schema:
+
+```json
+"battery": {"kind": "egemma", "reasoning": true}
+```
+
+`--output-tokens` stays the whole call's cap: the answer keeps 64 of it and
+the thought gets the rest, up to 4,096, so `--output-tokens 4160` gives a
+whole thought, and a cap with no room for one is an opening. Each record's
+`usage` counts the thought's tokens as `reasoning_tokens`. It needs an eGemma
+newer than its v0.5.0, whose `/judge` takes `reasoning`; an older one answers
+422, which the battery records as an opening.
 
 #### Tendora's engine
 
@@ -161,6 +178,7 @@ reports more stops the run after it. A cap of your own, on money or time,
 goes through `run(cancelled=...)`, which is asked before every call.
 `run(settle=True)` spends fewer calls: a trial stops once its level can no
 longer change, and the verdict reads as it would over every call.
+
 
 #### Record provenance
 

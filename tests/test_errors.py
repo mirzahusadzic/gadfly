@@ -140,7 +140,7 @@ UNQUOTED = {
     "error.msg", "error.code", "tried", "said", "MAX_TIMEOUT", "frame.quorum", "len(unread)",
     "type(reason).__name__", "type(error).__name__", "type(value).__name__", "kind.__name__",
     "many", "often", "made", "result.planned", "len(result.records)",
-    "', '.join(EFFORTS)", "', '.join(wrong)",
+    "', '.join(EFFORTS)", "', '.join(wrong)", "max_output_tokens", "ANSWER_TOKENS",
 }  # fmt: skip
 
 

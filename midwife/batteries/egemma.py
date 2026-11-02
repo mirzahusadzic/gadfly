@@ -5,7 +5,9 @@ instruction, with no persona added, and a grammar holds its answer to the
 schema: by default `{"label": <one of the frame's labels>}`, or a critic's own
 schema with the label's place named, as for the unified battery. Nothing
 leaves this machine, and nothing is cached, so the quorum's runs are fresh
-samples; at `temperature: 0` the battery is close to deterministic.
+samples; at `temperature: 0` the battery is close to deterministic. With
+`reasoning: true`, Gemma thinks before every answer, and only the answer is
+held to the schema.
 
     "battery": {"kind": "egemma", "temperature": 0.7}
 
@@ -13,7 +15,11 @@ What this battery promises, whatever the frame says:
 - it talks only to an eGemma on this machine (loopback), through no proxy
   and no redirect;
 - each call has a deadline (`timeout` seconds for the whole reply), the
-  budget's cap on output tokens, and a cap on what it reads back;
+  budget's cap on output tokens, and a cap on what it reads back; with
+  reasoning, the cap is the thought's and the answer's together: the answer
+  keeps ANSWER_TOKENS of it and the thought gets the rest, up to
+  MAX_THOUGHT_TOKENS, and a cap with no room left for a thought is an
+  opening;
 - it calls one at a time and paces itself to the judge budget eGemma
   publishes at GET /rate-limits (read once, before the first call); when
   eGemma is busy anyway (429 or 503) it waits as long as eGemma asks, at most
@@ -57,7 +63,11 @@ from .critic import (
 )
 
 DEFAULT_URL = os.environ.get("EGEMMA_URL", "http://127.0.0.1:8000").rstrip("/") + "/judge"
-BATTERY_KEYS = {"kind", "temperature", "output", "model", "revision"}
+BATTERY_KEYS = {"kind", "temperature", "output", "model", "revision", "reasoning"}
+# With reasoning, the answer's share of a call's cap: a label answer takes
+# about ten tokens. The thought gets the rest, up to eGemma's own cap.
+ANSWER_TOKENS = 64
+MAX_THOUGHT_TOKENS = 4096
 BUSY = (429, 503)  # eGemma's rate limit, and its queue when full
 RETRIES = 3
 MAX_WAIT = 60.0
@@ -109,7 +119,8 @@ def _wait(error: urllib.error.HTTPError, body: Callable[[], bytes]) -> float:
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     """The /judge request: the instruction, the text, the schema, the answer's
-    cap, and the frame's temperature if it names one."""
+    cap, and the frame's temperature if it names one. With reasoning, the call's
+    cap is split: the answer keeps ANSWER_TOKENS and the thought the rest."""
     schema, _ = output_schema(frame)
     body = {
         "instructions": frame.instruction,
@@ -119,6 +130,10 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     }
     if "temperature" in frame.battery:
         body["temperature"] = frame.battery["temperature"]
+    if frame.battery.get("reasoning"):
+        body["max_tokens"] = ANSWER_TOKENS
+        body["reasoning"] = True
+        body["max_reasoning_tokens"] = min(max_output_tokens - ANSWER_TOKENS, MAX_THOUGHT_TOKENS)
     return body
 
 
@@ -176,7 +191,8 @@ class EGemma:
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this battery must not serve:
         another battery's, an unknown key, a temperature outside 0 to 2, an
-        empty pin, or no key; then read the budget eGemma publishes."""
+        empty pin, reasoning that is not true or false, or no key; then read the
+        budget eGemma publishes."""
         battery = frame.battery
         if battery.get("kind") != self.name:
             raise BatteryError(f"this frame asks for battery {battery.get('kind')!r}")
@@ -190,6 +206,8 @@ class EGemma:
             raise BatteryError("battery.temperature is a number between 0 and 2")
         if not 0 <= temperature <= 2:
             raise BatteryError("battery.temperature is a number between 0 and 2")
+        if not isinstance(battery.get("reasoning", False), bool):
+            raise BatteryError("battery.reasoning is true or false")
         check_output(battery)
         for pin in ("model", "revision"):
             if pin in battery and not (isinstance(battery[pin], str) and battery[pin]):
@@ -201,6 +219,12 @@ class EGemma:
         """One /judge call, paced to eGemma's budget and retried while it is
         busy: the label at the frame's pointer, or an opening that says why
         there is none."""
+        if frame.battery.get("reasoning") and max_output_tokens <= ANSWER_TOKENS:
+            return Observation(
+                label=None,
+                opening=f"a cap of {max_output_tokens} output tokens leaves no room "
+                f"for a thought beside the answer's {ANSWER_TOKENS}",
+            )
         request = urllib.request.Request(
             self.url,
             data=json.dumps(payload(frame, prompt, max_output_tokens)).encode(),
