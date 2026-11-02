@@ -104,6 +104,8 @@ reach what it needs, and no call was made.
 | `BatteryError: the evaluator's address must not hold a user or password` | A battery's address names a user or a password. Gadfly refuses it without repeating it; take the credentials out of the address. |
 | `BatteryError: the evaluator's address 'http://127.0.0.1:99999' has no valid port` | `a port is a number from 0 to 65535`. |
 | `BatteryError: battery.timeout is a number of seconds, up to 3600` | The `local-json` battery's whole-call deadline is missing a positive number, or asks for more than an hour. |
+| `BatteryError: battery.reasoning is true or false` | The `egemma` battery reads `"reasoning": true` to let Gemma think first; Gemma has no levels. |
+| `BatteryError: battery.reasoning is one of none, minimal, low, medium, high, xhigh, max` | The `unified` battery passes `battery.reasoning` to the model as an effort, one of these words. |
 
 ---
 
@@ -145,6 +147,8 @@ answer. The run goes on, and `run` exits with 1 only when every call did.
 | `"eGemma answered 401"` or `"the router answered 401"` | The key or the token is wrong. |
 | `"eGemma answered 503 after 3 retries"` | eGemma stayed busy or has no model loaded; the battery waits and retries before it gives up. Check eGemma's own log. |
 | `"the router reports 'openrouter-data-policy'"` | No OpenRouter endpoint for that model keeps no data, and the frame does not consent to one that trains on its inputs. Choose another model, or pin endpoints with `battery.endpoints`. |
+| `"a cap of 64 output tokens leaves no room for a thought beside the answer's 64"` | With `"reasoning": true`, the `egemma` battery keeps 64 of each call's output tokens for the answer. Raise `--output-tokens`, to 4160 for a whole thought; no request was made. |
+| `"eGemma answered 422"` | eGemma refused the request as written. With `"reasoning": true`, an eGemma older than its reasoning change does not know the field: update eGemma. |
 
 ---
 

@@ -104,11 +104,16 @@ keeps it, and names where the label lives with a JSON pointer:
 }
 ```
 
-#### Gemma, thinking first
+#### Reasoning
 
-Gemma 4 has no reasoning levels: its thinking is on or off. With
-`reasoning: true` in the battery line, eGemma lets Gemma think before every
-answer, and only the answer is held to the schema:
+A frame asks its model to think in its battery line. The `unified` battery
+passes `battery.reasoning` to the model through the router as an effort, one
+of `none`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max`. A model that
+does not take a level refuses the call, which comes back as an opening.
+
+Gemma 4 has no levels: its thinking is on or off. With `reasoning: true` in
+the battery line, eGemma lets Gemma think before every answer, and only the
+answer is held to the schema:
 
 ```json
 "battery": {"kind": "egemma", "reasoning": true}
@@ -116,10 +121,12 @@ answer, and only the answer is held to the schema:
 
 `--output-tokens` stays the whole call's cap: the answer keeps 64 of it and
 the thought gets the rest, up to 4,096, so `--output-tokens 4160` gives a
-whole thought, and a cap with no room for one is an opening. Each record's
-`usage` counts the thought's tokens as `reasoning_tokens`. It needs an eGemma
-newer than its v0.5.0, whose `/judge` takes `reasoning`; an older one answers
-422, which the battery records as an opening.
+whole thought. A cap of 64 or less leaves no room for one, and each call
+opens before any request.
+
+Each record's `usage` counts the thought's tokens as `reasoning_tokens`. It
+needs an eGemma newer than its v0.5.0, whose `/judge` takes `reasoning`; an
+older one answers 422, which the battery records as an opening.
 
 #### Tendora's engine
 
