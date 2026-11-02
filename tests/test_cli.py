@@ -542,9 +542,11 @@ def test_report_and_plan_print_one_colon_to_a_line(capsys):
     ("command", "text", "said", "status"),
     [
         ("plan", '{"n": ' + "9" * 5000 + "}", "FrameError: file 'in.json' holds a number", 4),
-        ("plan", "[" * 100_000 + "]" * 100_000, "FrameError: file 'in.json' nests", 4),
+        # how deep Python's json reads differs by version and platform (3.14 on
+        # Linux reads this): whichever step refuses it, it is a refusal
+        ("plan", "[" * 100_000 + "]" * 100_000, "FrameError: ", 4),
         ("report", '{"n": ' + "9" * 5000 + "}\n", "RecordsError: file 'in.json' holds a number", 5),
-        ("portfolio", "[" * 100_000 + "]" * 100_000, "RecordsError: file 'in.json' nests", 5),
+        ("portfolio", "[" * 100_000 + "]" * 100_000, "RecordsError: ", 5),
     ],
 )
 def test_json_python_cannot_read_is_a_refusal_not_a_bug(
