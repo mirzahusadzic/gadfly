@@ -366,6 +366,13 @@ def _check_shape(record: Any) -> None:
             raise RecordsError(f"a record's {key} is not a str")
     if not isinstance(record["usage"], dict):
         raise RecordsError("a record's usage is not a dict")
+    if not all(
+        isinstance(key, str) and isinstance(value, int) and not isinstance(value, bool)
+        for key, value in record["usage"].items()
+    ):  # as run keeps them: whole numbers, by name
+        raise RecordsError("a record's usage counts are not whole numbers")
+    if "served" in record and not isinstance(record["served"], str):  # older records lack it
+        raise RecordsError("a record's served is not a str")
     for key in ("observation", "opening"):
         if record[key] is not None and not isinstance(record[key], str):
             raise RecordsError(f"a record's {key} is not a str")

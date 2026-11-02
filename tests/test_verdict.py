@@ -5,6 +5,7 @@ import itertools
 
 import pytest
 
+from midwife.errors import RecordsError
 from midwife.pipeline import judge, plan, situate
 from midwife.types import Record
 from midwife.verdict import (
@@ -246,6 +247,24 @@ def test_carried_evidence_counts_the_shams_that_held(raw):
     raw["interventions"]["sham"] = {"draws": 1}
     finding = verdict(situate(raw), ablation="grant")
     assert finding.evidence == ["ablation moved it decline -> grant; held under 1 sham"]
+
+
+@pytest.mark.parametrize(
+    "change, message",
+    [
+        ({"usage": {"output_tokens": "many"}}, "usage counts"),
+        ({"usage": {"output_tokens": True}}, "usage counts"),
+        ({"usage": {"output_tokens": 1.5}}, "usage counts"),
+        ({"served": {"not": "a string"}}, "served is not a str"),
+    ],
+)
+def test_record_metadata_no_battery_could_write_is_refused(raw, change, message):
+    # run keeps only whole-number counts and served text: a record holding
+    # anything else was written by something else
+    frame = situate(raw)
+    made = [r.as_dict() for r in records(frame, {"ablation": "grant"})]
+    with pytest.raises(RecordsError, match=message):
+        judge(frame, [*made[:-1], {**made[-1], **change}])
 
 
 @pytest.mark.parametrize(
