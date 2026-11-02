@@ -309,7 +309,7 @@ def test_a_first_ctrl_c_lets_the_calls_out_end_and_a_second_stops(raw):
         # each call that ended is kept, once, and the run stopped early; after
         # a first Ctrl-C every call made had ended, after a second none was
         # waited for, and the run says how many it left out
-        left = getattr(raised.value, "running", 0)
+        left = raised.value.running  # marked on either path
         assert len(kept) + left <= calls_needed(frame) and len(kept) < calls_needed(frame)
         assert len({(r.trial, r.run) for r in kept}) == len(kept)
         if presses == 1:

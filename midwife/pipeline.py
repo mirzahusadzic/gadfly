@@ -338,8 +338,10 @@ def run(
         pool.shutdown(wait=False, cancel_futures=True)
         if held and signal.getsignal(signal.SIGINT) is hold:
             signal.signal(signal.SIGINT, previous)
-    if interrupted:
-        raise KeyboardInterrupt
+    if interrupted:  # every call made has ended and is kept: none left running
+        interrupt = KeyboardInterrupt()
+        interrupt.running = 0
+        raise interrupt
     return ended(stopped)
 
 
