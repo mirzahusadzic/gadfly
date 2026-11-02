@@ -149,9 +149,9 @@ pr: unresolved
   levels: baseline hold, ablation merge
   evidence: ablation moved it hold -> merge
   evidence: not carried while 3 carriage checks are open
-  open: no hidden fallback: no bypass trial was declared
-  open: presentation invariance: no presentation trial was declared
-  open: specificity: no sham trial was declared
+  open: no hidden fallback (no bypass trial was declared)
+  open: presentation invariance (no presentation trial was declared)
+  open: specificity (no sham trial was declared)
 ```
 
 Each `open:` line is a check no trial has made yet. Under the default
@@ -251,7 +251,7 @@ $ uv run python examples/read.py \
 pr: carried
   levels: baseline hold, repeat hold, ablation merge, sham-1 hold, sham-2 hold, presentation hold, bypass merge
   evidence: ablation moved it hold -> merge; held under presentation, 2 shams
-  evidence: bypass moved it hold -> merge: no hidden fallback
+  evidence: bypass moved it hold -> merge, so no hidden fallback
 ```
 
 The prediction was a fallback, at about 55%. It was wrong: Gemma merged on
@@ -271,7 +271,7 @@ $ uv run python examples/read.py \
 pr: carried
   levels: baseline hold, repeat hold, ablation merge, sham-1 hold, sham-2 hold, presentation hold, bypass merge, control merge
   evidence: ablation moved it hold -> merge; held under presentation, 2 shams
-  evidence: bypass moved it hold -> merge: no hidden fallback
+  evidence: bypass moved it hold -> merge, so no hidden fallback
   evidence: the control moved it hold -> merge
 ```
 

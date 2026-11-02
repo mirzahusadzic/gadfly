@@ -128,8 +128,8 @@ $ uv run python examples/read.py \
 review: cooled
   levels: baseline request-changes, repeat request-changes, ablation request-changes, sham-1 request-changes, sham-2 request-changes, presentation request-changes, control approve
   evidence: ablation left it at request-changes
-  evidence: the control moved it request-changes -> approve: the scorer can tell
-  open: no hidden fallback: no bypass trial was declared
+  evidence: the control moved it request-changes -> approve, so the scorer can tell
+  open: no hidden fallback (no bypass trial was declared)
 ```
 
 **Cooled** says the ablation left the decision where it was while a control
@@ -151,7 +151,7 @@ review: unresolved
   evidence: ablation moved it request-changes -> approve; held under presentation, 2 shams
   evidence: the control moved it request-changes -> approve
   evidence: not carried while 1 carriage check is open
-  open: no hidden fallback: no bypass trial was declared
+  open: no hidden fallback (no bypass trial was declared)
 ```
 
 08 moves: cut the clock rule and Gemma approves. The shams and the presentation

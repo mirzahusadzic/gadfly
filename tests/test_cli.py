@@ -62,13 +62,13 @@ def test_plan_names_what_no_answers_can_give(capsys):
     assert main(["plan", str(ROOT / "examples/07-sql-rule.json")]) == 0
     assert capsys.readouterr().out.splitlines()[-2:] == [
         "never carried, whatever the answers: these stay open",
-        "  no hidden fallback: no bypass trial was declared",
+        "  no hidden fallback (no bypass trial was declared)",
     ]
     assert main(["plan", str(ROOT / "examples/upgrade.json")]) == 0
     assert "never" not in capsys.readouterr().out
     assert main(["plan", str(ROOT / "examples/07-sql-rule.json"), "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["unreachable"] == {
-        "carried": ["no hidden fallback: no bypass trial was declared"]
+        "carried": ["no hidden fallback (no bypass trial was declared)"]
     }
 
 
@@ -80,9 +80,9 @@ def test_plan_says_an_excluded_frame_is_never_carried_or_cooled(tmp_path, capsys
     assert main(["plan", str(path)]) == 0
     assert capsys.readouterr().out.splitlines()[-4:] == [
         "never carried, whatever the answers",
-        "  declared outside scope: refunds above the agent's limit",
+        "  declared outside scope (refunds above the agent's limit)",
         "never cooled, whatever the answers",
-        "  declared outside scope: refunds above the agent's limit",
+        "  declared outside scope (refunds above the agent's limit)",
     ]
 
 
@@ -267,7 +267,7 @@ def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     # the new file is the whole run, so it reports as one
     assert main(["report", REFUND, str(rest)]) == 0
     report = capsys.readouterr().out.splitlines()
-    assert report[1:3] == ["records: 8  planned calls: 8", "overall: carried"]
+    assert report[1:3] == ["records: 8 of 8 planned calls", "overall: carried"]
 
 
 @pytest.mark.parametrize(
@@ -473,3 +473,16 @@ def test_a_kept_record_no_file_can_hold_is_refused_before_a_call(tmp_path, capsy
     assert main([*argv, "--kept", str(kept), "--out", str(out)]) == 5
     assert "holds a lone surrogate" in capsys.readouterr().err
     assert not out.exists()
+
+
+def test_report_and_plan_print_one_colon_to_a_line(capsys):
+    # the label's colon, and no other: over every kept example run
+    seen = 0
+    for path in sorted((ROOT / "examples").glob("*.json")):
+        for records in sorted((ROOT / "examples/runs" / path.stem).glob("*.jsonl")):
+            for argv in (["report", str(path), str(records)], ["plan", str(path)]):
+                assert main(argv) == 0
+                lines = capsys.readouterr().out.splitlines()
+                seen += len(lines)
+                assert [line for line in lines if line.count(": ") > 1] == [], argv
+    assert seen > 1000

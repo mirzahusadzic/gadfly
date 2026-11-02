@@ -112,7 +112,7 @@ print(finding.obligations)
 - **`evidence`:** why this category, such as
   `ablation moved it decline -> grant`.
 - **`obligations`:** what did not run or did not pass, such as
-  `no hidden fallback: bypass left it at decline`.
+  `no hidden fallback (bypass left it at decline)`.
 
 With `eachAnchor`, once the ablation is read, the evidence ends with how the
 anchors carry it, read from each one cut alone: `each anchor carries it`,
@@ -174,7 +174,7 @@ A run made with `--stop-unresolved` asks the trials that most often fix a
 verdict first, then asks an input nothing more once every answer its other
 trials could give reads unresolved. The finding reads that category with the
 evidence and open checks all those answers share, and its last line names
-the trials left (`not asked: sham-1, sham-2, bypass; whatever they gave, it
+the trials left (`not asked (sham-1, sham-2, bypass); whatever they gave, it
 reads unresolved`).
 
 It never stops at another category: a trial not asked could still split, and

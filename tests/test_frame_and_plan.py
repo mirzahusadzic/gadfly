@@ -169,7 +169,7 @@ def test_a_sham_draws_from_the_kind_the_frame_names_for_its_anchor(raw):
     raw.update(carriage="all-checks", materialized=True)
     frame = parse(raw)
     assert not [t for t in plan(frame) if t.kind == "sham"]
-    assert unreachable(frame)[CARRIED][0].startswith("specificity: 0 sham trial(s), 2 declared")
+    assert unreachable(frame)[CARRIED][0].startswith("specificity (0 sham trial(s), 2 declared;")
     raw["interventions"]["sham"] = {"draws": 2, "kind": {"r2": "rule"}}
     frame = parse(raw)
     assert [t.removed for t in plan(frame) if t.kind == "sham"] == [("r3",), ("r4",)]

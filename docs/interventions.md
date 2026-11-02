@@ -187,7 +187,7 @@ moved the answer, one line says how the anchors carry it:
 |---|---|
 | every one moves it | `each anchor carries it` |
 | neither of two moves it | `the anchors carry it independently; either suffices` |
-| none of three or more moves it | `no anchor alone is needed: the others carry it without it` |
+| none of three or more moves it | `no anchor alone is needed; the others carry it without it` |
 | some do, some do not | `s1 carries it; s2 adds nothing alone` |
 | one has no agreed level | `s2 alone has no agreed level` |
 

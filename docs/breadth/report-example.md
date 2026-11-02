@@ -10,16 +10,16 @@ still open, each kept apart.
 $ uv run gadfly report examples/12-payroll-access.json \
     examples/runs/12-payroll-access/1.jsonl
 frame: payroll-access (202930b299ef9e09c878a7bec08524032b364c6d2fb91d94f72d8e018bff7cf7)
-records: 120  planned calls: 120
+records: 120 of 120 planned calls
 overall: unresolved
-  dana: ablation moved it allow -> deny; held under presentation, 2 shams
-  dana: bypass moved it allow -> unclear: no hidden fallback
-  dana: the control moved it allow -> deny
-  sam: ablation left it at deny, and so did the control: the scorer cannot tell
-  backup-job: ablation left it at allow
-  backup-job: the control moved it allow -> deny: the scorer can tell
-  obligation: sam: discrimination: the control left it at deny too
-  obligation: backup-job: no hidden fallback: bypass gave allow, not the designated opening (unclear)
+  in dana, ablation moved it allow -> deny; held under presentation, 2 shams
+  in dana, bypass moved it allow -> unclear, so no hidden fallback
+  in dana, the control moved it allow -> deny
+  in sam, ablation left it at deny, and so did the control; the scorer cannot tell
+  in backup-job, ablation left it at allow
+  in backup-job, the control moved it allow -> deny, so the scorer can tell
+  obligation: in sam, discrimination (the control left it at deny too)
+  obligation: in backup-job, no hidden fallback (bypass gave allow, not the designated opening, unclear)
 dana: carried
   level baseline: allow
   level repeat: allow
@@ -30,7 +30,7 @@ dana: carried
   level bypass: unclear
   level control: deny
   evidence: ablation moved it allow -> deny; held under presentation, 2 shams
-  evidence: bypass moved it allow -> unclear: no hidden fallback
+  evidence: bypass moved it allow -> unclear, so no hidden fallback
   evidence: the control moved it allow -> deny
 sam: unresolved
   level baseline: deny
@@ -41,8 +41,8 @@ sam: unresolved
   level presentation: deny
   level bypass: unclear
   level control: deny
-  evidence: ablation left it at deny, and so did the control: the scorer cannot tell
-  obligation: discrimination: the control left it at deny too
+  evidence: ablation left it at deny, and so did the control; the scorer cannot tell
+  obligation: discrimination (the control left it at deny too)
 backup-job: cooled
   level baseline: allow
   level repeat: allow
@@ -53,8 +53,8 @@ backup-job: cooled
   level bypass: allow
   level control: deny
   evidence: ablation left it at allow
-  evidence: the control moved it allow -> deny: the scorer can tell
-  obligation: no hidden fallback: bypass gave allow, not the designated opening (unclear)
+  evidence: the control moved it allow -> deny, so the scorer can tell
+  obligation: no hidden fallback (bypass gave allow, not the designated opening, unclear)
 ```
 
 Read it from the bottom, one requester at a time.

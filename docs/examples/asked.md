@@ -89,9 +89,9 @@ $ uv run python examples/read.py \
 review: carried
   levels: baseline request-changes, repeat request-changes, ablation approve, sham-1 request-changes, sham-2 request-changes, presentation request-changes, input-inversion approve, control unclear
   evidence: ablation moved it request-changes -> approve; held under presentation, 2 shams
-  evidence: input inversion moved it request-changes -> approve: the answer follows what is asked
+  evidence: input inversion moved it request-changes -> approve; the answer follows what is asked
   evidence: the control moved it request-changes -> unclear
-  open: no hidden fallback: no bypass trial was declared
+  open: no hidden fallback (no bypass trial was declared)
 ```
 
 Run 1 reads unresolved, its ablation split three approves to two unclears.

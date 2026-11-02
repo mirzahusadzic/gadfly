@@ -113,10 +113,10 @@ $ uv run python examples/read.py \
     --input approved
 approved: unresolved
   levels: baseline Yes, repeat Yes, ablation No, sham-1 Yes, sham-2 None, inversion No, control Yes
-  evidence: no agreed level in: sham-2
-  open: no hidden fallback: no bypass trial was declared
-  open: presentation invariance: no presentation trial was declared
-  open: monotonicity: the control removes the anchors and more, yet left it at Yes
+  evidence: no agreed level in sham-2
+  open: no hidden fallback (no bypass trial was declared)
+  open: presentation invariance (no presentation trial was declared)
+  open: monotonicity (the control removes the anchors and more, yet left it at Yes)
 ```
 
 That sham cut "Jordan keeps break-glass credentials in the password vault", a
@@ -132,11 +132,11 @@ $ uv run python examples/read.py \
     --input not-approved
 not-approved: unresolved
   levels: baseline No, repeat No, ablation No, sham-1 No, sham-2 No, inversion Yes, control No
-  evidence: ablation left it at No, and so did the control: the scorer cannot tell
+  evidence: ablation left it at No, and so did the control; the scorer cannot tell
   evidence: the inversion moved it No -> Yes, though the ablation did not
-  open: no hidden fallback: no bypass trial was declared
-  open: presentation invariance: no presentation trial was declared
-  open: discrimination: the control left it at No too
+  open: no hidden fallback (no bypass trial was declared)
+  open: presentation invariance (no presentation trial was declared)
+  open: discrimination (the control left it at No too)
 ```
 
 Cut the rule and it is still No, and cut everything and it is No again: a

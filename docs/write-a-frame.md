@@ -93,11 +93,11 @@ $ uv run gadfly run tests/fixtures/refund.json \
 $ uv run gadfly report tests/fixtures/refund.json \
     refund.jsonl
 frame: refund-receipt (dd916080072539784691a5232645b4d9c5b00e9cfdddd51650d15b347b385f85)
-records: 8  planned calls: 8
+records: 8 of 8 planned calls
 overall: carried
-  no-receipt: ablation moved it decline -> grant; held under presentation, 2 shams
-  no-receipt: bypass moved it decline -> unclear: no hidden fallback
-  no-receipt: the control moved it decline -> grant
+  in no-receipt, ablation moved it decline -> grant; held under presentation, 2 shams
+  in no-receipt, bypass moved it decline -> unclear, so no hidden fallback
+  in no-receipt, the control moved it decline -> grant
 no-receipt: carried
   level baseline: decline
   level repeat: decline
@@ -108,7 +108,7 @@ no-receipt: carried
   level bypass: unclear
   level control: grant
   evidence: ablation moved it decline -> grant; held under presentation, 2 shams
-  evidence: bypass moved it decline -> unclear: no hidden fallback
+  evidence: bypass moved it decline -> unclear, so no hidden fallback
   evidence: the control moved it decline -> grant
 ```
 

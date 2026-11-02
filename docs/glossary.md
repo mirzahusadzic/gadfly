@@ -107,7 +107,7 @@ $ uv run python examples/read.py examples/rung5.json \
 pr: carried
   levels: baseline hold, repeat hold, ablation merge, sham-1 hold, sham-2 hold, presentation hold, bypass merge
   evidence: ablation moved it hold -> merge; held under presentation, 2 shams
-  evidence: bypass moved it hold -> merge: no hidden fallback
+  evidence: bypass moved it hold -> merge, so no hidden fallback
 ```
 
 - **Level:** the label at least `agree` of a trial's calls gave; a trial

@@ -84,7 +84,7 @@ sql-rule (0fe4f0d4994453fabdf647d5c8f1ad90978f4d2c3e6d6d9c1def1fd676e3b1c1): 35 
   presentation body 62567e6fea7e  renames PAY-881 to OPS-217, customers to accounts, search.py to lookup.py
   control      body 6a515d35e727  cuts rule, diff
 never carried, whatever the answers: these stay open
-  no hidden fallback: no bypass trial was declared
+  no hidden fallback (no bypass trial was declared)
 ```
 
 When an input has more than 200,000 answers to read, `plan` says it read
@@ -170,11 +170,11 @@ of their own:
 $ uv run gadfly report examples/upgrade.json \
     examples/runs/upgrade/1.jsonl
 frame: quill-upgrade (569c71692864ab0fcfbfcd41baaa0011ee213bc0b90ca9bcb95dd40b7f085679)
-records: 40  planned calls: 40
+records: 40 of 40 planned calls
 overall: carried
-  pr: ablation moved it hold -> merge; held under presentation, 2 shams
-  pr: bypass moved it hold -> merge: no hidden fallback
-  pr: the control moved it hold -> merge
+  in pr, ablation moved it hold -> merge; held under presentation, 2 shams
+  in pr, bypass moved it hold -> merge, so no hidden fallback
+  in pr, the control moved it hold -> merge
 pr: carried
   level baseline: hold
   level repeat: hold
@@ -185,7 +185,7 @@ pr: carried
   level bypass: merge
   level control: merge
   evidence: ablation moved it hold -> merge; held under presentation, 2 shams
-  evidence: bypass moved it hold -> merge: no hidden fallback
+  evidence: bypass moved it hold -> merge, so no hidden fallback
   evidence: the control moved it hold -> merge
 ```
 

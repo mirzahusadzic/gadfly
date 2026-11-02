@@ -107,8 +107,8 @@ $ uv run python examples/read.py \
 review: cooled
   levels: baseline revise, repeat revise, ablation revise, sham-1 revise, sham-2 revise, presentation revise, bypass revise, control unclear
   evidence: ablation left it at revise
-  evidence: the control moved it revise -> unclear: the scorer can tell
-  open: no hidden fallback: bypass left it at revise
+  evidence: the control moved it revise -> unclear, so the scorer can tell
+  open: no hidden fallback (bypass left it at revise)
 ```
 
 Cooled, as predicted: the request to revise does not rest on the 300 ms
@@ -123,8 +123,8 @@ $ uv run python examples/read.py \
     examples/09-sync-sms.json --verdict 2
 review: unresolved
   levels: baseline revise, repeat revise, ablation revise, sham-1 revise, sham-2 revise, presentation revise, bypass None, control unclear
-  evidence: no agreed level in: bypass
-  open: no hidden fallback: the bypass has no agreed level to read against baseline
+  evidence: no agreed level in bypass
+  open: no hidden fallback (the bypass has no agreed level to read against baseline)
 ```
 
 Gadfly does not take the majority, average the calls or guess. A planned trial

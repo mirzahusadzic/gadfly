@@ -159,7 +159,7 @@ def test_an_anchor_that_moves_it_alone_where_the_ablation_did_not_is_said():
     [
         (
             lambda seen: "conditional" if seen else "open",
-            "no anchor alone is needed: the others carry it without it",
+            "no anchor alone is needed; the others carry it without it",
         ),
         (
             lambda seen: "conditional" if {"s16", "s24"} <= seen else "open",
@@ -201,7 +201,7 @@ def test_a_bypass_of_one_anchor_is_asked_beside_that_anchors_trial():
     assert bodies["bypass"] == bodies["ablation-s23"]
     assert finding.category == CARRIED
     assert finding.evidence[-2:] == [
-        "bypass moved it Sam -> open: no hidden fallback",
+        "bypass moved it Sam -> open, so no hidden fallback",
         "each anchor carries it",
     ]
 

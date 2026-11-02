@@ -49,7 +49,7 @@ def test_a_full_run_is_judged_from_its_records_alone(raw):
     # rule's words regardless still declines, so the fallback check stays open
     [finding] = judge(frame, [r.as_dict() for r in kept])
     assert finding.category == CARRIED
-    assert "no hidden fallback: bypass left it at decline" in finding.obligations
+    assert "no hidden fallback (bypass left it at decline)" in finding.obligations
 
 
 def test_a_scorer_that_reads_a_word_not_the_rule_is_caught_by_presentation(raw):

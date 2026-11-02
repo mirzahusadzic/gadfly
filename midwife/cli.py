@@ -126,8 +126,8 @@ def render_report(frame, records: list[dict[str, Any]]) -> str:
     unasked = _settled_calls(frame, records)
     rows = [
         f"frame: {frame.name} ({frame.hash})",
-        f"records: {len(records)}  planned calls: {calls_needed(frame)}"
-        + (f"  {unasked} calls missing, none able to change a level" if unasked else ""),
+        f"records: {len(records)} of {calls_needed(frame)} planned calls"
+        + (f"; {unasked} missing, none able to change a level" if unasked else ""),
         f"overall: {combined.category}",
     ]
     rows.extend(f"  {line}" for line in combined.evidence)

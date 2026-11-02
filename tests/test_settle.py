@@ -188,9 +188,7 @@ def test_the_command_line_settles_and_the_report_says_so(tmp_path, capsys):
     ]
     assert main(["report", str(path), str(out)]) == 0
     report = capsys.readouterr().out.splitlines()
-    assert report[1] == (
-        "records: 16  planned calls: 24  8 calls missing, none able to change a level"
-    )
+    assert report[1] == ("records: 16 of 24 planned calls; 8 missing, none able to change a level")
     assert report[2] == "overall: carried"
 
 
@@ -242,7 +240,7 @@ def test_a_short_stable_baseline_has_no_level(raw):
     short = [r for r in records if not (r.trial == "baseline" and r.run == 4)]
     [finding] = judge(frame, short)
     assert finding.levels["baseline"] is None and finding.levels["ablation"] == "grant"
-    assert finding.evidence[0] == "no agreed level in: baseline"
+    assert finding.evidence[0] == "no agreed level in baseline"
 
 
 def test_a_cumulative_that_holds_where_the_ablation_moved_opens_monotonicity(raw):
@@ -254,7 +252,7 @@ def test_a_cumulative_that_holds_where_the_ablation_moved_opens_monotonicity(raw
         return Observation(label=label, usage={"output_tokens": 1})
 
     raw["interventions"]["cumulative"] = ["r4"]
-    opened = "monotonicity: the cumulative removes the anchors and more, yet left it at decline"
+    opened = "monotonicity (the cumulative removes the anchors and more, yet left it at decline)"
     [listed] = judge(situate(raw), run(situate(raw), Rules(answer=odd), Budget(calls=99)).records)
     assert listed.levels["ablation"] == "grant" and listed.levels["cumulative"] == "decline"
     assert listed.category == "carried" and opened in listed.obligations
@@ -329,4 +327,4 @@ def test_a_short_stable_baseline_is_not_counted_as_settled(tmp_path, capsys):
     records.write_text("\n".join(short) + "\n")
     capsys.readouterr()
     assert main(["report", str(path), str(records)]) == 0
-    assert capsys.readouterr().out.splitlines()[1] == "records: 23  planned calls: 24"
+    assert capsys.readouterr().out.splitlines()[1] == "records: 23 of 24 planned calls"

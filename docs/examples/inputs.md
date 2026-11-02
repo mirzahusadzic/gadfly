@@ -108,17 +108,17 @@ $ uv run python examples/read.py \
 dana: carried
   levels: baseline allow, repeat allow, ablation deny, sham-1 allow, sham-2 allow, presentation allow, bypass unclear, control deny
   evidence: ablation moved it allow -> deny; held under presentation, 2 shams
-  evidence: bypass moved it allow -> unclear: no hidden fallback
+  evidence: bypass moved it allow -> unclear, so no hidden fallback
   evidence: the control moved it allow -> deny
 sam: unresolved
   levels: baseline deny, repeat deny, ablation deny, sham-1 deny, sham-2 deny, presentation deny, bypass unclear, control deny
-  evidence: ablation left it at deny, and so did the control: the scorer cannot tell
-  open: discrimination: the control left it at deny too
+  evidence: ablation left it at deny, and so did the control; the scorer cannot tell
+  open: discrimination (the control left it at deny too)
 backup-job: cooled
   levels: baseline allow, repeat allow, ablation allow, sham-1 allow, sham-2 allow, presentation allow, bypass allow, control deny
   evidence: ablation left it at allow
-  evidence: the control moved it allow -> deny: the scorer can tell
-  open: no hidden fallback: bypass gave allow, not the designated opening (unclear)
+  evidence: the control moved it allow -> deny, so the scorer can tell
+  open: no hidden fallback (bypass gave allow, not the designated opening, unclear)
 ```
 
 - **Dana is carried.** Cut the grant and she is denied; cut the directory entry

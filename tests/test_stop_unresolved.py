@@ -61,11 +61,11 @@ def test_a_reader_that_never_moves_stops_once_the_control_holds(raw):
     [finding] = judge(frame, stopped.records)
     [read] = judge(frame, whole.records)
     assert finding.category == read.category == UNRESOLVED
-    assert "ablation left it at decline, and so did the control: the scorer cannot tell" in (
+    assert "ablation left it at decline, and so did the control; the scorer cannot tell" in (
         finding.evidence
     )
     assert finding.evidence[-1] == (
-        "not asked: sham-1, sham-2, bypass; whatever they gave, it reads unresolved"
+        "not asked (sham-1, sham-2, bypass); whatever they gave, it reads unresolved"
     )
 
 
@@ -128,11 +128,11 @@ def test_judge_reads_a_missing_trial_as_unasked_only_when_no_answer_could_matter
     without = [r for r in records if r.trial not in ("sham-1", "bypass")]
     [finding] = judge(frame, without)
     assert finding.evidence[-1] == (
-        "not asked: sham-1, bypass; whatever they gave, it reads unresolved"
+        "not asked (sham-1, bypass); whatever they gave, it reads unresolved"
     )
     # with the control unasked as well, it could move and read cooled
     [finding] = judge(frame, [r for r in without if r.trial != "control"])
-    assert finding.evidence == ["no agreed level in: sham-1, bypass, control"]
+    assert finding.evidence == ["no agreed level in sham-1, bypass, control"]
 
 
 def test_unneeded_reads_a_trial_cut_short_as_still_open(raw):
@@ -159,8 +159,8 @@ def test_a_stopped_finding_names_each_anchor_alone_it_left(raw):
     )
     assert (len(stopped.records), stopped.unasked) == (2, 7)
     assert judge(frame, stopped.records)[0].evidence[-1] == (
-        "not asked: ablation, ablation-r2, ablation-r3, sham-1, presentation, bypass, "
-        "control; whatever they gave, it reads unresolved"
+        "not asked (ablation, ablation-r2, ablation-r3, sham-1, presentation, bypass, "
+        "control); whatever they gave, it reads unresolved"
     )
 
 
@@ -177,7 +177,7 @@ def test_a_stopped_stable_split_still_says_the_sessions_split(raw):
     assert len(stopped.records) == 3
     assert judge(frame, stopped.records)[0].evidence == [
         "the baseline and repeat sessions split (decline, grant, grant)",
-        "not asked: repeat, ablation, sham-1, sham-2, presentation, bypass, control; "
+        "not asked (repeat, ablation, sham-1, sham-2, presentation, bypass, control); "
         "whatever they gave, it reads unresolved",
     ]
 
@@ -224,7 +224,7 @@ def test_the_command_line_stops_and_says_so(tmp_path, capsys):
     assert main(["report", str(path), str(out)]) == 0
     report = capsys.readouterr().out
     assert "overall: unresolved" in report
-    assert "not asked: sham-1, sham-2, bypass; whatever they gave, it reads unresolved" in report
+    assert "not asked (sham-1, sham-2, bypass); whatever they gave, it reads unresolved" in report
 
 
 def test_a_run_with_nothing_to_ask_still_makes_its_file(tmp_path, capsys):
@@ -245,7 +245,7 @@ def test_a_run_with_nothing_to_ask_still_makes_its_file(tmp_path, capsys):
     ]
     assert out.read_text() == ""  # the whole run, with nothing in it
     assert main(["report", str(path), str(out)]) == 0
-    assert "not asked: baseline, ablation; whatever" in capsys.readouterr().out
+    assert "not asked (baseline, ablation); whatever" in capsys.readouterr().out
 
 
 class Never(Reader):
@@ -285,5 +285,5 @@ def test_a_trial_cut_short_reads_as_left_not_as_split(raw):
     ]
     [finding] = judge(frame, cut)
     assert finding.evidence[-1] == (
-        "not asked: bypass; not asked to the end: sham-1; whatever they gave, it reads unresolved"
+        "not asked (bypass); not asked to the end (sham-1); whatever they gave, it reads unresolved"
     )

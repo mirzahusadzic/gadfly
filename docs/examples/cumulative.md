@@ -139,9 +139,9 @@ $ uv run python examples/read.py \
 optimize: cooled
   levels: baseline database, repeat database, ablation database, cumulative api, sham-1 database, sham-2 database, presentation database, control api
   evidence: ablation left it at database
-  evidence: the control moved it database -> api: the scorer can tell
-  evidence: the cumulative ablation moved it to api: carried elsewhere too
-  open: no hidden fallback: no bypass trial was declared
+  evidence: the control moved it database -> api, so the scorer can tell
+  evidence: the cumulative ablation moved it to api; carried elsewhere too
+  open: no hidden fallback (no bypass trial was declared)
 ```
 
 The ablation left it at database, and the control moved it, so the reader can
@@ -165,7 +165,7 @@ debug: unresolved
   evidence: ablation moved it database -> unclear; held under presentation, 2 shams
   evidence: the control moved it database -> api
   evidence: not carried while 1 carriage check is open
-  open: no hidden fallback: no bypass trial was declared
+  open: no hidden fallback (no bypass trial was declared)
 ```
 
 It is carried but for the bypass neither frame declares. The fix and the

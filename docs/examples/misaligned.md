@@ -157,7 +157,7 @@ $ uv run python examples/read.py \
 debug: coupled but misaligned
   levels: baseline database, repeat database, ablation api, sham-1 database, sham-2 database, presentation database, control database
   evidence: ablation moved it database -> api, which the frame does not allow
-  open: no hidden fallback: no bypass trial was declared
+  open: no hidden fallback (no bypass trial was declared)
 ```
 
 Cut the only route and the answers do not go to unclear: they go to api, the

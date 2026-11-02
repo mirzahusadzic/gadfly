@@ -72,7 +72,7 @@ def test_the_inversion_tells_an_engine_that_drops_the_negation(frame):
     findings = read(frame, Rules(follows_sense=False))
     assert {f.category for f in findings} == {MISALIGNED}
     assert findings[0].evidence[-1] == (
-        "inversion left it at Yes: the answer does not follow the relation's sense"
+        "inversion left it at Yes; the answer does not follow the relation's sense"
     )
 
 
@@ -108,7 +108,7 @@ def test_turning_what_is_asked_turns_or_opens_each_answer(fixture, approved, ref
     assert findings["approved"].levels["input-inversion"] == approved
     assert findings["not-approved"].levels["input-inversion"] == refused
     assert {f.category for f in findings.values()} == {CARRIED}
-    assert "input inversion moved it Yes -> " + approved + ": the answer follows what is asked" in (
+    assert "input inversion moved it Yes -> " + approved + "; the answer follows what is asked" in (
         findings["approved"].evidence
     )
 
@@ -119,7 +119,7 @@ def test_an_engine_that_drops_what_is_asked_is_misaligned(fixture):
     findings = read(frame, Asked(reads_what_is_asked=False))
     assert {f.category for f in findings} == {MISALIGNED}
     assert findings[0].evidence[-1] == (
-        "input inversion left it at Yes: the answer does not follow what is asked"
+        "input inversion left it at Yes; the answer does not follow what is asked"
     )
 
 

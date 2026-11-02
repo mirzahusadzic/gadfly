@@ -108,12 +108,13 @@ def overall(findings: list[Finding]) -> Overall:
         raise UsageError("there is no finding to read")
     inputs = {f.input: f.category for f in findings}
     found = set(inputs.values())
-    evidence = [f"{f.input}: {line}" for f in findings for line in f.evidence]
+    evidence = [f"in {f.input}, {line}" for f in findings for line in f.evidence]
     if found == {CARRIED, COOLED}:
         carried = ", ".join(x for x, c in inputs.items() if c == CARRIED)
         cooled = ", ".join(x for x, c in inputs.items() if c == COOLED)
         evidence.insert(
-            0, f"carried on {carried}, cooled on {cooled}: the relation holds on some inputs only"
+            0,
+            f"carried on {carried}, cooled on {cooled}, so the relation holds on some inputs only",
         )
     category = next(
         (c for c in (OUTSIDE, MISALIGNED, UNRESOLVED) if c in found),
@@ -121,7 +122,9 @@ def overall(findings: list[Finding]) -> Overall:
     )
     shared = set.intersection(*(set(f.obligations) for f in findings))
     obligations = [o for o in findings[0].obligations if o in shared]
-    obligations += [f"{f.input}: {o}" for f in findings for o in f.obligations if o not in shared]
+    obligations += [
+        f"in {f.input}, {o}" for f in findings for o in f.obligations if o not in shared
+    ]
     return Overall(category, inputs, evidence, obligations)
 
 
@@ -209,7 +212,7 @@ def _unasked(
     if split and split not in evidence:
         evidence.insert(0, split)
     said = [
-        f"{what}: {', '.join(t for t, never in short.items() if never is unasked)}"
+        f"{what} ({', '.join(t for t, never in short.items() if never is unasked)})"
         for what, unasked in (("not asked", True), ("not asked to the end", False))
         if unasked in short.values()
     ]
@@ -275,7 +278,7 @@ def unreachable(frame: Frame) -> dict[str, list[str]] | None:
     for an input."""
     scope = _read_once(frame).get("outsideScope")
     if scope:  # the exclusion is the owner's: no answer reads either category
-        return {category: [f"declared outside scope: {scope}"] for category in (CARRIED, COOLED)}
+        return {category: [f"declared outside scope ({scope})"] for category in (CARRIED, COOLED)}
     blocked: dict[str, dict[str, list[str]]] = {CARRIED: {}, COOLED: {}}
     for x in frame.inputs:
         outcomes = _outcomes(frame, x["id"], {})
@@ -301,10 +304,10 @@ def unreachable(frame: Frame) -> dict[str, list[str]] | None:
         every = len(inputs) == len(frame.inputs)
         shared = set.intersection(*map(set, lists)) if every else set()
         said[category] = [o for o in lists[0] if o in shared] + [
-            f"{x}: {o}" for x, held in inputs.items() for o in held if o not in shared
+            f"in {x}, {o}" for x, held in inputs.items() for o in held if o not in shared
         ]
         if not every:
-            said[category] += [f"{x}: no answers come near" for x, h in inputs.items() if not h]
+            said[category] += [f"in {x}, no answers come near" for x, h in inputs.items() if not h]
     return said
 
 
@@ -443,17 +446,17 @@ def _reading(
     if _read_once(frame).get("outsideScope"):
         # The exclusion is the owner's; the trials do not test it, so only
         # its own check is open or settled here.
-        finding.evidence.append(f"declared outside scope: {_read_once(frame).get('outsideScope')}")
+        finding.evidence.append(f"declared outside scope ({_read_once(frame).get('outsideScope')})")
         check = _read_once(frame).get("scopeCheck")
         if check:
             finding.category = OUTSIDE
             finding.evidence.append(
-                f"{check['owner']} checked the scope at {check['encounter']}: "
+                f"{check['owner']} checked the scope at {check['encounter']} and found "
                 f"{check['statement']} ({check['source']})"
             )
         else:
             finding.obligations.append(
-                "independent scope check: the exclusion is declared, not tested"
+                "independent scope check (the exclusion is declared, not tested)"
             )
             if _read_once(frame).get("carriage", "all-checks") == "listed":
                 finding.category = OUTSIDE
@@ -521,7 +524,7 @@ def _read(
     # each anchor alone is evidence only: its level is read after the ablation
     missing = [t for t, v in levels.items() if v is None and not t.startswith("ablation-")]
     if missing:
-        say(f"no agreed level in: {', '.join(missing)}")
+        say(f"no agreed level in {', '.join(missing)}")
         return False
     base = levels["baseline"]
     split = _split(samples) if _read_once(frame)["standing"].get("stable") else None
@@ -529,7 +532,7 @@ def _read(
         say(split)
         return False
     if "repeat" in levels and levels["repeat"] != base:
-        say(f"repeat gave {levels['repeat']}, baseline {base}: this grain cannot tell")
+        say(f"repeat gave {levels['repeat']}, baseline {base}, so this grain cannot tell")
         return False
     if "presentation" in levels and levels["presentation"] != base:
         finding.category = MISALIGNED
@@ -554,16 +557,16 @@ def _ablated(frame: Frame, finding: Finding, levels: dict[str, str | None], base
         return
     if ablated == base:
         if levels.get("control") == base:
-            say(f"ablation left it at {base}, and so did the control: the scorer cannot tell")
-            finding.obligations.append(f"discrimination: the control left it at {base} too")
+            say(f"ablation left it at {base}, and so did the control; the scorer cannot tell")
+            finding.obligations.append(f"discrimination (the control left it at {base} too)")
         else:
             finding.category = COOLED
             say(f"ablation left it at {base}")
             if "control" in levels:
-                say(f"the control moved it {base} -> {levels['control']}: the scorer can tell")
+                say(f"the control moved it {base} -> {levels['control']}, so the scorer can tell")
             else:
                 finding.obligations.append(
-                    "discrimination: no control trial shows the scorer can move"
+                    "discrimination (no control trial shows the scorer can move)"
                 )
         for trial, _, _ in TURNS:
             if levels.get(trial) not in (None, base):
@@ -572,7 +575,7 @@ def _ablated(frame: Frame, finding: Finding, levels: dict[str, str | None], base
         # said whether or not the control moved: it is where else the decision rests
         if levels.get("cumulative") not in (None, base):
             say(
-                f"the cumulative ablation moved it to {levels['cumulative']}: carried elsewhere too"
+                f"the cumulative ablation moved it to {levels['cumulative']}; carried elsewhere too"
             )
         return
     moved = [t for t, v in levels.items() if t.startswith("sham-") and v != base]
@@ -586,7 +589,7 @@ def _ablated(frame: Frame, finding: Finding, levels: dict[str, str | None], base
         name, turned = trial.replace("-", " "), levels[trial]
         if turned == base:
             finding.category = MISALIGNED
-            say(f"{name} left it at {base}: the answer does not follow {follows}")
+            say(f"{name} left it at {base}; the answer does not follow {follows}")
             return
         if turned not in allowed_for(frame, base, key):
             finding.category = MISALIGNED
@@ -606,9 +609,9 @@ def _ablated(frame: Frame, finding: Finding, levels: dict[str, str | None], base
     for trial, _, follows in TURNS:
         if trial in levels:
             name = trial.replace("-", " ")
-            say(f"{name} moved it {base} -> {levels[trial]}: the answer follows {follows}")
+            say(f"{name} moved it {base} -> {levels[trial]}; the answer follows {follows}")
     if "bypass" in levels and _fallback(frame, levels, base) is None:
-        say(f"bypass moved it {base} -> {levels['bypass']}: no hidden fallback")
+        say(f"bypass moved it {base} -> {levels['bypass']}, so no hidden fallback")
     if "control" in levels:
         control = levels["control"]
         say(
@@ -638,7 +641,7 @@ def _alone(frame: Frame, levels: dict[str, str | None], base: str) -> list[str]:
     if len(idle) == len(alone):
         if len(alone) == 2:
             return ["the anchors carry it independently; either suffices"]
-        return ["no anchor alone is needed: the others carry it without it"]
+        return ["no anchor alone is needed; the others carry it without it"]
     parts = (
         [f"{', '.join(moving)} {'carries' if len(moving) == 1 else 'carry'} it"] if moving else []
     )
@@ -652,18 +655,18 @@ def _fallback(frame: Frame, levels: dict[str, str | None], base: str | None) -> 
     settled it (it moved, or reached the designated opening)."""
     bypass = levels.get("bypass")
     if "bypass" not in levels:
-        return "no hidden fallback: no bypass trial was declared"
+        return "no hidden fallback (no bypass trial was declared)"
     if bypass is None or base is None:
-        return "no hidden fallback: the bypass has no agreed level to read against baseline"
+        return "no hidden fallback (the bypass has no agreed level to read against baseline)"
     if "bypass" in _read_once(frame)["allowed"]:
         opening = allowed_for(frame, base, "bypass")
         if bypass not in opening:
             return (
-                f"no hidden fallback: bypass gave {bypass}, "
-                f"not the designated opening ({', '.join(opening)})"
+                f"no hidden fallback (bypass gave {bypass}, "
+                f"not the designated opening, {' or '.join(opening)})"
             )
     if bypass == base:  # nothing moved, even where the opening names the baseline answer
-        return f"no hidden fallback: bypass left it at {base}"
+        return f"no hidden fallback (bypass left it at {base})"
     return None
 
 
@@ -676,23 +679,23 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
     if fallback:
         open_.append(fallback)
     if "presentation" not in levels:
-        open_.append("presentation invariance: no presentation trial was declared")
+        open_.append("presentation invariance (no presentation trial was declared)")
     shams = sum(t.startswith("sham-") for t in levels)
     declared = _read_once(frame)["interventions"].get("sham")
     wanted = 0 if not declared else 1 if declared is True else declared["draws"]
     if not wanted:
-        open_.append("specificity: no sham trial was declared")
+        open_.append("specificity (no sham trial was declared)")
     elif shams < wanted:
         open_.append(
-            f"specificity: {shams} sham trial(s), {wanted} declared; "
+            f"specificity ({shams} sham trial(s), {wanted} declared; "
             "the body has no span left of the kind its shams draw from that is "
-            "not an anchor, bypassed or a fallback"
+            "not an anchor, bypassed or a fallback)"
         )
     # A sham that moved it is listed whatever the category: misaligned and
     # cooled are read before the shams, and must not hide them.
     moved = [t for t, v in levels.items() if t.startswith("sham-") and v not in (None, base)]
     if moved and base is not None:
-        open_.append(f"specificity: {', '.join(moved)} moved it too; the change is not specific")
+        open_.append(f"specificity ({', '.join(moved)} moved it too; the change is not specific)")
     # Cutting more should not move it less: a control that cuts the anchors and
     # more, or the cumulative (always the anchors and more), yet holds where the
     # ablation moved, leaves the ablation's move in doubt.
@@ -707,14 +710,14 @@ def _open_checks(frame: Frame, levels: dict[str, str | None], base: str | None) 
             and levels.get(trial) == base
         ):
             open_.append(
-                f"monotonicity: the {trial} removes the anchors and more, yet left it at {base}"
+                f"monotonicity (the {trial} removes the anchors and more, yet left it at {base})"
             )
     for trial, _, _ in TURNS:
         if trial in levels and levels[trial] is None:
-            open_.append(f"direction: the {trial.replace('-', ' ')} has no agreed level")
+            open_.append(f"direction (the {trial.replace('-', ' ')} has no agreed level)")
     if not _read_once(frame).get("materialized"):
         open_.append(
-            "materialization: the frame does not say the observation is "
-            "the form the recipient receives"
+            "materialization (the frame does not say the observation is "
+            "the form the recipient receives)"
         )
     return open_

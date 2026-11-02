@@ -54,7 +54,7 @@ without an answer is an opening, which `run` counts and names.
 | `gadfly: a record is a JSON object` or `gadfly: a record's trial is not a str` | A line of the records file is not a record Gadfly wrote: another file, or one edited by hand. |
 | ``gadfly: a portfolio reads `gadfly report --json` documents, and this is not one`` | Each file `portfolio` reads is the output of `gadfly report --json`. |
 | `gadfly: two records for pr/baseline run 2` | The same call is kept twice, usually from two files joined into one. Keep one of them. |
-| `unresolved`, with `no agreed level in: ...` | Fewer than `agree` answers matched in those trials: the reader split, or the calls came back as openings. The `openings` line of `run` says which. |
+| `unresolved`, with `no agreed level in ...` | Fewer than `agree` answers matched in those trials: the reader split, or the calls came back as openings. The `openings` line of `run` says which. |
 | `unresolved`, with only open checks beside it | Every trial agreed, but a check the category needs is still open. [Reading a verdict](reading-a-verdict.md) explains `carriage` and each check. |
 
 ---

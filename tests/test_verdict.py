@@ -70,7 +70,7 @@ def test_bypass_clears_the_fallback_check_only_at_its_designated_opening(raw):
     missed = verdict(situate(raw), ablation="grant", bypass="unclear")
     assert missed.category == CARRIED
     assert (
-        "no hidden fallback: bypass gave unclear, not the designated opening (opening)"
+        "no hidden fallback (bypass gave unclear, not the designated opening, opening)"
         in missed.obligations
     )
     reached = verdict(situate(raw), ablation="grant", bypass="opening")
@@ -82,7 +82,7 @@ def test_a_bypass_that_holds_at_baseline_settles_nothing(raw):
     # never moved read as one that did
     raw["allowed"]["bypass"] = ["decline"]
     held = verdict(situate(raw), ablation="grant", bypass="decline")
-    assert "no hidden fallback: bypass left it at decline" in held.obligations
+    assert "no hidden fallback (bypass left it at decline)" in held.obligations
     assert not [line for line in held.evidence if "bypass moved it" in line]
 
 
@@ -105,26 +105,28 @@ def test_cooled_needs_a_scorer_that_can_move(raw):
     # every trial declines: a blind scorer and an idle relation look the same
     blind = verdict(situate(raw))
     assert blind.category == COOLED
-    assert blind.obligations[-1] == "discrimination: no control trial shows the scorer can move"
+    assert blind.obligations[-1] == "discrimination (no control trial shows the scorer can move)"
     raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
     blind = verdict(situate(raw))
     assert blind.category == UNRESOLVED
     assert blind.evidence == [
-        "ablation left it at decline, and so did the control: the scorer cannot tell"
+        "ablation left it at decline, and so did the control; the scorer cannot tell"
     ]
     seeing = verdict(situate(raw), control="grant")
     assert seeing.category == COOLED
     assert not any(o.startswith("discrimination") for o in seeing.obligations)
     assert seeing.evidence == [
         "ablation left it at decline",
-        "the control moved it decline -> grant: the scorer can tell",
+        "the control moved it decline -> grant, so the scorer can tell",
     ]
 
 
 def test_outside_scope_keeps_its_scope_check_open(raw):
     raw["outsideScope"] = "the recipient never reads refunds"
     finding = verdict(situate(raw), ablation="grant")
-    assert finding.obligations == ["independent scope check: the exclusion is declared, not tested"]
+    assert finding.obligations == [
+        "independent scope check (the exclusion is declared, not tested)"
+    ]
 
 
 def test_misaligned_when_ablation_moves_it_where_the_frame_does_not_allow(raw):
@@ -148,7 +150,7 @@ def test_unresolved_when_repeat_differs(raw):
 
 def test_unresolved_when_a_trial_has_no_agreed_level(raw):
     finding = verdict(situate(raw), ablation=["grant", "decline", "unclear"])
-    assert finding.category == UNRESOLVED and finding.evidence == ["no agreed level in: ablation"]
+    assert finding.category == UNRESOLVED and finding.evidence == ["no agreed level in ablation"]
 
 
 def test_a_trial_without_records_has_no_level(raw):
@@ -194,9 +196,9 @@ def test_a_cumulative_that_moved_it_is_said_when_the_control_did_not(raw):
     raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
     finding = verdict(situate(raw), cumulative="grant")
     assert finding.category == UNRESOLVED
-    assert "discrimination: the control left it at decline too" in finding.obligations
+    assert "discrimination (the control left it at decline too)" in finding.obligations
     assert (
-        finding.evidence[-1] == "the cumulative ablation moved it to grant: carried elsewhere too"
+        finding.evidence[-1] == "the cumulative ablation moved it to grant; carried elsewhere too"
     )
 
 
@@ -205,7 +207,7 @@ def test_carried_without_a_sham_keeps_specificity_open(raw):
     finding = verdict(situate(raw), ablation="grant")
     assert finding.category == CARRIED
     # said as the other undeclared checks are, not as "0 sham trial(s), 0 declared"
-    assert "specificity: no sham trial was declared" in finding.obligations
+    assert "specificity (no sham trial was declared)" in finding.obligations
     # the evidence names only the trials that ran
     assert "sham" not in finding.evidence[0] and "presentation" in finding.evidence[0]
 
@@ -217,7 +219,7 @@ def test_carried_evidence_names_the_bypass_and_the_control_that_settled_it(raw):
     assert finding.category == CARRIED
     assert finding.evidence == [
         "ablation moved it decline -> grant; held under presentation, 2 shams",
-        "bypass moved it decline -> grant: no hidden fallback",
+        "bypass moved it decline -> grant, so no hidden fallback",
         "the control moved it decline -> grant",
     ]
 
@@ -227,10 +229,10 @@ def test_a_sham_that_moved_it_is_listed_under_every_category(raw):
     raw["allowed"] = {"ablation": ["unclear"]}
     misaligned = verdict(situate(raw), ablation="grant", sham_2="grant")
     assert misaligned.category == MISALIGNED
-    assert "specificity: sham-2 moved it too; the change is not specific" in misaligned.obligations
+    assert "specificity (sham-2 moved it too; the change is not specific)" in misaligned.obligations
     cooled = verdict(situate(raw), sham_1="grant")
     assert cooled.category == COOLED
-    assert "specificity: sham-1 moved it too; the change is not specific" in cooled.obligations
+    assert "specificity (sham-1 moved it too; the change is not specific)" in cooled.obligations
     held = verdict(situate(raw), ablation="unclear")
     assert not any("moved it too" in o for o in held.obligations)
 
@@ -302,18 +304,18 @@ def test_one_category_over_the_frames_inputs(raw):
     with pytest.raises(ValueError, match="no finding"):
         overall([])
     assert split.evidence == [
-        "carried on x1, cooled on x2: the relation holds on some inputs only",
-        "x1: x1 read carried",
-        "x2: x2 read cooled",
+        "carried on x1, cooled on x2, so the relation holds on some inputs only",
+        "in x1, x1 read carried",
+        "in x2, x2 read cooled",
     ]
     # what every input leaves open is said once; the rest names its input
     both = overall(
         [
-            found("x1", CARRIED, ["materialization: m", "no hidden fallback: f"]),
-            found("x2", CARRIED, ["materialization: m"]),
+            found("x1", CARRIED, ["materialization (m)", "no hidden fallback (f)"]),
+            found("x2", CARRIED, ["materialization (m)"]),
         ]
     )
-    assert both.obligations == ["materialization: m", "x1: no hidden fallback: f"]
+    assert both.obligations == ["materialization (m)", "in x1, no hidden fallback (f)"]
     # from a run: two inputs, one frame
     raw["inputs"].append({"id": "x2", "text": "Another customer without a receipt asks."})
     frame = situate(raw)
@@ -348,13 +350,13 @@ def test_judge_reads_each_record_a_fixed_number_of_times(raw):
 
 def test_every_category_keeps_its_open_checks_visible(raw):
     # misaligned by direction, with no bypass, presentation, sham or
-    # materialization: the open checks are listed, not dropped by the category
+    # materialization (the open checks are listed, not dropped by the category)
     raw["allowed"] = {"ablation": ["unclear"]}
     for key in ("repeat", "sham", "presentation", "bypass"):
         raw["interventions"].pop(key)
     misaligned = verdict(situate(raw), ablation="grant")
     assert misaligned.category == MISALIGNED
-    assert [o.split(":")[0] for o in misaligned.obligations] == [
+    assert [o.split(" (")[0] for o in misaligned.obligations] == [
         "no hidden fallback",
         "presentation invariance",
         "specificity",
@@ -375,7 +377,7 @@ def test_carried_and_cooled_need_their_checks_under_the_default_policy(raw):
     open_fallback = verdict(situate(raw), ablation="grant")
     assert open_fallback.category == UNRESOLVED
     assert open_fallback.evidence[-1] == "not carried while 1 carriage check is open"
-    assert open_fallback.obligations == ["no hidden fallback: bypass left it at decline"]
+    assert open_fallback.obligations == ["no hidden fallback (bypass left it at decline)"]
     assert verdict(situate(raw), ablation="grant", bypass="grant").category == CARRIED
     blind = verdict(situate(raw))
     assert blind.category == UNRESOLVED
@@ -406,13 +408,13 @@ def test_outside_scope_needs_the_owners_scope_check(raw):
     declared = verdict(situate(raw), ablation="grant")
     assert declared.category == UNRESOLVED
     assert declared.obligations == [
-        "independent scope check: the exclusion is declared, not tested"
+        "independent scope check (the exclusion is declared, not tested)"
     ]
     raw["scopeCheck"] = CHECKED
     checked = verdict(situate(raw), ablation="grant")
     assert checked.category == OUTSIDE and checked.obligations == []
     assert checked.evidence[-1] == (
-        "the refunds team checked the scope at the March policy review: "
+        "the refunds team checked the scope at the March policy review and found "
         "replies never quote the refund rule (scope review SR-4)"
     )
 
@@ -440,7 +442,7 @@ def superset_control(carriage="all-checks", control=("r1", "r2", "r3", "r4")):
     return situate(raw)
 
 
-MONOTONE = "monotonicity: the control removes the anchors and more, yet left it at decline"
+MONOTONE = "monotonicity (the control removes the anchors and more, yet left it at decline)"
 MOVED = {"*": "decline", "ablation": "grant", "bypass": "unclear"}
 
 
@@ -487,7 +489,7 @@ CARRIES = {"*": "decline", "ablation": "grant", "bypass": "unclear"}
 def test_an_inversion_that_reaches_what_the_frame_allows_carries_it():
     finding = verdict(inverting(), **CARRIES, inversion="grant")
     assert finding.category == CARRIED
-    assert "inversion moved it decline -> grant: the answer follows the relation's sense" in (
+    assert "inversion moved it decline -> grant; the answer follows the relation's sense" in (
         finding.evidence
     )
 
@@ -496,7 +498,7 @@ def test_an_inversion_that_leaves_the_answer_is_misaligned():
     finding = verdict(inverting(), **CARRIES, inversion="decline")
     assert finding.category == MISALIGNED
     assert finding.evidence[-1] == (
-        "inversion left it at decline: the answer does not follow the relation's sense"
+        "inversion left it at decline; the answer does not follow the relation's sense"
     )
 
 
@@ -512,7 +514,7 @@ def test_an_inversion_that_moves_it_where_the_frame_does_not_allow_is_misaligned
 def test_an_inversion_with_no_agreed_level_leaves_direction_open():
     finding = verdict(inverting(), **CARRIES, inversion=["grant", "unclear", "decline"])
     assert finding.category == UNRESOLVED
-    assert "direction: the inversion has no agreed level" in finding.obligations
+    assert "direction (the inversion has no agreed level)" in finding.obligations
 
 
 def test_on_the_cooled_side_an_inversion_is_evidence_only():
@@ -590,17 +592,17 @@ def test_unreachable_names_the_checks_that_keep_a_category_away(raw):
     raw["carriage"] = "all-checks"
     assert unreachable(situate(raw)) == {
         CARRIED: [
-            "materialization: the frame does not say the observation is the form "
-            "the recipient receives"
+            "materialization (the frame does not say the observation is the form "
+            "the recipient receives)"
         ],
-        COOLED: ["discrimination: no control trial shows the scorer can move"],
+        COOLED: ["discrimination (no control trial shows the scorer can move)"],
     }
     raw["materialized"] = True
     raw["interventions"]["control"] = ["r1", "r2", "r3"]
     assert unreachable(situate(raw)) == {}
     del raw["interventions"]["bypass"]
     assert unreachable(situate(raw)) == {
-        CARRIED: ["no hidden fallback: no bypass trial was declared"]
+        CARRIED: ["no hidden fallback (no bypass trial was declared)"]
     }
 
 
@@ -614,5 +616,5 @@ def test_unreachable_names_both_categories_an_exclusion_rules_out(raw, carriage)
     # the trials do not test the owner's exclusion: no answer reads carried or cooled
     raw["outsideScope"] = "refunds above the agent's limit"
     raw["carriage"] = carriage
-    said = ["declared outside scope: refunds above the agent's limit"]
+    said = ["declared outside scope (refunds above the agent's limit)"]
     assert unreachable(situate(raw)) == {CARRIED: said, COOLED: said}

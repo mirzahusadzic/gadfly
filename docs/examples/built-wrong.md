@@ -80,10 +80,10 @@ $ uv run python examples/read.py \
     --input debug
 debug: unresolved
   levels: baseline database, repeat database, ablation database, cumulative api, sham-1 database, sham-2 database, presentation database, control database
-  evidence: ablation left it at database, and so did the control: the scorer cannot tell
-  evidence: the cumulative ablation moved it to api: carried elsewhere too
-  open: no hidden fallback: no bypass trial was declared
-  open: discrimination: the control left it at database too
+  evidence: ablation left it at database, and so did the control; the scorer cannot tell
+  evidence: the cumulative ablation moved it to api; carried elsewhere too
+  open: no hidden fallback (no bypass trial was declared)
+  open: discrimination (the control left it at database too)
 ```
 
 The ablation left it at database, and so did the control. A reader that never

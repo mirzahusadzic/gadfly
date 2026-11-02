@@ -126,8 +126,8 @@ $ uv run python examples/read.py \
 drop: cooled
   levels: baseline drop, repeat drop, ablation drop, sham-1 drop, sham-2 drop, presentation drop, control unclear
   evidence: ablation left it at drop
-  evidence: the control moved it drop -> unclear: the scorer can tell
-  open: no hidden fallback: no bypass trial was declared
+  evidence: the control moved it drop -> unclear, so the scorer can tell
+  open: no hidden fallback (no bypass trial was declared)
 ```
 
 Cut the section and every call says unclear: the drop rests on the section, and

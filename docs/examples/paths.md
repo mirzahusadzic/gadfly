@@ -108,7 +108,7 @@ timeout: unresolved
   evidence: ablation moved it reject -> unclear; held under presentation, 2 shams
   evidence: the control moved it reject -> unclear
   evidence: not carried while 1 carriage check is open
-  open: no hidden fallback: bypass gave reject, not the designated opening (unclear)
+  open: no hidden fallback (bypass gave reject, not the designated opening, unclear)
 ```
 
 It is rejected, and stays rejected without the load tests, rightly: a longer

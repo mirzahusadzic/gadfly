@@ -110,7 +110,7 @@ enable: unresolved
   evidence: ablation moved it block -> unclear; held under presentation, 2 shams
   evidence: the control moved it block -> unclear
   evidence: not carried while 1 carriage check is open
-  open: no hidden fallback: bypass gave block, not the designated opening (unclear)
+  open: no hidden fallback (bypass gave block, not the designated opening, unclear)
 ```
 
 Blocking rests on the clause: cut it and every call says unclear. The
@@ -118,7 +118,7 @@ prediction was the opposite, a block on the GDPR prior. But the bypass blocks
 on every call: Gemma applies the agreement to Acme without the line that makes
 it Acme's.
 
-The open check, "bypass gave block, not the designated opening (unclear)", says
+The open check, "bypass gave block, not the designated opening, unclear", says
 that in Gadfly's words, and as the one carriage check still open it holds the
 verdict at unresolved. The bypass prediction was right.
 
