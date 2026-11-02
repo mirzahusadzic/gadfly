@@ -93,7 +93,7 @@ Gadfly its key; the address has a default.
   [eGemma](https://github.com/mirzahusadzic/egemma) as its README says. Gadfly calls it at
   `EGEMMA_URL`, by default `http://127.0.0.1:8000`, with the key from the
   file named by `EGEMMA_API_KEY_FILE`, else `EGEMMA_API_KEY`. A frame names it
-  as `"battery": {"kind": "egemma"}`, as every example does.
+  as `"battery": {"kind": "egemma"}`, as the examples Gemma reads do.
 - **The unified model router, for Claude, DeepSeek and OpenRouter's
   models:** install and start the [router](https://github.com/mirzahusadzic/codex-unified-model-router) as its README says.
   Gadfly calls it at `http://127.0.0.1:18766`, with its token from
@@ -127,7 +127,8 @@ uv run gadfly report examples/rung1.json check.jsonl
 
 Every example is a real experiment: a frame, the predictions written before
 its first call, and the records of each run, read by Gemma 4 26B through
-eGemma. Reading one back calls no model:
+eGemma, or for rung 19 by Muse Spark 1.3 Contributor through the router.
+Reading one back calls no model:
 
 ```text
 $ uv run python examples/read.py examples/07-sql-rule.json

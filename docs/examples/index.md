@@ -3,7 +3,9 @@
 Every example here is an experiment, not a demonstration: a frame, the
 predictions written before its first call, and the records of every run. The
 reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
-[eGemma](https://github.com/mirzahusadzic/egemma) on one machine, and reading an example back needs no model.
+[eGemma](https://github.com/mirzahusadzic/egemma) on one machine, except in rung
+19, read by Muse Spark 1.3 Contributor through the unified model router; reading
+an example back needs no model.
 
 - **Predictions first:** `examples/PREDICTIONS.md` holds what each step
   expected, written before its first call.
@@ -58,7 +60,7 @@ Each step shows four things, each printed from the files in `examples/` by
    `gadfly report` uses.
 
 Then what to take from it, and an experiment to try next. The scale is small
-on purpose: one model, one machine, three to five runs a frame, each trial
+on purpose: one model a frame, three to five runs a frame, each trial
 asked five times with four to agree, so each step says how narrow its result
 is.
 
@@ -70,7 +72,7 @@ and Gadfly.
 
 ### Every result at a glance
 
-| Example | Domain, grain | Does the decision rest on… | Read by Gemma, per run |
+| Example | Domain, grain | Does the decision rest on… | Per run, read by Gemma unless named |
 |---|---|---|---|
 | `upgrade.json`, `rung1`-`rung6` | dependencies, one changelog line | the line that removes a function our code calls? | carried; the rungs show each check closing |
 | `07-sql-rule.json` | code review, one repository rule | the rule against formatted SQL? | cooled: its training decides |
@@ -85,3 +87,4 @@ and Gadfly.
 | `16-restore-inversion.json` | access, one rule, two cases | the approval rule, and does the answer turn with it? | the answer turns every time; unresolved, a sham of the anchor's role and a default refusal |
 | `17-clock-asked.json` | code review, one rule, the diff asked about | the clock rule, and does the review turn with the diff? | carried in two runs of three; the review turns to approve |
 | `18`, `18b`, `18b2`, `18c` | access and incidents, two statements each | each of two statements, alone? | the restore rule carries it and the cited break-glass line has no agreed level (one run); elsewhere another route, a default or a split comes first |
+| `19-router-waist.json` | design review, a repository and a program that calls it | the second program, not the repository's name? | read by Muse: carried in every run, and the name changes nothing |
