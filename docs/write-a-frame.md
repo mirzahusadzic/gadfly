@@ -240,7 +240,7 @@ For problems after a run, see [Refused records](reading-a-verdict.md#refused-rec
 
 | Message | Fix |
 |---|---|
-| `unknown keys: [...]` | every top-level key is checked; remove the typo rather than hoping it is ignored |
+| `unknown keys (...)` | every top-level key is checked; remove the typo rather than hoping it is ignored |
 | `presentation renames nothing X reads` | map a word present in the body or every input |
 | `bypass removes exactly the anchors` | choose the separate connection whose removal should expose the opening |
 | `cumulative adds no span to the anchors` | cumulative must remove at least one additional span |

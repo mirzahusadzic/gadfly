@@ -202,7 +202,7 @@ def label_of(reply: dict, labels: tuple[str, ...]) -> tuple[str | None, str | No
         return None, f"the engine answered {texts}, which no label names"[:300]
     if status == "needs-reading":
         unread = reply.get("unread") if isinstance(reply.get("unread"), list) else []
-        return None, f"the engine answered needs-reading: {len(unread)} text(s) have no reading"
+        return None, f"the engine answered needs-reading, as {len(unread)} text(s) have no reading"
     return None, f"the engine answered {status}"[:300]
 
 
@@ -261,7 +261,7 @@ class Tendora:
             raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise BatteryError(f"the tendora battery reads no {sorted(unknown)}")
+            raise BatteryError(f"the tendora battery reads no {', '.join(sorted(unknown))}")
         if not isinstance(battery.get("url"), str):
             raise BatteryError("battery.url is the engine server's address on this machine")
         loopback(battery["url"], "the engine")
@@ -281,7 +281,7 @@ class Tendora:
         for x in frame.inputs:
             if asked(x["text"]) is None:
                 raise BatteryError(
-                    f"input {x['id']} is not 'Case: …' then 'Question: …', as the check asked it"
+                    f"input {x['id']} is not in the check's form, a Case line then a Question line"
                 )
         from ..interventions import plan
 
@@ -302,8 +302,8 @@ class Tendora:
                 )
             if asked(into) is None:
                 raise BatteryError(
-                    f"input {ids[sources[0]]} turns out of the form 'Case: …' then "
-                    "'Question: …', so the engine could not be asked it"
+                    f"input {ids[sources[0]]} turns out of the check's form, a Case line then "
+                    "a Question line, so the engine could not be asked it"
                 )
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
@@ -335,7 +335,7 @@ class Tendora:
             if isinstance(reason, TimeoutError):
                 return Observation(label=None, opening="the call passed its timeout")
             return Observation(
-                label=None, opening=f"the engine could not be reached: {type(reason).__name__}"
+                label=None, opening=f"the engine could not be reached ({type(reason).__name__})"
             )
         if len(body) > MAX_RESPONSE_BYTES:
             return Observation(label=None, opening="the answer exceeded the size cap")

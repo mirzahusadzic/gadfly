@@ -191,9 +191,9 @@ read from it.
 | Refusal | Meaning |
 |---|---|
 | `a record is a JSON object` | a stored row is not a record at all |
-| `a record lacks [...]` | the stored row is not a whole record; it is refused before its call is skipped |
+| `a record lacks ...` | the stored row is not a whole record; it is refused before its call is skipped |
 | `a record's ... is not a str` | a field holds the wrong kind of value; the row was written by something else |
-| `a record holds a label or an opening: not both, not neither` | a call ends in exactly one of the two |
+| `a record holds both a label and an opening, or neither` | a call ends in exactly one of the two |
 | `a record belongs to another frame` | any frame coordinate changed; the record's hash no longer names this frame |
 | `a record was made by X, not the Y battery` | a frame is read only by the battery its hash names |
 | `a record names an input or trial the plan does not have` | the plan or input id changed |

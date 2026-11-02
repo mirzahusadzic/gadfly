@@ -81,7 +81,7 @@ class LocalJSON:
             raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise BatteryError(f"the local-json battery reads no {sorted(unknown)}")
+            raise BatteryError(f"the local-json battery reads no {', '.join(sorted(unknown))}")
         if not isinstance(battery.get("url"), str):
             raise BatteryError("battery.url is the evaluator's address on this machine")
         loopback(battery["url"], "the evaluator")
@@ -119,7 +119,7 @@ class LocalJSON:
             if isinstance(reason, TimeoutError):
                 return Observation(label=None, opening="the call passed its timeout")
             return Observation(
-                label=None, opening=f"the evaluator could not be reached: {type(reason).__name__}"
+                label=None, opening=f"the evaluator could not be reached ({type(reason).__name__})"
             )
         if len(body) > MAX_RESPONSE_BYTES:
             return Observation(label=None, opening="the answer exceeded the size cap")

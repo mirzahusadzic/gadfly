@@ -29,7 +29,9 @@ def loopback(url: str, what: str) -> str:
     try:
         parsed.port  # noqa: B018 -- reading it checks it
     except ValueError:
-        raise BatteryError(f"{what}'s address has no valid port: {url}") from None
+        raise BatteryError(
+            f"{what}'s address has no valid port ({url})", "a port is a number from 0 to 65535"
+        ) from None
     if parsed.scheme != "http" or parsed.hostname not in LOOPBACK:
         raise BatteryError(f"{what} must be on this machine over http, not {url}")
     return url

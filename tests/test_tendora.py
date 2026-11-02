@@ -109,7 +109,7 @@ def test_a_control_that_cuts_every_statement_sends_none(raw):
             [],
             {"unread": [{"text": "x", "reason": "offline"}] * 3},
             None,
-            "the engine answered needs-reading: 3 text(s) have no reading",
+            "the engine answered needs-reading, as 3 text(s) have no reading",
         ),
     ],
 )
@@ -170,7 +170,7 @@ def test_each_record_names_what_served_it(raw, server):
         ({"battery": {"kind": "tendora", "url": "http://127.0.0.1:1", "scope": ""}}, "scope"),
         ({"battery": {"kind": "tendora", "url": "http://127.0.0.1:1", "offline": 1}}, "offline"),
         ({"battery": {"kind": "tendora", "url": "http://127.0.0.1:1", "model": "x"}}, "reads no"),
-        ({"inputs": [{"id": "x", "text": "Who notifies the customers?"}]}, "Case:"),
+        ({"inputs": [{"id": "x", "text": "Who notifies the customers?"}]}, "a Case line"),
     ],
 )
 def test_check_refuses_what_the_battery_must_not_serve(raw, change, message):
@@ -292,7 +292,7 @@ def test_check_refuses_two_inputs_turned_into_one_question():
 def test_check_refuses_a_rename_that_turns_an_input_out_of_its_form(presentation):
     # every turned input must still read Case: …, then Question: …, or the
     # trial could never be asked (pass 5, R08)
-    with pytest.raises(ValueError, match="input a turns out of the form"):
+    with pytest.raises(ValueError, match="input a turns out of the check's form"):
         Tendora().check(two_inputs(presentation))
 
 
@@ -359,7 +359,9 @@ def test_an_input_with_blank_words_or_a_carriage_return_is_not_asked(raw, text):
     # none, and a carriage return would be sent as part of them (pass 5, R09)
     assert asked(text) is None
     raw["inputs"][0]["text"] = text
-    with pytest.raises(ValueError, match="is not 'Case: …' then 'Question: …'"):
+    with pytest.raises(
+        ValueError, match="is not in the check's form, a Case line then a Question line"
+    ):
         Tendora().check(at(raw, "http://127.0.0.1:1"))
 
 

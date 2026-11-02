@@ -106,7 +106,7 @@ def test_a_failing_battery_gives_an_opening_never_a_label(raw):
         raise TimeoutError("slow")
 
     result = run(situate(raw), Rules(answer=fail), Budget(calls=21))
-    assert {r.opening for r in result.records} == {"battery failed: TimeoutError"}
+    assert {r.opening for r in result.records} == {"the battery failed (TimeoutError)"}
     assert {r.observation for r in result.records} == {None}
 
 

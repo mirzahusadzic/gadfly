@@ -267,6 +267,15 @@ A refusal: the message says what went wrong, each note what to do.
 class GadflyError(ValueError)
 ```
 
+#### noted
+
+Python's own `error`, with notes that say what to do: its constructor
+takes none.
+
+```python
+noted(error, *notes)
+```
+
 #### UsageError
 
 The command or the call asks for what cannot be done: a flag, a

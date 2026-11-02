@@ -357,7 +357,7 @@ def _check_shape(record: Any) -> None:
         raise RecordsError("a record is a JSON object")
     lacking = RECORD_KEYS - set(record)
     if lacking:
-        raise RecordsError(f"a record lacks {sorted(lacking)}")
+        raise RecordsError(f"a record lacks {', '.join(sorted(lacking))}")
     for key, kind in (("input", str), ("trial", str), ("prompt", str), ("raw", str)):
         if not isinstance(record[key], kind):
             raise RecordsError(f"a record's {key} is not a str")
@@ -394,13 +394,13 @@ def check_records(
             )
         observation, opening = record["observation"], record["opening"]
         if (observation is None) == (opening is None):
-            raise RecordsError("a record holds a label or an opening: not both, not neither")
+            raise RecordsError("a record holds both a label and an opening, or neither")
         if observation is not None and observation not in frame.labels:
             raise RecordsError(f"{observation!r} is not one of this frame's labels")
         if record["input"] not in inputs or record["trial"] not in bodies:
             raise RecordsError(
-                f"a record names an input or trial the plan does not have: "
-                f"{record['input']}/{record['trial']}"
+                "a record names an input or trial the plan does not have "
+                f"({record['input']}/{record['trial']})"
             )
         if record["body"] != bodies[record["trial"]]:
             raise RecordsError(f"a {record['trial']} record was made on another body")

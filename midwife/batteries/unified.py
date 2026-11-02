@@ -88,7 +88,7 @@ def _token() -> str:
             if key.strip() == "CODEX_ROUTER_TOKEN":
                 token = value.strip().strip("'\"")
     if not re.fullmatch(r"[0-9a-f]{64}", token):
-        raise BatteryError("no router token: set CODEX_ROUTER_TOKEN or install the router")
+        raise BatteryError("no router token", "set CODEX_ROUTER_TOKEN, or install the router")
     return token
 
 
@@ -243,14 +243,15 @@ class Unified:
             raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise BatteryError(f"the unified battery reads no {sorted(unknown)}")
+            raise BatteryError(f"the unified battery reads no {', '.join(sorted(unknown))}")
         model = battery.get("model")
         if not isinstance(model, str) or not model.strip():
             raise BatteryError("battery.model is a slug the router serves (GET /v1/models)")
         if not model.startswith(ROUTED_PREFIXES):
             raise BatteryError(
-                f"{model} is an OpenAI slug: the router reaches OpenAI only with the "
-                "caller's Codex sign-in, which this battery does not send"
+                f"{model} is an OpenAI slug",
+                "the router reaches OpenAI only with the caller's Codex sign-in, which this "
+                "battery does not send; choose another model",
             )
         if "tools" in battery:  # any value, even an empty list: the critic sends none
             raise BatteryError("the critic sends no tools")
@@ -297,7 +298,7 @@ class Unified:
                             "OpenRouter account's provider setting); naming it under "
                             "trainsOnInputs allows one that may train",
                         )
-                    return Observation(label=None, opening=f"router diagnostic: {diagnostic}")
+                    return Observation(label=None, opening=f"the router reports {diagnostic}")
                 lines = _lines(response, deadline, self.clock)
                 text, usage, opening, model = parse_stream(lines, deadline, self.clock)
                 endpoint = response.headers.get("x-provider-name", "")[:200]
@@ -308,7 +309,7 @@ class Unified:
             if isinstance(reason, TimeoutError):
                 return Observation(label=None, opening="the call passed its timeout")
             return Observation(
-                label=None, opening=f"the router could not be reached: {type(reason).__name__}"
+                label=None, opening=f"the router could not be reached ({type(reason).__name__})"
             )
         served = " via ".join(part for part in (model, endpoint) if part)
         if opening:

@@ -72,7 +72,10 @@ def _key() -> str:
         return key
     key = os.environ.get("EGEMMA_API_KEY") or os.environ.get("WORKBENCH_API_KEY")
     if not key:
-        raise BatteryError("no eGemma key: set EGEMMA_API_KEY_FILE or EGEMMA_API_KEY")
+        raise BatteryError(
+            "no eGemma key",
+            "name a file that holds it in EGEMMA_API_KEY_FILE, or set EGEMMA_API_KEY",
+        )
     return key
 
 
@@ -175,7 +178,7 @@ class EGemma:
             raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise BatteryError(f"the eGemma battery reads no {sorted(unknown)}")
+            raise BatteryError(f"the eGemma battery reads no {', '.join(sorted(unknown))}")
         temperature = battery.get("temperature", 0.7)
         if isinstance(temperature, bool) or not isinstance(temperature, int | float):
             raise BatteryError("battery.temperature is a number between 0 and 2")
@@ -217,7 +220,7 @@ class EGemma:
                 if isinstance(reason, TimeoutError):
                     return Observation(label=None, opening="the call passed its timeout")
                 return Observation(
-                    label=None, opening=f"eGemma could not be reached: {type(reason).__name__}"
+                    label=None, opening=f"eGemma could not be reached ({type(reason).__name__})"
                 )
         if len(body) > MAX_RESPONSE_BYTES:
             return Observation(label=None, opening="the answer exceeded the size cap")

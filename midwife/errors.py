@@ -25,6 +25,14 @@ class GadflyError(ValueError):
             self.add_note(note)
 
 
+def noted[E: BaseException](error: E, *notes: str) -> E:
+    """Python's own `error`, with notes that say what to do: its constructor
+    takes none."""
+    for note in notes:
+        error.add_note(note)
+    return error
+
+
 class UsageError(GadflyError):
     """The command or the call asks for what cannot be done: a flag, a
     budget, standard input."""

@@ -29,8 +29,11 @@ INSIDE = {
 def raised(path: Path):
     for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
         if isinstance(node, ast.Raise) and node.exc is not None:
-            target = node.exc.func if isinstance(node.exc, ast.Call) else node.exc
-            if isinstance(node.exc, ast.Call) or target.id[0].isupper():
+            exc = node.exc
+            if isinstance(exc, ast.Call) and getattr(exc.func, "id", None) == "noted":
+                exc = exc.args[0]  # Python's own error, with notes
+            target = exc.func if isinstance(exc, ast.Call) else exc
+            if isinstance(exc, ast.Call) or target.id[0].isupper():
                 yield node.lineno, target.id if isinstance(target, ast.Name) else target.attr
 
 
@@ -71,3 +74,53 @@ def test_a_battery_that_refuses_with_a_value_error_is_a_battery_error(raw):
     framed = situate(raw)
     with pytest.raises(BatteryError, match="serves no refunds"):
         run(framed, Picky(), Budget(calls=calls_needed(framed)))
+
+
+def said(path: Path):
+    # each refusal's own words: its message and its notes, as written
+    source = path.read_text(encoding="utf-8")
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call):
+            call = node.exc
+            if getattr(call.func, "id", None) == "noted":  # Python's own error, with notes
+                call, notes = call.args[0], call.args[1:]
+                words = [*call.args, *notes] if isinstance(call, ast.Call) else notes
+            else:
+                words = call.args
+            for word in words:
+                yield (
+                    node.lineno,
+                    ast.get_source_segment(source, word),
+                    "".join(
+                        part.value
+                        for part in ast.walk(word)
+                        if isinstance(part, ast.Constant) and isinstance(part.value, str)
+                    ),
+                )
+
+
+def test_a_message_and_its_notes_hold_no_colon_and_no_python_list():
+    # `Type: message` has its one colon; a list prints as words, not ['r9']
+    stray = []
+    for path in sorted((ROOT / "midwife").rglob("*.py")):
+        for line, source, words in said(path):
+            if ": " in words or "sorted(" in source and "join" not in source:
+                stray.append(f"{path.relative_to(ROOT)}:{line} {source[:60]}")
+    assert stray == []
+
+
+def test_an_openings_reason_holds_no_colon():
+    # run says it on one line: `openings: 3 of 8 calls, most often "<reason>" (3)`
+    stray = []
+    for path in sorted((ROOT / "midwife").rglob("*.py")):
+        source = path.read_text(encoding="utf-8")
+        for node in ast.walk(ast.parse(source)):
+            if isinstance(node, ast.keyword) and node.arg == "opening":
+                words = "".join(
+                    part.value
+                    for part in ast.walk(node.value)
+                    if isinstance(part, ast.Constant) and isinstance(part.value, str)
+                )
+                if ": " in words:
+                    stray.append(f"{path.relative_to(ROOT)}:{node.value.lineno}")
+    assert stray == []

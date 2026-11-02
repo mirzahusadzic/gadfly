@@ -206,11 +206,11 @@ def test_run_says_when_its_calls_came_back_as_openings(tmp_path, capsys):
     assert main([*argv, "--out", str(out)]) == 1  # every call opened: nothing was read
     assert capsys.readouterr().out.splitlines()[1] == (
         "openings: 8 of 8 calls, most often "
-        '"the reader could not be reached: ConnectionRefused" (8)'
+        '"the reader could not be reached (ConnectionRefused)" (8)'
     )
     assert main([*argv, "--out", str(tmp_path / "again.jsonl"), "--json"]) == 1
     assert json.loads(capsys.readouterr().out)["openings"] == {
-        "the reader could not be reached: ConnectionRefused": 8
+        "the reader could not be reached (ConnectionRefused)": 8
     }
     (tmp_path / "fine").mkdir()
     status, _ = run_refund(tmp_path / "fine")
@@ -223,7 +223,10 @@ def test_a_budget_below_the_plan_is_a_refusal(tmp_path, capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "3"]
     assert main([*argv, "--out", str(out)]) == 2
     captured = capsys.readouterr()
-    assert captured.err == "UsageError: the plan needs 8 calls; the budget allows 3\n"
+    assert captured.err.splitlines() == [
+        "UsageError: the plan needs 8 calls; the budget allows 3",
+        "gadfly plan shows the calls a whole run needs",
+    ]
     assert captured.out == "" and not out.exists()
 
 
@@ -407,7 +410,7 @@ def test_ctrl_c_keeps_what_was_made_and_says_how_to_finish(tmp_path, capsys):
     assert main([*argv, "--out", str(out)]) == 130
     err = capsys.readouterr().err
     assert err.startswith("KeyboardInterrupt: stopped by Ctrl-C after 2 calls")
-    assert f"--kept {out}" in err
+    assert f"finish with {out} as --kept" in err
     assert "Traceback" not in err and len(out.read_text().splitlines()) == 2
 
 
@@ -468,5 +471,5 @@ def test_a_kept_record_no_file_can_hold_is_refused_before_a_call(tmp_path, capsy
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     capsys.readouterr()
     assert main([*argv, "--kept", str(kept), "--out", str(out)]) == 5
-    assert "a kept record holds a lone surrogate" in capsys.readouterr().err
+    assert "holds a lone surrogate" in capsys.readouterr().err
     assert not out.exists()

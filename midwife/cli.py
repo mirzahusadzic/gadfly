@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .errors import BatteryError, FrameError, GadflyError, RecordsError, UsageError
+from .errors import BatteryError, FrameError, GadflyError, RecordsError, UsageError, noted
 from .frame import schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
@@ -75,9 +75,11 @@ def load_battery(spec: str):
     try:
         battery = target() if isinstance(target, type) else target
     except TypeError as error:  # a class that needs arguments is no battery to name here
-        raise BatteryError(f"{spec} could not be made: {error}") from None
+        raise BatteryError(f"{spec} could not be made ({error})") from None
     if not isinstance(battery, Battery):
-        raise BatteryError(f"{spec} is not a battery: it needs a name, check() and observe()")
+        raise BatteryError(
+            f"{spec} is not a battery", "a battery has a name, check() and observe()"
+        )
     return battery
 
 
@@ -85,7 +87,9 @@ def read_text(path: str, refusal: type[GadflyError]) -> str:
     """A file's text, or standard input's for `-`; text that is not UTF-8
     is a `refusal`."""
     if path == "-" and sys.stdin.isatty():  # nothing is piped in: say so rather than wait
-        raise UsageError("- reads standard input, which is a terminal: pipe the file in")
+        raise UsageError(
+            "- reads standard input, which is a terminal", "pipe the file in, or name it"
+        )
     try:
         return sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
     except UnicodeDecodeError:
@@ -99,7 +103,7 @@ def load_json(path: str, text: str, refusal: type[GadflyError], line: int = 1) -
         return json.loads(text)
     except json.JSONDecodeError as error:
         where = f"line {line + error.lineno - 1}, column {error.colno}"
-        raise refusal(f"{_named(path)} is not JSON at {where}: {error.msg}") from None
+        raise refusal(f"{_named(path)} is not JSON at {where} ({error.msg})") from None
 
 
 def _named(path: str) -> str:
@@ -217,18 +221,26 @@ def command_run(args) -> int:
             json.dumps(old, ensure_ascii=False).encode("utf-8")
         except UnicodeEncodeError:
             raise RecordsError(
-                f"{args.kept}: a kept record holds a lone surrogate, which no file can hold"
+                f"a record in {args.kept} holds a lone surrogate, which no file can hold",
+                "correct or drop that record, then run again",
             ) from None
     out = Path(args.out)
     streamed = args.out == "-"  # the records own standard output; the rest is a message
     if streamed and args.json:
-        raise UsageError("--json and --out - both print to standard output: choose a file")
+        raise UsageError(
+            "--json and --out - both print to standard output", "choose a file for --out"
+        )
     if not streamed and out.exists():  # a new file: never another run's
-        raise FileExistsError(f"{out} exists: kept records are never written over")
+        raise noted(
+            FileExistsError(f"{out} exists already"),
+            "kept records are never written over; choose a new --out, or finish it with --kept",
+        )
     if not streamed and not out.parent.is_dir():  # found out before a call is spent
-        raise FileNotFoundError(f"{out.parent} is not a folder: make it, or choose another --out")
+        raise noted(
+            FileNotFoundError(f"{out.parent} is not a folder"), "make it, or choose another --out"
+        )
     if not streamed and not os.access(out.parent, os.W_OK):
-        raise PermissionError(f"{out.parent} cannot be written: choose another --out")
+        raise noted(PermissionError(f"{out.parent} cannot be written"), "choose another --out")
     where, say = ("standard output", sys.stderr) if streamed else (str(out), sys.stdout)
 
     def opened():
@@ -265,15 +277,14 @@ def command_run(args) -> int:
         )
     except KeyboardInterrupt:
         # every record made so far is already in its file: say how to finish
-        kept_where = (
-            "no record was kept"
-            if not files
-            else f"they went to {where}; finish with them as --kept and a new --out"
-            if streamed
-            else f"they are in {out}; finish with --kept {out} and a new --out"
-        )
-        raise KeyboardInterrupt(
-            f"stopped by Ctrl-C after {len(made)} calls; {kept_where}"
+        stopped = f"stopped by Ctrl-C after {len(made)} calls"
+        if not files:
+            raise KeyboardInterrupt(f"{stopped}, and no record was kept") from None
+        raise noted(
+            KeyboardInterrupt(
+                f"{stopped}; they went to {where}" if streamed else f"{stopped}; they are in {out}"
+            ),
+            f"finish with {'them' if streamed else out} as --kept and a new --out",
         ) from None
     finally:
         if not streamed:
@@ -282,7 +293,7 @@ def command_run(args) -> int:
         if progress and made:
             print(file=sys.stderr)
     if not result.records and result.stopped:  # nothing was spent: a refusal, not a run
-        raise UsageError(result.stopped)
+        raise UsageError(result.stopped, "gadfly plan shows the calls a whole run needs")
     if not files:  # nothing was left to ask: the new file, empty or kept, is still the whole run
         files.append(opened())
         files[0].writelines(json.dumps(old, ensure_ascii=False) + "\n" for old in kept)
@@ -501,7 +512,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         named = [vars(args).get(key) for key in ("frame", "records", "kept")]
         if [*named, *vars(args).get("reports", [])].count("-") > 1:
-            raise UsageError("standard input is read once: name one - at most")
+            raise UsageError("standard input is read once", "name - for one file at most")
         return args.func(args)
     except (GadflyError, OSError, KeyboardInterrupt) as error:
         return refused(error, "--json" in argv)
@@ -560,7 +571,8 @@ class Parser(argparse.ArgumentParser):
         # argparse's words hold colons: "argument --calls: invalid int value: 'x'"
         message = re.sub(r"^argument (\S+): ", r"\1, ", message)
         message = message.replace("the following arguments are required: ", "missing ")
-        raise UsageError(message.replace(": ", " "), f"{self.prog} --help shows its arguments")
+        plain = message.replace(": ", " ")
+        raise UsageError(plain, f"{self.prog} --help shows its arguments")
 
 
 if __name__ == "__main__":

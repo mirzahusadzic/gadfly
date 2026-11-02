@@ -116,7 +116,9 @@ def run(
     wanted = set(ids) if only is None else set(only)
     unknown = wanted - set(ids)
     if unknown:
-        raise UsageError(f"the plan has no trial {sorted(unknown)}")
+        raise UsageError(
+            f"the plan has no trial {', '.join(sorted(unknown))}", "gadfly plan lists its trials"
+        )
     made = [record.as_dict() if isinstance(record, Record) else record for record in kept]
     for record in made:  # a row that is no record is refused before anything is counted
         _check_shape(record)
@@ -341,7 +343,7 @@ def _observe(battery: Battery, frame: Frame, text: str, cap: int) -> Observation
     try:
         observation = battery.observe(frame, text, cap)
     except Exception as error:  # noqa: BLE001 — the failure is the observation
-        return Observation(label=None, opening=f"battery failed: {type(error).__name__}")
+        return Observation(label=None, opening=f"the battery failed ({type(error).__name__})")
     if not isinstance(observation, Observation):
         return Observation(label=None, opening="the battery returned no observation")
     kinds = {"label": (str, type(None)), "opening": (str, type(None)), "raw": str,

@@ -107,7 +107,7 @@ def test_a_proxy_in_the_environment_is_not_used(raw, token, router, monkeypatch)
 def test_a_diagnostic_answer_is_an_opening(raw, token, router):
     fake = router((200, {"x-codex-router-diagnostic": "upstream unavailable"}, answer("grant")))
     observation = Unified(fake.url).observe(situate(raw), "p", 16)
-    assert observation.opening == "router diagnostic: upstream unavailable"
+    assert observation.opening == "the router reports upstream unavailable"
 
 
 def test_an_error_status_is_an_opening(raw, token, router):

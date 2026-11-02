@@ -256,10 +256,13 @@ def test_carried_evidence_counts_the_shams_that_held(raw):
         (lambda r: r.__class__(**{**r.as_dict(), "run": 3}), "outside the quorum"),
         (lambda r: r.__class__(**{**r.as_dict(), "battery": "other"}), "made by other"),
         (lambda r: r.__class__(**{**r.as_dict(), "observation": "approved"}), "not one of"),
-        (lambda r: r.__class__(**{**r.as_dict(), "opening": "also"}), "a label or an opening"),
+        (
+            lambda r: r.__class__(**{**r.as_dict(), "opening": "also"}),
+            "both a label and an opening",
+        ),
         (
             lambda r: r.__class__(**{**r.as_dict(), "observation": None, "opening": None}),
-            "a label or an opening",
+            "both a label and an opening",
         ),
     ],
 )
