@@ -48,8 +48,10 @@ category:
 
 1. **unresolved:** a planned trial has no agreed level, except a one-anchor
    trial, which is evidence only. With `stable`, the baseline and repeat
-   sessions must not split, and a repeat level that differs from the
-   baseline is unresolved too: the grain cannot tell the levels apart.
+   sessions must not split, and a call among them that came back as an
+   opening splits them, as that session gave no answer. A repeat level that
+   differs from the baseline is unresolved too: the grain cannot tell the
+   levels apart.
 2. **coupled but misaligned:** presentation moved the observation, or
    placement did.
 3. **coupled but misaligned:** ablation moved it outside `allowed`, or, for

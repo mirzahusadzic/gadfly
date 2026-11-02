@@ -77,6 +77,7 @@ read from them.
 | `RecordsError: a record of trial 'baseline' was made on another body` | The trial's text differs from the one the record was made on. The frame, or the way Gadfly plans it, changed after the run. |
 | `RecordsError: a record is a JSON object` or `RecordsError: a record's trial is not a str` | A line of the records file is not a record Gadfly wrote: another file, or one edited by hand. |
 | `RecordsError: file 'records.jsonl' is not JSON at line 3, column 1 (Expecting value)` | That line is not a record; the file was cut short or edited. |
+| `RecordsError: file 'records.jsonl' is not UTF-8 text` | The file was written by another tool or edited in another encoding. Save it as UTF-8. |
 | `RecordsError: two records for input 'pr', trial 'baseline', run 2` | The same call is kept twice, usually from two files joined into one. Keep one of them. |
 | `RecordsError: a kept record of trial 'baseline' was made from another prompt` | A record passed as `--kept` was made with a prompt this frame does not plan for that call. Resume only from the records this frame's own run made. |
 | `RecordsError: file 'kept.jsonl' holds a lone surrogate at line 3` | `no file can hold it; correct or drop that record, then run again`. That record holds text, often from another tool, that cannot be written back, and nothing was spent. |
@@ -114,6 +115,8 @@ was spent. These are Python's own errors, said in plain words.
 | `FileNotFoundError: file 'frame.json' does not exist` | Check the path, or the file that the environment variable `EGEMMA_API_KEY_FILE` names. |
 | `FileNotFoundError: folder 'runs' does not exist` | `make it, or choose another --out`. |
 | `PermissionError: folder 'runs' cannot be written` | `choose another --out`. The folder is not yours to write. |
+| `IsADirectoryError: 'runs' is a folder, not a file` | Name the file in the folder, not the folder. |
+| `NotADirectoryError: path 'notes.txt/frame.json' runs through a file, not a folder` | A part of the path that should be a folder is a file. Check the path. |
 | `FileExistsError: file 'records.jsonl' exists already` | `kept records are never written over; choose a new --out, or finish it with --kept`. To finish a stopped run, pass its file as `--kept` with a new `--out`. |
 
 ---

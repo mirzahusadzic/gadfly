@@ -393,7 +393,7 @@ def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
             and any(pattern.fullmatch(text.partition(" ")[2]) for pattern in printed)
         )
 
-    quoted, unknown, astray, section = 0, [], [], ""
+    quoted, unknown, astray, section, rowed = 0, [], [], "", set()
     for row in (ROOT / "docs/troubleshooting.md").read_text(encoding="utf-8").splitlines():
         if row.startswith("### "):
             section = row[4:]
@@ -405,6 +405,7 @@ def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
             kind, _, message = text.partition(": ")
             if kind in classes:
                 astray += [] if classes[kind] == section else [f"{kind} under {section}"]
+                rowed.add(kind)
             elif kind == "stopped":  # why a run stopped, as run says it
                 pass
             elif text.startswith('"') and text.endswith('"'):
@@ -417,6 +418,7 @@ def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
         if note:
             unknown += [] if known(note[1]) else [note[1]]
     assert quoted > 30 and unknown == [] and astray == []
+    assert set(classes) - rowed == set()  # and every class Gadfly raises has a row
 
 
 def test_the_exit_statuses_troubleshooting_tables_are_the_codes():
