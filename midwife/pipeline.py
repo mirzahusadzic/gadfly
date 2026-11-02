@@ -120,7 +120,7 @@ def run(
     except GadflyError:
         raise
     except ValueError as error:  # a battery refuses as the protocol says, with a ValueError
-        raise BatteryError(str(error)) from error
+        raise BatteryError(f"battery {battery.name!r} refused this frame", str(error)) from error
     ids = trial_ids(frame)
     wanted = set(ids) if only is None else set(only)
     unknown = wanted - set(ids)
@@ -352,11 +352,11 @@ def _warned(result: RunResult, level: int = 3) -> RunResult:
     openings = Counter(r.opening for r in result.records if r.opening is not None)
     if openings:
         reason, times = openings.most_common(1)[0]
-        many = sum(openings.values())
+        many, often = sum(openings.values()), "once" if times == 1 else f"({times} times)"
         warnings.warn(
             OpeningWarning(
                 f"{many} of {len(result.records)} calls came back as openings, "
-                f"most often {reason!r} ({times} times)"
+                f"most often {reason!r} {often}"
             ),
             stacklevel=level,
         )

@@ -67,14 +67,17 @@ def test_a_battery_that_refuses_with_a_value_error_is_a_battery_error(raw):
         name = raw["battery"]["kind"]
 
         def check(self, frame):
-            raise ValueError("this battery serves no refunds")  # as the protocol says
+            raise ValueError("this battery serves no refunds: none")  # as the protocol says
 
         def observe(self, frame, prompt, max_output_tokens):
             raise AssertionError("never asked")
 
     framed = situate(raw)
-    with pytest.raises(BatteryError, match="serves no refunds"):
+    with pytest.raises(BatteryError) as refused:
         run(framed, Picky(), Budget(calls=calls_needed(framed)))
+    # Gadfly's words in the message, the battery's own in a note
+    assert str(refused.value) == f"battery {raw['battery']['kind']!r} refused this frame"
+    assert refused.value.__notes__ == ["this battery serves no refunds: none"]
 
 
 def said(path: Path):
@@ -135,7 +138,7 @@ UNQUOTED = {
     "what", "where", "at", "key", "stopped", "self.prog", "line", "pin", "status_line",
     "error.msg", "error.code", "tried", "said", "MAX_TIMEOUT", "frame.quorum", "len(unread)",
     "type(reason).__name__", "type(error).__name__", "type(value).__name__", "kind.__name__",
-    "many", "times", "made", "result.planned", "len(result.records)",
+    "many", "often", "made", "result.planned", "len(result.records)",
     "', '.join(EFFORTS)", "', '.join(wrong)",
 }  # fmt: skip
 
@@ -194,7 +197,7 @@ def test_a_run_says_what_it_did_not_do_as_asked_with_warnings(raw):
     raw["battery"] = {"kind": "rule-reader"}
     frame = situate(raw)
     n = calls_needed(frame)
-    with pytest.warns(OpeningWarning, match=rf"^{n} of {n} calls came back as openings"):
+    with pytest.warns(OpeningWarning, match=rf"^{n} of {n} calls came back as .* \({n} times\)$"):
         run(frame, Unreachable(), Budget(calls=n))
     with pytest.warns(StoppedWarning, match=rf"^the run stopped after 3 of {n} calls; the token"):
         run(frame, Unreachable(), Budget(calls=n, output_tokens_per_call=10, tokens=30))
@@ -204,3 +207,22 @@ def test_a_run_says_what_it_did_not_do_as_asked_with_warnings(raw):
             run(frame, Unreachable(), Budget(calls=calls_needed(frame)))
     assert (OpeningWarning.exit, StoppedWarning.exit) == (1, 3)
     assert issubclass(OpeningWarning, GadflyWarning) and issubclass(GadflyWarning, UserWarning)
+
+
+def test_one_opening_is_said_once(raw):
+    from midwife.errors import OpeningWarning
+    from tests.fixtures.refund import RuleReader, Unreachable
+
+    class OnceUnreachable(RuleReader):
+        calls = 0
+
+        def observe(self, frame, prompt, max_output_tokens):
+            OnceUnreachable.calls += 1
+            if OnceUnreachable.calls == 1:
+                return Unreachable().observe(frame, prompt, max_output_tokens)
+            return super().observe(frame, prompt, max_output_tokens)
+
+    raw["battery"] = {"kind": "rule-reader"}
+    frame = situate(raw)
+    with pytest.warns(OpeningWarning, match=r"\(ConnectionRefused\)' once$"):
+        run(frame, OnceUnreachable(), Budget(calls=calls_needed(frame)))

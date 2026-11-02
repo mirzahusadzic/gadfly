@@ -113,8 +113,12 @@ def read_text(path: str, refusal: type[GadflyError]) -> str:
             return Path(path).read_text(encoding="utf-8")
         # stdin's own reader passes bad bytes on as surrogates: decode them here
         stream = getattr(sys.stdin, "buffer", None)
-        return stream.read().decode("utf-8") if stream else sys.stdin.read()
-    except UnicodeDecodeError:
+        if stream:
+            return stream.read().decode("utf-8")
+        text = sys.stdin.read()  # a caller's own text stream: no bytes beneath it
+        text.encode("utf-8")  # a lone surrogate is a byte that was not UTF-8
+        return text
+    except (UnicodeDecodeError, UnicodeEncodeError):
         raise refusal(f"{_named(path)} is not UTF-8 text") from None
 
 

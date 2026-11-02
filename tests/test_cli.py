@@ -661,3 +661,11 @@ def test_a_battery_s_own_ctrl_c_at_once_ends_the_command_as_one(tmp_path, capsys
     assert main([*argv, "--parallel", "2", "--out", str(out)]) == 130
     err = capsys.readouterr().err
     assert err.startswith("KeyboardInterrupt: stopped by Ctrl-C") and "unanswered" not in err
+
+
+def test_text_standard_input_holding_surrogates_is_not_utf8(capsys, monkeypatch):
+    # a caller's own text stream, no bytes beneath it, read as standard input is
+    bad = b'{"name": "\xff"}'.decode("utf-8", "surrogateescape")
+    monkeypatch.setattr("sys.stdin", io.StringIO(bad))
+    assert main(["plan", "-"]) == 4
+    assert capsys.readouterr().err == "FrameError: standard input is not UTF-8 text\n"
