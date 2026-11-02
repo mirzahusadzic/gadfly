@@ -4,14 +4,17 @@ Gemma gave through eGemma, kept under examples/runs/."""
 
 import json
 import re
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from pathlib import Path
 
 import pytest
 
 from examples.read import runs_of, verdict
+from midwife import pipeline
 from midwife.cli import load_records
+from midwife.frame import digest
 from midwife.pipeline import calls_needed, judge, overall, situate
+from midwife.types import Budget, Observation
 from midwife.verdict import CARRIED as CAR
 from midwife.verdict import COOLED as COO
 from midwife.verdict import MISALIGNED as MIS
@@ -87,6 +90,42 @@ def test_no_kept_run_reads_what_plan_calls_unreachable(path):
     never = unreachable(frame)
     for run in runs_of(path):
         assert overall(judge(frame, load_records(str(run)))).category not in never
+
+
+class Replay:
+    """Gives each prompt the answers a kept run kept for it, in the order a
+    run asks them (the baseline's before the repeat's, which share a prompt)."""
+
+    def __init__(self, frame, records):
+        self.name, self.answers = frame.battery["kind"], defaultdict(deque)
+        first = {"baseline": 0, "repeat": 1}
+        for r in sorted(records, key=lambda r: (first.get(r["trial"], 2), r["trial"], r["run"])):
+            self.answers[r["prompt"]].append(r)
+
+    def check(self, frame):
+        pass
+
+    def observe(self, frame, prompt, max_output_tokens):
+        r = self.answers[digest(prompt)].popleft()
+        return Observation(
+            label=r["observation"], opening=r["opening"], raw=r["raw"], usage=r["usage"]
+        )
+
+
+def test_a_run_that_stops_at_unresolved_reads_every_kept_run_alike():
+    # Gemma's own answers, asked again: stopping changes no category and saves calls
+    asked = kept = 0
+    for path in FRAMES:
+        frame = situate(json.loads(path.read_text(encoding="utf-8")))
+        for each in runs_of(path):
+            records = load_records(str(each))
+            budget = Budget(calls=calls_needed(frame))
+            replay = Replay(frame, records)
+            stopped = pipeline.run(frame, replay, budget, stop_unresolved=True).records
+            read = [f.category for f in judge(frame, stopped)]
+            assert read == [f.category for f in judge(frame, records)], each
+            asked, kept = asked + len(stopped), kept + len(records)
+    assert (asked, kept) == (4690, 6290)
 
 
 def test_only_the_approved_restore_raises_monotonicity():

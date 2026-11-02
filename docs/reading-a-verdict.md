@@ -170,6 +170,17 @@ a level`), whatever left them missing. Any trial a stopped run left short has
 a level only once its missing calls could not change it, and under `stable`
 the baseline and repeat need every call.
 
+A run made with `--stop-unresolved` asks the trials that most often fix a
+verdict first, then asks an input nothing more once every answer its other
+trials could give reads unresolved. The finding reads that category with the
+evidence and open checks all those answers share, and its last line names
+the trials left (`not asked: sham-1, sham-2, bypass; whatever they gave, it
+reads unresolved`).
+
+It never stops at another category: a trial not asked could still split, and
+a split reads unresolved. Any run whose missing trials could change nothing
+reads the same way, so a stopped run and a whole run name one category.
+
 ---
 
 ### Refused records

@@ -11,7 +11,8 @@ that calls out. It never starts a call the budget cannot cover, stops
 between calls when the caller says so, and hands each record to `on_record`
 as soon as it exists, so the caller keeps what was spent even if the run
 stops early. Asked to, it skips the calls a settled trial no longer needs,
-and makes several calls at once for a battery that takes them.
+stops an input once it reads unresolved whatever its other trials give, and
+makes several calls at once for a battery that takes them.
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ from .frame import Frame, digest, parse
 from .interventions import Trial, prompt, trial_ids
 from .interventions import plan as plan_trials
 from .types import Battery, Budget, Observation, Record
-from .verdict import Finding, _check_shape, _fixed, check_records
+from .verdict import Finding, _check_shape, _fixed, check_records, unneeded
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
 
@@ -41,16 +42,23 @@ overall = overall_of
 RAW_LIMIT = 2_000
 
 
+# Asked to stop an input once it reads unresolved, a run asks these first,
+# as they most often fix a verdict, then the rest in the plan's order.
+DECISIVE = ("baseline", "repeat", "ablation", "control", "presentation", "placement")
+
+
 @dataclass(frozen=True)
 class RunResult:
     """What a run made: its records, the calls it planned, why it stopped
     early (None when it reached the end of its plan), and how many planned
-    calls it skipped because their trial had settled."""
+    calls it skipped because their trial had settled or their input could
+    read nothing but unresolved."""
 
     records: tuple[Record, ...]
     planned: int
     stopped: str | None  # None when it reached the end of its plan
     settled: int = 0  # calls not made: their trial's level could no longer change
+    unasked: int = 0  # calls not made: their input reads unresolved whatever they give
 
 
 def calls_needed(frame: Frame) -> int:
@@ -69,6 +77,7 @@ def run(
     only: Iterable[str] | None = None,
     kept: Iterable[Record | dict] = (),
     settle: bool = False,
+    stop_unresolved: bool = False,
     parallel: int = 1,
 ) -> RunResult:
     """Every planned trial of every input, `quorum` times each, in a fixed
@@ -80,12 +89,15 @@ def run(
     `settle` makes no more calls for a trial whose level can no longer
     change (`settled`); the verdict reads it as it would read every call.
     Under `standing.stable` the baseline and repeat always run whole, as
-    their split is read across all their calls. `parallel` makes up to that
-    many calls at once, for a battery that says it takes them (a
-    `concurrent` attribute that is true); records are handed on as each
-    call ends, and a call already started is always kept: a first Ctrl-C
-    starts no more calls, keeps those already out, then goes on as
-    KeyboardInterrupt, and a second stops at once."""
+    their split is read across all their calls. `stop_unresolved` asks the
+    `DECISIVE` trials first and asks an input nothing more once every answer
+    its other trials could give reads unresolved (`unneeded`); the verdict
+    reads the category a whole run would, and names the trials not asked.
+    `parallel` makes up to that many calls at once, for a battery that says
+    it takes them (a `concurrent` attribute that is true); records are
+    handed on as each call ends, and a call already started is always kept:
+    a first Ctrl-C starts no more calls, keeps those already out, then goes
+    on as KeyboardInterrupt, and a second stops at once."""
     named = frame.battery["kind"]
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise ValueError(f"this frame asks for the {named} battery, not {battery.name}")
@@ -117,6 +129,8 @@ def run(
         )
     everything = plan(frame)
     trials = [trial for trial in everything if trial.id in wanted]
+    if stop_unresolved:  # stable: the rest keep the plan's order
+        trials.sort(key=lambda t: DECISIVE.index(t.id) if t.id in DECISIVE else len(DECISIVE))
     # Kept records stand for calls, so they are read as judge will read them,
     # and, being this run's own, each must name the prompt its call was planned with.
     check_records(frame, made, {trial.id: trial.body_hash for trial in everything})
@@ -148,16 +162,36 @@ def run(
     whole = {"baseline", "repeat"} if frame.raw["standing"].get("stable") else set()
     cap = budget.output_tokens_per_call
     records: list[Record] = []
-    spent = skipped = 0
+    spent = skipped = unasked = 0
+    spared: dict[tuple, frozenset[str]] = {}  # each input's unneeded trials, by its fixed ones
+
+    def fixed(key: tuple[str, str]) -> bool:
+        # a trial whose level can no longer change, whatever its other calls give
+        n = answered[key]
+        return n >= frame.quorum or (
+            key[1] not in whole and _fixed(tally[key], n, frame.quorum, frame.agree, frame.labels)
+        )
 
     def needless(x: dict[str, str], trial: Trial) -> bool:
         # asked to settle, a trial whose level can no longer change asks no more
         key = (x["id"], trial.id)
-        return (
-            settle
-            and trial.id not in whole
-            and _fixed(tally[key], answered[key], frame.quorum, frame.agree, frame.labels)
-        )
+        return settle and trial.id not in whole and fixed(key)
+
+    def done_with(x: dict[str, str], trial: Trial) -> bool:
+        # asked to stop, an input that reads unresolved whatever comes asks no more;
+        # read from its fixed trials alone, once for each set of them
+        if not stop_unresolved:
+            return False
+        known = {
+            t: [*tally[x["id"], t].elements()]
+            + [None] * (answered[x["id"], t] - tally[x["id"], t].total())
+            for t in ids
+            if answered[x["id"], t] and fixed((x["id"], t))
+        }
+        state = (x["id"], tuple((t, tuple(sorted(map(str, s)))) for t, s in sorted(known.items())))
+        if state not in spared:
+            spared[state] = unneeded(frame, x["id"], known)
+        return trial.id in spared[state]
 
     def blocked(running: int) -> str | None:
         # why no further call may start while `running` calls are still out
@@ -185,12 +219,15 @@ def run(
         return None
 
     def ended(stopped: str | None = None) -> RunResult:
-        return RunResult(tuple(records), planned, stopped, skipped)
+        return RunResult(tuple(records), planned, stopped, skipped, unasked)
 
     if parallel == 1:
         for x, trial, index in calls:
             if needless(x, trial):
                 skipped += 1
+                continue
+            if done_with(x, trial):
+                unasked += 1
                 continue
             stopped = blocked(0)
             if stopped:
@@ -244,6 +281,10 @@ def run(
                         if needless(x, trial):
                             queue.popleft()
                             skipped += 1
+                            continue
+                        if done_with(x, trial):
+                            queue.popleft()
+                            unasked += 1
                             continue
                         stopped = "cancelled" if interrupted else blocked(len(running))
                         if stopped:

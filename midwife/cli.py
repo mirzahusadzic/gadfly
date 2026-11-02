@@ -214,6 +214,7 @@ def command_run(args) -> int:
             only=args.only,
             kept=kept,
             settle=args.settle,
+            stop_unresolved=args.stop_unresolved,
             parallel=args.parallel,
         )
     except KeyboardInterrupt:
@@ -249,6 +250,7 @@ def command_run(args) -> int:
             "made": len(result.records),
             "kept": len(kept) if files else 0,
             "settled": result.settled,
+            "unasked": result.unasked,
             "stopped": result.stopped,
             "openings": dict(openings.most_common()),
         }
@@ -260,6 +262,11 @@ def command_run(args) -> int:
         print(f"wrote {len(result.records)}/{result.planned} calls to {out}{before}")
         if result.settled:
             print(f"settled: {result.settled} calls not made, their trials' levels already fixed")
+        if result.unasked:
+            print(
+                f"unasked: {result.unasked} calls not made, "
+                "their input unresolved whatever they gave"
+            )
         if openings:
             reason, count = openings.most_common(1)[0]
             total = sum(openings.values())
@@ -370,6 +377,11 @@ def parser() -> argparse.ArgumentParser:
     execute.add_argument("--kept", help="records already made: their calls are not made again")
     execute.add_argument(
         "--settle", action="store_true", help="stop a trial once its level cannot change"
+    )
+    execute.add_argument(
+        "--stop-unresolved",
+        action="store_true",
+        help="ask the decisive trials first; stop an input once nothing can resolve it",
     )
     execute.add_argument(
         "--parallel", type=int, default=1, help="calls at once, for a battery that takes them"

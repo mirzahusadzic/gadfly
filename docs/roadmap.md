@@ -14,6 +14,7 @@ each answering one need and keeping its contracts.
 | Calls at once | `gadfly run --parallel N` | the budget, and every call already made |
 | Dead ends before a call | `gadfly plan` | the verdict rules, read over every answer each trial could give |
 | Shams of another kind | `"sham": {"draws": n, "kind": {anchor: kind}}` | old frames' hashes and plans |
+| Stopping at unresolved | `gadfly run --stop-unresolved` | the category a whole run reads |
 
 ---
 
@@ -45,6 +46,8 @@ details.
   before its verdict said so.
 - **Shams of another kind:** an anchor alone of its kind got no sham, and the
   only way round was to give it a kind it does not have.
+- **Stopping at unresolved:** an input that could read nothing else still
+  spent every trial, such as one whose ablation and control both held.
 
 ---
 

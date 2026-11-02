@@ -174,8 +174,70 @@ def judge(frame: Frame, records: list[dict[str, Any]]) -> list[Finding]:
     for x in frame.inputs:
         samples = {t: seen.get((x["id"], t), []) for t in planned}
         levels = {t: _level_of(frame, s, t in whole) for t, s in samples.items()}
-        findings.append(_finding(frame, x["id"], levels, samples))
+        findings.append(
+            _unasked(frame, x["id"], levels, samples) or _finding(frame, x["id"], levels, samples)
+        )
     return findings
+
+
+def _unasked(
+    frame: Frame, x: str, levels: dict[str, str | None], samples: dict[str, list[str | None]]
+) -> Finding | None:
+    """An input some of whose trials were never asked, or not to the end, read
+    when every answer they could give reads unresolved: the evidence and open
+    checks all those readings share, and the trials left. None while an answer
+    could read otherwise; the rules then read each as having no level."""
+    whole = {"baseline", "repeat"} if _read_once(frame)["standing"].get("stable") else set()
+    short = {
+        t: not s
+        for t, s in samples.items()
+        if not t.startswith("ablation-")
+        and len(s) < frame.quorum
+        and (t in whole or not settled(s, frame.quorum, frame.agree, frame.labels))
+    }  # each trial left, and whether it was never asked at all
+    asked = {t: [] if t in short else s for t, s in samples.items()}
+    outcomes = _outcomes(frame, x, asked) if short else None
+    if outcomes is None:
+        return None
+    evidence: list[str] | None = None
+    obligations: list[str] = []
+    for finding, _, _ in outcomes:
+        if finding.category != UNRESOLVED:
+            return None
+        if evidence is None:
+            evidence, obligations = finding.evidence, finding.obligations
+        evidence = [e for e in evidence if e in finding.evidence]
+        obligations = [o for o in obligations if o in finding.obligations]
+    said = [
+        f"{what}: {', '.join(t for t, never in short.items() if never is unasked)}"
+        for what, unasked in (("not asked", True), ("not asked to the end", False))
+        if unasked in short.values()
+    ]
+    said.append("whatever they gave, it reads unresolved")
+    return Finding(x, UNRESOLVED, levels, [*(evidence or []), "; ".join(said)], obligations)
+
+
+def unneeded(frame: Frame, x: str, samples: dict[str, list[str | None]]) -> frozenset[str]:
+    """The trials input `x` need not be asked, given the answers so far: once
+    every answer the rest could give reads unresolved, all those with no
+    answers, but each anchor alone while a reading still gets as far as the
+    ablation, where its evidence is read. Empty while an answer could read
+    otherwise, or the answers are too many to read."""
+    from .interventions import trial_ids
+
+    outcomes = _outcomes(frame, x, samples)
+    if outcomes is None:
+        return frozenset()
+    reached = False
+    for finding, _, ablation in outcomes:
+        if finding.category != UNRESOLVED:
+            return frozenset()
+        reached = reached or ablation
+    return frozenset(
+        t
+        for t in trial_ids(frame)
+        if not samples.get(t) and not (reached and t.startswith("ablation-"))
+    )
 
 
 def _level_of(frame: Frame, samples: list[str | None], whole: bool) -> str | None:

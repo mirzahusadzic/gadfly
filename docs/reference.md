@@ -43,7 +43,8 @@ that calls out. It never starts a call the budget cannot cover, stops
 between calls when the caller says so, and hands each record to `on_record`
 as soon as it exists, so the caller keeps what was spent even if the run
 stops early. Asked to, it skips the calls a settled trial no longer needs,
-and makes several calls at once for a battery that takes them.
+stops an input once it reads unresolved whatever its other trials give, and
+makes several calls at once for a battery that takes them.
 
 #### situate
 
@@ -84,7 +85,8 @@ overall = midwife.verdict.overall
 
 What a run made: its records, the calls it planned, why it stopped
 early (None when it reached the end of its plan), and how many planned
-calls it skipped because their trial had settled.
+calls it skipped because their trial had settled or their input could
+read nothing but unresolved.
 
 ```python
 @dataclass(frozen=True)
@@ -119,6 +121,7 @@ run(
     only=None,
     kept=(),
     settle=False,
+    stop_unresolved=False,
     parallel=1,
 )
 ```
@@ -126,12 +129,15 @@ run(
 `settle` makes no more calls for a trial whose level can no longer
 change (`settled`); the verdict reads it as it would read every call.
 Under `standing.stable` the baseline and repeat always run whole, as
-their split is read across all their calls. `parallel` makes up to that
-many calls at once, for a battery that says it takes them (a
-`concurrent` attribute that is true); records are handed on as each
-call ends, and a call already started is always kept: a first Ctrl-C
-starts no more calls, keeps those already out, then goes on as
-KeyboardInterrupt, and a second stops at once.
+their split is read across all their calls. `stop_unresolved` asks the
+`DECISIVE` trials first and asks an input nothing more once every answer
+its other trials could give reads unresolved (`unneeded`); the verdict
+reads the category a whole run would, and names the trials not asked.
+`parallel` makes up to that many calls at once, for a battery that says
+it takes them (a `concurrent` attribute that is true); records are
+handed on as each call ends, and a call already started is always kept:
+a first Ctrl-C starts no more calls, keeps those already out, then goes
+on as KeyboardInterrupt, and a second stops at once.
 
 #### judge
 
@@ -445,6 +451,18 @@ stopped run never reads a level its missing calls could change.
 
 ```python
 judge(frame, records)
+```
+
+#### unneeded
+
+The trials input `x` need not be asked, given the answers so far: once
+every answer the rest could give reads unresolved, all those with no
+answers, but each anchor alone while a reading still gets as far as the
+ablation, where its evidence is read. Empty while an answer could read
+otherwise, or the answers are too many to read.
+
+```python
+unneeded(frame, x, samples)
 ```
 
 #### unreachable
