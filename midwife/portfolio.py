@@ -14,6 +14,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .errors import RecordsError, UsageError
+from .verdict import CARRIED, COOLED, MISALIGNED, OUTSIDE, UNRESOLVED
+
+# the categories a verdict reads: a report naming another is not one Gadfly wrote
+CATEGORIES = {CARRIED, COOLED, MISALIGNED, UNRESOLVED, OUTSIDE}
 
 
 @dataclass(frozen=True)
@@ -61,7 +65,7 @@ def entry_from(document: dict[str, Any]) -> Entry:
     """An entry from a `gadfly report --json` document (or a bare overall)."""
     refusal = "a portfolio reads `gadfly report --json` documents, and this is not one"
     overall = document.get("overall", document) if isinstance(document, dict) else None
-    if not isinstance(overall, dict) or not isinstance(overall.get("category"), str):
+    if not isinstance(overall, dict) or overall.get("category") not in CATEGORIES:
         raise RecordsError(refusal)
     name = document.get("frame", document.get("name", "unnamed"))
     inputs = overall.get("inputs", {})
@@ -70,7 +74,7 @@ def entry_from(document: dict[str, Any]) -> Entry:
         isinstance(name, str)
         and isinstance(document.get("hash", ""), str)
         and isinstance(inputs, dict)
-        and all(isinstance(k, str) and isinstance(v, str) for k, v in inputs.items())
+        and all(isinstance(k, str) and v in CATEGORIES for k, v in inputs.items())
         and all(isinstance(x, list) and all(isinstance(s, str) for s in x)
                 for x in (evidence, obligations))
     ):  # fmt: skip

@@ -314,6 +314,8 @@ def test_run_refuses_a_bad_battery_or_folder_before_any_call(tmp_path, capsys, a
         '{"frame": "a", "overall": {"category": "carried", "evidence": "x"}}',
         '{"frame": "a", "overall": {"category": "carried", "obligations": [3]}}',
         '{"frame": 3, "overall": {"category": "carried"}}',
+        '{"frame": "a", "overall": {"category": "great"}}',
+        '{"frame": "a", "overall": {"category": "carried", "inputs": {"x": "excellent"}}}',
     ],
 )
 def test_portfolio_refuses_a_report_that_is_not_one(tmp_path, capsys, document):
