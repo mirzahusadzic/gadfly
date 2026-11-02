@@ -303,20 +303,25 @@ def command_run(args) -> int:
             stop_unresolved=args.stop_unresolved,
             parallel=args.parallel,
         )
-    except KeyboardInterrupt:
+    except KeyboardInterrupt as interrupt:
         # every record made so far is already in its file: say how to finish
         stopped = f"stopped by Ctrl-C after {len(made)} calls"
         if not files:
-            raise KeyboardInterrupt(f"{stopped}, and no record was kept") from None
-        if streamed:
-            raise noted(
+            said = noted(KeyboardInterrupt(f"{stopped}, and no record was kept"))
+        elif streamed:
+            said = noted(
                 KeyboardInterrupt(f"{stopped}; they went to standard output"),
                 "finish with them as --kept and a new --out",
-            ) from None
-        raise noted(
-            KeyboardInterrupt(f"{stopped}; they are in file {str(out)!r}"),
-            f"finish with --kept {str(out)!r} and a new --out",
-        ) from None
+            )
+        else:
+            said = noted(
+                KeyboardInterrupt(f"{stopped}; they are in file {str(out)!r}"),
+                f"finish with --kept {str(out)!r} and a new --out",
+            )
+        said.running = getattr(interrupt, "running", 0)  # calls hung, left to their threads
+        if said.running:
+            said.add_note(f"{said.running} calls still out were left unanswered")
+        raise said from None
     finally:
         if not streamed:
             for file in files:
@@ -549,7 +554,12 @@ def main(argv: list[str] | None = None) -> int:
             raise UsageError("standard input is read once", "name - for one file at most")
         return args.func(args)
     except (GadflyError, OSError, KeyboardInterrupt) as error:
-        return refused(error, as_json)
+        status = refused(error, as_json)
+        if getattr(error, "running", 0):  # a call hung in its thread would hold the exit
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os._exit(status)
+        return status
     except Exception:
         traceback.print_exc()
         return errors.BUG  # Gadfly's fault, not the caller's

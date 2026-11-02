@@ -8,6 +8,8 @@ policy's binding line says the rules decide (its bypass cuts that line).
 
 from __future__ import annotations
 
+import time
+
 from midwife.types import Observation
 
 
@@ -77,4 +79,20 @@ class Counted(RuleReader):
 
     def observe(self, frame, prompt, max_output_tokens):
         type(self).calls += 1
+        return super().observe(frame, prompt, max_output_tokens)
+
+
+class Stuck(RuleReader):
+    """The rule reader taking calls at once, its third and later calls hung,
+    as a service that never answers would leave them (for at most 20 s)."""
+
+    concurrent = True
+
+    def __init__(self):
+        self.calls = 0
+
+    def observe(self, frame, prompt, max_output_tokens):
+        self.calls += 1
+        if self.calls > 2:
+            time.sleep(20)
         return super().observe(frame, prompt, max_output_tokens)

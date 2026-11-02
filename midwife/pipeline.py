@@ -283,41 +283,44 @@ def run(
     if held:
         signal.signal(signal.SIGINT, hold)
     stopped = None
+    pool = ThreadPoolExecutor(max_workers=parallel)
     try:
-        with ThreadPoolExecutor(max_workers=parallel) as pool:
-            try:
-                while queue or running:
-                    while stopped is None and queue and len(running) < parallel:
-                        x, trial, index = queue[0]
-                        if needless(x, trial):
-                            queue.popleft()
-                            skipped += 1
-                            continue
-                        if done_with(x, trial):
-                            queue.popleft()
-                            unasked += 1
-                            continue
-                        stopped = "cancelled" if interrupted else blocked(len(running))
-                        if stopped:
-                            break
-                        queue.popleft()
-                        seq, text = next(order), prompt(frame, trial, x)
-                        started[seq] = (x, trial, index, text)
-                        running[pool.submit(ask, seq, text)] = seq
-                    if not running:
-                        break
-                    finished, _ = wait(running, return_when=FIRST_COMPLETED)
-                    for seq, call in sorted((running.pop(call), call) for call in finished):
-                        call.result()  # what a worker raised past _observe, raised here
-                        stopped = keep_call(seq) or stopped
-            except KeyboardInterrupt:
-                # raised here, not held: every call made is spent, so keep each
-                pool.shutdown(wait=True)
-                for seq in sorted(started):
-                    if seq in ended_at:
-                        keep_call(seq)
-                raise
+        while queue or running:
+            while stopped is None and queue and len(running) < parallel:
+                x, trial, index = queue[0]
+                if needless(x, trial):
+                    queue.popleft()
+                    skipped += 1
+                    continue
+                if done_with(x, trial):
+                    queue.popleft()
+                    unasked += 1
+                    continue
+                stopped = "cancelled" if interrupted else blocked(len(running))
+                if stopped:
+                    break
+                queue.popleft()
+                seq, text = next(order), prompt(frame, trial, x)
+                started[seq] = (x, trial, index, text)
+                running[pool.submit(ask, seq, text)] = seq
+            if not running:
+                break
+            finished, _ = wait(running, return_when=FIRST_COMPLETED)
+            for seq, call in sorted((running.pop(call), call) for call in finished):
+                call.result()  # what a worker raised past _observe, raised here
+                stopped = keep_call(seq) or stopped
+    except KeyboardInterrupt as interrupt:
+        # raised here, not held: every call made is spent, so keep each
+        # one that ended; after a second Ctrl-C, wait for none still out,
+        # as a call hung in its thread cannot be stopped
+        if not interrupted:
+            pool.shutdown(wait=True)  # every call handed to a worker, tracked or not
+        for seq in sorted(set(started) & set(ended_at)):
+            keep_call(seq)
+        interrupt.running = len(started)  # made, and not kept: still out
+        raise
     finally:
+        pool.shutdown(wait=False, cancel_futures=True)
         if held and signal.getsignal(signal.SIGINT) is hold:
             signal.signal(signal.SIGINT, previous)
     if interrupted:

@@ -2,8 +2,10 @@
 
 import io
 import json
+import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -587,3 +589,34 @@ def test_standard_input_that_is_not_utf8_says_so(capsys, monkeypatch):
     monkeypatch.setattr("sys.stdin", piped)
     assert main(["plan", "-"]) == 4
     assert capsys.readouterr().err == "FrameError: standard input is not UTF-8 text\n"
+
+
+def test_a_second_ctrl_c_stops_at_once_though_a_call_hangs(tmp_path):
+    # a call hung in its thread cannot be stopped; the command does not wait for it
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Stuck", "--calls", "8"]
+    child = subprocess.Popen(
+        [sys.executable, "-m", "midwife", *argv, "--parallel", "2", "--out", str(out)],
+        cwd=ROOT,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        deadline = time.monotonic() + 10
+        while (
+            time.monotonic() < deadline
+            and len(out.read_text().splitlines() if out.exists() else []) < 2
+        ):
+            time.sleep(0.05)  # the two calls that answer are kept; the next two hang
+        time.sleep(0.3)
+        child.send_signal(signal.SIGINT)
+        time.sleep(0.3)
+        child.send_signal(signal.SIGINT)
+        status = child.wait(timeout=3)
+    finally:
+        if child.poll() is None:
+            child.kill()
+            child.wait()
+    assert status == 130
+    assert child.stderr.read().startswith("KeyboardInterrupt: stopped by Ctrl-C after 2 calls")
+    assert len(out.read_text().splitlines()) == 2
