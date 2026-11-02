@@ -18,7 +18,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-from .errors import FrameError
+from .errors import FrameError, quoted
 
 # The situated relation L = (I, B, r, g, P, T, B0, C, p): each must be said
 # (the body B and the baseline B0 are checked on their own).
@@ -149,7 +149,7 @@ def _no_null_options(raw: dict[str, Any]) -> None:
         for key in keys:
             if key in where and where[key] is None:
                 named = f"{section}.{key}" if section else key
-                raise FrameError(f"{named} is null", "leave it out instead")
+                raise FrameError(f"key {named!r} is null", "leave it out instead")
 
 
 def canonical(value: Any) -> str:
@@ -198,7 +198,7 @@ def parse(raw: dict[str, Any]) -> Frame:
 
     unknown = set(raw) - KEYS
     if unknown:
-        raise FrameError(f"unknown keys ({', '.join(sorted(unknown))})")
+        raise FrameError(f"unknown keys {quoted(sorted(unknown))}")
     if not need("name", str):
         raise FrameError("the name is empty")
     for key in SITUATION:
@@ -248,7 +248,9 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("a relation rests on at least one anchor")
     missing = [anchor for anchor in anchors if anchor not in known]
     if missing:
-        raise FrameError(f"anchors not in the body ({', '.join(missing)})")
+        raise FrameError(
+            f"the body has no span {quoted(missing)}", "anchors name spans of the body"
+        )
     if len(set(anchors)) != len(anchors):
         raise FrameError("anchors name a span twice")
 
@@ -278,7 +280,7 @@ def parse(raw: dict[str, Any]) -> Frame:
     interventions = need("interventions", dict)
     unknown = set(interventions) - set(INTERVENTIONS)
     if unknown:
-        raise FrameError(f"unknown interventions ({', '.join(sorted(unknown))})")
+        raise FrameError(f"unknown interventions {quoted(sorted(unknown))}")
     if interventions.get("ablation") is not True:
         raise FrameError(
             "required influence is tested by ablation, and none is declared", "set ablation to true"
@@ -316,7 +318,7 @@ def parse(raw: dict[str, Any]) -> Frame:
     for value in allowed.values():
         if value in ("lower", "higher"):
             if order is None:
-                raise FrameError(f"allowed '{value}' needs observe.order")
+                raise FrameError(f"allowed {value!r} needs observe.order")
         elif not (
             isinstance(value, list)
             and value
@@ -380,7 +382,7 @@ def _plain_json(value: Any, where: str) -> None:
             ) from None
     elif isinstance(value, float):
         if not math.isfinite(value):
-            raise FrameError(f"{where} is not plain JSON, as {value} is not a JSON number")
+            raise FrameError(f"{where} is not plain JSON, as {value!r} is not a JSON number")
     elif not (value is None or isinstance(value, bool | int)):
         raise FrameError(
             f"{where} is not plain JSON, as a {type(value).__name__} is not a JSON value"
@@ -409,11 +411,13 @@ def _check_sham_kind(pools: Any, spans: tuple[Span, ...], anchors: tuple[str, ..
     kinds = {span.id: span.kind for span in spans}
     for anchor, kind in pools.items():
         if anchor not in anchors:
-            raise FrameError(f"sham kind names {anchor}, which is no anchor")
+            raise FrameError(f"sham kind names {anchor!r}, which is no anchor")
         if kind not in kinds.values():
-            raise FrameError(f"sham kind names a kind no span has ({kind})")
+            raise FrameError(f"sham kind names kind {kind!r}, which no span has")
         if kind == kinds[anchor]:
-            raise FrameError(f"sham kind maps {anchor} to its own kind, as shams are drawn anyway")
+            raise FrameError(
+                f"sham kind maps {anchor!r} to its own kind, as shams are drawn anyway"
+            )
 
 
 def _check_interventions(
@@ -439,7 +443,7 @@ def _check_interventions(
             raise FrameError(f"{key} lists the spans it removes")
         for span_id in value:
             if span_id not in known:
-                raise FrameError(f"{key} names a span not in the body ({span_id})")
+                raise FrameError(f"{key} names span {span_id!r}, which is not in the body")
         if len(set(value)) != len(value):
             raise FrameError(f"{key} names a span twice")
     each = interventions.get("eachAnchor", False)
@@ -484,13 +488,13 @@ def _check_interventions(
             )
         for span_id in placement.values():
             if span_id not in known:
-                raise FrameError(f"placement names a span not in the body ({span_id})")
+                raise FrameError(f"placement names span {span_id!r}, which is not in the body")
         if placement["span"] == placement["after"]:
             raise FrameError("placement moves a span after another span, not itself")
         if place(spans, placement["span"], placement["after"]) == spans:
             raise FrameError(
-                f"placement leaves the order as it is, as {placement['span']} already follows "
-                f"{placement['after']}"
+                f"placement leaves the order as it is, as {placement['span']!r} already follows "
+                f"{placement['after']!r}"
             )
     if presentation:
         if len({word.lower() for word in presentation}) != len(presentation):
@@ -499,7 +503,7 @@ def _check_interventions(
         body_moves = any(renaming(span.text) != span.text for span in spans)
         for x in inputs:
             if not body_moves and renaming(x["text"]) == x["text"]:
-                raise FrameError(f"presentation renames nothing {x['id']} reads")
+                raise FrameError(f"presentation renames nothing input {x['id']!r} reads")
     inversion = interventions.get("inversion")
     if inversion is not None:
         if not (
@@ -518,11 +522,12 @@ def _check_interventions(
         for phrase in inversion:
             found = re.compile(rf"(?<!\w){re.escape(phrase)}(?!\w)", re.IGNORECASE)
             if not any(found.search(span.text) for span in spans if span.id in anchored):
-                raise FrameError(f"inversion's '{phrase}' is in no anchor")
+                raise FrameError(f"inversion's {phrase!r} is in no anchor")
             elsewhere = [s.id for s in spans if s.id not in anchored and found.search(s.text)]
             if elsewhere:
                 raise FrameError(
-                    f"inversion's '{phrase}' is also in {elsewhere[0]}, which is not an anchor"
+                    f"inversion's {phrase!r} is also in span {elsewhere[0]!r}, "
+                    "which is not an anchor"
                 )
         inverting = renamer(tuple(sorted(inversion.items())))
         if all(inverting(s.text) == s.text for s in spans if s.id in anchored):
@@ -541,7 +546,7 @@ def _check_interventions(
         for phrase in asked:
             found = re.compile(rf"(?<!\w){re.escape(phrase)}(?!\w)", re.IGNORECASE)
             if not any(found.search(x["text"]) for x in inputs):
-                raise FrameError(f"inputInversion's '{phrase}' is in no input")
+                raise FrameError(f"inputInversion's {phrase!r} is in no input")
         turning = renamer(tuple(sorted(asked.items())))
         if all(turning(x["text"]) == x["text"] for x in inputs):
             raise FrameError("inputInversion changes no input, as each phrase stays as it is")

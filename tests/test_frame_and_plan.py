@@ -19,7 +19,7 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
     "change, message",
     [
         (lambda r: r.pop("promise"), "promise"),
-        (lambda r: r.update(anchors=["r9"]), "anchors not in the body"),
+        (lambda r: r.update(anchors=["r9"]), "the body has no span"),
         (lambda r: r.update(anchors=[]), "at least one anchor"),
         (lambda r: r["interventions"].pop("ablation"), "ablation"),
         (lambda r: r["interventions"].update(teleport=True), "unknown interventions"),
@@ -27,7 +27,7 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
         (lambda r: r.update(allowed={"ablation": "lower"}), "needs observe.order"),
         (lambda r: r.update(standing={"quorum": 3, "agree": 4}), "agree is between"),
         (lambda r: r["body"]["spans"].append(dict(r["body"]["spans"][0])), "share an id"),
-        (lambda r: r["interventions"].update(bypass=["r9"]), "bypass names a span"),
+        (lambda r: r["interventions"].update(bypass=["r9"]), "bypass names span"),
         (lambda r: r.update(inputs=[{"id": "x1"}]), "inputs are"),
         (lambda r: r["observe"].update(labels=["grant"]), "at least two labels"),
         # a frame that would run, spend its calls, and only then be refused
@@ -58,7 +58,7 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
         (lambda r: r["interventions"].update(bypass=["r2"]), "the ablation again"),
         (lambda r: r["interventions"].update(cumulative=["r2"]), "adds no span"),
         (lambda r: r["interventions"].update(control=["r2"]), "the ablation again"),
-        (lambda r: r["interventions"].update(control=["r9"]), "control names a span"),
+        (lambda r: r["interventions"].update(control=["r9"]), "control names span"),
         (lambda r: r["interventions"].update(sham={"draws": 1, "kinds": {}}), "sham is true"),
         (lambda r: r["interventions"].update(sham={"draws": 1, "kind": "note"}), "sham kind maps"),
         (
@@ -91,7 +91,7 @@ def test_presentation_must_reach_every_input(raw):
     # "day" is only in x1's text; x2's presentation prompt would be its baseline's
     raw["interventions"]["presentation"] = {"day": "date"}
     raw["inputs"].append({"id": "x2", "text": "A customer asks for a refund."})
-    with pytest.raises(FrameError, match="renames nothing x2 reads"):
+    with pytest.raises(FrameError, match="renames nothing input 'x2' reads"):
         parse(raw)
 
 
@@ -280,7 +280,7 @@ def test_placement_moves_one_span_after_another_and_nothing_else(raw):
     [
         ({"span": "r2", "after": "r1"}, "leaves the order as it is"),  # r2 already follows r1
         ({"span": "r2", "after": "r2"}, "after another span"),
-        ({"span": "r9", "after": "r1"}, "placement names a span not in the body"),
+        ({"span": "r9", "after": "r1"}, "placement names span"),
         ({"span": "r2"}, "placement moves one span"),
     ],
 )
@@ -357,7 +357,7 @@ def test_an_inversion_in_a_span_beside_the_anchor_is_refused(raw):
     raw["body"]["spans"][4]["text"] = "Every refund requires a receipt, these rules say."
     raw["interventions"]["inversion"] = INVERT
     raw["allowed"]["inversion"] = ["grant"]
-    with pytest.raises(FrameError, match="also in r5, which is not an anchor"):
+    with pytest.raises(FrameError, match="also in span 'r5', which is not an anchor"):
         parse(raw)
 
 

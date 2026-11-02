@@ -59,7 +59,7 @@ import urllib.request
 from collections.abc import Callable
 from functools import lru_cache
 
-from ..errors import BatteryError
+from ..errors import BatteryError, quoted
 from ..frame import Frame
 from ..pipeline import RAW_LIMIT
 from ..types import Observation
@@ -192,18 +192,18 @@ def label_of(reply: dict, labels: tuple[str, ...]) -> tuple[str | None, str | No
     if status == "supported" and any(a.get("conditional") for a in answers):
         status = CONDITIONAL  # an answer that holds only on a condition
     if status in OUTCOMES:
-        return (status, None) if status in labels else (None, f"the engine answered {status}")
+        return (status, None) if status in labels else (None, f"the engine answered {status!r}")
     if status == "supported":
         texts = [a.get("text") for a in answers]
         if len(texts) == 1 and texts[0] in labels:
             return texts[0], None
         if texts and ANOTHER in labels:
             return ANOTHER, None
-        return None, f"the engine answered {texts}, which no label names"[:300]
+        return None, f"the engine answered {quoted(map(str, texts))}, which no label names"[:300]
     if status == "needs-reading":
         unread = reply.get("unread") if isinstance(reply.get("unread"), list) else []
         return None, f"the engine answered needs-reading, as {len(unread)} text(s) have no reading"
-    return None, f"the engine answered {status}"[:300]
+    return None, f"the engine answered {status!r}"[:300]
 
 
 def answer_line(reply: dict) -> dict:
@@ -258,10 +258,12 @@ class Tendora:
         turned into one question."""
         battery = frame.battery
         if battery.get("kind") != self.name:
-            raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
+            raise BatteryError(f"this frame asks for battery {battery.get('kind')!r}")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise BatteryError(f"the tendora battery reads no {', '.join(sorted(unknown))}")
+            raise BatteryError(
+                f"the tendora battery reads no {quoted(sorted(unknown))} under battery"
+            )
         if not isinstance(battery.get("url"), str):
             raise BatteryError("battery.url is the engine server's address on this machine")
         loopback(battery["url"], "the engine")
@@ -281,28 +283,29 @@ class Tendora:
         for x in frame.inputs:
             if asked(x["text"]) is None:
                 raise BatteryError(
-                    f"input {x['id']} is not in the check's form, a Case line then a Question line"
+                    f"input {x['id']!r} is not in the check's form, "
+                    "a Case line then a Question line"
                 )
         from ..interventions import plan
 
         for trial in plan(frame):  # the engine is sent one statement a line
             for span in trial.spans:
                 if "\n" in span.text or "\r" in span.text:
-                    where = "" if trial.id == "baseline" else f" in the {trial.id} trial"
+                    where = "" if trial.id == "baseline" else f" in trial {trial.id!r}"
                     raise BatteryError(
-                        f"span {span.id} holds a line break{where}, but the engine is sent "
+                        f"span {span.id!r} holds a line break{where}, but the engine is sent "
                         "one statement a line"
                     )
         ids = {x["text"]: x["id"] for x in frame.inputs}
         for into, sources in turned(frame).items():
             if len(sources) > 1:
                 raise BatteryError(
-                    f"inputs {', '.join(ids[s] for s in sources)} turn into the same question, "
+                    f"inputs {quoted(ids[s] for s in sources)} turn into the same question, "
                     "so the engine could not tell which saved check to ask it against"
                 )
             if asked(into) is None:
                 raise BatteryError(
-                    f"input {ids[sources[0]]} turns out of the check's form, a Case line then "
+                    f"input {ids[sources[0]]!r} turns out of the check's form, a Case line then "
                     "a Question line, so the engine could not be asked it"
                 )
 
@@ -376,4 +379,4 @@ def _said(body: bytes) -> str:
     except (json.JSONDecodeError, OSError, ValueError):
         return ""
     message = said.get("error") if isinstance(said, dict) else None
-    return f": {' '.join(str(message).split())[:200]}" if message else ""
+    return f" ({' '.join(str(message).split())[:200]!r})" if message else ""

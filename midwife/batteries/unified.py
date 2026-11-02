@@ -51,7 +51,7 @@ import urllib.request
 from collections.abc import Callable
 from pathlib import Path
 
-from ..errors import BatteryError
+from ..errors import BatteryError, quoted
 from ..frame import Frame
 from ..types import Observation
 from .critic import (
@@ -88,7 +88,10 @@ def _token() -> str:
             if key.strip() == "CODEX_ROUTER_TOKEN":
                 token = value.strip().strip("'\"")
     if not re.fullmatch(r"[0-9a-f]{64}", token):
-        raise BatteryError("no router token", "set CODEX_ROUTER_TOKEN, or install the router")
+        raise BatteryError(
+            "no router token",
+            "set the environment variable CODEX_ROUTER_TOKEN, or install the router",
+        )
     return token
 
 
@@ -211,7 +214,7 @@ def parse_stream(
     except TimeoutError:
         return "".join(deltas) or final_text, usage, "the call passed its timeout", model
     except OSError as error:
-        opening = f"the connection failed: {type(error).__name__}"
+        opening = f"the connection failed ({type(error).__name__})"
         return "".join(deltas) or final_text, usage, opening, model
     text = "".join(deltas) or final_text
     if status != "completed":
@@ -240,16 +243,18 @@ class Unified:
         router token."""
         battery = frame.battery
         if battery.get("kind") != self.name:
-            raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
+            raise BatteryError(f"this frame asks for battery {battery.get('kind')!r}")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise BatteryError(f"the unified battery reads no {', '.join(sorted(unknown))}")
+            raise BatteryError(
+                f"the unified battery reads no {quoted(sorted(unknown))} under battery"
+            )
         model = battery.get("model")
         if not isinstance(model, str) or not model.strip():
             raise BatteryError("battery.model is a slug the router serves (GET /v1/models)")
         if not model.startswith(ROUTED_PREFIXES):
             raise BatteryError(
-                f"{model} is an OpenAI slug",
+                f"model {model!r} is an OpenAI slug",
                 "the router reaches OpenAI only with the caller's Codex sign-in, which this "
                 "battery does not send; choose another model",
             )
@@ -270,8 +275,8 @@ class Unified:
             raise BatteryError("battery.trainsOnInputs lists the model slugs that may train")
         if model.startswith(TRAINS_ON_INPUTS) and not consented(battery):
             raise BatteryError(
-                f"{model}'s provider trains on its inputs; "
-                "name it under battery.trainsOnInputs to send the body there"
+                f"the provider of model {model!r} trains on its inputs",
+                "name it under battery.trainsOnInputs to send the body there",
             )
         _token()  # no token, no run: refuse before the first call, not at each
 
@@ -298,7 +303,7 @@ class Unified:
                             "OpenRouter account's provider setting); naming it under "
                             "trainsOnInputs allows one that may train",
                         )
-                    return Observation(label=None, opening=f"the router reports {diagnostic}")
+                    return Observation(label=None, opening=f"the router reports {diagnostic!r}")
                 lines = _lines(response, deadline, self.clock)
                 text, usage, opening, model = parse_stream(lines, deadline, self.clock)
                 endpoint = response.headers.get("x-provider-name", "")[:200]

@@ -71,14 +71,14 @@ def load_battery(spec: str):
         raise BatteryError(str(error)) from None
     target = getattr(module, attribute, None)
     if target is None:
-        raise BatteryError(f"{module_name} has no {attribute}")
+        raise BatteryError(f"module {module_name!r} has no {attribute!r}")
     try:
         battery = target() if isinstance(target, type) else target
     except TypeError as error:  # a class that needs arguments is no battery to name here
-        raise BatteryError(f"{spec} could not be made ({error})") from None
+        raise BatteryError(f"battery {spec!r} could not be made", str(error)) from None
     if not isinstance(battery, Battery):
         raise BatteryError(
-            f"{spec} is not a battery", "a battery has a name, check() and observe()"
+            f"{spec!r} is not a battery", "a battery has a name, check() and observe()"
         )
     return battery
 
@@ -107,14 +107,21 @@ def load_json(path: str, text: str, refusal: type[GadflyError], line: int = 1) -
 
 
 def _named(path: str) -> str:
-    return "standard input" if path == "-" else path
+    return "standard input" if path == "-" else f"file {path!r}"
 
 
 def load_records(path: str) -> list[dict[str, Any]]:
     """The records kept in a JSON Lines file, or on standard input for `-`."""
+    return [record for _, record in _numbered(path)]
+
+
+def _numbered(path: str) -> list[tuple[int, dict[str, Any]]]:
+    # each record with the line it was read from, for a refusal to point at
     lines = read_text(path, RecordsError).splitlines()
     return [
-        load_json(path, text, RecordsError, n) for n, text in enumerate(lines, 1) if text.strip()
+        (n, load_json(path, text, RecordsError, n))
+        for n, text in enumerate(lines, 1)
+        if text.strip()
     ]
 
 
@@ -215,14 +222,15 @@ def command_run(args) -> int:
     """`gadfly run`: every planned call the budget covers, each record kept."""
     frame = load_frame(args.frame)
     battery = load_battery(args.battery)
-    kept = load_records(args.kept) if args.kept else []
-    for old in kept:  # the new file starts with them: found out before a call is spent
+    numbered = _numbered(args.kept) if args.kept else []
+    kept = [old for _, old in numbered]
+    for line, old in numbered:  # the new file starts with them: found out before a call
         try:
             json.dumps(old, ensure_ascii=False).encode("utf-8")
         except UnicodeEncodeError:
             raise RecordsError(
-                f"a record in {args.kept} holds a lone surrogate, which no file can hold",
-                "correct or drop that record, then run again",
+                f"{_named(args.kept)} holds a lone surrogate at line {line}",
+                "no file can hold it; correct or drop that record, then run again",
             ) from None
     out = Path(args.out)
     streamed = args.out == "-"  # the records own standard output; the rest is a message
@@ -232,15 +240,19 @@ def command_run(args) -> int:
         )
     if not streamed and out.exists():  # a new file: never another run's
         raise noted(
-            FileExistsError(f"{out} exists already"),
+            FileExistsError(f"file {str(out)!r} exists already"),
             "kept records are never written over; choose a new --out, or finish it with --kept",
         )
     if not streamed and not out.parent.is_dir():  # found out before a call is spent
         raise noted(
-            FileNotFoundError(f"{out.parent} is not a folder"), "make it, or choose another --out"
+            FileNotFoundError(f"folder {str(out.parent)!r} does not exist"),
+            "make it, or choose another --out",
         )
     if not streamed and not os.access(out.parent, os.W_OK):
-        raise noted(PermissionError(f"{out.parent} cannot be written"), "choose another --out")
+        raise noted(
+            PermissionError(f"folder {str(out.parent)!r} cannot be written"),
+            "choose another --out",
+        )
     where, say = ("standard output", sys.stderr) if streamed else (str(out), sys.stdout)
 
     def opened():
@@ -280,11 +292,14 @@ def command_run(args) -> int:
         stopped = f"stopped by Ctrl-C after {len(made)} calls"
         if not files:
             raise KeyboardInterrupt(f"{stopped}, and no record was kept") from None
+        if streamed:
+            raise noted(
+                KeyboardInterrupt(f"{stopped}; they went to standard output"),
+                "finish with them as --kept and a new --out",
+            ) from None
         raise noted(
-            KeyboardInterrupt(
-                f"{stopped}; they went to {where}" if streamed else f"{stopped}; they are in {out}"
-            ),
-            f"finish with {'them' if streamed else out} as --kept and a new --out",
+            KeyboardInterrupt(f"{stopped}; they are in file {str(out)!r}"),
+            f"finish with --kept {str(out)!r} and a new --out",
         ) from None
     finally:
         if not streamed:
@@ -545,13 +560,13 @@ def _plain(error: OSError) -> str:
     # Python's own words carry an errno and a colon; ours are plain already
     if error.filename is None:
         return str(error)
-    said = {
-        errno.ENOENT: "does not exist",
-        errno.EACCES: "cannot be read or written here",
-        errno.EISDIR: "is a folder, not a file",
-        errno.ENOTDIR: "is not in a folder",
-    }.get(error.errno)
-    return f"{error.filename} {said or f'cannot be used ({error.strerror})'}"
+    name = str(error.filename)
+    return {
+        errno.ENOENT: f"file {name!r} does not exist",
+        errno.EACCES: f"file {name!r} cannot be read or written here",
+        errno.EISDIR: f"{name!r} is a folder, not a file",
+        errno.ENOTDIR: f"path {name!r} runs through a file, not a folder",
+    }.get(error.errno, f"file {name!r} cannot be used ({error.strerror})")
 
 
 class Parser(argparse.ArgumentParser):

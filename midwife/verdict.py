@@ -48,7 +48,7 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from .errors import RecordsError, UsageError
+from .errors import RecordsError, UsageError, quoted
 from .frame import Frame, _read_once
 
 CARRIED, COOLED = "carried", "cooled"
@@ -360,7 +360,7 @@ def _check_shape(record: Any) -> None:
         raise RecordsError("a record is a JSON object")
     lacking = RECORD_KEYS - set(record)
     if lacking:
-        raise RecordsError(f"a record lacks {', '.join(sorted(lacking))}")
+        raise RecordsError(f"a record lacks keys {quoted(sorted(lacking))}")
     for key, kind in (("input", str), ("trial", str), ("prompt", str), ("raw", str)):
         if not isinstance(record[key], kind):
             raise RecordsError(f"a record's {key} is not a str")
@@ -392,8 +392,8 @@ def check_records(
             raise RecordsError("a record belongs to another frame")
         if record["battery"] != battery:
             raise RecordsError(
-                f"a record was made by {record['battery']}, not the {battery} battery "
-                "the frame names"
+                f"a record was made by battery {record['battery']!r}, not {battery!r}, "
+                "which the frame names"
             )
         observation, opening = record["observation"], record["opening"]
         if (observation is None) == (opening is None):
@@ -402,17 +402,17 @@ def check_records(
             raise RecordsError(f"{observation!r} is not one of this frame's labels")
         if record["input"] not in inputs or record["trial"] not in bodies:
             raise RecordsError(
-                "a record names an input or trial the plan does not have "
-                f"({record['input']}/{record['trial']})"
+                f"a record names input {record['input']!r} and trial {record['trial']!r}, "
+                "which the plan does not have"
             )
         if record["body"] != bodies[record["trial"]]:
-            raise RecordsError(f"a {record['trial']} record was made on another body")
+            raise RecordsError(f"a record of trial {record['trial']!r} was made on another body")
         run = record["run"]
         if not isinstance(run, int) or isinstance(run, bool) or not 0 <= run < frame.quorum:
             raise RecordsError(f"run {run!r} is outside the quorum of {frame.quorum}")
         key = (record["input"], record["trial"], run)
         if key in seen:
-            raise RecordsError(f"two records for {key[0]}/{key[1]} run {run}")
+            raise RecordsError(f"two records for input {key[0]!r}, trial {key[1]!r}, run {run!r}")
         seen.add(key)
 
 

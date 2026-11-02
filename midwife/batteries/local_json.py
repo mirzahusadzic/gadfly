@@ -32,7 +32,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable
 
-from ..errors import BatteryError
+from ..errors import BatteryError, quoted
 from ..frame import Frame
 from ..types import Observation
 from .critic import (
@@ -78,10 +78,12 @@ class LocalJSON:
         does not point at its label."""
         battery = frame.battery
         if battery.get("kind") != self.name:
-            raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
+            raise BatteryError(f"this frame asks for battery {battery.get('kind')!r}")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise BatteryError(f"the local-json battery reads no {', '.join(sorted(unknown))}")
+            raise BatteryError(
+                f"the local-json battery reads no {quoted(sorted(unknown))} under battery"
+            )
         if not isinstance(battery.get("url"), str):
             raise BatteryError("battery.url is the evaluator's address on this machine")
         loopback(battery["url"], "the evaluator")

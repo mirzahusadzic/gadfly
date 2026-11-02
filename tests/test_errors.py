@@ -104,7 +104,8 @@ def test_a_message_and_its_notes_hold_no_colon_and_no_python_list():
     stray = []
     for path in sorted((ROOT / "midwife").rglob("*.py")):
         for line, source, words in said(path):
-            if ": " in words or "sorted(" in source and "join" not in source:
+            listed = "join" in source or "quoted(" in source  # a list said as words
+            if ": " in words or "sorted(" in source and not listed:
                 stray.append(f"{path.relative_to(ROOT)}:{line} {source[:60]}")
     assert stray == []
 
@@ -123,4 +124,56 @@ def test_an_openings_reason_holds_no_colon():
                 )
                 if ": " in words:
                     stray.append(f"{path.relative_to(ROOT)}:{node.value.lineno}")
+    assert stray == []
+
+
+# what a refusal or an opening may put in its words unquoted: Gadfly's own
+# words, numbers, and Python's words in parentheses; any value a caller or a
+# service supplied is quoted, as Python's own messages quote one
+UNQUOTED = {
+    "what", "where", "key", "stopped", "self.prog", "line", "pin", "status_line",
+    "error.msg", "error.code", "tried", "said", "MAX_TIMEOUT", "frame.quorum", "len(unread)",
+    "type(reason).__name__", "type(error).__name__", "type(value).__name__", "kind.__name__",
+    "', '.join(EFFORTS)", "', '.join(wrong)",
+}  # fmt: skip
+
+
+def worded(path: Path):
+    # every message, note and opening reason, as written in the source
+    source = path.read_text(encoding="utf-8")
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call):
+            call = node.exc
+            if getattr(call.func, "id", None) == "noted":
+                yield from call.args[1:]
+                call = call.args[0]
+            if isinstance(call, ast.Call) and getattr(call.func, "id", "") in REFUSALS | PYTHONS:
+                yield from call.args
+            elif isinstance(call, ast.Call) and getattr(call.func, "id", "") == "refusal":
+                yield from call.args
+        elif isinstance(node, ast.keyword) and node.arg == "opening":
+            yield node.value
+        elif isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "opening":
+            yield node.value
+        elif isinstance(node, ast.Return) and isinstance(node.value, ast.Tuple):
+            first = node.value.elts[0] if node.value.elts else None
+            if (
+                isinstance(first, ast.Constant)
+                and first.value is None
+                and len(node.value.elts) == 2
+            ):
+                yield node.value.elts[1]  # a battery's (no label, why) pair
+
+
+def test_every_value_a_refusal_or_an_opening_names_is_quoted():
+    stray = []
+    for path in sorted((ROOT / "midwife").rglob("*.py")):
+        source = path.read_text(encoding="utf-8")
+        for words in worded(path):
+            for part in ast.walk(words):
+                if isinstance(part, ast.FormattedValue) and part.conversion != ord("r"):
+                    value = ast.get_source_segment(source, part.value)
+                    # quoted() and _named() quote what they are given
+                    if value not in UNQUOTED and not value.startswith(("quoted(", "_named(")):
+                        stray.append(f"{path.relative_to(ROOT)}:{part.lineno} {{{value}}}")
     assert stray == []

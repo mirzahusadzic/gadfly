@@ -26,7 +26,7 @@ from collections.abc import Callable, Iterable
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, replace
 
-from .errors import BatteryError, GadflyError, RecordsError, UsageError
+from .errors import BatteryError, GadflyError, RecordsError, UsageError, quoted
 from .frame import Frame, digest, parse
 from .interventions import Trial, prompt, trial_ids
 from .interventions import plan as plan_trials
@@ -101,11 +101,11 @@ def run(
     on as KeyboardInterrupt, and a second stops at once."""
     named = frame.battery["kind"]
     if battery.name != named:  # the hash names the battery: no other reads under it
-        raise BatteryError(f"this frame asks for the {named} battery, not {battery.name}")
+        raise BatteryError(f"this frame asks for battery {named!r}, not {battery.name!r}")
     if not isinstance(parallel, int) or isinstance(parallel, bool) or parallel < 1:
         raise UsageError("parallel is a whole number of calls, at least 1")
     if parallel > 1 and getattr(battery, "concurrent", False) is not True:
-        raise UsageError(f"the {battery.name} battery does not take calls at once")
+        raise UsageError(f"battery {battery.name!r} does not take calls at once")
     try:
         battery.check(frame)
     except GadflyError:
@@ -117,7 +117,7 @@ def run(
     unknown = wanted - set(ids)
     if unknown:
         raise UsageError(
-            f"the plan has no trial {', '.join(sorted(unknown))}", "gadfly plan lists its trials"
+            f"the plan has no trial {quoted(sorted(unknown))}", "gadfly plan lists its trials"
         )
     made = [record.as_dict() if isinstance(record, Record) else record for record in kept]
     for record in made:  # a row that is no record is refused before anything is counted
@@ -147,7 +147,9 @@ def run(
     for record in made:
         planned_prompt = prompt(frame, by_trial[record["trial"]], by_input[record["input"]])
         if record["prompt"] != digest(planned_prompt):
-            raise RecordsError(f"a kept {record['trial']} record was made from another prompt")
+            raise RecordsError(
+                f"a kept record of trial {record['trial']!r} was made from another prompt"
+            )
     calls = [
         (x, trial, index)
         for x in frame.inputs

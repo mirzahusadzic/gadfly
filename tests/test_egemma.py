@@ -76,7 +76,7 @@ def test_a_call_sends_the_key_and_reads_the_label(frame, key, server):
     [
         (reply(None, text='{"label": "dec', truncated=True), "the answer was cut at its token cap"),
         (reply(None), "the answer is not JSON"),
-        (reply("refund"), "the answer's /label is not one of this frame's labels"),
+        (reply("refund"), "the answer's '/label' is not one of this frame's labels"),
         ((401, {}, b"{}"), "eGemma answered 401"),
         ((422, {}, b"{}"), "eGemma answered 422"),
         ((200, {}, b"not json"), "eGemma's reply is not JSON"),
@@ -122,7 +122,7 @@ def test_check_refuses_unknown_keys_bad_temperatures_and_no_key(raw, monkeypatch
         ({"kind": "egemma", "temperature": 3}, "between 0 and 2"),
         ({"kind": "egemma", "temperature": True}, "between 0 and 2"),
         ({"kind": "egemma", "output": {"schema": {}, "label": "x"}}, "JSON pointer"),
-        ({"kind": "unified"}, "asks for the unified battery"),
+        ({"kind": "unified"}, "asks for battery 'unified'"),
     ]:
         with pytest.raises(ValueError, match=message):
             EGemma().check(situate({**raw, "battery": battery}))
@@ -137,7 +137,7 @@ def test_the_key_file_comes_first(monkeypatch, tmp_path, key):
     monkeypatch.setenv("EGEMMA_API_KEY_FILE", str(path))
     assert egemma._key() == "from-file"
     path.write_text("")
-    with pytest.raises(BatteryError, match="empty file"):
+    with pytest.raises(BatteryError, match="is empty"):
         egemma._key()
 
 
@@ -224,7 +224,7 @@ def test_an_answer_that_breaks_its_schema_is_an_opening(frame, key, server):
     fake = server(breaks)
     observation = EGemma(fake.base + "/judge").observe(frame, "p", 32)
     assert observation.label is None
-    assert observation.opening == "the answer breaks its schema: /score 0 is less than 10"
+    assert observation.opening == "the answer breaks its schema ('/score 0 is less than 10')"
 
 
 def test_a_call_records_the_model_that_served(frame, key, server):

@@ -267,6 +267,14 @@ A refusal: the message says what went wrong, each note what to do.
 class GadflyError(ValueError)
 ```
 
+#### quoted
+
+Values as a message names them: each quoted, as Python's repr does.
+
+```python
+quoted(values)
+```
+
 #### noted
 
 Python's own `error`, with notes that say what to do: its constructor

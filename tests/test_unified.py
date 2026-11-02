@@ -71,7 +71,7 @@ def test_a_critic_of_your_own_keeps_its_schema_and_names_where_the_label_is(raw)
     answer = json.dumps({"review": {"verdict": "decline", "notes": ["no receipt"]}})
     assert read_label(answer, frame) == ("decline", None)
     missing = json.dumps({"review": {}})
-    assert read_label(missing, frame) == (None, "the answer has nothing at /review/verdict")
+    assert read_label(missing, frame) == (None, "the answer has nothing at '/review/verdict'")
 
 
 def test_a_call_sends_the_prompt_the_cap_and_the_token(raw, token, router):
@@ -107,7 +107,7 @@ def test_a_proxy_in_the_environment_is_not_used(raw, token, router, monkeypatch)
 def test_a_diagnostic_answer_is_an_opening(raw, token, router):
     fake = router((200, {"x-codex-router-diagnostic": "upstream unavailable"}, answer("grant")))
     observation = Unified(fake.url).observe(situate(raw), "p", 16)
-    assert observation.opening == "the router reports upstream unavailable"
+    assert observation.opening == "the router reports 'upstream unavailable'"
 
 
 def test_an_error_status_is_an_opening(raw, token, router):
@@ -122,7 +122,7 @@ def test_an_answer_outside_the_schema_is_an_opening(raw, token, router):
     assert observation.raw == "grant or decline, hard to say"
     fake.reply = (200, {}, answer('{"label": "refund"}'))
     observation = Unified(fake.url).observe(situate(raw), "p", 16)
-    assert observation.opening == "the answer's /label is not one of this frame's labels"
+    assert observation.opening == "the answer's '/label' is not one of this frame's labels"
 
 
 def test_the_router_must_be_on_this_machine():
@@ -144,7 +144,7 @@ def test_check_refuses_tools_training_providers_wrong_kinds_and_no_token(
         ({"tools": False}, "no tools"),
         ({"model": "ultra-spark/deepseek-v4.1-flash-1017"}, "trains on its inputs"),
         ({"model": " "}, "slug the router serves"),
-        ({"kind": "other"}, "asks for the other battery"),
+        ({"kind": "other"}, "asks for battery 'other'"),
         ({"reasoning": "extreme"}, "reasoning is one of"),
         ({"output": {"schema": {}, "label": "verdict"}}, "JSON pointer"),
         ({"temperature": 0}, "reads no"),

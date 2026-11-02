@@ -172,7 +172,7 @@ def test_only_the_battery_the_frame_names_reads_it(raw):
     # recorded under a frame that says something else read it
     raw["battery"] = {"kind": "unified", "model": "anthropic/claude-sonnet-5-5"}
     battery = Rules()
-    with pytest.raises(ValueError, match="asks for the unified battery, not rules"):
+    with pytest.raises(ValueError, match="asks for battery 'unified', not 'rules'"):
         run(situate(raw), battery, Budget(calls=21))
     assert battery.calls == []
 

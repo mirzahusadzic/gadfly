@@ -153,19 +153,36 @@ def test_dash_at_a_terminal_is_refused_not_waited_on(capsys, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ("command", "text", "said", "status"),
+    ("command", "name", "text", "said", "status"),
     [
-        ("plan", '{"name":\n', "FrameError: frame.json is not JSON at line 2, column 1", 4),
-        ("check-frame", "[1,", "FrameError: frame.json is not JSON at line 1, column 4", 4),
-        ("report", "{}\nnot json\n", "RecordsError: records.jsonl is not JSON at line 2", 5),
-        ("portfolio", "{", "RecordsError: report.json is not JSON at line 1, column 2", 5),
+        (
+            "plan",
+            "frame.json",
+            '{"name":\n',
+            "FrameError: file 'frame.json' is not JSON at line 2",
+            4,
+        ),
+        (
+            "check-frame",
+            "frame.json",
+            "[1,",
+            "FrameError: file 'frame.json' is not JSON at line 1",
+            4,
+        ),
+        ("report", "records.jsonl", "{}\nnot json\n", "RecordsError: file 'records.jsonl' is", 5),
+        (
+            "portfolio",
+            "report.json",
+            "{",
+            "RecordsError: file 'report.json' is not JSON at line 1",
+            5,
+        ),
     ],
 )
 def test_a_file_that_is_not_json_is_named_with_its_line(
-    tmp_path, capsys, monkeypatch, command, text, said, status
+    tmp_path, capsys, monkeypatch, command, name, text, said, status
 ):
     monkeypatch.chdir(tmp_path)  # so the message names the file as given
-    name = said.split()[1]
     Path(name).write_text(text)
     argv = [command, REFUND, name] if command == "report" else [command, name]
     assert main(argv) == status
@@ -329,7 +346,11 @@ def test_portfolio_counts_categories_and_never_names_one(tmp_path, capsys):
     [
         (["run", REFUND, "--battery", "RuleReader", "--calls", "7", "--out", "x"], "UsageError", 2),
         (["plan", str(ROOT / "pyproject.toml")], "FrameError", 4),
-        (["plan", "no-such-frame.json"], "FileNotFoundError: no-such-frame.json does not exist", 7),
+        (
+            ["plan", "no-such-frame.json"],
+            "FileNotFoundError: file 'no-such-frame.json' does not exist",
+            7,
+        ),
     ],
 )
 def test_a_refusal_is_its_class_its_message_and_its_status(argv, said, status, capsys):
@@ -343,7 +364,7 @@ def test_with_json_a_refusal_is_one_object_on_standard_error(capsys):
         "error": {
             "type": "FileNotFoundError",
             "exit": 7,
-            "message": "no-such-frame.json does not exist",
+            "message": "file 'no-such-frame.json' does not exist",
             "notes": [],
             "help": "https://mirzahusadzic.github.io/gadfly/troubleshooting#file-errors",
         }
@@ -390,7 +411,7 @@ def test_a_refused_run_writes_no_records_file(tmp_path, capsys):
     out = tmp_path / "records.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:PhraseMatcher", "--calls", "7"]
     assert main([*argv, "--out", str(out)]) == 6
-    assert "BatteryError: this frame asks for the rule-reader battery" in capsys.readouterr().err
+    assert "BatteryError: this frame asks for battery 'rule-reader'" in capsys.readouterr().err
     assert not out.exists()
 
 
@@ -410,7 +431,7 @@ def test_ctrl_c_keeps_what_was_made_and_says_how_to_finish(tmp_path, capsys):
     assert main([*argv, "--out", str(out)]) == 130
     err = capsys.readouterr().err
     assert err.startswith("KeyboardInterrupt: stopped by Ctrl-C after 2 calls")
-    assert f"finish with {out} as --kept" in err
+    assert f"finish with --kept '{out}'" in err
     assert "Traceback" not in err and len(out.read_text().splitlines()) == 2
 
 

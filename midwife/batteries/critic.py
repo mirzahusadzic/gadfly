@@ -30,10 +30,10 @@ def loopback(url: str, what: str) -> str:
         parsed.port  # noqa: B018 -- reading it checks it
     except ValueError:
         raise BatteryError(
-            f"{what}'s address has no valid port ({url})", "a port is a number from 0 to 65535"
+            f"{what}'s address {url!r} has no valid port", "a port is a number from 0 to 65535"
         ) from None
     if parsed.scheme != "http" or parsed.hostname not in LOOPBACK:
-        raise BatteryError(f"{what} must be on this machine over http, not {url}")
+        raise BatteryError(f"{what}'s address {url!r} is not on this machine over http")
     return url
 
 
@@ -219,7 +219,7 @@ def label_at(answer, frame: Frame) -> tuple[str | None, str | None]:
     try:
         label = pointed(answer, pointer)
     except KeyError:
-        return None, f"the answer has nothing at {pointer}"
+        return None, f"the answer has nothing at {pointer!r}"
     if not isinstance(label, str) or label not in frame.labels:
-        return None, f"the answer's {pointer} is not one of this frame's labels"
+        return None, f"the answer's {pointer!r} is not one of this frame's labels"
     return label, None

@@ -101,9 +101,9 @@ def test_a_control_that_cuts_every_statement_sends_none(raw):
         ("supported", ["the support lead"], {}, "another answer", None),
         ("conditional", ["Sam"], {}, "conditional", None),
         ("open", [], {"candidates": [{"text": "Sam"}]}, "open", None),
-        ("ambiguous", ["Sam", "Priya"], {}, None, "the engine answered ambiguous"),
-        ("conflict", [], {}, None, "the engine answered conflict"),
-        ("limited", [], {}, None, "the engine answered limited"),
+        ("ambiguous", ["Sam", "Priya"], {}, None, "the engine answered 'ambiguous'"),
+        ("conflict", [], {}, None, "the engine answered 'conflict'"),
+        ("limited", [], {}, None, "the engine answered 'limited'"),
         (
             "needs-reading",
             [],
@@ -135,7 +135,7 @@ def test_an_answer_no_label_names_is_an_opening_without_another_answer(raw):
     raw["observe"]["labels"].remove("another answer")
     body = json.loads(reply("supported", "Sam", "Priya")[2])
     label, opening = label_of(body, situate(raw).labels)
-    assert label is None and opening.startswith("the engine answered ['Sam', 'Priya']")
+    assert label is None and opening.startswith("the engine answered 'Sam', 'Priya'")
 
 
 def test_a_refusal_is_an_opening_in_the_engines_words(raw, server):
@@ -145,7 +145,7 @@ def test_a_refusal_is_an_opening_in_the_engines_words(raw, server):
     baseline = plan(frame)[0]
     observation = Tendora().observe(frame, prompt(frame, baseline, frame.inputs[0]), 64)
     assert observation.label is None
-    assert observation.opening == f"the engine answered 409: {said['error']}"
+    assert observation.opening == f"the engine answered 409 ({said['error']!r})"
 
 
 def test_each_record_names_what_served_it(raw, server):
@@ -278,7 +278,7 @@ def test_check_refuses_two_inputs_turned_into_one_question():
     # the engine is asked the turned text against one saved check: two
     # inputs that turn into it leave it no one check (pass 5, R04)
     same = {"alpha": "it", "beta": "it", "first": "same", "second": "same"}
-    with pytest.raises(ValueError, match="inputs a, b turn into the same question"):
+    with pytest.raises(ValueError, match="inputs 'a', 'b' turn into the same question"):
         Tendora().check(two_inputs(same))
     frame = two_inputs(same)
     trial = next(t for t in plan(frame) if t.id == "presentation")
@@ -292,7 +292,7 @@ def test_check_refuses_two_inputs_turned_into_one_question():
 def test_check_refuses_a_rename_that_turns_an_input_out_of_its_form(presentation):
     # every turned input must still read Case: …, then Question: …, or the
     # trial could never be asked (pass 5, R08)
-    with pytest.raises(ValueError, match="input a turns out of the check's form"):
+    with pytest.raises(ValueError, match="input 'a' turns out of the check's form"):
         Tendora().check(two_inputs(presentation))
 
 
@@ -333,7 +333,7 @@ def test_a_run_turns_each_input_once_not_once_per_prompt(server, monkeypatch, n)
         (lambda raw: raw["body"]["spans"][0].update(text="Maya declares.\nAlex pages."), ","),
         (
             lambda raw: raw["interventions"].update(presentation={"Maya": "Maya\nand Alex"}),
-            " in the presentation trial",
+            " in trial 'presentation'",
         ),
     ],
 )
@@ -342,7 +342,7 @@ def test_check_refuses_a_statement_with_a_line_break(raw, change, where):
     # break, as written or as a trial renames it, would reach it as two
     # (pass 5, R03)
     change(raw)
-    with pytest.raises(ValueError, match=f"span maya-declares holds a line break{where}"):
+    with pytest.raises(ValueError, match=f"span 'maya-declares' holds a line break{where}"):
         Tendora().check(at(raw, "http://127.0.0.1:1"))
 
 

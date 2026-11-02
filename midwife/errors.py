@@ -13,6 +13,8 @@ A file the command line cannot read or write is Python's own error
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 # The statuses no GadflyError carries: Python's own file errors, Ctrl-C, and
 # anything else raised, which is a bug (EX_SOFTWARE)
 FILE, INTERRUPTED, BUG = 7, 130, 70
@@ -27,6 +29,11 @@ class GadflyError(ValueError):
         super().__init__(message)
         for note in notes:
             self.add_note(note)
+
+
+def quoted(values: Iterable[str]) -> str:
+    """Values as a message names them: each quoted, as Python's repr does."""
+    return ", ".join(map(repr, values))
 
 
 def noted[E: BaseException](error: E, *notes: str) -> E:

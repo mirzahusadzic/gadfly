@@ -80,7 +80,7 @@ def test_a_refusal_never_shows_a_password(raw):
 
 
 def test_check_refuses_another_batterys_frame(raw):
-    with pytest.raises(ValueError, match="asks for the rules battery"):
+    with pytest.raises(ValueError, match="asks for battery 'rules'"):
         LocalJSON().check(situate({**raw, "battery": {"kind": "rules"}}))
 
 
@@ -92,7 +92,7 @@ def test_check_refuses_another_batterys_frame(raw):
         ((200, {}, b"not json"), "the evaluator's reply is not JSON"),
         ((200, {}, b"[]"), "the evaluator's reply is not a JSON object"),
         (reply(None), "the answer is not JSON"),
-        (reply("refund"), "the answer's /label is not one of this frame's labels"),
+        (reply("refund"), "the answer's '/label' is not one of this frame's labels"),
     ],
 )
 def test_what_the_evaluator_cannot_answer_is_an_opening(raw, evaluator, answer, opening):

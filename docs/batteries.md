@@ -195,7 +195,7 @@ class CitationReader:
     def check(self, frame):
         kind = frame.battery["kind"]
         if kind != self.name:
-            raise ValueError(f"this frame asks for {kind}")
+            raise ValueError(f"this frame asks for battery {kind!r}")
 
     def observe(self, frame, prompt, max_output_tokens):
         body, _, question = prompt.partition("\n\n---\n\n")

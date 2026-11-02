@@ -191,14 +191,14 @@ read from it.
 | Refusal | Meaning |
 |---|---|
 | `a record is a JSON object` | a stored row is not a record at all |
-| `a record lacks ...` | the stored row is not a whole record; it is refused before its call is skipped |
+| `a record lacks keys '...'` | the stored row is not a whole record; it is refused before its call is skipped |
 | `a record's ... is not a str` | a field holds the wrong kind of value; the row was written by something else |
 | `a record holds both a label and an opening, or neither` | a call ends in exactly one of the two |
 | `a record belongs to another frame` | any frame coordinate changed; the record's hash no longer names this frame |
 | `a record was made by X, not the Y battery` | a frame is read only by the battery its hash names |
 | `a record names an input or trial the plan does not have` | the plan or input id changed |
-| `a X record was made on another body` | the trial's body hash does not match the current plan |
+| `a record of trial 'x' was made on another body` | the trial's body hash does not match the current plan |
 | `run N is outside the quorum of M` | re-situate with the intended standing; do not edit the record |
-| `two records for input/trial run N` | the persisted set contains the same call twice |
+| `two records for input 'x', trial 'y', run N` | the persisted set contains the same call twice |
 | `... is not one of this frame's labels` | the scorer's answer was outside the declared observation map |
-| `a kept ... record was made from another prompt` | only when resuming a run: the kept record's prompt digest is not the one this frame plans for that call |
+| `a kept record of trial 'x' was made from another prompt` | only when resuming a run: the kept record's prompt digest is not the one this frame plans for that call |

@@ -87,7 +87,7 @@ def test_check_frame_says_ok_or_where_the_frame_is_wrong(tmp_path, capsys):
     result = json.loads(capsys.readouterr().out)
     assert result["ok"] is False and result["checked"] == "schema and parser"
     assert [p["at"] for p in result["problems"]] == ["/interventions/sham", "/"]
-    assert result["problems"][1]["problem"] == "anchors not in the body (r9)"
+    assert result["problems"][1]["problem"] == "the body has no span 'r9'"
 
 
 def _drift(change):

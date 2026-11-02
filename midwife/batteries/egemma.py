@@ -40,7 +40,7 @@ from functools import partial
 from pathlib import Path
 from urllib.parse import urlparse
 
-from ..errors import BatteryError
+from ..errors import BatteryError, quoted
 from ..frame import Frame
 from ..types import Observation
 from .critic import (
@@ -68,13 +68,17 @@ def _key() -> str:
     if path:
         key = Path(path).read_text(encoding="utf-8").strip()
         if not key:
-            raise BatteryError("EGEMMA_API_KEY_FILE names an empty file")
+            raise BatteryError(
+                f"file {path!r} is empty",
+                "the environment variable EGEMMA_API_KEY_FILE names it; write eGemma's key into it",
+            )
         return key
     key = os.environ.get("EGEMMA_API_KEY") or os.environ.get("WORKBENCH_API_KEY")
     if not key:
         raise BatteryError(
             "no eGemma key",
-            "name a file that holds it in EGEMMA_API_KEY_FILE, or set EGEMMA_API_KEY",
+            "name a file that holds it in the environment variable EGEMMA_API_KEY_FILE, "
+            "or set EGEMMA_API_KEY",
         )
     return key
 
@@ -175,10 +179,12 @@ class EGemma:
         empty pin, or no key; then read the budget eGemma publishes."""
         battery = frame.battery
         if battery.get("kind") != self.name:
-            raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
+            raise BatteryError(f"this frame asks for battery {battery.get('kind')!r}")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise BatteryError(f"the eGemma battery reads no {', '.join(sorted(unknown))}")
+            raise BatteryError(
+                f"the eGemma battery reads no {quoted(sorted(unknown))} under battery"
+            )
         temperature = battery.get("temperature", 0.7)
         if isinstance(temperature, bool) or not isinstance(temperature, int | float):
             raise BatteryError("battery.temperature is a number between 0 and 2")
@@ -254,7 +260,12 @@ class EGemma:
             first = violations[0] if isinstance(violations, list) and violations else {}
             first = first if isinstance(first, dict) else {}
             where = f"{first.get('path', '')} {first.get('message', '')}".strip()
-            opening = f"the answer breaks its schema: {where}"[:300].rstrip(": ")
+            opening = (
+                f"the answer breaks its schema ({where!r})"
+                if where
+                else "the answer breaks its schema"
+            )
+            opening = opening[:300]
             return Observation(label=None, opening=opening, **seen)
         label, opening = label_at(reply["answer"], frame)
         if label is None:
