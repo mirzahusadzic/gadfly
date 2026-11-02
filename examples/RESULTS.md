@@ -301,3 +301,7 @@ thought before every answer, 577 to 1,739 output tokens a call.
 No hidden fallback stays open by declaration: the second program's own line
 gives its address and protocol, so no one line can be cut to sever it from
 the router, and the frame names the category with that check beside it.
+
+This frame was also read by other models while the design was worked out;
+only the reading shown here is kept, and its predictions were written before
+its calls.
