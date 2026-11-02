@@ -274,7 +274,14 @@ def command_run(args) -> int:
     # a service that is down answers every call with an opening: say so, so a
     # run that spent its calls on nothing does not read as a finished one
     openings = Counter(r.opening for r in result.records if r.opening is not None)
-    status = 1 if result.records and sum(openings.values()) == len(result.records) else 0
+    # and a run its budget cut short, so its records do not read as the whole run
+    status = (
+        1
+        if result.records and sum(openings.values()) == len(result.records)
+        else 3
+        if result.stopped
+        else 0
+    )
     if args.json:
         payload = {
             "frame": frame.name,

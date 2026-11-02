@@ -21,7 +21,7 @@ a command reads may be `-`, standard input, once in a command.
 | --- | --- | --- | --- |
 | `check-frame FRAME` | no | `ok`, the frame's hash and its calls, or each problem and where it is | 0 when accepted, 1 when not |
 | `plan FRAME` | no | each trial, its kind and its body's hash, and the call count | 0 |
-| `run FRAME` | yes, up to `--calls` | the calls written, how many came back as openings and why, why it stopped early, and how to read the verdict | 0; 1 when every call came back as an opening; 130 when stopped by Ctrl-C |
+| `run FRAME` | yes, up to `--calls` | the calls written, how many came back as openings and why, why it stopped early, and how to read the verdict | 0; 1 when every call came back as an opening; 3 when stopped early, its records partial; 130 when stopped by Ctrl-C |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0 |
 | `portfolio REPORT...` | no | frames counted by category, the obligations they share, and frames whose inputs disagree | 0 |
 

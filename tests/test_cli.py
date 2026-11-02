@@ -225,6 +225,16 @@ def test_a_budget_below_the_plan_is_a_refusal(tmp_path, capsys):
     assert captured.out == "" and not out.exists()
 
 
+def test_a_run_its_budget_cuts_short_exits_with_3(tmp_path, capsys):
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    budget = ["--output-tokens", "10", "--token-budget", "30"]
+    assert main([*argv, *budget, "--out", str(out)]) == 3  # the records are partial
+    told = capsys.readouterr().out
+    assert "wrote 3/8 calls" in told and "stopped: the token budget (30) is spent" in told
+    assert len(out.read_text().splitlines()) == 3
+
+
 def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     status, first = run_refund(tmp_path, "--only", "baseline")
     rest = tmp_path / "rest.jsonl"
