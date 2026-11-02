@@ -1183,7 +1183,8 @@ directory.
 
 #### load_frame
 
-The frame in a JSON file, checked and hashed.
+The frame in a JSON file, or on standard input for `-`, checked and
+hashed.
 
 ```python
 load_frame(path)

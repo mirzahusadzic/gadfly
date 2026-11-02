@@ -170,6 +170,19 @@ def test_a_file_that_is_not_json_is_named_with_its_line(tmp_path, capsys, comman
     assert capsys.readouterr().err.startswith(f"gadfly: {path} {said}")
 
 
+@pytest.mark.parametrize("command", ["check-frame", "plan"])
+def test_a_frame_may_come_from_standard_input(capsys, monkeypatch, command):
+    monkeypatch.setattr("sys.stdin", io.StringIO(Path(REFUND).read_text()))
+    assert main([command, "-"]) == 0
+    assert "refund-receipt" in capsys.readouterr().out
+
+
+def test_standard_input_is_read_once(capsys, monkeypatch):
+    monkeypatch.setattr("sys.stdin", io.StringIO(Path(REFUND).read_text()))
+    assert main(["report", "-", "-"]) == 2
+    assert "standard input is read once" in capsys.readouterr().err
+
+
 def test_out_dash_and_json_are_refused_together(capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, "--out", "-", "--json"]) == 2

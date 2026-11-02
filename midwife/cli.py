@@ -48,7 +48,8 @@ docs: https://mirzahusadzic.github.io/gadfly/command-line
 
 
 def load_frame(path: str):
-    """The frame in a JSON file, checked and hashed."""
+    """The frame in a JSON file, or on standard input for `-`, checked and
+    hashed."""
     return situate(load_json(path, read_text(path)))
 
 
@@ -344,7 +345,7 @@ def command_report(args) -> int:
 def command_check_frame(args) -> int:
     """`gadfly check-frame`: the frame's shape against the schema (when
     jsonschema is installed), then the parser's authoritative refusal."""
-    raw = load_json(args.frame, Path(args.frame).read_text(encoding="utf-8"))
+    raw = load_json(args.frame, read_text(args.frame))
     problems = []
     try:
         from jsonschema import Draft202012Validator
@@ -374,7 +375,7 @@ def command_check_frame(args) -> int:
 
 def command_portfolio(args) -> int:
     """`gadfly portfolio`: several reports counted side by side."""
-    documents = [load_json(path, Path(path).read_text(encoding="utf-8")) for path in args.reports]
+    documents = [load_json(path, read_text(path)) for path in args.reports]
     summary = summarize([entry_from(document) for document in documents])
     if args.json:
         print(json.dumps(summary, indent=2))
@@ -405,12 +406,12 @@ def parser() -> argparse.ArgumentParser:
     commands = root.add_subparsers(dest="command", metavar="command")
 
     show = commands.add_parser("plan", help="show trials and call count without spending")
-    show.add_argument("frame", help="the frame, a JSON file")
+    show.add_argument("frame", help="the frame, a JSON file, or - for stdin")
     show.add_argument("--json", action="store_true", help="print JSON instead of text")
     show.set_defaults(func=command_plan)
 
     execute = commands.add_parser("run", help="run a battery and keep records as JSON Lines")
-    execute.add_argument("frame", help="the frame, a JSON file")
+    execute.add_argument("frame", help="the frame, a JSON file, or - for stdin")
     execute.add_argument("--battery", required=True, help="module:Class")
     execute.add_argument("--out", required=True, help="a new JSON Lines file, or - for stdout")
     execute.add_argument("--calls", required=True, type=int, help="the most calls to make")
@@ -433,18 +434,20 @@ def parser() -> argparse.ArgumentParser:
     execute.set_defaults(func=command_run)
 
     report = commands.add_parser("report", help="judge a kept JSON Lines file")
-    report.add_argument("frame", help="the frame the records were made under")
+    report.add_argument("frame", help="the frame the records were made under, or - for stdin")
     report.add_argument("records", help="the records, a JSON Lines file, or - for stdin")
     report.add_argument("--json", action="store_true", help="print JSON instead of text")
     report.set_defaults(func=command_report)
 
     check = commands.add_parser("check-frame", help="check a frame before any call")
-    check.add_argument("frame", help="the frame, a JSON file")
+    check.add_argument("frame", help="the frame, a JSON file, or - for stdin")
     check.add_argument("--json", action="store_true", help="print JSON instead of text")
     check.set_defaults(func=command_check_frame)
 
     portfolio = commands.add_parser("portfolio", help="count verdicts across report files")
-    portfolio.add_argument("reports", nargs="+", help="documents from `gadfly report --json`")
+    portfolio.add_argument(
+        "reports", nargs="+", help="documents from `gadfly report --json`, one may be -"
+    )
     portfolio.add_argument("--json", action="store_true", help="print JSON instead of text")
     portfolio.set_defaults(func=command_portfolio)
     return root
@@ -458,6 +461,9 @@ def main(argv: list[str] | None = None) -> int:
         command_line.print_help()
         return 0
     try:
+        named = [vars(args).get(key) for key in ("frame", "records", "kept")]
+        if [*named, *vars(args).get("reports", [])].count("-") > 1:
+            raise ValueError("standard input is read once: name one - at most")
         return args.func(args)
     except (OSError, ValueError, RuntimeError, KeyError, ImportError) as error:
         print(f"gadfly: {error}", file=sys.stderr)

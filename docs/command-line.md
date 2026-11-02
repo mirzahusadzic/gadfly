@@ -14,7 +14,8 @@ Every command also takes `--json`, which prints the same as JSON. A refusal,
 such as a missing file, an existing `--out` file, a battery that cannot be
 imported or a budget below the plan, prints `gadfly:` and the reason, and exits
 with 2.
-Results go to standard output, and messages to standard error.
+Results go to standard output and messages to standard error, and any file
+a command reads may be `-`, standard input, once in a command.
 
 | Command | Calls a model | Prints | Exit status |
 | --- | --- | --- | --- |
