@@ -577,3 +577,11 @@ def test_a_file_named_json_after_the_options_is_a_file(tmp_path, capsys, monkeyp
     monkeypatch.chdir(tmp_path)  # no file named --json here
     assert main(["plan", "--", "--json"]) == 7
     assert capsys.readouterr().err.startswith("FileNotFoundError: file '--json' does not exist")
+
+
+def test_standard_input_that_is_not_utf8_says_so(capsys, monkeypatch):
+    # as a terminal's or a pipe's stdin is opened: bad bytes would pass as surrogates
+    piped = io.TextIOWrapper(io.BytesIO(b'{"name": "\xff"}'), "utf-8", "surrogateescape")
+    monkeypatch.setattr("sys.stdin", piped)
+    assert main(["plan", "-"]) == 4
+    assert capsys.readouterr().err == "FrameError: standard input is not UTF-8 text\n"

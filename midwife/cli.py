@@ -97,7 +97,11 @@ def read_text(path: str, refusal: type[GadflyError]) -> str:
             "- reads standard input, which is a terminal", "pipe the file in, or name it"
         )
     try:
-        return sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
+        if path != "-":
+            return Path(path).read_text(encoding="utf-8")
+        # stdin's own reader passes bad bytes on as surrogates: decode them here
+        stream = getattr(sys.stdin, "buffer", None)
+        return stream.read().decode("utf-8") if stream else sys.stdin.read()
     except UnicodeDecodeError:
         raise refusal(f"{_named(path)} is not UTF-8 text") from None
 
