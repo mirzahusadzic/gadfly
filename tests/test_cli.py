@@ -301,6 +301,8 @@ def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     "argv, said, status",
     [
         (["--battery", "tests.fixtures.refund:NoSuchReader"], "BatteryError: ", 6),
+        (["--battery", ".refund:RuleReader"], "BatteryError: module '.refund'", 6),
+        (["--battery", "..:RuleReader"], "BatteryError: module '..'", 6),
         (["--out", "{tmp}/missing-dir/records.jsonl"], "FileNotFoundError: ", 7),
     ],
 )

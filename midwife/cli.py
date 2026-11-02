@@ -77,6 +77,11 @@ def load_battery(spec: str):
     module_name, sep, attribute = spec.partition(":")
     if not sep or not module_name or not attribute:
         raise UsageError("--battery is module:Class (for example midwife.batteries.egemma:EGemma)")
+    if module_name.startswith("."):  # import_module raises TypeError on it, not ImportError
+        raise BatteryError(
+            f"module {module_name!r} could not be imported",
+            "--battery names a module in full, not relative to another",
+        )
     if os.getcwd() not in sys.path:  # as `python -m` would: your module, from here
         sys.path.insert(0, os.getcwd())
     try:
