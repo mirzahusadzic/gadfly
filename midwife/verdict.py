@@ -320,16 +320,17 @@ def _outcomes(
     frame: Frame, x: str, samples: dict[str, list[str | None]]
 ) -> Iterator[tuple[Finding, str, bool]] | None:
     """Every finding input `x` can read once its trials not asked to the end
-    answer: each at every label, its shams all at one (any sham that moves
-    reads alike), each anchor alone at none (evidence only, never a
-    category). Each comes with its category before the all-checks hold and
-    whether the reading got as far as the ablation. None when they number
-    more than OUTCOMES."""
+    answer: each one's calls left all at one label, after the answers it has
+    (each label it can still agree on is reached so, and a split reads
+    unresolved anyway), its shams all at one (any sham that moves reads
+    alike), each anchor alone at none (evidence only, never a category).
+    Each comes with its category before the all-checks hold and whether the
+    reading got as far as the ablation. None when they number more than
+    OUTCOMES."""
     from .interventions import trial_ids
 
     planned = trial_ids(frame)
     whole = {"baseline", "repeat"} if _read_once(frame)["standing"].get("stable") else set()
-    # a trial cut short is read at every label, as one never asked
     left = {t for t in planned if _left(frame, samples.get(t, []), t in whole)}
     unasked = [t for t in planned if t in left and not t.startswith("ablation-")]
     shams = [t for t in unasked if t.startswith("sham-")]
@@ -343,8 +344,12 @@ def _outcomes(
     def read(answers: tuple[str, ...]) -> tuple[Finding, str, bool]:
         given = dict(zip(free, answers, strict=True))
         given.update(dict.fromkeys(shams[1:], given.get(shams[0]) if shams else None))
-        drawn = {**asked, **{t: [v] * frame.quorum for t, v in given.items()}}
-        finding, reached = _reading(frame, x, {**levels, **given}, drawn)
+        drawn = dict(asked)
+        for t, v in given.items():  # the answers it has, then the calls left at v
+            had = samples.get(t, [])
+            drawn[t] = [*had, *[v] * (frame.quorum - len(had))]
+        completed = {t: _level_of(frame, drawn[t], t in whole) for t in given}
+        finding, reached = _reading(frame, x, {**levels, **completed}, drawn)
         before = finding.category
         if held:
             _hold(finding)

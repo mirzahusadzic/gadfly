@@ -348,3 +348,29 @@ def test_a_stopped_run_does_no_more_work_a_call_as_the_trials_grow(raw):
 
     small, large = lines_a_call(8), lines_a_call(32)
     assert large <= small * 1.25, (small, large)
+
+
+def test_a_trial_cut_short_is_completed_from_its_answers(raw):
+    # a baseline that began with decline, three alike to agree: it can only
+    # agree on decline, which the repeat's grant leaves unresolved
+    raw["standing"] = {"quorum": 3, "agree": 3}
+    raw["carriage"] = "listed"
+    raw["interventions"] = {"repeat": True, "ablation": True}
+    raw["allowed"] = {"ablation": ["decline"]}
+    frame = situate(raw)
+    asked = {"repeat": ["grant"] * 3, "ablation": ["decline"] * 3, "baseline": ["decline"]}
+    assert unneeded(frame, frame.inputs[0]["id"], asked) == {"baseline"}
+
+
+def test_a_stable_split_in_a_trial_cut_short_is_said_first(raw):
+    raw["standing"] = {"stable": True, "quorum": 3, "agree": 2}
+    frame = situate(raw)
+    cut = run(
+        frame,
+        Reader(lambda prompt, n: "decline" if n == 1 else "grant"),
+        Budget(calls=calls_needed(frame), output_tokens_per_call=1, tokens=2),
+        only=("baseline",),
+    )
+    assert [r.observation for r in cut.records] == ["decline", "grant"]
+    [finding] = judge(frame, cut.records)
+    assert finding.evidence[0] == "the baseline and repeat sessions split (decline, grant)"
