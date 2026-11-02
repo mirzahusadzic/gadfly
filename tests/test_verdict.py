@@ -256,6 +256,9 @@ def test_carried_evidence_counts_the_shams_that_held(raw):
         ({"usage": {"output_tokens": True}}, "usage counts"),
         ({"usage": {"output_tokens": 1.5}}, "usage counts"),
         ({"served": {"not": "a string"}}, "served is not a str"),
+        ({"frame": 5}, "a record's frame is not a str"),
+        ({"battery": None}, "a record's battery is not a str"),
+        ({"body": 5}, "a record's body is not a str"),
     ],
 )
 def test_record_metadata_no_battery_could_write_is_refused(raw, change, message):

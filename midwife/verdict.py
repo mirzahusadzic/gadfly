@@ -366,8 +366,8 @@ def _check_shape(record: Any) -> None:
     lacking = RECORD_KEYS - set(record)
     if lacking:
         raise RecordsError(f"a record lacks keys {quoted(sorted(lacking))}")
-    for key, kind in (("input", str), ("trial", str), ("prompt", str), ("raw", str)):
-        if not isinstance(record[key], kind):
+    for key in ("frame", "input", "trial", "body", "prompt", "battery", "raw"):
+        if not isinstance(record[key], str):
             raise RecordsError(f"a record's {key} is not a str")
     if not isinstance(record["usage"], dict):
         raise RecordsError("a record's usage is not a dict")
