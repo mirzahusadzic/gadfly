@@ -31,7 +31,8 @@ a command reads may be `-`, standard input, once in a command.
 
 `check-frame` runs the frame's JSON Schema when `jsonschema` is installed,
 then the parser, which has the last word. It never invents a default or
-rewrites the frame:
+rewrites the frame; it prints each problem as a `FrameError` with where it is,
+and exits with 4, or prints `ok`:
 
 ```text
 $ uv run gadfly check-frame examples/upgrade.json
@@ -107,11 +108,11 @@ uv run gadfly run examples/upgrade.json \
 ```
 
 It prints the calls it wrote, and in a terminal counts them as they are
-made. When some came back as openings, it also prints how many and the most
-common reason, such as `eGemma could not be reached`:
-[Troubleshooting](troubleshooting.md) says what each one means. Stopped by
+made. Calls that came back as openings raise an `OpeningWarning`, and a stop
+before the plan's end a `StoppedWarning`, each said on standard error with
+what to do, as [Troubleshooting](troubleshooting.md) tables them. Stopped by
 Ctrl-C, it says where the records made so far are and how to finish with
-`--kept`.
+`--kept`, and a second Ctrl-C ends it at once, waiting for no call still out.
 
 | Flag | Value | Effect |
 | --- | --- | --- |

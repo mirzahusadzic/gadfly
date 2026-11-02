@@ -15,6 +15,8 @@ each answering one need and keeping its contracts.
 | Dead ends before a call | `gadfly plan` | the verdict rules, read over every answer each trial could give |
 | Shams of another kind | `"sham": {"draws": n, "kind": {anchor: kind}}` | old frames' hashes and plans |
 | Stopping at unresolved | `gadfly run --stop-unresolved` | the category a whole run reads |
+| Records through a pipe | `gadfly run --out -`, `gadfly report FRAME -` | each record written as it exists, never over a file |
+| Errors and warnings as classes | `midwife.errors`, `--json` on every command | one exit status a class, and every message tabled |
 
 ---
 
@@ -48,6 +50,13 @@ details.
   only way round was to give it a kind it does not have.
 - **Stopping at unresolved:** an input that could read nothing else still
   spent every trial, such as one whose ablation and control both held.
+- **Records through a pipe:** a run could only write a file, so a script
+  that wanted the verdict kept one it did not need. `-` stands for standard
+  output and input, as clig.dev asks.
+- **[Errors and warnings as classes](troubleshooting.md):** a script or
+  another model could tell a bad frame from a bad battery only by reading
+  the words, and openings and early stops were lines with no class. Each is
+  now a Python error or warning, with its own exit status.
 
 ---
 

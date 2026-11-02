@@ -224,6 +224,11 @@ The pipeline turns an unexpected exception into an opening too, but a battery
 should not lean on that net. A timeout in particular must never become a label
 or be dropped.
 
+A battery refuses a frame it must not serve with a `ValueError`, from `check`
+as above, or while its module is imported or it is made. Gadfly raises each as
+a `BatteryError`, exit 6 on the command line, with the battery's own words as
+its note.
+
 ---
 
 ### Choosing a live quorum

@@ -149,3 +149,9 @@ A run asks a battery each trial's prompt and keeps what comes back.
   answer, and optionally a cap on all output tokens.
 - **Prediction:** what you expect each trial to give, written before the
   first call; the examples keep theirs.
+- **Refusal:** an error Gadfly raises instead of guessing, a class named
+  for what to fix (`FrameError`, `RecordsError` and others) with its own exit
+  status; [Troubleshooting](troubleshooting.md) tables each one.
+- **Warning:** what a run did not do as asked though it went on, calls that
+  came back as openings or a stop before the plan's end, raised as an
+  `OpeningWarning` or a `StoppedWarning`.
