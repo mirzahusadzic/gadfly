@@ -19,17 +19,21 @@ directory.
 from __future__ import annotations
 
 import argparse
+import errno
 import functools
 import importlib
 import json
 import os
+import re
 import sys
+import traceback
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .frame import FrameError, schema
+from .errors import BatteryError, FrameError, GadflyError, RecordsError, UsageError
+from .frame import schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
 from .types import Battery, Budget, Record
@@ -51,52 +55,63 @@ docs: https://mirzahusadzic.github.io/gadfly/command-line
 def load_frame(path: str):
     """The frame in a JSON file, or on standard input for `-`, checked and
     hashed."""
-    return situate(load_json(path, read_text(path)))
+    return situate(load_json(path, read_text(path, FrameError), FrameError))
 
 
 def load_battery(spec: str):
     """An instance of the battery class `module:Class`."""
     module_name, sep, attribute = spec.partition(":")
     if not sep or not module_name or not attribute:
-        raise ValueError("--battery is module:Class (for example midwife.batteries.egemma:EGemma)")
+        raise UsageError("--battery is module:Class (for example midwife.batteries.egemma:EGemma)")
     if os.getcwd() not in sys.path:  # as `python -m` would: your module, from here
         sys.path.insert(0, os.getcwd())
-    target = getattr(importlib.import_module(module_name), attribute, None)
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError as error:
+        raise BatteryError(str(error)) from None
+    target = getattr(module, attribute, None)
     if target is None:
-        raise ValueError(f"{module_name} has no {attribute}")
+        raise BatteryError(f"{module_name} has no {attribute}")
     try:
         battery = target() if isinstance(target, type) else target
     except TypeError as error:  # a class that needs arguments is no battery to name here
-        raise ValueError(f"{spec} could not be made: {error}") from None
+        raise BatteryError(f"{spec} could not be made: {error}") from None
     if not isinstance(battery, Battery):
-        raise ValueError(f"{spec} is not a battery: it needs a name, check() and observe()")
+        raise BatteryError(f"{spec} is not a battery: it needs a name, check() and observe()")
     return battery
 
 
-def read_text(path: str) -> str:
-    """A file's text, or standard input's for `-`."""
-    if path != "-":
-        return Path(path).read_text(encoding="utf-8")
-    if sys.stdin.isatty():  # nothing is piped in: say so rather than wait
-        raise ValueError("- reads standard input, which is a terminal: pipe the file in")
-    return sys.stdin.read()
+def read_text(path: str, refusal: type[GadflyError]) -> str:
+    """A file's text, or standard input's for `-`; text that is not UTF-8
+    is a `refusal`."""
+    if path == "-" and sys.stdin.isatty():  # nothing is piped in: say so rather than wait
+        raise UsageError("- reads standard input, which is a terminal: pipe the file in")
+    try:
+        return sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        raise refusal(f"{_named(path)} is not UTF-8 text") from None
 
 
-def load_json(path: str, text: str, line: int = 1) -> Any:
-    """`text` as JSON, or a refusal that names its file and where it broke;
-    `line` is where `text` starts in the file."""
+def load_json(path: str, text: str, refusal: type[GadflyError], line: int = 1) -> Any:
+    """`text` as JSON, or a `refusal` that names its file and where it
+    broke; `line` is where `text` starts in the file."""
     try:
         return json.loads(text)
     except json.JSONDecodeError as error:
         where = f"line {line + error.lineno - 1}, column {error.colno}"
-        name = "standard input" if path == "-" else path
-        raise ValueError(f"{name} is not JSON at {where}: {error.msg}") from None
+        raise refusal(f"{_named(path)} is not JSON at {where}: {error.msg}") from None
+
+
+def _named(path: str) -> str:
+    return "standard input" if path == "-" else path
 
 
 def load_records(path: str) -> list[dict[str, Any]]:
     """The records kept in a JSON Lines file, or on standard input for `-`."""
-    lines = read_text(path).splitlines()
-    return [load_json(path, text, n) for n, text in enumerate(lines, 1) if text.strip()]
+    lines = read_text(path, RecordsError).splitlines()
+    return [
+        load_json(path, text, RecordsError, n) for n, text in enumerate(lines, 1) if text.strip()
+    ]
 
 
 def render_report(frame, records: list[dict[str, Any]]) -> str:
@@ -201,13 +216,13 @@ def command_run(args) -> int:
         try:
             json.dumps(old, ensure_ascii=False).encode("utf-8")
         except UnicodeEncodeError:
-            raise ValueError(
+            raise RecordsError(
                 f"{args.kept}: a kept record holds a lone surrogate, which no file can hold"
             ) from None
     out = Path(args.out)
     streamed = args.out == "-"  # the records own standard output; the rest is a message
     if streamed and args.json:
-        raise ValueError("--json and --out - both print to standard output: choose a file")
+        raise UsageError("--json and --out - both print to standard output: choose a file")
     if not streamed and out.exists():  # a new file: never another run's
         raise FileExistsError(f"{out} exists: kept records are never written over")
     if not streamed and not out.parent.is_dir():  # found out before a call is spent
@@ -257,8 +272,9 @@ def command_run(args) -> int:
             if streamed
             else f"they are in {out}; finish with --kept {out} and a new --out"
         )
-        print(f"\ngadfly: stopped by Ctrl-C after {len(made)} calls; {kept_where}", file=sys.stderr)
-        return 130
+        raise KeyboardInterrupt(
+            f"stopped by Ctrl-C after {len(made)} calls; {kept_where}"
+        ) from None
     finally:
         if not streamed:
             for file in files:
@@ -266,7 +282,7 @@ def command_run(args) -> int:
         if progress and made:
             print(file=sys.stderr)
     if not result.records and result.stopped:  # nothing was spent: a refusal, not a run
-        raise ValueError(result.stopped)
+        raise UsageError(result.stopped)
     if not files:  # nothing was left to ask: the new file, empty or kept, is still the whole run
         files.append(opened())
         files[0].writelines(json.dumps(old, ensure_ascii=False) + "\n" for old in kept)
@@ -353,7 +369,7 @@ def command_report(args) -> int:
 def command_check_frame(args) -> int:
     """`gadfly check-frame`: the frame's shape against the schema (when
     jsonschema is installed), then the parser's authoritative refusal."""
-    raw = load_json(args.frame, read_text(args.frame))
+    raw = load_json(args.frame, read_text(args.frame, FrameError), FrameError)
     problems = []
     try:
         from jsonschema import Draft202012Validator
@@ -383,7 +399,9 @@ def command_check_frame(args) -> int:
 
 def command_portfolio(args) -> int:
     """`gadfly portfolio`: several reports counted side by side."""
-    documents = [load_json(path, read_text(path)) for path in args.reports]
+    documents = [
+        load_json(path, read_text(path, RecordsError), RecordsError) for path in args.reports
+    ]
     summary = summarize([entry_from(document) for document in documents])
     if args.json:
         print(json.dumps(summary, indent=2))
@@ -404,7 +422,7 @@ def command_portfolio(args) -> int:
 
 def parser() -> argparse.ArgumentParser:
     """The command line's arguments."""
-    root = argparse.ArgumentParser(
+    root = Parser(
         prog="gadfly",
         description="Test whether a decision rests on the evidence you think it does.",
         epilog=EXAMPLES,
@@ -462,27 +480,87 @@ def parser() -> argparse.ArgumentParser:
     )
     portfolio.add_argument("--json", action="store_true", help="print JSON instead of text")
     portfolio.set_defaults(func=command_portfolio)
+    root.commands = {"plan": show, "run": execute, "report": report, "check-frame": check}
+    root.commands["portfolio"] = portfolio
     return root
 
 
+TROUBLESHOOTING = "https://mirzahusadzic.github.io/gadfly/troubleshooting"
+
+
 def main(argv: list[str] | None = None) -> int:
-    """Run one command; a refusal is a message and exit status 2."""
+    """Run one command. A refusal prints its class and message, then its
+    notes, and exits with its class's status; with `--json`, the same as one
+    object on standard error. Anything else is a bug: its traceback, and 70."""
+    argv = sys.argv[1:] if argv is None else argv
     command_line = parser()
-    args = command_line.parse_args(argv)
-    if args.command is None:  # no command: what the tool does, not an error
-        command_line.print_help()
-        return 0
     try:
+        args = command_line.parse_args(argv)
+        if args.command is None:  # no command: what the tool does, not an error
+            command_line.print_help()
+            return 0
         named = [vars(args).get(key) for key in ("frame", "records", "kept")]
         if [*named, *vars(args).get("reports", [])].count("-") > 1:
-            raise ValueError("standard input is read once: name one - at most")
+            raise UsageError("standard input is read once: name one - at most")
         return args.func(args)
-    except (OSError, ValueError, RuntimeError, KeyError, ImportError) as error:
-        print(f"gadfly: {error}", file=sys.stderr)
-        return 2
-    except KeyboardInterrupt:
-        print("gadfly: stopped by Ctrl-C", file=sys.stderr)
-        return 130
+    except (GadflyError, OSError, KeyboardInterrupt) as error:
+        return refused(error, "--json" in argv)
+    except Exception:
+        traceback.print_exc()
+        return 70  # EX_SOFTWARE: Gadfly's fault, not the caller's
+
+
+def refused(error: BaseException, as_json: bool) -> int:
+    """Say a refusal as the last lines of a Python traceback, or as JSON, and
+    give its exit status: a GadflyError's own, 7 for a file, 130 for Ctrl-C."""
+    if isinstance(error, GadflyError):
+        status, anchor, message = error.exit, type(error).__name__.lower(), str(error)
+    elif isinstance(error, OSError):
+        status, anchor, message = 7, "file-errors", _plain(error)
+    else:
+        status, anchor, message = 130, "keyboardinterrupt", str(error) or "stopped by Ctrl-C"
+    kind, notes = type(error).__name__, list(getattr(error, "__notes__", []))
+    if as_json:
+        said = {"type": kind, "exit": status, "message": message, "notes": notes}
+        said["help"] = f"{TROUBLESHOOTING}#{anchor}"
+        print(json.dumps({"error": said}, indent=2), file=sys.stderr)
+    else:
+        print(f"{kind}: {message}", *notes, sep="\n", file=sys.stderr)
+    return status
+
+
+def _plain(error: OSError) -> str:
+    # Python's own words carry an errno and a colon; ours are plain already
+    if error.filename is None:
+        return str(error)
+    said = {
+        errno.ENOENT: "does not exist",
+        errno.EACCES: "cannot be read or written here",
+        errno.EISDIR: "is a folder, not a file",
+        errno.ENOTDIR: "is not in a folder",
+    }.get(error.errno)
+    return f"{error.filename} {said or f'cannot be used ({error.strerror})'}"
+
+
+class Parser(argparse.ArgumentParser):
+    """The arguments; a mistake in them is a UsageError."""
+
+    commands: dict[str, Parser] = {}
+
+    def parse_args(self, args=None, namespace=None):
+        """The arguments; one no command takes is that command's mistake."""
+        parsed, extra = self.parse_known_args(args, namespace)
+        if extra:  # the command's own mistake, pointing at its own help
+            parser = self.commands.get(getattr(parsed, "command", None), self)
+            parser.error(f"unrecognized arguments: {' '.join(extra)}")
+        return parsed
+
+    def error(self, message: str):
+        """Refuse as a UsageError, in one clause, pointing at the help."""
+        # argparse's words hold colons: "argument --calls: invalid int value: 'x'"
+        message = re.sub(r"^argument (\S+): ", r"\1, ", message)
+        message = message.replace("the following arguments are required: ", "missing ")
+        raise UsageError(message.replace(": ", " "), f"{self.prog} --help shows its arguments")
 
 
 if __name__ == "__main__":

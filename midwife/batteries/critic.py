@@ -13,6 +13,7 @@ import urllib.request
 from collections.abc import Callable
 from urllib.parse import urlparse
 
+from ..errors import BatteryError
 from ..frame import Frame
 
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
@@ -24,13 +25,13 @@ def loopback(url: str, what: str) -> str:
     else ValueError, which never repeats a user or password the URL holds."""
     parsed = urlparse(url)
     if parsed.username is not None or parsed.password is not None:
-        raise ValueError(f"{what}'s address must not hold a user or password")
+        raise BatteryError(f"{what}'s address must not hold a user or password")
     try:
         parsed.port  # noqa: B018 -- reading it checks it
     except ValueError:
-        raise ValueError(f"{what}'s address has no valid port: {url}") from None
+        raise BatteryError(f"{what}'s address has no valid port: {url}") from None
     if parsed.scheme != "http" or parsed.hostname not in LOOPBACK:
-        raise ValueError(f"{what} must be on this machine over http, not {url}")
+        raise BatteryError(f"{what} must be on this machine over http, not {url}")
     return url
 
 
@@ -168,7 +169,9 @@ def check_output(battery: dict) -> None:
         and isinstance(output["label"], str)
         and output["label"].startswith("/")
     ):
-        raise ValueError("battery.output is {schema, label}, label a JSON pointer such as /verdict")
+        raise BatteryError(
+            "battery.output is {schema, label}, label a JSON pointer such as /verdict"
+        )
 
 
 def output_schema(frame: Frame) -> tuple[dict, str]:

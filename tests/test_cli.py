@@ -153,21 +153,23 @@ def test_dash_at_a_terminal_is_refused_not_waited_on(capsys, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ("command", "text", "said"),
+    ("command", "text", "said", "status"),
     [
-        ("plan", '{"name":\n', "is not JSON at line 2, column 1: Expecting value"),
-        ("check-frame", "[1,", "is not JSON at line 1, column 4: Expecting value"),
-        ("report", "{}\nnot json\n", "is not JSON at line 2, column 1: Expecting value"),
-        ("portfolio", "{", "is not JSON at line 1, column 2: Expecting property name"),
+        ("plan", '{"name":\n', "FrameError: frame.json is not JSON at line 2, column 1", 4),
+        ("check-frame", "[1,", "FrameError: frame.json is not JSON at line 1, column 4", 4),
+        ("report", "{}\nnot json\n", "RecordsError: records.jsonl is not JSON at line 2", 5),
+        ("portfolio", "{", "RecordsError: report.json is not JSON at line 1, column 2", 5),
     ],
 )
-def test_a_file_that_is_not_json_is_named_with_its_line(tmp_path, capsys, command, text, said):
-    name = {"report": "records.jsonl", "portfolio": "report.json"}.get(command, "frame.json")
-    path = tmp_path / name
-    path.write_text(text)
-    argv = [command, REFUND, str(path)] if command == "report" else [command, str(path)]
-    assert main(argv) == 2
-    assert capsys.readouterr().err.startswith(f"gadfly: {path} {said}")
+def test_a_file_that_is_not_json_is_named_with_its_line(
+    tmp_path, capsys, monkeypatch, command, text, said, status
+):
+    monkeypatch.chdir(tmp_path)  # so the message names the file as given
+    name = said.split()[1]
+    Path(name).write_text(text)
+    argv = [command, REFUND, name] if command == "report" else [command, name]
+    assert main(argv) == status
+    assert capsys.readouterr().err.startswith(said)
 
 
 @pytest.mark.parametrize("command", ["check-frame", "plan"])
@@ -193,7 +195,7 @@ def test_out_dash_and_json_are_refused_together(capsys):
 def test_run_never_writes_over_kept_records(tmp_path, capsys):
     (tmp_path / "records.jsonl").write_text("")
     status, _ = run_refund(tmp_path)
-    assert status == 2 and "never written over" in capsys.readouterr().err
+    assert status == 7 and capsys.readouterr().err.startswith("FileExistsError: ")
 
 
 def test_run_says_when_its_calls_came_back_as_openings(tmp_path, capsys):
@@ -221,7 +223,7 @@ def test_a_budget_below_the_plan_is_a_refusal(tmp_path, capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "3"]
     assert main([*argv, "--out", str(out)]) == 2
     captured = capsys.readouterr()
-    assert captured.err == "gadfly: the plan needs 8 calls; the budget allows 3\n"
+    assert captured.err == "UsageError: the plan needs 8 calls; the budget allows 3\n"
     assert captured.out == "" and not out.exists()
 
 
@@ -246,9 +248,11 @@ def test_the_records_file_takes_the_usual_names_too(tmp_path, capsys, name):
 def test_a_flag_is_named_in_full(tmp_path, capsys):
     # a shortened flag would change meaning the day a longer one is added
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
-    with pytest.raises(SystemExit) as stopped:
-        main([*argv, "--out", str(tmp_path / "records.jsonl"), "--stop"])
-    assert stopped.value.code == 2 and "unrecognized arguments: --stop" in capsys.readouterr().err
+    assert main([*argv, "--out", str(tmp_path / "records.jsonl"), "--stop"]) == 2
+    assert capsys.readouterr().err.splitlines() == [
+        "UsageError: unrecognized arguments --stop",
+        "gadfly run --help shows its arguments",
+    ]
 
 
 def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
@@ -264,20 +268,20 @@ def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
 
 
 @pytest.mark.parametrize(
-    "argv, message",
+    "argv, said, status",
     [
-        (["--battery", "tests.fixtures.refund:NoSuchReader"], "has no NoSuchReader"),
-        (["--out", "{tmp}/missing-dir/records.jsonl"], "missing-dir"),
+        (["--battery", "tests.fixtures.refund:NoSuchReader"], "BatteryError: ", 6),
+        (["--out", "{tmp}/missing-dir/records.jsonl"], "FileNotFoundError: ", 7),
     ],
 )
-def test_run_refuses_a_bad_battery_or_folder_before_any_call(tmp_path, capsys, argv, message):
-    # a refusal is a message and exit 2, before a call is spent
+def test_run_refuses_a_bad_battery_or_folder_before_any_call(tmp_path, capsys, argv, said, status):
+    # a refusal is its class and its status, before a call is spent
     out = str(tmp_path / "r.jsonl")
     argv = [a.replace("{tmp}", str(tmp_path)) for a in argv]
     argv = ["--battery", "tests.fixtures.refund:Unreachable", "--out", out, *argv]
-    assert main(["run", REFUND, "--calls", "8", *argv]) == 2
+    assert main(["run", REFUND, "--calls", "8", *argv]) == status
     err = capsys.readouterr().err
-    assert err.startswith("gadfly: ") and message in err and "Traceback" not in err
+    assert err.startswith(said) and "Traceback" not in err
 
 
 @pytest.mark.parametrize(
@@ -295,8 +299,8 @@ def test_run_refuses_a_bad_battery_or_folder_before_any_call(tmp_path, capsys, a
 def test_portfolio_refuses_a_report_that_is_not_one(tmp_path, capsys, document):
     report = tmp_path / "report.json"
     report.write_text(document)
-    assert main(["portfolio", str(report)]) == 2
-    assert capsys.readouterr().err.startswith("gadfly: ")
+    assert main(["portfolio", str(report)]) == 5
+    assert capsys.readouterr().err.startswith("RecordsError: ")
 
 
 def test_portfolio_counts_categories_and_never_names_one(tmp_path, capsys):
@@ -318,14 +322,38 @@ def test_portfolio_counts_categories_and_never_names_one(tmp_path, capsys):
 
 
 @pytest.mark.parametrize(
-    "argv, message",
+    "argv, said, status",
     [
-        (["run", REFUND, "--battery", "RuleReader", "--calls", "7", "--out", "x"], "module:Class"),
-        (["plan", str(ROOT / "pyproject.toml")], "gadfly: "),
+        (["run", REFUND, "--battery", "RuleReader", "--calls", "7", "--out", "x"], "UsageError", 2),
+        (["plan", str(ROOT / "pyproject.toml")], "FrameError", 4),
+        (["plan", "no-such-frame.json"], "FileNotFoundError: no-such-frame.json does not exist", 7),
     ],
 )
-def test_a_refusal_is_a_message_and_status_two(argv, message, capsys):
-    assert main(argv) == 2 and message in capsys.readouterr().err
+def test_a_refusal_is_its_class_its_message_and_its_status(argv, said, status, capsys):
+    assert main(argv) == status and capsys.readouterr().err.startswith(said)
+
+
+def test_with_json_a_refusal_is_one_object_on_standard_error(capsys):
+    assert main(["plan", "no-such-frame.json", "--json"]) == 7
+    told = capsys.readouterr()
+    assert told.out == "" and json.loads(told.err) == {
+        "error": {
+            "type": "FileNotFoundError",
+            "exit": 7,
+            "message": "no-such-frame.json does not exist",
+            "notes": [],
+            "help": "https://mirzahusadzic.github.io/gadfly/troubleshooting#file-errors",
+        }
+    }
+
+
+def test_a_bug_prints_its_traceback_and_exits_with_70(capsys, monkeypatch):
+    def broken(args):
+        return 1 / 0
+
+    monkeypatch.setattr("midwife.cli.command_plan", broken)
+    assert main(["plan", REFUND]) == 70
+    assert "Traceback" in capsys.readouterr().err
 
 
 def test_python_m_midwife_is_the_command_line():
@@ -358,8 +386,8 @@ def test_a_refused_run_writes_no_records_file(tmp_path, capsys):
     # the frame names the rule reader: another battery is refused before a call
     out = tmp_path / "records.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:PhraseMatcher", "--calls", "7"]
-    assert main([*argv, "--out", str(out)]) == 2
-    assert "asks for the rule-reader battery" in capsys.readouterr().err
+    assert main([*argv, "--out", str(out)]) == 6
+    assert "BatteryError: this frame asks for the rule-reader battery" in capsys.readouterr().err
     assert not out.exists()
 
 
@@ -378,7 +406,8 @@ def test_ctrl_c_keeps_what_was_made_and_says_how_to_finish(tmp_path, capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Interrupted", "--calls", "8"]
     assert main([*argv, "--out", str(out)]) == 130
     err = capsys.readouterr().err
-    assert "stopped by Ctrl-C after 2 calls" in err and f"--kept {out}" in err
+    assert err.startswith("KeyboardInterrupt: stopped by Ctrl-C after 2 calls")
+    assert f"--kept {out}" in err
     assert "Traceback" not in err and len(out.read_text().splitlines()) == 2
 
 
@@ -414,7 +443,7 @@ def test_an_unwritable_folder_is_refused_before_any_call(tmp_path, capsys):
     try:
         Counted.calls = 0
         argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Counted", "--calls", "8"]
-        assert main([*argv, "--out", str(folder / "records.jsonl")]) == 2
+        assert main([*argv, "--out", str(folder / "records.jsonl")]) == 7
     finally:
         folder.chmod(0o755)
     assert Counted.calls == 0 and "read-only" in capsys.readouterr().err
@@ -422,7 +451,7 @@ def test_an_unwritable_folder_is_refused_before_any_call(tmp_path, capsys):
 
 def test_a_battery_that_is_not_one_is_refused(tmp_path, capsys):
     argv = ["run", REFUND, "--battery", "midwife.frame:parse", "--calls", "8"]
-    assert main([*argv, "--out", str(tmp_path / "r.jsonl")]) == 2
+    assert main([*argv, "--out", str(tmp_path / "r.jsonl")]) == 6
     assert "is not a battery" in capsys.readouterr().err
 
 
@@ -438,6 +467,6 @@ def test_a_kept_record_no_file_can_hold_is_refused_before_a_call(tmp_path, capsy
     out = tmp_path / "rest.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     capsys.readouterr()
-    assert main([*argv, "--kept", str(kept), "--out", str(out)]) == 2
+    assert main([*argv, "--kept", str(kept), "--out", str(out)]) == 5
     assert "a kept record holds a lone surrogate" in capsys.readouterr().err
     assert not out.exists()

@@ -32,6 +32,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable
 
+from ..errors import BatteryError
 from ..frame import Frame
 from ..types import Observation
 from .critic import (
@@ -77,12 +78,12 @@ class LocalJSON:
         does not point at its label."""
         battery = frame.battery
         if battery.get("kind") != self.name:
-            raise ValueError(f"this frame asks for the {battery.get('kind')} battery")
+            raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise ValueError(f"the local-json battery reads no {sorted(unknown)}")
+            raise BatteryError(f"the local-json battery reads no {sorted(unknown)}")
         if not isinstance(battery.get("url"), str):
-            raise ValueError("battery.url is the evaluator's address on this machine")
+            raise BatteryError("battery.url is the evaluator's address on this machine")
         loopback(battery["url"], "the evaluator")
         timeout = battery.get("timeout", DEFAULT_TIMEOUT)
         if (
@@ -90,7 +91,7 @@ class LocalJSON:
             or not isinstance(timeout, int | float)
             or not 0 < timeout <= MAX_TIMEOUT
         ):
-            raise ValueError(f"battery.timeout is a number of seconds, up to {MAX_TIMEOUT}")
+            raise BatteryError(f"battery.timeout is a number of seconds, up to {MAX_TIMEOUT}")
         check_output(battery)
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:

@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
+from .errors import BatteryError, UsageError
 from .frame import Frame
 
 
@@ -26,7 +27,7 @@ class Observation:
 
     def __post_init__(self) -> None:
         if (self.label is None) == (self.opening is None):
-            raise ValueError("an observation is either a label or an opening")
+            raise BatteryError("an observation is either a label or an opening")
 
 
 @dataclass(frozen=True)
@@ -86,8 +87,8 @@ class Budget:
             return isinstance(value, int) and not isinstance(value, bool)
 
         if not (whole(self.calls) and whole(self.output_tokens_per_call)):
-            raise ValueError("a budget counts calls and tokens in whole numbers")
+            raise UsageError("a budget counts calls and tokens in whole numbers")
         if self.calls < 1 or self.output_tokens_per_call < 1:
-            raise ValueError("a budget allows at least one call of at least one token")
+            raise UsageError("a budget allows at least one call of at least one token")
         if self.tokens is not None and not (whole(self.tokens) and self.tokens >= 0):
-            raise ValueError("a token budget is a whole number of tokens, or None")
+            raise UsageError("a token budget is a whole number of tokens, or None")

@@ -40,6 +40,7 @@ from functools import partial
 from pathlib import Path
 from urllib.parse import urlparse
 
+from ..errors import BatteryError
 from ..frame import Frame
 from ..types import Observation
 from .critic import (
@@ -67,11 +68,11 @@ def _key() -> str:
     if path:
         key = Path(path).read_text(encoding="utf-8").strip()
         if not key:
-            raise RuntimeError("EGEMMA_API_KEY_FILE names an empty file")
+            raise BatteryError("EGEMMA_API_KEY_FILE names an empty file")
         return key
     key = os.environ.get("EGEMMA_API_KEY") or os.environ.get("WORKBENCH_API_KEY")
     if not key:
-        raise RuntimeError("no eGemma key: set EGEMMA_API_KEY_FILE or EGEMMA_API_KEY")
+        raise BatteryError("no eGemma key: set EGEMMA_API_KEY_FILE or EGEMMA_API_KEY")
     return key
 
 
@@ -171,19 +172,19 @@ class EGemma:
         empty pin, or no key; then read the budget eGemma publishes."""
         battery = frame.battery
         if battery.get("kind") != self.name:
-            raise ValueError(f"this frame asks for the {battery.get('kind')} battery")
+            raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise ValueError(f"the eGemma battery reads no {sorted(unknown)}")
+            raise BatteryError(f"the eGemma battery reads no {sorted(unknown)}")
         temperature = battery.get("temperature", 0.7)
         if isinstance(temperature, bool) or not isinstance(temperature, int | float):
-            raise ValueError("battery.temperature is a number between 0 and 2")
+            raise BatteryError("battery.temperature is a number between 0 and 2")
         if not 0 <= temperature <= 2:
-            raise ValueError("battery.temperature is a number between 0 and 2")
+            raise BatteryError("battery.temperature is a number between 0 and 2")
         check_output(battery)
         for pin in ("model", "revision"):
             if pin in battery and not (isinstance(battery[pin], str) and battery[pin]):
-                raise ValueError("battery.model and revision name what eGemma must serve")
+                raise BatteryError("battery.model and revision name what eGemma must serve")
         _key()  # no key, no run: refuse before the first call, not at each
         self.read_budget()
 

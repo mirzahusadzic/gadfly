@@ -18,6 +18,8 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
+from .errors import FrameError
+
 # The situated relation L = (I, B, r, g, P, T, B0, C, p): each must be said
 # (the body B and the baseline B0 are checked on their own).
 SITUATION = ("relation", "locus", "role", "grain", "purpose", "trajectory", "crossing", "promise")
@@ -58,10 +60,6 @@ SCOPE_CHECK = {"owner", "statement", "source", "encounter"}
 # (the default) carried and cooled need theirs passed; under listed they are
 # listed beside the category, as After the Poem's study reads them.
 CARRIAGE = ("all-checks", "listed")
-
-
-class FrameError(ValueError):
-    """A frame that cannot be assessed as declared."""
 
 
 @dataclass(frozen=True)

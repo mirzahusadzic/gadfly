@@ -7,8 +7,9 @@ and on GitHub. For narrative guidance start with
 
 - **[`midwife.pipeline`](#midwifepipeline):** `situate`, `plan`, `run`,
   `judge`, `overall`, `calls_needed`.
-- **[`midwife.frame`](#midwifeframe):** frame parsing, hashing and refusal
-  errors.
+- **[`midwife.frame`](#midwifeframe):** frame parsing and hashing.
+- **[`midwife.errors`](#midwifeerrors):** what Gadfly refuses, a class for
+  each thing to fix, with its exit status.
 - **[`midwife.types`](#midwifetypes):** `Observation`, `Record`, `Budget`,
   `Battery`.
 - **[`midwife.verdict`](#midwifeverdict):** categories, levels, evidence and
@@ -163,14 +164,6 @@ form before any trial runs; the hash travels with every record, so a verdict
 always names the frame it was read under. Changing any coordinate, the grain
 included, gives another hash: another frame.
 
-#### FrameError
-
-A frame that cannot be assessed as declared.
-
-```python
-class FrameError(ValueError)
-```
-
 #### Span
 
 One piece of the body at the frame's grain.
@@ -243,6 +236,69 @@ caller's dict afterwards cannot change what the hash names.
 
 ```python
 parse(raw)
+```
+<!-- end api -->
+
+<!-- api midwife.errors -->
+
+---
+
+### midwife.errors
+
+What Gadfly refuses, as Python names it: a class for what the caller must
+fix (PEP 8), its exit status an attribute of the class (PEP 352), a message
+that says what went wrong, and notes that say what to do (PEP 678).
+
+```python
+UsageError     2  the command or the call: flags, budget, standard input
+FrameError     4  the frame
+RecordsError   5  records or a report that are not this frame's run
+BatteryError   6  the battery: its module, its settings, its service
+```
+
+A file the command line cannot read or write is Python's own error
+(PEP 3151), exit 7. Each class is a ValueError, as every refusal was.
+
+#### GadflyError
+
+A refusal: the message says what went wrong, each note what to do.
+
+```python
+class GadflyError(ValueError)
+```
+
+#### UsageError
+
+The command or the call asks for what cannot be done: a flag, a
+budget, standard input.
+
+```python
+class UsageError(GadflyError)
+```
+
+#### FrameError
+
+A frame that cannot be assessed as declared.
+
+```python
+class FrameError(GadflyError)
+```
+
+#### RecordsError
+
+Records or a report that are not what this frame's run made.
+
+```python
+class RecordsError(GadflyError)
+```
+
+#### BatteryError
+
+A battery that cannot be made, cannot serve this frame as set up, or
+cannot reach what it needs.
+
+```python
+class BatteryError(GadflyError)
 ```
 <!-- end api -->
 
@@ -1200,19 +1256,20 @@ load_battery(spec)
 
 #### read_text
 
-A file's text, or standard input's for `-`.
+A file's text, or standard input's for `-`; text that is not UTF-8
+is a `refusal`.
 
 ```python
-read_text(path)
+read_text(path, refusal)
 ```
 
 #### load_json
 
-`text` as JSON, or a refusal that names its file and where it broke;
-`line` is where `text` starts in the file.
+`text` as JSON, or a `refusal` that names its file and where it
+broke; `line` is where `text` starts in the file.
 
 ```python
-load_json(path, text, line=1)
+load_json(path, text, refusal, line=1)
 ```
 
 #### load_records
@@ -1284,10 +1341,45 @@ parser()
 
 #### main
 
-Run one command; a refusal is a message and exit status 2.
+Run one command. A refusal prints its class and message, then its
+notes, and exits with its class's status; with `--json`, the same as one
+object on standard error. Anything else is a bug: its traceback, and 70.
 
 ```python
 main(argv=None)
+```
+
+#### refused
+
+Say a refusal as the last lines of a Python traceback, or as JSON, and
+give its exit status: a GadflyError's own, 7 for a file, 130 for Ctrl-C.
+
+```python
+refused(error, as_json)
+```
+
+#### Parser
+
+The arguments; a mistake in them is a UsageError.
+
+```python
+class Parser(argparse.ArgumentParser)
+```
+
+##### Parser.parse_args
+
+The arguments; one no command takes is that command's mistake.
+
+```python
+parse_args(args=None, namespace=None)
+```
+
+##### Parser.error
+
+Refuse as a UsageError, in one clause, pointing at the help.
+
+```python
+error(message)
 ```
 <!-- end api -->
 

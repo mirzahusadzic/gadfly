@@ -13,6 +13,7 @@ import pytest
 from midwife.batteries import unified
 from midwife.batteries.critic import pointed, read_label
 from midwife.batteries.unified import Unified, parse_stream, payload
+from midwife.errors import BatteryError
 from midwife.pipeline import situate
 from tests.fakes import Fake
 
@@ -154,7 +155,7 @@ def test_check_refuses_tools_training_providers_wrong_kinds_and_no_token(
     named = {"model": "ultra-spark/x", "trainsOnInputs": ["ultra-spark/x"]}
     critic.check(situate({**raw, "battery": {**raw["battery"], **named}}))
     monkeypatch.setenv("CODEX_ROUTER_TOKEN", "short")
-    with pytest.raises(RuntimeError, match="no router token"):
+    with pytest.raises(BatteryError, match="no router token"):
         critic.check(situate(raw))
 
 

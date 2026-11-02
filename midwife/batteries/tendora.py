@@ -59,6 +59,7 @@ import urllib.request
 from collections.abc import Callable
 from functools import lru_cache
 
+from ..errors import BatteryError
 from ..frame import Frame
 from ..pipeline import RAW_LIMIT
 from ..types import Observation
@@ -257,12 +258,12 @@ class Tendora:
         turned into one question."""
         battery = frame.battery
         if battery.get("kind") != self.name:
-            raise ValueError(f"this frame asks for the {battery.get('kind')} battery")
+            raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise ValueError(f"the tendora battery reads no {sorted(unknown)}")
+            raise BatteryError(f"the tendora battery reads no {sorted(unknown)}")
         if not isinstance(battery.get("url"), str):
-            raise ValueError("battery.url is the engine server's address on this machine")
+            raise BatteryError("battery.url is the engine server's address on this machine")
         loopback(battery["url"], "the engine")
         timeout = battery.get("timeout", DEFAULT_TIMEOUT)
         if (
@@ -270,16 +271,16 @@ class Tendora:
             or not isinstance(timeout, int | float)
             or not 0 < timeout <= MAX_TIMEOUT
         ):
-            raise ValueError(f"battery.timeout is a number of seconds, up to {MAX_TIMEOUT}")
+            raise BatteryError(f"battery.timeout is a number of seconds, up to {MAX_TIMEOUT}")
         if "scope" in battery and not (isinstance(battery["scope"], str) and battery["scope"]):
-            raise ValueError("battery.scope names the check's scope")
+            raise BatteryError("battery.scope names the check's scope")
         if "offline" in battery and not isinstance(battery["offline"], bool):
-            raise ValueError("battery.offline is true or false")
+            raise BatteryError("battery.offline is true or false")
         if OPEN not in frame.labels:
-            raise ValueError("the tendora battery needs open among the labels")
+            raise BatteryError("the tendora battery needs open among the labels")
         for x in frame.inputs:
             if asked(x["text"]) is None:
-                raise ValueError(
+                raise BatteryError(
                     f"input {x['id']} is not 'Case: …' then 'Question: …', as the check asked it"
                 )
         from ..interventions import plan
@@ -288,19 +289,19 @@ class Tendora:
             for span in trial.spans:
                 if "\n" in span.text or "\r" in span.text:
                     where = "" if trial.id == "baseline" else f" in the {trial.id} trial"
-                    raise ValueError(
+                    raise BatteryError(
                         f"span {span.id} holds a line break{where}, but the engine is sent "
                         "one statement a line"
                     )
         ids = {x["text"]: x["id"] for x in frame.inputs}
         for into, sources in turned(frame).items():
             if len(sources) > 1:
-                raise ValueError(
+                raise BatteryError(
                     f"inputs {', '.join(ids[s] for s in sources)} turn into the same question, "
                     "so the engine could not tell which saved check to ask it against"
                 )
             if asked(into) is None:
-                raise ValueError(
+                raise BatteryError(
                     f"input {ids[sources[0]]} turns out of the form 'Case: …' then "
                     "'Question: …', so the engine could not be asked it"
                 )

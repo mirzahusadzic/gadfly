@@ -13,6 +13,8 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
+from .errors import RecordsError, UsageError
+
 
 @dataclass(frozen=True)
 class Entry:
@@ -30,10 +32,10 @@ def summarize(entries: list[Entry]) -> dict[str, Any]:
     """Counts by category, the frames in each, the obligations frames share,
     and the frames whose inputs reached different categories."""
     if not entries:
-        raise ValueError("a portfolio needs at least one frame")
+        raise UsageError("a portfolio needs at least one frame")
     names = [entry.name for entry in entries]
     if len(names) != len(set(names)):
-        raise ValueError("portfolio entry names must be unique")
+        raise UsageError("portfolio entry names must be unique")
     counts = Counter(entry.category for entry in entries)
     by_category: dict[str, list[str]] = defaultdict(list)
     obligations: dict[str, list[str]] = defaultdict(list)
@@ -60,7 +62,7 @@ def entry_from(document: dict[str, Any]) -> Entry:
     refusal = "a portfolio reads `gadfly report --json` documents, and this is not one"
     overall = document.get("overall", document) if isinstance(document, dict) else None
     if not isinstance(overall, dict) or not isinstance(overall.get("category"), str):
-        raise ValueError(refusal)
+        raise RecordsError(refusal)
     name = document.get("frame", document.get("name", "unnamed"))
     inputs = overall.get("inputs", {})
     evidence, obligations = overall.get("evidence", []), overall.get("obligations", [])
@@ -72,7 +74,7 @@ def entry_from(document: dict[str, Any]) -> Entry:
         and all(isinstance(x, list) and all(isinstance(s, str) for s in x)
                 for x in (evidence, obligations))
     ):  # fmt: skip
-        raise ValueError(refusal)
+        raise RecordsError(refusal)
     return Entry(
         name=name,
         frame=document.get("hash", ""),

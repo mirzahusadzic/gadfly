@@ -9,6 +9,7 @@ import pytest
 
 from midwife.batteries import egemma
 from midwife.batteries.egemma import EGemma, payload
+from midwife.errors import BatteryError
 from midwife.pipeline import calls_needed, judge, run, situate
 from midwife.types import Budget
 from tests.fakes import Fake
@@ -126,7 +127,7 @@ def test_check_refuses_unknown_keys_bad_temperatures_and_no_key(raw, monkeypatch
         with pytest.raises(ValueError, match=message):
             EGemma().check(situate({**raw, "battery": battery}))
     monkeypatch.delenv("EGEMMA_API_KEY")
-    with pytest.raises(RuntimeError, match="no eGemma key"):
+    with pytest.raises(BatteryError, match="no eGemma key"):
         EGemma().check(situate({**raw, "battery": {"kind": "egemma"}}))
 
 
@@ -136,7 +137,7 @@ def test_the_key_file_comes_first(monkeypatch, tmp_path, key):
     monkeypatch.setenv("EGEMMA_API_KEY_FILE", str(path))
     assert egemma._key() == "from-file"
     path.write_text("")
-    with pytest.raises(RuntimeError, match="empty file"):
+    with pytest.raises(BatteryError, match="empty file"):
         egemma._key()
 
 

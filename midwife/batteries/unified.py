@@ -51,6 +51,7 @@ import urllib.request
 from collections.abc import Callable
 from pathlib import Path
 
+from ..errors import BatteryError
 from ..frame import Frame
 from ..types import Observation
 from .critic import (
@@ -87,7 +88,7 @@ def _token() -> str:
             if key.strip() == "CODEX_ROUTER_TOKEN":
                 token = value.strip().strip("'\"")
     if not re.fullmatch(r"[0-9a-f]{64}", token):
-        raise RuntimeError("no router token: set CODEX_ROUTER_TOKEN or install the router")
+        raise BatteryError("no router token: set CODEX_ROUTER_TOKEN or install the router")
     return token
 
 
@@ -102,7 +103,7 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     """The request body. No `tools` key, ever."""
     battery = frame.battery
     if not isinstance(battery.get("model"), str) or not battery["model"].strip():
-        raise ValueError("battery.model is a slug the router serves (GET /v1/models)")
+        raise BatteryError("battery.model is a slug the router serves (GET /v1/models)")
     schema, _ = output_schema(frame)
     body = {
         "model": battery["model"],
@@ -239,35 +240,35 @@ class Unified:
         router token."""
         battery = frame.battery
         if battery.get("kind") != self.name:
-            raise ValueError(f"this frame asks for the {battery.get('kind')} battery")
+            raise BatteryError(f"this frame asks for the {battery.get('kind')} battery")
         unknown = set(battery) - BATTERY_KEYS
         if unknown:
-            raise ValueError(f"the unified battery reads no {sorted(unknown)}")
+            raise BatteryError(f"the unified battery reads no {sorted(unknown)}")
         model = battery.get("model")
         if not isinstance(model, str) or not model.strip():
-            raise ValueError("battery.model is a slug the router serves (GET /v1/models)")
+            raise BatteryError("battery.model is a slug the router serves (GET /v1/models)")
         if not model.startswith(ROUTED_PREFIXES):
-            raise ValueError(
+            raise BatteryError(
                 f"{model} is an OpenAI slug: the router reaches OpenAI only with the "
                 "caller's Codex sign-in, which this battery does not send"
             )
         if "tools" in battery:  # any value, even an empty list: the critic sends none
-            raise ValueError("the critic sends no tools")
+            raise BatteryError("the critic sends no tools")
         endpoints = battery.get("endpoints", ["any"])
         if not (
             isinstance(endpoints, list)
             and endpoints
             and all(isinstance(e, str) and e for e in endpoints)
         ):
-            raise ValueError("battery.endpoints lists OpenRouter endpoint tags, in order")
+            raise BatteryError("battery.endpoints lists OpenRouter endpoint tags, in order")
         if battery.get("reasoning") not in (None, *EFFORTS):
-            raise ValueError(f"battery.reasoning is one of {', '.join(EFFORTS)}")
+            raise BatteryError(f"battery.reasoning is one of {', '.join(EFFORTS)}")
         check_output(battery)
         named = battery.get("trainsOnInputs", [])
         if not (isinstance(named, list) and all(isinstance(m, str) and m for m in named)):
-            raise ValueError("battery.trainsOnInputs lists the model slugs that may train")
+            raise BatteryError("battery.trainsOnInputs lists the model slugs that may train")
         if model.startswith(TRAINS_ON_INPUTS) and not consented(battery):
-            raise ValueError(
+            raise BatteryError(
                 f"{model}'s provider trains on its inputs; "
                 "name it under battery.trainsOnInputs to send the body there"
             )

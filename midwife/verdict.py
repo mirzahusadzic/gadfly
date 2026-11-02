@@ -48,6 +48,7 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
+from .errors import RecordsError, UsageError
 from .frame import Frame, _read_once
 
 CARRIED, COOLED = "carried", "cooled"
@@ -104,7 +105,7 @@ def overall(findings: list[Finding]) -> Overall:
     or cooled only when every input is. Each input's evidence is kept; what
     every input leaves open is said once, the rest names its input."""
     if not findings:
-        raise ValueError("there is no finding to read")
+        raise UsageError("there is no finding to read")
     inputs = {f.input: f.category for f in findings}
     found = set(inputs.values())
     evidence = [f"{f.input}: {line}" for f in findings for line in f.evidence]
@@ -353,18 +354,18 @@ def _check_shape(record: Any) -> None:
     """A record's shape, before anything is read from it: an object with every
     key, each of its kind."""
     if not isinstance(record, dict):
-        raise ValueError("a record is a JSON object")
+        raise RecordsError("a record is a JSON object")
     lacking = RECORD_KEYS - set(record)
     if lacking:
-        raise ValueError(f"a record lacks {sorted(lacking)}")
+        raise RecordsError(f"a record lacks {sorted(lacking)}")
     for key, kind in (("input", str), ("trial", str), ("prompt", str), ("raw", str)):
         if not isinstance(record[key], kind):
-            raise ValueError(f"a record's {key} is not a str")
+            raise RecordsError(f"a record's {key} is not a str")
     if not isinstance(record["usage"], dict):
-        raise ValueError("a record's usage is not a dict")
+        raise RecordsError("a record's usage is not a dict")
     for key in ("observation", "opening"):
         if record[key] is not None and not isinstance(record[key], str):
-            raise ValueError(f"a record's {key} is not a str")
+            raise RecordsError(f"a record's {key} is not a str")
 
 
 def check_records(
@@ -385,30 +386,30 @@ def check_records(
     for record in records:
         _check_shape(record)
         if record["frame"] != frame.hash:
-            raise ValueError("a record belongs to another frame")
+            raise RecordsError("a record belongs to another frame")
         if record["battery"] != battery:
-            raise ValueError(
+            raise RecordsError(
                 f"a record was made by {record['battery']}, not the {battery} battery "
                 "the frame names"
             )
         observation, opening = record["observation"], record["opening"]
         if (observation is None) == (opening is None):
-            raise ValueError("a record holds a label or an opening: not both, not neither")
+            raise RecordsError("a record holds a label or an opening: not both, not neither")
         if observation is not None and observation not in frame.labels:
-            raise ValueError(f"{observation!r} is not one of this frame's labels")
+            raise RecordsError(f"{observation!r} is not one of this frame's labels")
         if record["input"] not in inputs or record["trial"] not in bodies:
-            raise ValueError(
+            raise RecordsError(
                 f"a record names an input or trial the plan does not have: "
                 f"{record['input']}/{record['trial']}"
             )
         if record["body"] != bodies[record["trial"]]:
-            raise ValueError(f"a {record['trial']} record was made on another body")
+            raise RecordsError(f"a {record['trial']} record was made on another body")
         run = record["run"]
         if not isinstance(run, int) or isinstance(run, bool) or not 0 <= run < frame.quorum:
-            raise ValueError(f"run {run!r} is outside the quorum of {frame.quorum}")
+            raise RecordsError(f"run {run!r} is outside the quorum of {frame.quorum}")
         key = (record["input"], record["trial"], run)
         if key in seen:
-            raise ValueError(f"two records for {key[0]}/{key[1]} run {run}")
+            raise RecordsError(f"two records for {key[0]}/{key[1]} run {run}")
         seen.add(key)
 
 
