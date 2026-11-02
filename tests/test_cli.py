@@ -669,3 +669,19 @@ def test_text_standard_input_holding_surrogates_is_not_utf8(capsys, monkeypatch)
     monkeypatch.setattr("sys.stdin", io.StringIO(bad))
     assert main(["plan", "-"]) == 4
     assert capsys.readouterr().err == "FrameError: standard input is not UTF-8 text\n"
+
+
+@pytest.mark.parametrize(
+    ("place", "said"),
+    [
+        ("blocker/records.jsonl", "NotADirectoryError: path 'blocker/records.jsonl' runs through"),
+        ("folder", "IsADirectoryError: 'folder' is a folder, not a file"),
+    ],
+)
+def test_out_through_a_file_or_at_a_folder_says_which(tmp_path, capsys, monkeypatch, place, said):
+    monkeypatch.chdir(tmp_path)
+    Path("blocker").write_text("")
+    Path("folder").mkdir()
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    assert main([*argv, "--out", place]) == 7
+    assert capsys.readouterr().err.startswith(said)

@@ -270,10 +270,20 @@ def command_run(args) -> int:
             "--json and --out - both print to standard output", "choose a file for --out"
         )
     # a new file: never another run's, nor what a link, even a broken one, points at
+    if not streamed and out.is_dir() and not out.is_symlink():
+        raise noted(
+            IsADirectoryError(f"{str(out)!r} is a folder, not a file"),
+            "name a new file in it, or choose another --out",
+        )
     if not streamed and os.path.lexists(out):
         raise noted(
             FileExistsError(f"file {str(out)!r} exists already"),
             "kept records are never written over; choose a new --out, or finish it with --kept",
+        )
+    if not streamed and out.parent.exists() and not out.parent.is_dir():
+        raise noted(
+            NotADirectoryError(f"path {str(out)!r} runs through a file, not a folder"),
+            "choose another --out",
         )
     if not streamed and not out.parent.is_dir():  # found out before a call is spent
         raise noted(

@@ -17,6 +17,7 @@ WARNINGS = {"OpeningWarning", "StoppedWarning"}
 # Python's own, said by the command line: a file it cannot use, or Ctrl-C;
 # and the exit itself
 PYTHONS = {"FileExistsError", "FileNotFoundError", "PermissionError", "KeyboardInterrupt"}
+PYTHONS |= {"IsADirectoryError", "NotADirectoryError"}
 PYTHONS |= {"SystemExit"}
 # raised and caught inside a battery, never reaching its caller
 INSIDE = {
