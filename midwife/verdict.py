@@ -42,8 +42,9 @@ prompt and what served it.
 
 from __future__ import annotations
 
+import itertools
 from collections import Counter, defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -186,6 +187,86 @@ def _level_of(frame: Frame, samples: list[str | None], whole: bool) -> str | Non
     return level(samples, frame.agree)
 
 
+def unreachable(frame: Frame) -> dict[str, list[str]] | None:
+    """What no answers can make this frame read, found before a call: carried
+    or cooled, each with the checks open in every reading that would name it
+    but for them (empty when none comes that near). The rules themselves read
+    every answer each trial could give; None when the readings would be more
+    than OUTCOMES for an input."""
+    if _read_once(frame).get("outsideScope"):
+        return {}  # the exclusion is the owner's; no answer decides it
+    blocked: dict[str, dict[str, list[str]]] = {CARRIED: {}, COOLED: {}}
+    for x in frame.inputs:
+        outcomes = _outcomes(frame, x["id"], {})
+        if outcomes is None:
+            return None
+        reached: set[str] = set()
+        near: dict[str, list[str] | None] = dict.fromkeys(blocked)
+        for finding, before, _ in outcomes:
+            reached.add(finding.category)
+            if before in near and finding.category != before:
+                holding = _holding(before, finding.obligations)
+                seen = near[before]
+                near[before] = holding if seen is None else [o for o in seen if o in holding]
+        for category, inputs in blocked.items():
+            if category not in reached:
+                inputs[x["id"]] = near[category] or []
+    # as in overall: what every input leaves open is said once, the rest names its input
+    said: dict[str, list[str]] = {}
+    for category, inputs in blocked.items():
+        if not inputs:
+            continue
+        lists = list(inputs.values())
+        every = len(inputs) == len(frame.inputs)
+        shared = set.intersection(*map(set, lists)) if every else set()
+        said[category] = [o for o in lists[0] if o in shared] + [
+            f"{x}: {o}" for x, held in inputs.items() for o in held if o not in shared
+        ]
+        if not every:
+            said[category] += [f"{x}: no answers come near" for x, h in inputs.items() if not h]
+    return said
+
+
+# The most readings a check makes of one input before it gives up: every
+# answer each unasked trial could give, at about 3 µs a reading.
+OUTCOMES = 200_000
+
+
+def _outcomes(
+    frame: Frame, x: str, samples: dict[str, list[str | None]]
+) -> Iterator[tuple[Finding, str, bool]] | None:
+    """Every finding input `x` can read once its trials with no samples answer:
+    each at every label, its shams all at one (any sham that moves reads
+    alike), each anchor alone at none (evidence only, never a category). Each
+    comes with its category before the all-checks hold and whether the
+    reading got as far as the ablation. None when they number more than
+    OUTCOMES."""
+    from .interventions import trial_ids
+
+    planned = trial_ids(frame)
+    unasked = [t for t in planned if not samples.get(t) and not t.startswith("ablation-")]
+    shams = [t for t in unasked if t.startswith("sham-")]
+    free = [t for t in unasked if t not in shams[1:]]
+    if len(frame.labels) ** len(free) > OUTCOMES:
+        return None
+    whole = {"baseline", "repeat"} if _read_once(frame)["standing"].get("stable") else set()
+    asked = {t: samples.get(t, []) for t in planned}
+    levels = {t: _level_of(frame, s, t in whole) for t, s in asked.items()}
+    held = _read_once(frame).get("carriage", "all-checks") == "all-checks"
+
+    def read(answers: tuple[str, ...]) -> tuple[Finding, str, bool]:
+        given = dict(zip(free, answers, strict=True))
+        given.update(dict.fromkeys(shams[1:], given.get(shams[0]) if shams else None))
+        drawn = {**asked, **{t: [v] * frame.quorum for t, v in given.items()}}
+        finding, reached = _reading(frame, x, {**levels, **given}, drawn)
+        before = finding.category
+        if held:
+            _hold(finding)
+        return finding, before, reached
+
+    return (read(answers) for answers in itertools.product(frame.labels, repeat=len(free)))
+
+
 def _check_shape(record: Any) -> None:
     """A record's shape, before anything is read from it: an object with every
     key, each of its kind."""
@@ -264,6 +345,17 @@ def allowed_for(frame: Frame, base: str, trial: str = "ablation") -> list[str]:
 def _finding(
     frame: Frame, x: str, levels: dict[str, str | None], samples: dict[str, list[str | None]]
 ) -> Finding:
+    finding, _ = _reading(frame, x, levels, samples)
+    if _read_once(frame).get("carriage", "all-checks") == "all-checks":
+        _hold(finding)
+    return finding
+
+
+def _reading(
+    frame: Frame, x: str, levels: dict[str, str | None], samples: dict[str, list[str | None]]
+) -> tuple[Finding, bool]:
+    """The finding before the all-checks hold, and whether the reading got as
+    far as the ablation (where each anchor alone is read)."""
     finding = Finding(input=x, category=UNRESOLVED, levels=levels)
     if _read_once(frame).get("outsideScope"):
         # The exclusion is the owner's; the trials do not test it, so only
@@ -284,21 +376,19 @@ def _finding(
                 finding.category = OUTSIDE
             else:
                 finding.evidence.append("not outside scope until the owner's check is recorded")
-        return finding
+        return finding, False
     # An input the input inversion does not turn was asked as it stands: its
     # level is a repeat's, never a stay
     read = dict(levels)
     if "input-inversion" in levels and not _turned(frame, x):
         del read["input-inversion"]
         finding.evidence.append("the input inversion does not reach this input")
-    _read(frame, finding, read, samples)
+    reached = _read(frame, finding, read, samples)
     # What the trials did not settle is listed whatever the category: a
     # category never hides an open check.
     base = levels.get("baseline")
     finding.obligations[:0] = _open_checks(frame, read, base)
-    if _read_once(frame).get("carriage", "all-checks") == "all-checks":
-        _hold(finding)
-    return finding
+    return finding, reached
 
 
 def _turned(frame: Frame, x: str) -> bool:
@@ -312,18 +402,26 @@ def _turned(frame: Frame, x: str) -> bool:
     return rename(text, mapping) != text
 
 
+def _holding(category: str, obligations: list[str]) -> list[str]:
+    """The open checks that keep a category from being named under
+    all-checks: every carriage check for carried, discrimination for cooled."""
+    if category == CARRIED:
+        return obligations
+    if category == COOLED:
+        return [o for o in obligations if o.startswith("discrimination")]
+    return []
+
+
 def _hold(finding: Finding) -> None:
     """Under all-checks a category is named only when the checks it needs have
-    passed: every carriage check for carried, discrimination for cooled."""
-    if finding.category == CARRIED and finding.obligations:
-        n = len(finding.obligations)
+    passed (`_holding`)."""
+    n = len(_holding(finding.category, finding.obligations))
+    if finding.category == CARRIED and n:
         finding.category = UNRESOLVED
         finding.evidence.append(
             f"not carried while {n} carriage check{' is' if n == 1 else 's are'} open"
         )
-    elif finding.category == COOLED and any(
-        o.startswith("discrimination") for o in finding.obligations
-    ):
+    elif finding.category == COOLED and n:
         finding.category = UNRESOLVED
         finding.evidence.append("not cooled until a control shows the scorer can move")
 
@@ -333,34 +431,36 @@ def _read(
     finding: Finding,
     levels: dict[str, str | None],
     samples: dict[str, list[str | None]],
-) -> None:
-    """The rules, in order: the first that matches names the category."""
+) -> bool:
+    """The rules, in order: the first that matches names the category. True
+    when the reading got as far as the ablation."""
     say = finding.evidence.append
     # each anchor alone is evidence only: its level is read after the ablation
     missing = [t for t, v in levels.items() if v is None and not t.startswith("ablation-")]
     if missing:
         say(f"no agreed level in: {', '.join(missing)}")
-        return
+        return False
     base = levels["baseline"]
     if _read_once(frame)["standing"].get("stable") and "repeat" in samples:
         pooled = samples["baseline"] + samples["repeat"]
         if len(set(pooled)) > 1:
             shown = ", ".join("an opening" if s is None else s for s in pooled)
             say(f"the baseline and repeat sessions split ({shown})")
-            return
+            return False
     if "repeat" in levels and levels["repeat"] != base:
         say(f"repeat gave {levels['repeat']}, baseline {base}: this grain cannot tell")
-        return
+        return False
     if "presentation" in levels and levels["presentation"] != base:
         finding.category = MISALIGNED
         say(f"presentation moved it {base} -> {levels['presentation']}")
-        return
+        return False
     if "placement" in levels and levels["placement"] != base:
         finding.category = MISALIGNED
         say(f"placement moved it {base} -> {levels['placement']}")
-        return
+        return False
     _ablated(frame, finding, levels, base)
     finding.evidence += _alone(frame, levels, base)
+    return True
 
 
 def _ablated(frame: Frame, finding: Finding, levels: dict[str, str | None], base: str) -> None:

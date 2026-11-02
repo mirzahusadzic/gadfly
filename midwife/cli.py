@@ -32,7 +32,7 @@ from .frame import FrameError, schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
 from .types import Battery, Budget, Record
-from .verdict import settled
+from .verdict import settled, unreachable
 
 EXAMPLES = """\
 examples:
@@ -153,6 +153,7 @@ def command_plan(args) -> int:
             }
             for trial in trials
         ],
+        "unreachable": unreachable(frame),
     }
     if args.json:
         print(json.dumps(body, indent=2))
@@ -160,6 +161,11 @@ def command_plan(args) -> int:
         print(f"{body['frame']} ({body['hash']}): {body['calls']} calls")
         for trial in trials:
             print(f"  {trial.id:12} body {trial.body_hash[:12]}  {_change(frame, trial)}")
+        if body["unreachable"] is None:
+            print("too many answers to read which categories it can reach")
+        for category, held in (body["unreachable"] or {}).items():
+            print(f"never {category}, whatever the answers" + (": these stay open" * bool(held)))
+            print("".join(f"  {line}\n" for line in held), end="")
     return 0
 
 

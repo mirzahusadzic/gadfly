@@ -68,6 +68,27 @@ Each line is a trial, the hash of the body the reader gets, and what the
 trial does to it, so the predictions can be written from here. The count is
 the inputs times the trials times `quorum`.
 
+`plan` also names what no answers can make the frame read, carried or cooled,
+with the checks that keep it away. The verdict rules read every answer each
+trial could give, so this frame, which declares no bypass, is never carried:
+
+```text
+$ uv run gadfly plan examples/07-sql-rule.json
+sql-rule (0fe4f0d4994453fabdf647d5c8f1ad90978f4d2c3e6d6d9c1def1fd676e3b1c1): 35 calls
+  baseline     body 22bf6e6555c8  nothing
+  repeat       body 22bf6e6555c8  nothing, asked again
+  ablation     body 6124bb2e4a65  cuts rule
+  sham-1       body 15b71e9b8c80  cuts branches
+  sham-2       body 856dab033e53  cuts size
+  presentation body 62567e6fea7e  renames PAY-881 to OPS-217, customers to accounts, search.py to lookup.py
+  control      body 6a515d35e727  cuts rule, diff
+never carried, whatever the answers: these stay open
+  no hidden fallback: no bypass trial was declared
+```
+
+When an input has more than 200,000 answers to read, `plan` says it read
+none rather than guess.
+
 ---
 
 ### Run a frame

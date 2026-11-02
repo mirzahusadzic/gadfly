@@ -1,12 +1,21 @@
 """Each verdict path, from records alone, in the order the rules are read."""
 
 import copy
+import itertools
 
 import pytest
 
 from midwife.pipeline import judge, plan, situate
 from midwife.types import Record
-from midwife.verdict import CARRIED, COOLED, MISALIGNED, OUTSIDE, UNRESOLVED, level
+from midwife.verdict import (
+    CARRIED,
+    COOLED,
+    MISALIGNED,
+    OUTSIDE,
+    UNRESOLVED,
+    level,
+    unreachable,
+)
 from tests.conftest import REFUND
 
 
@@ -532,3 +541,71 @@ def test_an_input_the_input_inversion_does_not_reach_is_not_read_as_a_stay():
     assert findings["x1"].category == MISALIGNED  # turned, and it stayed
     assert findings["x2"].category == CARRIED
     assert "the input inversion does not reach this input" in findings["x2"].evidence
+
+
+def _every_category(frame):
+    # each input's categories over every answer each trial could give, read
+    # one trial at a time: every sham apart, each anchor alone at none too
+    from midwife.interventions import trial_ids
+    from midwife.verdict import _finding
+
+    ids = trial_ids(frame)
+    reach = []
+    for x in frame.inputs:
+        options = [
+            (*frame.labels, None) if t.startswith("ablation-") else frame.labels for t in ids
+        ]
+        found = set()
+        for answers in itertools.product(*options):
+            levels = dict(zip(ids, answers, strict=True))
+            samples = {t: [v] * frame.quorum for t, v in levels.items()}
+            found.add(_finding(frame, x["id"], levels, samples).category)
+        reach.append(found)
+    return reach
+
+
+@pytest.mark.parametrize("carriage", ["listed", "all-checks"])
+@pytest.mark.parametrize("each", [False, True])
+@pytest.mark.parametrize("control", [None, ["r1", "r3"], ["r1", "r2", "r3", "r4"]])
+def test_unreachable_is_what_no_answers_give(raw, carriage, each, control):
+    # read against every answer one by one: shams read alike and each
+    # anchor alone never names a category, so neither shortcut loses one
+    raw["carriage"] = carriage
+    if each:
+        raw["anchors"] = ["r2", "r4"]
+        raw["interventions"]["eachAnchor"] = True
+    if control:
+        raw["interventions"]["control"] = control
+    frame = situate(raw)
+    reach = _every_category(frame)
+    never = {c for c in (CARRIED, COOLED) if any(c not in found for found in reach)}
+    assert set(unreachable(frame)) == never
+
+
+def test_unreachable_names_the_checks_that_keep_a_category_away(raw):
+    assert unreachable(situate(raw)) == {}  # the fixture lists its open checks
+    raw["carriage"] = "all-checks"
+    assert unreachable(situate(raw)) == {
+        CARRIED: [
+            "materialization: the frame does not say the observation is the form "
+            "the recipient receives"
+        ],
+        COOLED: ["discrimination: no control trial shows the scorer can move"],
+    }
+    raw["materialized"] = True
+    raw["interventions"]["control"] = ["r1", "r2", "r3"]
+    assert unreachable(situate(raw)) == {}
+    del raw["interventions"]["bypass"]
+    assert unreachable(situate(raw)) == {
+        CARRIED: ["no hidden fallback: no bypass trial was declared"]
+    }
+
+
+def test_unreachable_gives_up_rather_than_read_too_many_answers(raw):
+    raw["observe"]["labels"] += [f"other-{n}" for n in range(9)]  # 12 labels, 6 trials to read
+    assert unreachable(situate(raw)) is None
+
+
+def test_unreachable_leaves_a_declared_exclusion_to_its_owner(raw):
+    raw["outsideScope"] = "refunds above the agent's limit"
+    assert unreachable(situate(raw)) == {}

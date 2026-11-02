@@ -56,6 +56,32 @@ def test_plan_shows_the_trials_and_the_calls_without_spending(capsys):
     ]
 
 
+def test_plan_names_what_no_answers_can_give(capsys):
+    # found before a call: frame 07 declares no bypass, so it is never carried
+    assert main(["plan", str(ROOT / "examples/07-sql-rule.json")]) == 0
+    assert capsys.readouterr().out.splitlines()[-2:] == [
+        "never carried, whatever the answers: these stay open",
+        "  no hidden fallback: no bypass trial was declared",
+    ]
+    assert main(["plan", str(ROOT / "examples/upgrade.json")]) == 0
+    assert "never" not in capsys.readouterr().out
+    assert main(["plan", str(ROOT / "examples/07-sql-rule.json"), "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["unreachable"] == {
+        "carried": ["no hidden fallback: no bypass trial was declared"]
+    }
+
+
+def test_plan_says_when_the_answers_are_too_many_to_read(tmp_path, capsys):
+    raw = json.loads(Path(REFUND).read_text())
+    raw["observe"]["labels"] += [f"other-{n}" for n in range(9)]
+    frame = tmp_path / "many.json"
+    frame.write_text(json.dumps(raw))
+    assert main(["plan", str(frame)]) == 0
+    assert capsys.readouterr().out.splitlines()[-1] == (
+        "too many answers to read which categories it can reach"
+    )
+
+
 def run_refund(tmp_path, *more):
     out = tmp_path / "records.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]

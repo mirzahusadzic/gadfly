@@ -12,6 +12,7 @@ each answering one need and keeping its contracts.
 | `local-json` battery | `"battery": {"kind": "local-json", "url": ...}` | loopback, no credentials, a whole-call deadline |
 | Settled trials | `gadfly run --settle` | every level, category and evidence line of a whole run |
 | Calls at once | `gadfly run --parallel N` | the budget, and every call already made |
+| Dead ends before a call | `gadfly plan` | the verdict rules, read over every answer each trial could give |
 
 ---
 
@@ -38,6 +39,9 @@ details.
   remaining calls; with four of five to agree, four alike decide it.
 - **Calls at once:** a battery that can serve several calls, such as a
   router, waited on one at a time.
+- **Dead ends before a call:** a frame that no answers could make carried,
+  such as one with no bypass under the default policy, spent every call
+  before its verdict said so.
 
 ---
 
@@ -59,8 +63,8 @@ The examples point at these, most useful first. None is built yet.
    contrary evidence, which tests direction, not only dependence.
 5. **Better statistics:** report counts with ranges, and keep the
    temperature with the answers.
-6. **Help writing frames:** for example, a warning when a control leaves a
-   line that still points to the answer, as in
+6. **Help writing frames:** beyond the dead ends `plan` names, a warning
+   when a control leaves a line that still points to the answer, as in
    [A frame built wrong](examples/built-wrong.md). It flags problems and never
    writes a frame from a result.
 

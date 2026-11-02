@@ -11,11 +11,12 @@ import pytest
 
 from examples.read import runs_of, verdict
 from midwife.cli import load_records
-from midwife.pipeline import calls_needed, judge, situate
+from midwife.pipeline import calls_needed, judge, overall, situate
 from midwife.verdict import CARRIED as CAR
 from midwife.verdict import COOLED as COO
 from midwife.verdict import MISALIGNED as MIS
 from midwife.verdict import UNRESOLVED as UNR
+from midwife.verdict import unreachable
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
 FRAMES = sorted(EXAMPLES.glob("*.json"))
@@ -77,6 +78,15 @@ def test_each_kept_run_reads_as_reported(stem):
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
     read = [[f.category for f in judge(frame, load_records(str(run)))] for run in runs_of(path)]
     assert read == REPORTED[stem]
+
+
+@pytest.mark.parametrize("path", FRAMES, ids=lambda p: p.stem)
+def test_no_kept_run_reads_what_plan_calls_unreachable(path):
+    # what plan says before a call, held to what the calls then gave
+    frame = situate(json.loads(path.read_text(encoding="utf-8")))
+    never = unreachable(frame)
+    for run in runs_of(path):
+        assert overall(judge(frame, load_records(str(run)))).category not in never
 
 
 def test_only_the_approved_restore_raises_monotonicity():
