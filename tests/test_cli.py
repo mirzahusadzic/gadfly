@@ -764,3 +764,28 @@ def test_with_json_a_run_s_warnings_are_in_its_one_result(tmp_path, capsys):
         ("StoppedWarning", 3),
     ]
     assert UnreachableThenInterrupted  # the fixtures load
+
+
+def test_free_text_and_paths_print_quoted_when_they_would_break_a_line(
+    tmp_path, capsys, monkeypatch
+):
+    # an exclusion's words, a path and a report's name are the caller's: one that
+    # holds a line break or a colon a label ends at prints quoted, as Python quotes
+    monkeypatch.chdir(tmp_path)
+    frame = json.loads(Path(REFUND).read_text())
+    frame["outsideScope"] = "refunds: none\never"
+    Path("frame.json").write_text(json.dumps(frame))
+    argv = ["run", "frame.json", "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    assert main([*argv, "--out", "out: one.jsonl"]) == 0
+    told = capsys.readouterr().out.splitlines()
+    assert told[0] == "wrote 8/8 calls to 'out: one.jsonl'"
+    assert told[-1] == "to read the verdict: gadfly report frame.json 'out: one.jsonl'"
+    assert main(["report", "frame.json", "out: one.jsonl"]) == 0
+    report = capsys.readouterr().out.splitlines()
+    assert "  evidence: declared outside scope ('refunds: none\\never')" in report
+    assert main(["report", "frame.json", "out: one.jsonl", "--json"]) == 0
+    document = json.loads(capsys.readouterr().out)
+    document["frame"] = "a: b"
+    Path("report.json").write_text(json.dumps(document))
+    assert main(["portfolio", "report.json"]) == 0
+    assert "unresolved: 'a: b'" in capsys.readouterr().out.splitlines()

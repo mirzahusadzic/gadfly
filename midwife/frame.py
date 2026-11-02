@@ -18,7 +18,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-from .errors import FrameError, quoted
+from .errors import FrameError, is_plain, quoted
 
 # The situated relation L = (I, B, r, g, P, T, B0, C, p): each must be said
 # (the body B and the baseline B0 are checked on their own).
@@ -201,6 +201,7 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError(f"unknown keys {quoted(sorted(unknown))}")
     if not need("name", str):
         raise FrameError("the name is empty")
+    _one_name(raw["name"], "the name")
     for key in SITUATION:
         if not need(key, str).strip():
             raise FrameError(f"{key} is empty")
@@ -242,6 +243,8 @@ def parse(raw: dict[str, Any]) -> Frame:
     known = set(ids)  # looked up, not scanned
     if len(set(ids)) != len(ids):
         raise FrameError("two spans share an id")
+    for span_id in ids:
+        _one_name(span_id, "span id")
 
     anchors = tuple(need("anchors", list))
     if not anchors:
@@ -264,6 +267,8 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("an input is its id and its text, and nothing else")
     if len({x["id"] for x in inputs}) != len(inputs):
         raise FrameError("two inputs share an id")
+    for x in inputs:
+        _one_name(x["id"], "input id")
 
     observe = need("observe", dict)
     labels = tuple(need("labels", list, observe))
@@ -273,6 +278,8 @@ def parse(raw: dict[str, Any]) -> Frame:
         labels
     ):
         raise FrameError("labels are distinct, non-empty strings")
+    for label in labels:
+        _one_name(label, "label")
     instruction = need("instruction", str, observe)
     if not instruction.strip():
         raise FrameError("the instruction is empty")
@@ -393,6 +400,16 @@ def _plain_json(value: Any, where: str) -> None:
     elif not (value is None or isinstance(value, bool)):
         raise FrameError(
             f"{where} is not plain JSON, as a {type(value).__name__} is not a JSON value"
+        )
+
+
+def _one_name(value: str, what: str) -> None:
+    """A name Gadfly prints where a reader, a script or another model reads
+    lines: one line, with no colon a label would end at."""
+    if not is_plain(value):
+        raise FrameError(
+            f"{what} {value!r} is not one plain name",
+            "a name holds no line break and no colon followed by a space",
         )
 
 

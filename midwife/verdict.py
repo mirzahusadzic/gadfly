@@ -48,7 +48,7 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from .errors import RecordsError, UsageError, quoted
+from .errors import RecordsError, UsageError, plain, quoted
 from .frame import Frame, _read_once
 
 CARRIED, COOLED = "carried", "cooled"
@@ -278,7 +278,9 @@ def unreachable(frame: Frame) -> dict[str, list[str]] | None:
     for an input."""
     scope = _read_once(frame).get("outsideScope")
     if scope:  # the exclusion is the owner's: no answer reads either category
-        return {category: [f"declared outside scope ({scope})"] for category in (CARRIED, COOLED)}
+        return {
+            category: [f"declared outside scope ({plain(scope)})"] for category in (CARRIED, COOLED)
+        }
     blocked: dict[str, dict[str, list[str]]] = {CARRIED: {}, COOLED: {}}
     for x in frame.inputs:
         outcomes = _outcomes(frame, x["id"], {})
@@ -458,13 +460,14 @@ def _reading(
     if _read_once(frame).get("outsideScope"):
         # The exclusion is the owner's; the trials do not test it, so only
         # its own check is open or settled here.
-        finding.evidence.append(f"declared outside scope ({_read_once(frame).get('outsideScope')})")
+        scope = plain(_read_once(frame)["outsideScope"])  # the owner's words, on one line
+        finding.evidence.append(f"declared outside scope ({scope})")
         check = _read_once(frame).get("scopeCheck")
         if check:
             finding.category = OUTSIDE
             finding.evidence.append(
-                f"{check['owner']} checked the scope at {check['encounter']} and found "
-                f"{check['statement']} ({check['source']})"
+                f"{plain(check['owner'])} checked the scope at {plain(check['encounter'])} "
+                f"and found {plain(check['statement'])} ({plain(check['source'])})"
             )
         else:
             finding.obligations.append(

@@ -276,6 +276,24 @@ A refusal: the message says what went wrong, each note what to do.
 class GadflyError(ValueError)
 ```
 
+#### is_plain
+
+Whether a value prints as one plain name: no line break, and no colon a
+label would end at.
+
+```python
+is_plain(value)
+```
+
+#### plain
+
+A value as a line prints it: as it is when it is one plain name, else
+quoted as Python's repr, so it can neither end a label nor start a line.
+
+```python
+plain(value)
+```
+
 #### quoted
 
 Values as a message names them: each quoted, as Python's repr does.

@@ -1,4 +1,5 @@
 import copy
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -448,3 +449,20 @@ def test_an_input_inversion_is_refused_unless_it_turns_an_input(raw, change, mes
 def test_a_sign_edged_word_is_not_part_of_a_longer_run_of_its_sign(text, renamed):
     # pass 4, R14: "C++" was renamed inside "C+++", leaving "Rust+"
     assert rename(text, (("C++", "Rust"), (".env", ".cfg"))) == renamed
+
+
+@pytest.mark.parametrize(
+    ("change", "said"),
+    [
+        (lambda r: r.update(name="refund: receipt"), "the name 'refund: receipt'"),
+        (lambda r: r["body"]["spans"][0].update(id="r\n1"), "span id 'r\\n1'"),
+        (lambda r: r["inputs"][0].update(id="pr: west"), "input id 'pr: west'"),
+        (lambda r: r["observe"]["labels"].append("go: on"), "label 'go:\\u2028on'"),
+    ],
+)
+def test_a_name_gadfly_prints_on_a_line_is_one_plain_name(raw, change, said):
+    # a name is printed where a reader, a script or another model reads lines:
+    # one with a line break, or a colon a label would end at, would forge one
+    change(raw)
+    with pytest.raises(FrameError, match=re.escape(f"{said} is not one plain name")):
+        parse(raw)

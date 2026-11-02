@@ -25,6 +25,7 @@ import importlib
 import json
 import os
 import re
+import shlex
 import signal
 import sys
 import traceback
@@ -44,6 +45,7 @@ from .errors import (
     StoppedWarning,
     UsageError,
     noted,
+    plain,
 )
 from .frame import schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
@@ -208,11 +210,13 @@ def _settled_calls(frame, records: list[dict[str, Any]]) -> int:
 def _change(frame, trial) -> str:
     # what a trial does to the body, so predictions can be written from here
     if trial.kind == "inversion":
-        return "inverts " + ", ".join(f"{a} to {b}" for a, b in trial.renamed)
+        return "inverts " + ", ".join(f"{plain(a)} to {plain(b)}" for a, b in trial.renamed)
     if trial.kind == "input-inversion":
-        return "inverts the input's " + ", ".join(f"{a} to {b}" for a, b in trial.renamed)
+        return "inverts the input's " + ", ".join(
+            f"{plain(a)} to {plain(b)}" for a, b in trial.renamed
+        )
     if trial.renamed:
-        return "renames " + ", ".join(f"{a} to {b}" for a, b in trial.renamed)
+        return "renames " + ", ".join(f"{plain(a)} to {plain(b)}" for a, b in trial.renamed)
     if trial.kind == "placement":
         move = frame.interventions["placement"]
         return f"moves {move['span']} after {move['after']}"
@@ -306,7 +310,10 @@ def command_run(args) -> int:
             PermissionError(f"folder {str(out.parent)!r} cannot be written"),
             "choose another --out",
         )
-    where, say = ("standard output", sys.stderr) if streamed else (str(out), sys.stdout)
+    # a path as a shell would take it back, so a colon or a space in it breaks no line
+    where, say = (
+        ("standard output", sys.stderr) if streamed else (shlex.quote(str(out)), sys.stdout)
+    )
 
     def opened():
         return sys.stdout if streamed else out.open("x", encoding="utf-8")
@@ -446,9 +453,9 @@ def command_run(args) -> int:
                 file=say,
             )
         read = (
-            f"pipe them to gadfly report {args.frame} -"
+            f"pipe them to gadfly report {shlex.quote(args.frame)} -"
             if streamed
-            else f"gadfly report {args.frame} {out}"
+            else f"gadfly report {shlex.quote(args.frame)} {where}"
         )
         print(f"to read the verdict: {read}", file=say)
         for warning, _ in raised:
@@ -535,15 +542,15 @@ def command_portfolio(args) -> int:
         return 0
     print(f"{summary['frames']} frame{'s' * (summary['frames'] != 1)}")
     for category, names in summary["by_category"].items():
-        print(f"{category}: {', '.join(names)}")
+        print(f"{category}: {', '.join(map(plain, names))}")
     if summary["shared_obligations"]:
         print("open in several frames:")
         for obligation, names in summary["shared_obligations"].items():
-            print(f"  {obligation} ({', '.join(names)})")
+            print(f"  {plain(obligation)} ({', '.join(map(plain, names))})")
     if summary["input_disagreements"]:
         print("frames whose inputs disagree:")
         for name, inputs in summary["input_disagreements"].items():
-            print(f"  {name}: " + ", ".join(f"{x} {c}" for x, c in inputs.items()))
+            print(f"  {plain(name)}: " + ", ".join(f"{plain(x)} {c}" for x, c in inputs.items()))
     return 0
 
 

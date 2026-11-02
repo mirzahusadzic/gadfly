@@ -20,6 +20,7 @@ error with Python's own filters (`-W error::midwife.errors.OpeningWarning`):
 
 from __future__ import annotations
 
+import unicodedata
 from collections.abc import Iterable
 
 # The statuses no GadflyError carries: Python's own file errors, Ctrl-C, and
@@ -36,6 +37,20 @@ class GadflyError(ValueError):
         super().__init__(message)
         for note in notes:
             self.add_note(note)
+
+
+def is_plain(value: str) -> bool:
+    """Whether a value prints as one plain name: no line break, and no colon a
+    label would end at."""
+    return ": " not in value and not any(
+        unicodedata.category(c) in ("Cc", "Zl", "Zp") for c in value
+    )
+
+
+def plain(value: str) -> str:
+    """A value as a line prints it: as it is when it is one plain name, else
+    quoted as Python's repr, so it can neither end a label nor start a line."""
+    return value if is_plain(value) else repr(value)
 
 
 def quoted(values: Iterable[str]) -> str:
