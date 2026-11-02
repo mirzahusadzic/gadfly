@@ -287,3 +287,16 @@ def test_a_trial_cut_short_reads_as_left_not_as_split(raw):
     assert finding.evidence[-1] == (
         "not asked (bypass); not asked to the end (sham-1); whatever they gave, it reads unresolved"
     )
+
+
+def test_a_battery_that_raises_ctrl_c_at_once_raises_it_as_itself(raw):
+    # its worker's KeyboardInterrupt reaches the caller as one, not as a KeyError
+    class Interrupting(Reader):
+        concurrent = True
+
+        def observe(self, frame, prompt, max_output_tokens):
+            raise KeyboardInterrupt
+
+    frame = situate(raw)
+    with pytest.raises(KeyboardInterrupt):
+        run(frame, Interrupting(None), Budget(calls=calls_needed(frame)), parallel=2)

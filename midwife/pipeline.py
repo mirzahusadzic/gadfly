@@ -307,7 +307,8 @@ def run(
                     if not running:
                         break
                     finished, _ = wait(running, return_when=FIRST_COMPLETED)
-                    for seq in sorted(running.pop(call) for call in finished):
+                    for seq, call in sorted((running.pop(call), call) for call in finished):
+                        call.result()  # what a worker raised past _observe, raised here
                         stopped = keep_call(seq) or stopped
             except KeyboardInterrupt:
                 # raised here, not held: every call made is spent, so keep each
