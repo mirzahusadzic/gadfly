@@ -69,12 +69,18 @@ def load_battery(spec: str):
         module = importlib.import_module(module_name)
     except ImportError as error:
         raise BatteryError(str(error)) from None
+    except GadflyError:
+        raise
+    except ValueError as error:  # a battery refuses with a ValueError, as in check
+        raise BatteryError(f"battery {spec!r} could not be made", str(error)) from error
     target = getattr(module, attribute, None)
     if target is None:
         raise BatteryError(f"module {module_name!r} has no {attribute!r}")
     try:
         battery = target() if isinstance(target, type) else target
-    except TypeError as error:  # a class that needs arguments is no battery to name here
+    except GadflyError:
+        raise
+    except (TypeError, ValueError) as error:  # it needs arguments, or refuses as in check
         raise BatteryError(f"battery {spec!r} could not be made", str(error)) from None
     if not isinstance(battery, Battery):
         raise BatteryError(

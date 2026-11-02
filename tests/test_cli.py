@@ -538,3 +538,36 @@ def test_a_link_where_the_records_would_go_is_refused_before_a_call(tmp_path, ca
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Counted", "--calls", "8"]
     assert main([*argv, "--out", str(out)]) == 7
     assert Counted.calls == 0 and capsys.readouterr().err.startswith("FileExistsError: ")
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "raise ValueError('no setting for the evaluator')\n",
+        "class Reader:\n    def __init__(self):\n"
+        "        raise ValueError('no setting for the evaluator')\n",
+    ],
+)
+def test_a_battery_that_refuses_to_be_made_is_a_battery_error(
+    tmp_path, capsys, monkeypatch, source
+):
+    # the protocol's refusal is a ValueError: on import and when made, as in check
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    Path("refusing_battery.py").write_text(source)
+    argv = [
+        "run",
+        REFUND,
+        "--battery",
+        "refusing_battery:Reader",
+        "--calls",
+        "8",
+        "--out",
+        "r.jsonl",
+    ]
+    assert main(argv) == 6
+    assert capsys.readouterr().err.splitlines() == [
+        "BatteryError: battery 'refusing_battery:Reader' could not be made",
+        "no setting for the evaluator",
+    ]
+    sys.modules.pop("refusing_battery", None)
