@@ -71,6 +71,8 @@ gadfly --version
 uvx --from midwife gadfly --help
 ```
 
+Coming from 0.6.0, [Upgrading to
+0.7.0](https://mirzahusadzic.github.io/gadfly/upgrading) lists what changed.
 To use it from Python, add it to your project with `uv add midwife` or
 `pip install midwife`, then `import midwife`. The examples read records kept
 in the repository, so to run them, clone it:

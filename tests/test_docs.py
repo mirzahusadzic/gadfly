@@ -729,3 +729,16 @@ def test_the_local_json_page_promises_only_what_the_battery_checks():
     page = " ".join((ROOT / "docs/breadth/local-json-battery.md").read_text().split())
     assert "invalid JSON/schema" not in page
     assert "held to its schema by the evaluator, not here" in page
+
+
+def test_the_upgrade_page_names_each_class_with_its_status():
+    # what a caller of 0.6.0 meets: every refusal class and warning, as raised
+    from midwife import errors
+
+    page = " ".join((ROOT / "docs/upgrading.md").read_text(encoding="utf-8").split())
+    for kind in (errors.UsageError, errors.FrameError, errors.RecordsError, errors.BatteryError):
+        assert f"`{kind.__name__}` {kind.exit}" in page, kind.__name__
+    for kind in (errors.OpeningWarning, errors.StoppedWarning):
+        assert f"`{kind.__name__}`" in page, kind.__name__
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "gadfly/upgrading)" in readme
