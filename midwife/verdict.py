@@ -191,12 +191,9 @@ def _unasked(
     short = {
         t: not s
         for t, s in samples.items()
-        if not t.startswith("ablation-")
-        and len(s) < frame.quorum
-        and (t in whole or not settled(s, frame.quorum, frame.agree, frame.labels))
+        if not t.startswith("ablation-") and _left(frame, s, t in whole)
     }  # each trial left, and whether it was never asked at all
-    asked = {t: [] if t in short else s for t, s in samples.items()}
-    outcomes = _outcomes(frame, x, asked) if short else None
+    outcomes = _outcomes(frame, x, samples) if short else None
     if outcomes is None:
         return None
     evidence: list[str] | None = None
@@ -219,12 +216,13 @@ def _unasked(
 
 def unneeded(frame: Frame, x: str, samples: dict[str, list[str | None]]) -> frozenset[str]:
     """The trials input `x` need not be asked, given the answers so far: once
-    every answer the rest could give reads unresolved, all those with no
-    answers, but each anchor alone while a reading still gets as far as the
+    every answer the rest could give reads unresolved, all those not asked to
+    the end, but each anchor alone while a reading still gets as far as the
     ablation, where its evidence is read. Empty while an answer could read
     otherwise, or the answers are too many to read."""
     from .interventions import trial_ids
 
+    whole = {"baseline", "repeat"} if _read_once(frame)["standing"].get("stable") else set()
     outcomes = _outcomes(frame, x, samples)
     if outcomes is None:
         return frozenset()
@@ -236,17 +234,22 @@ def unneeded(frame: Frame, x: str, samples: dict[str, list[str | None]]) -> froz
     return frozenset(
         t
         for t in trial_ids(frame)
-        if not samples.get(t) and not (reached and t.startswith("ablation-"))
+        if _left(frame, samples.get(t, []), t in whole)
+        and not (reached and t.startswith("ablation-"))
     )
 
 
 def _level_of(frame: Frame, samples: list[str | None], whole: bool) -> str | None:
     """A trial's level, read only when its missing calls could not change it."""
-    if len(samples) < frame.quorum and (
+    return None if _left(frame, samples, whole) else level(samples, frame.agree)
+
+
+def _left(frame: Frame, samples: list[str | None], whole: bool) -> bool:
+    """Whether a trial's missing calls could still change its level: always,
+    for one read `whole`."""
+    return len(samples) < frame.quorum and (
         whole or not settled(samples, frame.quorum, frame.agree, frame.labels)
-    ):
-        return None
-    return level(samples, frame.agree)
+    )
 
 
 def unreachable(frame: Frame) -> dict[str, list[str]] | None:
@@ -299,22 +302,24 @@ OUTCOMES = 200_000
 def _outcomes(
     frame: Frame, x: str, samples: dict[str, list[str | None]]
 ) -> Iterator[tuple[Finding, str, bool]] | None:
-    """Every finding input `x` can read once its trials with no samples answer:
-    each at every label, its shams all at one (any sham that moves reads
-    alike), each anchor alone at none (evidence only, never a category). Each
-    comes with its category before the all-checks hold and whether the
-    reading got as far as the ablation. None when they number more than
-    OUTCOMES."""
+    """Every finding input `x` can read once its trials not asked to the end
+    answer: each at every label, its shams all at one (any sham that moves
+    reads alike), each anchor alone at none (evidence only, never a
+    category). Each comes with its category before the all-checks hold and
+    whether the reading got as far as the ablation. None when they number
+    more than OUTCOMES."""
     from .interventions import trial_ids
 
     planned = trial_ids(frame)
-    unasked = [t for t in planned if not samples.get(t) and not t.startswith("ablation-")]
+    whole = {"baseline", "repeat"} if _read_once(frame)["standing"].get("stable") else set()
+    # a trial cut short is read at every label, as one never asked
+    left = {t for t in planned if _left(frame, samples.get(t, []), t in whole)}
+    unasked = [t for t in planned if t in left and not t.startswith("ablation-")]
     shams = [t for t in unasked if t.startswith("sham-")]
     free = [t for t in unasked if t not in shams[1:]]
     if len(frame.labels) ** len(free) > OUTCOMES:
         return None
-    whole = {"baseline", "repeat"} if _read_once(frame)["standing"].get("stable") else set()
-    asked = {t: samples.get(t, []) for t in planned}
+    asked = {t: [] if t in left else samples.get(t, []) for t in planned}
     levels = {t: _level_of(frame, s, t in whole) for t, s in asked.items()}
     held = _read_once(frame).get("carriage", "all-checks") == "all-checks"
 

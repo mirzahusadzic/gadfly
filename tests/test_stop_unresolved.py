@@ -13,7 +13,7 @@ import pytest
 from midwife.cli import main
 from midwife.pipeline import calls_needed, judge, overall, run, situate
 from midwife.types import Budget, Observation
-from midwife.verdict import UNRESOLVED
+from midwife.verdict import UNRESOLVED, unneeded
 
 REFUND = Path(__file__).parent / "fixtures" / "refund.json"
 
@@ -133,6 +133,17 @@ def test_judge_reads_a_missing_trial_as_unasked_only_when_no_answer_could_matter
     # with the control unasked as well, it could move and read cooled
     [finding] = judge(frame, [r for r in without if r.trial != "control"])
     assert finding.evidence == ["no agreed level in: sham-1, bypass, control"]
+
+
+def test_unneeded_reads_a_trial_cut_short_as_still_open(raw):
+    frame = situate(raw)
+    x = frame.inputs[0]["id"]
+    # one baseline answer of three: the other two could still make it carried
+    assert unneeded(frame, x, {"baseline": ["decline"]}) == frozenset()
+    # once nothing can resolve it, one cut short is left with those never asked
+    held = dict.fromkeys(("baseline", "repeat", "ablation", "control", "presentation"))
+    asked = {t: ["decline"] * 3 for t in held} | {"sham-1": ["decline"]}
+    assert unneeded(frame, x, asked) == {"sham-1", "sham-2", "bypass"}
 
 
 def test_the_command_line_stops_and_says_so(tmp_path, capsys):

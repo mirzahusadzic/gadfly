@@ -456,8 +456,8 @@ judge(frame, records)
 #### unneeded
 
 The trials input `x` need not be asked, given the answers so far: once
-every answer the rest could give reads unresolved, all those with no
-answers, but each anchor alone while a reading still gets as far as the
+every answer the rest could give reads unresolved, all those not asked to
+the end, but each anchor alone while a reading still gets as far as the
 ablation, where its evidence is read. Empty while an answer could read
 otherwise, or the answers are too many to read.
 
