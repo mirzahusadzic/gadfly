@@ -180,6 +180,14 @@
                 "draws": {
                   "type": "integer",
                   "minimum": 1
+                },
+                "kind": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "additionalProperties": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               }
             }

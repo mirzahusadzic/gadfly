@@ -13,6 +13,7 @@ each answering one need and keeping its contracts.
 | Settled trials | `gadfly run --settle` | every level, category and evidence line of a whole run |
 | Calls at once | `gadfly run --parallel N` | the budget, and every call already made |
 | Dead ends before a call | `gadfly plan` | the verdict rules, read over every answer each trial could give |
+| Shams of another kind | `"sham": {"draws": n, "kind": {anchor: kind}}` | old frames' hashes and plans |
 
 ---
 
@@ -42,6 +43,8 @@ details.
 - **Dead ends before a call:** a frame that no answers could make carried,
   such as one with no bypass under the default policy, spent every call
   before its verdict said so.
+- **Shams of another kind:** an anchor alone of its kind got no sham, and the
+  only way round was to give it a kind it does not have.
 
 ---
 

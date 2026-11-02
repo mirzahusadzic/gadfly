@@ -95,11 +95,12 @@ def renamer(mapping: tuple[tuple[str, str], ...]) -> Callable[[str], str]:
 
 def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
     """Spans to remove instead of the anchors: as many as the anchors, of the
-    same kinds, none cited, none bypassed, none a declared fallback, and no
-    span in two draws. A fallback is declared to carry the relation, so
-    cutting it is no sham. Each is the closest in length still free; spans
-    equally close are drawn among by the frame's own seed. A draw that
-    cannot be matched is left out; the verdict says so."""
+    same kinds (or the kind the sham's `kind` names for an anchor), none
+    cited, none bypassed, none a declared fallback, and no span in two
+    draws. A fallback is declared to carry the relation, so cutting it is no
+    sham. Each is the closest in length still free; spans equally close are
+    drawn among by the frame's own seed. A draw that cannot be matched is
+    left out; the verdict says so."""
     iv = frame.interventions
     anchored = set(frame.anchors)  # looked up, not scanned
     # what a sham may not cut
@@ -114,16 +115,18 @@ def sham_draws(frame: Frame, count: int) -> list[tuple[str, ...]]:
     # each pool's lengths, kept beside it, so a draw never rebuilds them
     lengths = {kind: [entry[0] for entry in pool] for kind, pool in pools.items()}
     anchors = [span for span in frame.spans if span.id in anchored]
+    named = iv["sham"].get("kind", {}) if isinstance(iv.get("sham"), dict) else {}
     rng = random.Random(int(frame.hash[:16], 16))
     draws: list[tuple[str, ...]] = []
     for _ in range(count):
         chosen: list[str] = []
         for anchor in anchors:
-            pool = pools.get(anchor.kind)
+            kind = named.get(anchor.id, anchor.kind)
+            pool = pools.get(kind)
             if not pool:
                 return draws
-            at = _nearest(pool, lengths[anchor.kind], len(anchor.text), rng)
-            lengths[anchor.kind].pop(at)
+            at = _nearest(pool, lengths[kind], len(anchor.text), rng)
+            lengths[kind].pop(at)
             chosen.append(pool.pop(at)[2].id)
         draws.append(tuple(sorted(chosen)))
     return draws

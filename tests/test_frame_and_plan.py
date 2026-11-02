@@ -59,6 +59,20 @@ def test_a_frame_is_hashed_whole_and_any_coordinate_changes_it(raw):
         (lambda r: r["interventions"].update(cumulative=["r2"]), "adds no span"),
         (lambda r: r["interventions"].update(control=["r2"]), "the ablation again"),
         (lambda r: r["interventions"].update(control=["r9"]), "control names a span"),
+        (lambda r: r["interventions"].update(sham={"draws": 1, "kinds": {}}), "sham is true"),
+        (lambda r: r["interventions"].update(sham={"draws": 1, "kind": "note"}), "sham kind maps"),
+        (
+            lambda r: r["interventions"].update(sham={"draws": 1, "kind": {"r9": "note"}}),
+            "no anchor",
+        ),
+        (
+            lambda r: r["interventions"].update(sham={"draws": 1, "kind": {"r2": "x"}}),
+            "no span has",
+        ),
+        (
+            lambda r: r["interventions"].update(sham={"draws": 1, "kind": {"r2": "rule"}}),
+            "own kind",
+        ),
         (lambda r: r.update(carriage="lenient"), "carriage is all-checks or listed"),
         (lambda r: r.update(scopeCheck={"owner": "o"}), "scopeCheck checks an outsideScope"),
         (
@@ -144,6 +158,22 @@ def test_a_sham_that_cannot_be_matched_is_left_out(raw):
         if span["id"] != "r2":
             span["kind"] = "note"
     assert not [t for t in plan(parse(raw)) if t.kind == "sham"]
+
+
+def test_a_sham_draws_from_the_kind_the_frame_names_for_its_anchor(raw):
+    # r2 alone of its kind gets no sham, so carried is out of reach; named,
+    # its shams come from the rules, closest in length as before
+    from midwife.verdict import CARRIED, unreachable
+
+    next(span for span in raw["body"]["spans"] if span["id"] == "r2")["kind"] = "failure"
+    raw.update(carriage="all-checks", materialized=True)
+    frame = parse(raw)
+    assert not [t for t in plan(frame) if t.kind == "sham"]
+    assert unreachable(frame)[CARRIED][0].startswith("specificity: 0 sham trial(s), 2 declared")
+    raw["interventions"]["sham"] = {"draws": 2, "kind": {"r2": "rule"}}
+    frame = parse(raw)
+    assert [t.removed for t in plan(frame) if t.kind == "sham"] == [("r3",), ("r4",)]
+    assert CARRIED not in unreachable(frame)
 
 
 def test_presentation_renames_whole_words_in_body_and_input(raw):

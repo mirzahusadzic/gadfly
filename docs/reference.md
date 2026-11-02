@@ -549,11 +549,12 @@ renamer(mapping)
 #### sham_draws
 
 Spans to remove instead of the anchors: as many as the anchors, of the
-same kinds, none cited, none bypassed, none a declared fallback, and no
-span in two draws. A fallback is declared to carry the relation, so
-cutting it is no sham. Each is the closest in length still free; spans
-equally close are drawn among by the frame's own seed. A draw that
-cannot be matched is left out; the verdict says so.
+same kinds (or the kind the sham's `kind` names for an anchor), none
+cited, none bypassed, none a declared fallback, and no span in two
+draws. A fallback is declared to carry the relation, so cutting it is no
+sham. Each is the closest in length still free; spans equally close are
+drawn among by the frame's own seed. A draw that cannot be matched is
+left out; the verdict says so.
 
 ```python
 sham_draws(frame, count)

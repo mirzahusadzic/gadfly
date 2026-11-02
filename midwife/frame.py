@@ -383,6 +383,27 @@ def _span(value: Any) -> Span:
     return Span(**value)
 
 
+def _check_sham_kind(pools: Any, spans: tuple[Span, ...], anchors: tuple[str, ...]) -> None:
+    """A sham's `kind`, when given: anchors mapped to the kind of span their
+    shams are drawn from instead of their own, each a kind the body has."""
+    if pools is None:
+        return
+    if not (
+        isinstance(pools, dict)
+        and pools
+        and all(isinstance(k, str) and isinstance(v, str) and v for k, v in pools.items())
+    ):
+        raise FrameError("sham kind maps anchors to the kind their shams are drawn from")
+    kinds = {span.id: span.kind for span in spans}
+    for anchor, kind in pools.items():
+        if anchor not in anchors:
+            raise FrameError(f"sham kind names {anchor}, which is no anchor")
+        if kind not in kinds.values():
+            raise FrameError(f"sham kind names a kind no span has: {kind}")
+        if kind == kinds[anchor]:
+            raise FrameError(f"sham kind maps {anchor} to its own kind, as shams are drawn anyway")
+
+
 def _check_interventions(
     interventions: dict[str, Any],
     spans: tuple[Span, ...],
@@ -421,11 +442,13 @@ def _check_interventions(
         raise FrameError("cumulative adds no span to the anchors: it is the ablation again")
     sham = interventions.get("sham")
     if not (sham is None or isinstance(sham, bool)):
+        keys = set(sham) if isinstance(sham, dict) else set()
         draws = sham.get("draws") if isinstance(sham, dict) else None
-        if set(sham if isinstance(sham, dict) else ()) != {"draws"} or not (
+        if not {"draws"} <= keys <= {"draws", "kind"} or not (
             isinstance(draws, int) and not isinstance(draws, bool) and draws >= 1
         ):
-            raise FrameError("sham is true or {draws: n} with n at least 1")
+            raise FrameError("sham is true or {draws: n} with n at least 1, and an optional kind")
+        _check_sham_kind(sham.get("kind"), spans, anchors)
     presentation = interventions.get("presentation")
     if presentation is not None and not (
         isinstance(presentation, dict)

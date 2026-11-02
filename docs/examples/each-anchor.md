@@ -119,7 +119,7 @@ x: carried
   evidence: s15 carries it
   open: no hidden fallback: no bypass trial was declared
   open: presentation invariance: no presentation trial was declared
-  open: specificity: 1 sham trial(s), 2 declared; the body has no span of the anchors' kind left that is not an anchor, bypassed or a fallback
+  open: specificity: 1 sham trial(s), 2 declared; the body has no span left of the kind its shams draw from that is not an anchor, bypassed or a fallback
   open: monotonicity: the control removes the anchors and more, yet left it at Yes
 ```
 

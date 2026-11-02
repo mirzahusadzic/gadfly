@@ -19,7 +19,7 @@ call.
 | `ablation` | the anchors are removed | required influence | `quorum` calls |
 | `ablation-<anchor>` | one anchor removed, the others kept (`eachAnchor`) | how several anchors carry it, as evidence only | one `quorum` per anchor |
 | `cumulative` | anchors plus the spans they may fall back on | support carried elsewhere | `quorum` calls |
-| `sham-*` | as much text of the anchors' kinds, never an anchor, a bypassed span or a declared fallback | specificity of the change | one `quorum` per draw |
+| `sham-*` | as much text of the anchors' kinds (or the kind `sham.kind` names for one), never an anchor, a bypassed span or a declared fallback | specificity of the change | one `quorum` per draw |
 | `presentation` | mapped words renamed in one pass, body and input | whether wording rather than meaning drives the scorer | `quorum` calls |
 | `placement` | one span moved after another, its text unchanged | whether the structure rather than the meaning drives the scorer | `quorum` calls |
 | `inversion` | the anchors' sense inverted in their own words; the input left as it is | whether the answer follows the relation's sense, reaching `allowed.inversion` | `quorum` calls |
@@ -36,6 +36,12 @@ A sham matches the anchors by length in characters, within their kind, so
 `kind` is how a frame chooses the unit a sham matches. To cut as many lines
 as the anchors, give each block a kind that names its line count, such as
 `lines-8`.
+
+An anchor that is the only span of its kind gets no sham, so under the
+default policy its frame is never carried, as `plan` says before a call.
+`"sham": {"draws": 2, "kind": {"failure": "console"}}` draws the shams of
+the anchor `failure` from the spans of kind `console`, and the anchor keeps
+the kind it has.
 
 ---
 
