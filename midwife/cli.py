@@ -25,6 +25,7 @@ import importlib
 import json
 import os
 import re
+import signal
 import sys
 import traceback
 from collections import Counter, defaultdict
@@ -539,6 +540,10 @@ def main(argv: list[str] | None = None) -> int:
     """Run one command. A refusal prints its class and message, then its
     notes, and exits with its class's status; with `--json`, the same as one
     object on standard error. Anything else is a bug: its traceback, and 70."""
+    if argv is None and hasattr(signal, "SIGPIPE"):
+        # run as the program: a reader that stops reading (`| head`) ends it at
+        # once and quietly, as it ends any Unix tool (status 141 in a shell)
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     argv = sys.argv[1:] if argv is None else argv
     command_line = parser()
     # until the arguments are read, --json is asked for only among the options

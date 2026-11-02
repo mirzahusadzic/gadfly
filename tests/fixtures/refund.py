@@ -96,3 +96,11 @@ class Stuck(RuleReader):
         if self.calls > 2:
             time.sleep(20)
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class Slow(RuleReader):
+    """The rule reader, a twentieth of a second a call."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        time.sleep(0.05)
+        return super().observe(frame, prompt, max_output_tokens)

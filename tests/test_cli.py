@@ -620,3 +620,24 @@ def test_a_second_ctrl_c_stops_at_once_though_a_call_hangs(tmp_path):
     assert status == 130
     assert child.stderr.read().startswith("KeyboardInterrupt: stopped by Ctrl-C after 2 calls")
     assert len(out.read_text().splitlines()) == 2
+
+
+def test_a_reader_that_stops_reading_ends_the_command_quietly():
+    # as `gadfly run ... --out - | head -1`: as Unix tools do, SIGPIPE ends it
+    # at once, with no message, rather than a Python warning and status 120
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Slow", "--calls", "8"]
+    child = subprocess.Popen(
+        [sys.executable, "-m", "midwife", *argv, "--out", "-"],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        assert json.loads(child.stdout.readline())["trial"] == "baseline"
+        child.stdout.close()  # the reader is gone; the next record has nowhere to go
+        status = child.wait(timeout=10)
+    finally:
+        if child.poll() is None:
+            child.kill()
+            child.wait()
+    assert status == -signal.SIGPIPE and child.stderr.read() == b""
