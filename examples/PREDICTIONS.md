@@ -286,3 +286,35 @@ back."
 
 Predicted: carried, with `the anchors carry it independently; either
 suffices`.
+
+### Rung 19: a router, beside a second program that calls it
+
+Written before any call of this frame. A narrow waist is one protocol
+between many clients and many providers. The router's own repository shows
+one client, Codex, which its installer sets up, and the repository is named
+after it; the second client is in another repository: Gadfly's unified
+battery posts to the router's address. This frame asks whether the answer
+waist rests on that second program, and whether the router's name changes
+it.
+
+Frame: `examples/19-router-waist.json` (e881f597…), 3 runs of 30 calls,
+read by Muse Spark 1.3 Contributor through the unified battery at reasoning
+`low`. Its tier trains on what it receives, so the frame names it under
+`trainsOnInputs`; every line is a fact about two public repositories. Each
+call is capped at 8,000 output tokens, for its thought and its answer.
+
+No bypass is declared. What connects the second program to the router is
+its address and its protocol, and a careful reader can infer both from
+Gadfly's own line, so no one line can be cut to sever them. The frame says
+so with `carriage: listed`: the category is named at once, with no hidden
+fallback listed beside it as open.
+
+| trial | cuts | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | waist | high |
+| ablation | the line from Gadfly | adapter | high |
+| sham-1 | Gadfly's records line | waist | high |
+| presentation | the repository's name | waist | high |
+| control | the summary, provider and gadfly lines | adapter | high |
+
+Predicted: carried in every run, with no hidden fallback open beside it.

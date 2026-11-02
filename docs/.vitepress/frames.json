@@ -99,6 +99,11 @@
     "name": "restore-cited",
     "hash": "4713844abfdae2bbedb8cc6e1b554c26bbf4ba1ca0ac55209e45cf1384bb15a5"
   },
+  "19-router-waist": {
+    "path": "examples/19-router-waist.json",
+    "name": "router-waist",
+    "hash": "e881f5975ceb46ed93fb272e1bca4d8bc365ad08bac7b561cc53c238fa91562b"
+  },
   "rung1": {
     "path": "examples/rung1.json",
     "name": "quill-upgrade-rung-1",

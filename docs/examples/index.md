@@ -10,9 +10,9 @@ reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
 - **Every run kept:** `examples/runs/` holds every record of every run.
 - **Nothing edited after:** a wrong prediction stays in, and so does a frame
   that turned out to be built wrong; a corrected frame is a new one beside it.
-- **Cheap to run:** 6,290 calls in all, across code review, contracts, access
-  rules, incidents, migrations and performance work, and not one failed
-  (`examples/FINDINGS.md`).
+- **Cheap to run:** 6,380 calls in all, across code review, design review,
+  contracts, access rules, incidents, migrations and performance work, and
+  not one failed (`examples/FINDINGS.md`).
 
 ---
 

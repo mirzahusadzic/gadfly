@@ -276,3 +276,28 @@ monotonicity open: right on all three. Run 3 carried, reading "s15 carries
 it" and "s14 alone has no agreed level" (Yes 3 to No 2 in that run); runs 1
 and 2 split at the baseline or repeat. Monotonicity is open in runs 1 and 3,
 the control answering Yes from the case alone.
+
+## Rung 19: a router, beside a second program that calls it
+
+Read by Muse Spark 1.3 Contributor through the unified battery at reasoning
+`low`, 3 runs of 30 calls. Calls per trial over the three runs:
+
+| trial | answers |
+|---|---|
+| baseline | waist 15 |
+| repeat | waist 15 |
+| ablation (the second program) | adapter 14, waist 1 |
+| sham-1 | waist 15 |
+| presentation (`unified-model-router`) | waist 15 |
+| control | adapter 15 |
+| per run | carried in all three |
+
+Predicted carried in every run, with no hidden fallback open beside it:
+right in all three. Muse answered waist with the second program in view and
+adapter without it, and renaming the repository left the answer where it
+was, so the review rested on the evidence, not on the router's name. It
+thought before every answer, 577 to 1,739 output tokens a call.
+
+No hidden fallback stays open by declaration: the second program's own line
+gives its address and protocol, so no one line can be cut to sever it from
+the router, and the frame names the category with that check beside it.

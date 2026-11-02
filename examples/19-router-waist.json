@@ -1,0 +1,46 @@
+{
+  "name": "router-waist",
+  "relation": "the answer waist rests on a second program speaking the router's one protocol, not on the router's name",
+  "locus": "the evidence a reviewer has across two repositories: the router's README, docs and code, and the library that also calls it",
+  "role": "a reviewer of a repository's design",
+  "grain": "one fact about the repositories",
+  "purpose": "decide whether the router is a narrow waist or an adapter for one client",
+  "trajectory": "repositories, evidence, the reviewer's finding, the review report",
+  "crossing": "the finding written in the review",
+  "promise": "the reviewer answers waist because a second program, Gadfly, speaks the same protocol through the router; without that line, the router read alone, they say adapter or unclear, and a neutral name leaves the answer as it was",
+  "baseline": "the router read beside the line from the library that calls it; nothing changed",
+  "body": {
+    "spans": [
+      {"id": "summary", "kind": "readme", "text": "README: codex-unified-model-router is a loopback-only router that lets one Codex thread switch between OpenAI, Claude and DeepSeek models from Codex's own model picker."},
+      {"id": "provider", "kind": "readme", "text": "README: Codex talks to the router as one model provider, over the Responses API. The router picks the upstream from the model slug, adapts each request to that provider and streams the response back."},
+      {"id": "install", "kind": "code", "text": "install.mjs writes the router into Codex's config.toml as its model provider, with the router's model catalog and prompts."},
+      {"id": "pin", "kind": "code", "text": "install.mjs pins Codex's app-server daemon to the installed Codex CLI, so the daemon no longer updates itself to a release the router has not been tested with."},
+      {"id": "ultraspark", "kind": "docs", "text": "docs/setup.md: Ultra Spark is a catalog entry the installer adds, DeepSeek with prompts/ultra-spark.md. It hands tasks to up to 10 Muse Spark workers through Codex's spawn_agent, and the lead's and every worker's calls go through the router."},
+      {"id": "keys", "kind": "code", "text": "Every provider key stays in the router's own process on loopback; a client holds only a local token."},
+      {"id": "deps", "kind": "readme", "text": "README: Node.js 20 or later, and zero npm runtime dependencies."},
+      {"id": "tests", "kind": "readme", "text": "README: the tests need no API keys or network access, and CI runs them on Linux, macOS and Windows."},
+      {"id": "gadfly", "kind": "library", "text": "Gadfly, a separate Python library with no runtime dependencies, reads models through its unified battery, which posts to the router's http://127.0.0.1:18766/v1/responses with the router's local token."},
+      {"id": "records", "kind": "library", "text": "Gadfly keeps every call as one JSON line, from which any verdict is read again without a model."}
+    ]
+  },
+  "anchors": ["gadfly"],
+  "inputs": [
+    {"id": "review", "text": "Review the design of codex-unified-model-router as it stands."}
+  ],
+  "observe": {
+    "labels": ["waist", "adapter", "unclear"],
+    "instruction": "You review the design of software repositories. Use only the evidence given. Answer waist if the router is a narrow waist, one protocol that any client may speak, between its clients and many providers, adapter if it is built for one client and only that client uses it, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": true,
+    "presentation": {"codex-unified-model-router": "unified-model-router"},
+    "control": ["summary", "provider", "gadfly"]
+  },
+  "allowed": {"ablation": ["adapter", "unclear"]},
+  "standing": {"quorum": 5, "agree": 4},
+  "materialized": true,
+  "carriage": "listed",
+  "battery": {"kind": "unified", "model": "openrouter/meta/muse-spark-1.3-contributor", "reasoning": "low", "trainsOnInputs": ["openrouter/meta/muse-spark-1.3-contributor"]}
+}

@@ -1,6 +1,6 @@
 """Every example's kept runs: each is its frame's whole plan, and each reads to
-the verdict the docs report. No model is called; the records are the ones
-Gemma gave through eGemma, kept under examples/runs/."""
+the verdict the docs report. No model is called; the records are the ones each
+frame's reader gave, kept under examples/runs/."""
 
 import json
 import re
@@ -52,6 +52,7 @@ REPORTED: dict[str, list[list[str]]] = {
     "18b-access-logs": [[UNR]] * 3,
     "18b2-access-logs-both": [[UNR]] * 3,
     "18c-restore-cited": [[UNR], [UNR], [CAR]],
+    "19-router-waist": [[CAR]] * 3,
     "rung1": [[UNR]] * 5,
     "rung2": [[UNR]] * 5,
     "rung3": [[UNR]] * 5,
@@ -71,7 +72,7 @@ def test_every_kept_run_is_its_frames_whole_plan(path):
         records = load_records(str(run))
         assert len(records) == calls_needed(frame)
         judge(frame, records)  # refuses a record of another frame or another plan
-        assert {r["battery"] for r in records} == {"egemma"}
+        assert {r["battery"] for r in records} == {frame.battery["kind"]}
         assert all(r["served"] for r in records), "every record names what served it"
 
 
@@ -113,19 +114,21 @@ class Replay:
 
 
 def test_a_run_that_stops_at_unresolved_reads_every_kept_run_alike():
-    # Gemma's own answers, asked again: stopping changes no category and saves calls
+    # each reader's own answers, asked again: stopping changes no category and
+    # saves calls; each call's cap covers what the run's records report spending
     asked = kept = 0
     for path in FRAMES:
         frame = situate(json.loads(path.read_text(encoding="utf-8")))
         for each in runs_of(path):
             records = load_records(str(each))
-            budget = Budget(calls=calls_needed(frame))
+            spent = max(r["usage"].get("output_tokens", 0) for r in records)
+            budget = Budget(calls=calls_needed(frame), output_tokens_per_call=max(spent, 64))
             replay = Replay(frame, records)
             stopped = pipeline.run(frame, replay, budget, stop_unresolved=True).records
             read = [f.category for f in judge(frame, stopped)]
             assert read == [f.category for f in judge(frame, records)], each
             asked, kept = asked + len(stopped), kept + len(records)
-    assert (asked, kept) == (4690, 6290)
+    assert (asked, kept) == (4780, 6380)
 
 
 def test_only_the_approved_restore_raises_monotonicity():
@@ -188,22 +191,25 @@ def test_the_counts_the_results_quote_are_the_kept_runs():
 
 def test_the_totals_the_docs_quote_are_the_kept_runs():
     # every call kept, and those that differ from their trial's majority in
-    # their own run, recounted from the records
-    total, off, incident = 0, 0, 0
+    # their own run, recounted from the records; FINDINGS speaks of Gemma's
+    total, gemma, off, incident = 0, 0, 0, 0
     for path in FRAMES:
+        by_gemma = json.loads(path.read_text(encoding="utf-8"))["battery"]["kind"] == "egemma"
         for run in runs_of(path):
             answers = defaultdict(list)
             for record in load_records(str(run)):
                 answers[record["input"], record["trial"]].append(record["observation"])
-            total += sum(len(a) for a in answers.values())
-            odd = sum(len(a) - Counter(a).most_common(1)[0][1] for a in answers.values())
-            off += odd
-            incident += odd if path.stem.startswith("10") else 0
+            calls = sum(len(a) for a in answers.values())
+            total += calls
+            if by_gemma:
+                odd = sum(len(a) - Counter(a).most_common(1)[0][1] for a in answers.values())
+                gemma, off = gemma + calls, off + odd
+                incident += odd if path.stem.startswith("10") else 0
     findings = " ".join((EXAMPLES / "FINDINGS.md").read_text(encoding="utf-8").split())
     ladder = " ".join((EXAMPLES.parent / "docs/examples/index.md").read_text().split())
-    assert f"{off} of {total:,} calls differed from their trial's majority" in findings
+    assert f"{off} of {gemma:,} calls differed from their trial's majority" in findings
     assert f"{incident} of them are in the incident frames" in findings
-    assert f"**No call failed.** {total:,} calls: no error" in findings
+    assert f"**No call failed.** {gemma:,} calls: no error" in findings
     assert f"{total:,} calls in all" in ladder
 
 
