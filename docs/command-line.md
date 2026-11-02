@@ -95,7 +95,8 @@ none rather than guess.
 
 `run` makes the calls the budget covers and keeps each record as one JSON line
 the moment it exists. It needs an explicit budget, never writes over a file,
-and makes no file until its first record:
+and makes none when it is refused, so a run with nothing left to ask still
+makes its file, empty:
 
 ```bash
 uv run gadfly run examples/upgrade.json \

@@ -154,6 +154,27 @@ def test_the_command_line_stops_and_says_so(tmp_path, capsys):
     assert "not asked: sham-1, sham-2, bypass; whatever they gave, it reads unresolved" in report
 
 
+def test_a_run_with_nothing_to_ask_still_makes_its_file(tmp_path, capsys):
+    # no control and no bypass under all-checks: unresolved before a call
+    frame = json.loads(REFUND.read_text())
+    frame["battery"] = {"kind": "rules"}
+    frame["interventions"] = {"ablation": True}
+    frame["allowed"] = {"ablation": ["grant", "decline", "unclear"]}
+    path, out = tmp_path / "frame.json", tmp_path / "records.jsonl"
+    path.write_text(json.dumps(frame))
+    reader = "tests.test_stop_unresolved:Never"
+    argv = ["run", str(path), "--battery", reader, "--calls", "2", "--out", str(out)]
+    assert main([*argv, "--stop-unresolved"]) == 0
+    assert capsys.readouterr().out.splitlines() == [
+        f"wrote 0/2 calls to {out}",
+        "unasked: 2 calls not made, their input unresolved whatever they gave",
+        f"to read the verdict: gadfly report {path} {out}",
+    ]
+    assert out.read_text() == ""  # the whole run, with nothing in it
+    assert main(["report", str(path), str(out)]) == 0
+    assert "not asked: baseline, ablation; whatever" in capsys.readouterr().out
+
+
 class Never(Reader):
     """A reader that declines whatever it is shown."""
 

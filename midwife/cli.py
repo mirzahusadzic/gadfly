@@ -10,8 +10,8 @@
 
 It uses only the public pipeline. `run` needs an explicit call budget,
 writes each record as one JSON line the moment it exists, never writes over
-a file and makes none until its first record, and says when it stopped
-early; `report` keeps a finding's evidence and its open obligations apart.
+a file and makes none when it is refused, and says when it stopped early;
+`report` keeps a finding's evidence and its open obligations apart.
 A battery is named `module:Class` and is imported from the current
 directory.
 """
@@ -233,7 +233,7 @@ def command_run(args) -> int:
             print(file=sys.stderr)
     if not result.records and result.stopped:  # nothing was spent: a refusal, not a run
         raise ValueError(result.stopped)
-    if kept and not files:  # nothing was left to make: the new file is still the whole run
+    if not files:  # nothing was left to ask: the new file, empty or kept, is still the whole run
         with out.open("x", encoding="utf-8") as whole:
             whole.writelines(json.dumps(old, ensure_ascii=False) + "\n" for old in kept)
         files.append(whole)

@@ -1175,8 +1175,8 @@ uv run gadfly portfolio a.json b.json
 
 It uses only the public pipeline. `run` needs an explicit call budget,
 writes each record as one JSON line the moment it exists, never writes over
-a file and makes none until its first record, and says when it stopped
-early; `report` keeps a finding's evidence and its open obligations apart.
+a file and makes none when it is refused, and says when it stopped early;
+`report` keeps a finding's evidence and its open obligations apart.
 A battery is named `module:Class` and is imported from the current
 directory.
 
