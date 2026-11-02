@@ -85,7 +85,21 @@ def test_a_cap_with_no_room_for_a_thought_is_an_opening_and_no_call(frame, key, 
     assert observation.label is None and observation.opening == (
         "a cap of 64 output tokens leaves no room for a thought beside the answer's 64"
     )
-    assert fake.requests == []
+    assert fake.requests == [] and observation.usage == {"output_tokens": 0}
+    with pytest.raises(BatteryError, match="no room for a thought"):
+        payload(thinking, "p", egemma.ANSWER_TOKENS)  # never a request eGemma refuses
+
+
+def test_a_cap_with_no_room_for_a_thought_spends_none_of_a_token_budget(raw, key, monkeypatch):
+    # every call opens before any request, so a run spends no output tokens
+    raw["battery"] = {"kind": "egemma", "reasoning": True}
+    frame = situate(raw)
+    battery = EGemma()
+    monkeypatch.setattr(battery, "read_budget", lambda: None)  # no eGemma to ask
+    budget = Budget(calls=calls_needed(frame), output_tokens_per_call=64, tokens=64)
+    with pytest.warns(Warning):
+        result = run(frame, battery, budget)
+    assert result.stopped is None and len(result.records) == calls_needed(frame)
 
 
 def test_a_thought_is_counted_in_the_records_usage(frame, key, server):

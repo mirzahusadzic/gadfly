@@ -131,6 +131,11 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     if "temperature" in frame.battery:
         body["temperature"] = frame.battery["temperature"]
     if frame.battery.get("reasoning"):
+        if max_output_tokens <= ANSWER_TOKENS:  # a thought of no tokens is no request
+            raise BatteryError(
+                f"a cap of {max_output_tokens} output tokens leaves no room "
+                f"for a thought beside the answer's {ANSWER_TOKENS}"
+            )
         body["max_tokens"] = ANSWER_TOKENS
         body["reasoning"] = True
         body["max_reasoning_tokens"] = min(max_output_tokens - ANSWER_TOKENS, MAX_THOUGHT_TOKENS)
@@ -224,6 +229,7 @@ class EGemma:
                 label=None,
                 opening=f"a cap of {max_output_tokens} output tokens leaves no room "
                 f"for a thought beside the answer's {ANSWER_TOKENS}",
+                usage={"output_tokens": 0},  # no call was made, so a token budget spent none
             )
         request = urllib.request.Request(
             self.url,
