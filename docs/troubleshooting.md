@@ -156,15 +156,6 @@ exits with 3. The records made are kept, and `--kept` finishes them.
 | `StoppedWarning: the run stopped after 3 of 8 calls; the token budget (30) is spent` | `finish with --kept 'records.jsonl' and a new --out`. Raise `--token-budget` first. |
 | `StoppedWarning: the run stopped after 1 of 8 calls; the battery reported 900 output tokens for a call capped at 64` | `finish with --kept 'records.jsonl' and a new --out`. The battery spent more output tokens on one call than `--output-tokens` allows, and that call's record is kept. A battery that writes before it answers spends tokens on the whole call: set `--output-tokens` to what a whole call may spend. |
 
---- | --- |
-| `openings: 10 of 10 calls, most often "eGemma could not be reached (ConnectionRefusedError)" (10)` | Nothing answers at `EGEMMA_URL`, by default `http://127.0.0.1:8000`. Start eGemma, or point the variable at it. The calls were spent, and `run` exits with 1, so run again into a new file. |
-| `"the router could not be reached (...)"` or `"the evaluator could not be reached (...)"` | The same for the router, at `http://127.0.0.1:18766`, or for your evaluator, at the frame's `battery.url`. |
-| `"eGemma answered 401"` or `"the router answered 401"` | The key or the token is wrong. |
-| `"eGemma answered 503 after 3 retries"` | eGemma stayed busy or has no model loaded; the battery waits and retries before it gives up. Check eGemma's own log. |
-| `"the router reports 'openrouter-data-policy'"` | No OpenRouter endpoint for that model keeps no data, and the frame does not consent to one that trains on its inputs. Choose another model, or pin endpoints with `battery.endpoints`. |
-| `stopped: the token budget (30) is spent` | The run stopped before its last call, so its records are partial, and `run` exits with 3. Finish with `--kept` and a new `--out`. |
-| `stopped: the battery reported 900 output tokens for a call capped at 64` | The battery spent more output tokens on one call than `--output-tokens` allows, so the run stopped after that call, and its record is kept. A battery that writes before it answers spends tokens on the whole call: set `--output-tokens` to what a whole call may spend, and finish with `--kept`. |
-
 ---
 
 ### Reading a verdict

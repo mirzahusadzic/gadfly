@@ -406,8 +406,9 @@ def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
             if kind in classes:
                 astray += [] if classes[kind] == section else [f"{kind} under {section}"]
                 rowed.add(kind)
-            elif kind == "stopped":  # why a run stopped, as run says it
-                pass
+            elif kind in ("stopped", "openings"):  # lines run no longer prints: a warning now
+                unknown.append(text)
+                continue
             elif text.startswith('"') and text.endswith('"'):
                 kind, message = "", text[1:-1]  # an opening, as run names it
             else:
