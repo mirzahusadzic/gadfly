@@ -134,3 +134,12 @@ class Exiting(RuleReader):
         if self.calls == 2:
             raise SystemExit(0)
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class Separated(RuleReader):
+    """The rule reader whose replies hold Unicode line separators, as any
+    text may: valid in a JSON string, but lines to str.splitlines()."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        observation = super().observe(frame, prompt, max_output_tokens)
+        return Observation(label=observation.label, raw="a b c\x85d")

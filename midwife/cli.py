@@ -158,7 +158,8 @@ def load_records(path: str) -> list[dict[str, Any]]:
 
 def _numbered(path: str) -> list[tuple[int, dict[str, Any]]]:
     # each record with the line it was read from, for a refusal to point at
-    lines = read_text(path, RecordsError).splitlines()
+    # a record ends at a newline only: U+2028 and its kind are text inside it
+    lines = [line.removesuffix("\r") for line in read_text(path, RecordsError).split("\n")]
     return [
         (n, load_json(path, text, RecordsError, n))
         for n, text in enumerate(lines, 1)

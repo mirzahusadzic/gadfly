@@ -727,3 +727,11 @@ def test_a_battery_that_exits_is_a_bug_not_a_success(tmp_path, capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Exiting", "--calls", "8"]
     assert main([*argv, "--out", str(out)]) == 70
     assert "SystemExit" in capsys.readouterr().err
+
+
+def test_records_holding_line_separators_are_read_back(tmp_path, capsys):
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Separated", "--calls", "8"]
+    assert main([*argv, "--out", str(out)]) == 0
+    assert main(["report", REFUND, str(out)]) == 0
+    assert "records: 8 of 8 planned calls" in capsys.readouterr().out
