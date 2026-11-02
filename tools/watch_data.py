@@ -59,7 +59,7 @@ def watched(stem: str) -> dict:
     runs, served = [], set()
     for kept in runs_of(path):
         records = load_records(str(kept))
-        served |= {r["served"].partition("@")[0] for r in records}
+        served |= {_model(stem, r.get("served")) for r in records}
         for r in records:
             if digests[r["input"], r["trial"]] != r["prompt"]:
                 raise SystemExit(f"{kept}: {r['input']}/{r['trial']} was asked another prompt")
@@ -87,6 +87,14 @@ def watched(stem: str) -> dict:
     for model in served:  # none without runs
         data["readBy"] = f"{MODELS[model]} ({model})"
     return {**data, "runs": runs}
+
+
+def _model(stem: str, served: object) -> str:
+    # the model a record says served it: "model", "model@revision", or the
+    # unified battery's "model via endpoint"
+    if not isinstance(served, str) or not served:
+        raise SystemExit(f"{stem}: a record does not say what served it")
+    return served.partition(" via ")[0].partition("@")[0]
 
 
 def watched_frame(frame, trials, prompts, file: str) -> dict:
@@ -254,6 +262,8 @@ def encoded(stem: str) -> str:
         data = titled()
     else:
         data = watched(stem)
+        if not data["runs"]:  # the view plays a run; an example keeps three
+            raise SystemExit(f"{stem}: no kept run to play")
     return json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 

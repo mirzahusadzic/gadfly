@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from midwife.cli import load_records
 from tools import watch_data
 
 ROOT = Path(__file__).parent.parent
@@ -199,6 +200,40 @@ def test_the_watch_view_plays_the_kept_runs(stem):
     # refuses a prompt its records' digest does not name
     kept = (watch_data.OUT / f"{stem}.json").read_text(encoding="utf-8")
     assert kept == watch_data.encoded(stem)
+
+
+@pytest.mark.parametrize(
+    "served, model",
+    [
+        (
+            "google/gemma-4-26B-A4B-it-qat-q4_0-gguf@d1c082be",
+            "google/gemma-4-26B-A4B-it-qat-q4_0-gguf",
+        ),
+        ("meta/muse-spark-1.3-contributor via DeepInfra", "meta/muse-spark-1.3-contributor"),
+        ("meta/muse-spark-1.3-contributor", "meta/muse-spark-1.3-contributor"),
+    ],
+)
+def test_the_watch_view_names_the_model_whatever_form_served_takes(monkeypatch, served, model):
+    # served is "model", "model@revision", or the unified battery's "model via endpoint"
+    stem = "19-router-waist"
+    runs = watch_data.runs_of(watch_data.ROOT / "examples" / f"{stem}.json")
+    records = [{**r, "served": served} for r in load_records(str(runs[0]))]
+    monkeypatch.setattr(watch_data, "runs_of", lambda path: [runs[0]])
+    monkeypatch.setattr(watch_data, "load_records", lambda path: records)
+    assert watch_data.watched(stem)["readBy"].endswith(f"({model})")
+
+
+def test_the_watch_view_refuses_what_it_cannot_play(monkeypatch):
+    # a record that does not say what served it, and an example with no run
+    stem = "19-router-waist"
+    runs = watch_data.runs_of(watch_data.ROOT / "examples" / f"{stem}.json")
+    records = [{k: v for k, v in r.items() if k != "served"} for r in load_records(str(runs[0]))]
+    monkeypatch.setattr(watch_data, "load_records", lambda path: records)
+    with pytest.raises(SystemExit, match="does not say what served it"):
+        watch_data.watched(stem)
+    monkeypatch.setattr(watch_data, "runs_of", lambda path: [])
+    with pytest.raises(SystemExit, match="no kept run to play"):
+        watch_data.encoded(stem)
 
 
 def test_the_watch_view_counts_the_asks_of_one_run():
