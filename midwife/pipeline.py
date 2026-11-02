@@ -117,9 +117,9 @@ def run(
         raise UsageError(f"battery {battery.name!r} does not take calls at once")
     try:
         battery.check(frame)
-    except GadflyError:
-        raise
     except ValueError as error:  # a battery refuses as the protocol says, with a ValueError
+        if isinstance(error, GadflyError) and type(battery).__module__.startswith("midwife."):
+            raise  # a shipped battery's refusal, in Gadfly's own words
         said = f"it said {str(error)!r}"  # its words quoted: a battery's are not Gadfly's
         raise BatteryError(f"battery {battery.name!r} refused this frame", said) from error
     ids = trial_ids(frame)

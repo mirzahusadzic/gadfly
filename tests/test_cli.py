@@ -791,3 +791,56 @@ def test_free_text_and_paths_print_quoted_when_they_would_break_a_line(
     Path("report.json").write_text(json.dumps(document))
     assert main(["portfolio", "report.json"]) == 0
     assert "unresolved: 'a: b'" in capsys.readouterr().out.splitlines()
+
+
+def test_a_usage_error_keeps_a_quoted_value_whole(tmp_path, capsys):
+    # argparse's own colons go; a value's stay inside its quotes
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader"]
+    assert main([*argv, "--calls", "a: b", "--out", str(tmp_path / "r.jsonl")]) == 2
+    assert "UsageError: --calls, invalid int value 'a: b'" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "argv, status",
+    [
+        (["plan", REFUND, "--bogus\nforged"], 2),  # an argument no command takes
+        (["plan", "{frame}"], 4),  # a frame's key with a line break in it
+    ],
+)
+def test_a_refusal_prints_a_value_with_a_line_break_on_its_line(tmp_path, capsys, argv, status):
+    frame = tmp_path / "frame.json"
+    frame.write_text('{"x\\nforged": 1e999}', encoding="utf-8")
+    assert main([a.replace("{frame}", str(frame)) for a in argv]) == status
+    lines = capsys.readouterr().err.splitlines()
+    assert not any(line.startswith("forged") for line in lines), lines
+
+
+def test_a_run_names_a_path_with_a_line_break_on_its_line(tmp_path, capsys):
+    out = tmp_path / "records\nforged.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    assert main([*argv, "--out", str(out)]) == 0
+    printed = capsys.readouterr().out
+    assert len(printed.splitlines()) == 2 and repr(str(out)) in printed
+
+
+@pytest.mark.parametrize("raised_in", ["check", "__init__"])
+def test_a_battery_of_your_own_raising_gadflys_error_is_quoted(
+    tmp_path, capsys, monkeypatch, raised_in
+):
+    # a battery's words are quoted whichever class it raises them with
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    Path("own_battery.py").write_text(
+        "from midwife.errors import BatteryError\n"
+        "class Reader:\n"
+        "    name = 'rule-reader'\n"
+        f"    def {raised_in}(self, *args):\n"
+        "        raise BatteryError('no key: set it\\nforged line')\n"
+        "    def observe(self, frame, prompt, cap):\n"
+        "        pass\n"
+    )
+    argv = ["run", REFUND, "--battery", "own_battery:Reader", "--calls", "8"]
+    assert main([*argv, "--out", str(tmp_path / "r.jsonl")]) == 6
+    lines = capsys.readouterr().err.splitlines()
+    assert lines[1] == "it said 'no key: set it\\nforged line'", lines
+    assert not any(line.startswith("forged") for line in lines)

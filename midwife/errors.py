@@ -39,12 +39,16 @@ class GadflyError(ValueError):
             self.add_note(note)
 
 
+def one_line(value: str) -> bool:
+    """Whether a value prints on one line: no line break, nor any other
+    control character a terminal could act on."""
+    return not any(unicodedata.category(c) in ("Cc", "Zl", "Zp") for c in value)
+
+
 def is_plain(value: str) -> bool:
     """Whether a value prints as one plain name: no line break, and no colon a
     label would end at."""
-    return ": " not in value and not any(
-        unicodedata.category(c) in ("Cc", "Zl", "Zp") for c in value
-    )
+    return ": " not in value and one_line(value)
 
 
 def plain(value: str) -> str:

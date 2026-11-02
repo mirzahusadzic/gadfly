@@ -276,6 +276,15 @@ A refusal: the message says what went wrong, each note what to do.
 class GadflyError(ValueError)
 ```
 
+#### one_line
+
+Whether a value prints on one line: no line break, nor any other
+control character a terminal could act on.
+
+```python
+one_line(value)
+```
+
 #### is_plain
 
 Whether a value prints as one plain name: no line break, and no colon a

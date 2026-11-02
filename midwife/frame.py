@@ -18,7 +18,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-from .errors import FrameError, is_plain, quoted
+from .errors import FrameError, is_plain, plain, quoted
 
 # The situated relation L = (I, B, r, g, P, T, B0, C, p): each must be said
 # (the body B and the baseline B0 are checked on their own).
@@ -376,7 +376,7 @@ def _plain_json(value: Any, where: str) -> None:
             if not isinstance(key, str):
                 raise FrameError(f"{where} is not plain JSON, as the key {key!r} is not a string")
             _plain_json(key, where)
-            _plain_json(item, f"{where}.{key}")
+            _plain_json(item, f"{where}.{plain(key)}")
     elif isinstance(value, list):
         for item in value:
             _plain_json(item, where)

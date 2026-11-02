@@ -45,6 +45,7 @@ from .errors import (
     StoppedWarning,
     UsageError,
     noted,
+    one_line,
     plain,
 )
 from .frame import schema
@@ -90,9 +91,9 @@ def load_battery(spec: str):
         raise BatteryError(
             f"module {module_name!r} could not be imported", f"it said {str(error)!r}"
         ) from None
-    except GadflyError:
-        raise
     except ValueError as error:  # a battery refuses with a ValueError, as in check
+        if isinstance(error, GadflyError) and module_name.startswith("midwife."):
+            raise  # a shipped battery's refusal, in Gadfly's own words
         raise BatteryError(
             f"battery {spec!r} could not be made", f"it said {str(error)!r}"
         ) from error
@@ -101,8 +102,12 @@ def load_battery(spec: str):
         raise BatteryError(f"module {module_name!r} has no {attribute!r}")
     try:
         battery = target() if isinstance(target, type) else target
-    except GadflyError:
-        raise
+    except GadflyError as error:
+        if module_name.startswith("midwife."):
+            raise  # a shipped battery's refusal, in Gadfly's own words
+        raise BatteryError(
+            f"battery {spec!r} could not be made", f"it said {str(error)!r}"
+        ) from None
     except (
         TypeError,
         ValueError,
@@ -156,6 +161,12 @@ def load_json(path: str, text: str, refusal: type[GadflyError], line: int | None
 
 def _named(path: str) -> str:
     return "standard input" if path == "-" else f"file {path!r}"
+
+
+def _shell(path: str) -> str:
+    # a path as a shell would take it back, or Python's repr where that would
+    # break a line, as shlex keeps a line break inside its quotes
+    return shlex.quote(path) if one_line(path) else repr(path)
 
 
 def load_records(path: str) -> list[dict[str, Any]]:
@@ -316,9 +327,7 @@ def command_run(args) -> int:
             "choose another --out",
         )
     # a path as a shell would take it back, so a colon or a space in it breaks no line
-    where, say = (
-        ("standard output", sys.stderr) if streamed else (shlex.quote(str(out)), sys.stdout)
-    )
+    where, say = ("standard output", sys.stderr) if streamed else (_shell(str(out)), sys.stdout)
 
     def opened():
         return sys.stdout if streamed else out.open("x", encoding="utf-8")
@@ -458,9 +467,9 @@ def command_run(args) -> int:
                 file=say,
             )
         read = (
-            f"pipe them to gadfly report {shlex.quote(args.frame)} -"
+            f"pipe them to gadfly report {_shell(args.frame)} -"
             if streamed
-            else f"gadfly report {shlex.quote(args.frame)} {where}"
+            else f"gadfly report {_shell(args.frame)} {where}"
         )
         print(f"to read the verdict: {read}", file=say)
         for warning, _ in raised:
@@ -712,6 +721,10 @@ def _plain(error: OSError) -> str:
     }.get(error.errno, f"file {name!r} cannot be used ({error.strerror})")
 
 
+# a value argparse quotes, as Python's repr does, with either quote
+QUOTED = re.compile(r"""('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")""")
+
+
 class Parser(argparse.ArgumentParser):
     """The arguments; a mistake in them is a UsageError."""
 
@@ -722,7 +735,7 @@ class Parser(argparse.ArgumentParser):
         parsed, extra = self.parse_known_args(args, namespace)
         if extra:  # the command's own mistake, pointing at its own help
             parser = self.commands.get(getattr(parsed, "command", None), self)
-            parser.error(f"unrecognized arguments {' '.join(extra)}")
+            parser.error(f"unrecognized arguments {' '.join(map(plain, extra))}")
         return parsed
 
     def error(self, message: str):
@@ -730,8 +743,10 @@ class Parser(argparse.ArgumentParser):
         # argparse's words hold colons: "argument --calls: invalid int value: 'x'"
         message = re.sub(r"^argument (\S+): ", r"\1, ", message)
         message = message.replace("the following arguments are required: ", "missing ")
-        plain = message.replace(": ", " ")
-        raise UsageError(plain, f"{self.prog} --help shows its arguments")
+        # the colons argparse adds go, a value's own stay inside its quotes
+        parts = QUOTED.split(message)
+        parts[::2] = [part.replace(": ", " ") for part in parts[::2]]
+        raise UsageError("".join(parts), f"{self.prog} --help shows its arguments")
 
 
 if __name__ == "__main__":
