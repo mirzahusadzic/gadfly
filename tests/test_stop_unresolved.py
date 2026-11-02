@@ -187,15 +187,30 @@ def test_calls_at_once_stop_too(raw):
         concurrent = True
 
     frame = situate(raw)
-    stopped = run(
-        frame,
-        AtOnce(lambda prompt, n: "decline"),
-        Budget(calls=calls_needed(frame)),
-        stop_unresolved=True,
-        parallel=3,
+    whole = run(frame, Reader(lambda prompt, n: "decline"), Budget(calls=calls_needed(frame)))
+    for _ in range(5):  # which calls are out when it stops is the threads' timing
+        stopped = run(
+            frame,
+            AtOnce(lambda prompt, n: "decline"),
+            Budget(calls=calls_needed(frame)),
+            stop_unresolved=True,
+            parallel=3,
+        )
+        assert len(stopped.records) + stopped.unasked == calls_needed(frame)
+        read = overall(judge(frame, stopped.records))
+        assert read.category == overall(judge(frame, whole.records)).category
+
+
+def test_a_trial_cut_short_reads_as_left_not_as_split(raw):
+    # as calls made at once leave it: one answer of three, the rest never asked
+    frame = situate(raw)
+    records = run(frame, Reader(lambda p, n: "decline"), Budget(calls=calls_needed(frame))).records
+    cut = [
+        r
+        for r in records
+        if r.trial != "bypass" and (r.trial, r.run) not in {("sham-1", 1), ("sham-1", 2)}
+    ]
+    [finding] = judge(frame, cut)
+    assert finding.evidence[-1] == (
+        "not asked: bypass; not asked to the end: sham-1; whatever they gave, it reads unresolved"
     )
-    assert stopped.unasked > 0
-    assert len(stopped.records) + stopped.unasked == calls_needed(frame)
-    # calls made at once leave some trials part asked: read as left, not as split
-    said = judge(frame, stopped.records)[0].evidence[-1]
-    assert said.startswith("not asked") and said.endswith("whatever they gave, it reads unresolved")
