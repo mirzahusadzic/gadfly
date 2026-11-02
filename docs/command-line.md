@@ -19,11 +19,11 @@ a command reads may be `-`, standard input, once in a command.
 
 | Command | Calls a model | Prints | Exit status |
 | --- | --- | --- | --- |
-| `check-frame FRAME` | no | `ok`, the frame's hash and its calls, or each problem as a `FrameError` and where it is | 0 when accepted, 4 when not |
-| `plan FRAME` | no | each trial, its kind and its body's hash, and the call count | 0 |
-| `run FRAME` | yes, up to `--calls` | the calls written and how to read the verdict, then an `OpeningWarning` for calls that came back as openings and a `StoppedWarning` for an early stop | 0; 1 when every call came back as an opening; 3 when stopped early, its records partial; 130 when stopped by Ctrl-C |
-| `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0 |
-| `portfolio REPORT...` | no | frames counted by category, the obligations they share, and frames whose inputs disagree | 0 |
+| `check-frame FRAME` | no | `ok`, the frame's hash and its calls, or each problem as a `FrameError` and where it is | 0 when accepted, 4 when not; a refusal's |
+| `plan FRAME` | no | each trial, its kind and its body's hash, and the call count | 0; a refusal's |
+| `run FRAME` | yes, up to `--calls` | the calls written and how to read the verdict, then an `OpeningWarning` for calls that came back as openings and a `StoppedWarning` for an early stop | 0; 1 when every call came back as an opening, stopped early or not; 3 when stopped early, its records partial; 130 when stopped by Ctrl-C; 141 when its reader stops reading; a refusal's |
+| `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0; a refusal's |
+| `portfolio REPORT...` | no | frames counted by category, the obligations they share, and frames whose inputs disagree | 0; a refusal's |
 
 ---
 
@@ -212,4 +212,5 @@ uv run gadfly portfolio a.json b.json
 
 It counts the frames by category, lists the obligations two or more of them
 share, and names the frames whose inputs disagree; `--json` prints the same as
-JSON.
+JSON. A report whose categories are not the five a verdict reads is refused as
+a `RecordsError`, as `gadfly report` did not write it.

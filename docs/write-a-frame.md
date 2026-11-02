@@ -240,6 +240,7 @@ For problems after a run, see [Refused records](reading-a-verdict.md#refused-rec
 
 | Message | Fix |
 |---|---|
+| `input id 'pr: west' is not one plain name` | a name, span id, input id or label prints on a line of its own: no line break, and no colon followed by a space |
 | `unknown keys '...'` | every top-level key is checked; remove the typo rather than hoping it is ignored |
 | `presentation renames nothing input 'x' reads` | map a word present in the body or every input |
 | `bypass removes exactly the anchors` | choose the separate connection whose removal should expose the opening |

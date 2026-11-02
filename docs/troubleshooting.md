@@ -77,6 +77,8 @@ read from them.
 | `RecordsError: a record of trial 'baseline' was made on another body` | The trial's text differs from the one the record was made on. The frame, or the way Gadfly plans it, changed after the run. |
 | `RecordsError: a record is a JSON object` or `RecordsError: a record's trial is not a str` | A line of the records file is not a record Gadfly wrote: another file, or one edited by hand. |
 | `RecordsError: file 'records.jsonl' is not JSON at line 3, column 1 (Expecting value)` | That line is not a record; the file was cut short or edited. |
+| `RecordsError: a record's usage counts are not whole numbers` | A run keeps usage as whole counts by name, so something else wrote this record. |
+| `RecordsError: a record's served is not a str` | The same for what the battery said it served. |
 | `RecordsError: file 'records.jsonl' is not UTF-8 text` | The file was written by another tool or edited in another encoding. Save it as UTF-8. |
 | `RecordsError: two records for input 'pr', trial 'baseline', run 2` | The same call is kept twice, usually from two files joined into one. Keep one of them. |
 | `RecordsError: a kept record of trial 'baseline' was made from another prompt` | A record passed as `--kept` was made with a prompt this frame does not plan for that call. Resume only from the records this frame's own run made. |
@@ -165,7 +167,7 @@ with 0.
 
 | You see | What it means, and what to do |
 | --- | --- |
-| `unresolved`, with `no agreed level in ...` | Fewer than `agree` answers matched in those trials: the reader split, or the calls came back as openings. The `openings` line of `run` says which. |
+| `unresolved`, with `no agreed level in ...` | Fewer than `agree` answers matched in those trials: the reader split, or the calls came back as openings. The run's `OpeningWarning` says which. |
 | `unresolved`, with only open checks beside it | Every trial agreed, but a check the category needs is still open. [Reading a verdict](reading-a-verdict.md) explains `carriage` and each check. |
 
 ---
