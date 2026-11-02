@@ -532,8 +532,11 @@ def main(argv: list[str] | None = None) -> int:
     object on standard error. Anything else is a bug: its traceback, and 70."""
     argv = sys.argv[1:] if argv is None else argv
     command_line = parser()
+    # until the arguments are read, --json is asked for only among the options
+    as_json = "--json" in (argv[: argv.index("--")] if "--" in argv else argv)
     try:
         args = command_line.parse_args(argv)
+        as_json = bool(getattr(args, "json", False))
         if args.command is None:  # no command: what the tool does, not an error
             command_line.print_help()
             return 0
@@ -542,7 +545,7 @@ def main(argv: list[str] | None = None) -> int:
             raise UsageError("standard input is read once", "name - for one file at most")
         return args.func(args)
     except (GadflyError, OSError, KeyboardInterrupt) as error:
-        return refused(error, "--json" in argv)
+        return refused(error, as_json)
     except Exception:
         traceback.print_exc()
         return errors.BUG  # Gadfly's fault, not the caller's

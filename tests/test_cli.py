@@ -571,3 +571,9 @@ def test_a_battery_that_refuses_to_be_made_is_a_battery_error(
         "no setting for the evaluator",
     ]
     sys.modules.pop("refusing_battery", None)
+
+
+def test_a_file_named_json_after_the_options_is_a_file(tmp_path, capsys, monkeypatch):
+    monkeypatch.chdir(tmp_path)  # no file named --json here
+    assert main(["plan", "--", "--json"]) == 7
+    assert capsys.readouterr().err.startswith("FileNotFoundError: file '--json' does not exist")
