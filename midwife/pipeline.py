@@ -161,19 +161,12 @@ def run(
     # so a trial can settle without counting them again
     tally: dict[tuple[str, str], Counter[str]] = defaultdict(Counter)
     answered: Counter[tuple[str, str]] = Counter()
-
-    def count(x: str, trial: str, observation: str | None) -> None:
-        answered[x, trial] += 1
-        if observation is not None:
-            tally[x, trial][observation] += 1
-
-    for record in made:
-        count(record["input"], record["trial"], record["observation"])
     whole = {"baseline", "repeat"} if frame.raw["standing"].get("stable") else set()
-    cap = budget.output_tokens_per_call
-    records: list[Record] = []
-    spent = skipped = unasked = 0
-    spared: dict[tuple, frozenset[str]] = {}  # each input's unneeded trials, by its fixed ones
+    # asked to stop: each input's trials whose level is fixed, with their answers
+    # as they come, and how often those changed, which names the input's state
+    known: dict[str, dict[str, list[str | None]]] = defaultdict(dict)
+    revision: Counter[str] = Counter()
+    spared: dict[str, tuple[int, frozenset[str]]] = {}  # each input's unneeded trials, by state
 
     def fixed(key: tuple[str, str]) -> bool:
         # a trial whose level can no longer change, whatever its other calls give
@@ -182,6 +175,24 @@ def run(
             key[1] not in whole and _fixed(tally[key], n, frame.quorum, frame.agree, frame.labels)
         )
 
+    def count(x: str, trial: str, observation: str | None) -> None:
+        answered[x, trial] += 1
+        if observation is not None:
+            tally[x, trial][observation] += 1
+        if stop_unresolved and (trial in known[x] or fixed((x, trial))):
+            known[x].setdefault(trial, []).append(observation)
+            if len(known[x][trial]) == 1:  # fixed now: its earlier answers too
+                known[x][trial] = [*tally[x, trial].elements()] + [None] * (
+                    answered[x, trial] - tally[x, trial].total()
+                )
+            revision[x] += 1
+
+    for record in made:
+        count(record["input"], record["trial"], record["observation"])
+    cap = budget.output_tokens_per_call
+    records: list[Record] = []
+    spent = skipped = unasked = 0
+
     def needless(x: dict[str, str], trial: Trial) -> bool:
         # asked to settle, a trial whose level can no longer change asks no more
         key = (x["id"], trial.id)
@@ -189,20 +200,13 @@ def run(
 
     def done_with(x: dict[str, str], trial: Trial) -> bool:
         # asked to stop, an input that reads unresolved whatever comes asks no more;
-        # read from its fixed trials alone, once for each set of them: a trial's
-        # answers only grow, so how many it has names them
+        # read from its fixed trials alone, once each time their answers change
         if not stop_unresolved:
             return False
-        done = [t for t in ids if answered[x["id"], t] and fixed((x["id"], t))]
-        state = (x["id"], tuple((t, answered[x["id"], t]) for t in done))
-        if state not in spared:
-            known = {
-                t: [*tally[x["id"], t].elements()]
-                + [None] * (answered[x["id"], t] - tally[x["id"], t].total())
-                for t in done
-            }
-            spared[state] = unneeded(frame, x["id"], known)
-        return trial.id in spared[state]
+        state = revision[x["id"]]
+        if spared.get(x["id"], (None,))[0] != state:
+            spared[x["id"]] = state, unneeded(frame, x["id"], known[x["id"]])
+        return trial.id in spared[x["id"]][1]
 
     def blocked(running: int) -> str | None:
         # why no further call may start while `running` calls are still out

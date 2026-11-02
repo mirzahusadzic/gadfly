@@ -300,3 +300,51 @@ def test_a_battery_that_raises_ctrl_c_at_once_raises_it_as_itself(raw):
     frame = situate(raw)
     with pytest.raises(KeyboardInterrupt):
         run(frame, Interrupting(None), Budget(calls=calls_needed(frame)), parallel=2)
+
+
+def test_a_stopped_run_does_no_more_work_a_call_as_the_trials_grow(raw):
+    # the run loop's own lines a call, counted: the fixed answers that name an
+    # input's state are kept as they come, not gathered again at every call
+    import sys
+
+    from midwife import pipeline
+
+    def lines_a_call(anchors):
+        frame = situate(
+            {
+                **raw,
+                "body": {
+                    "spans": [
+                        {"id": f"r{i}", "text": f"rule {i}", "kind": "rule"}
+                        for i in range(2 * anchors)
+                    ]
+                },
+                "anchors": [f"r{i}" for i in range(anchors)],
+                "interventions": {"ablation": True, "eachAnchor": True},
+                "allowed": {"ablation": ["decline"]},
+                "standing": {"quorum": 2, "agree": 2},
+            }
+        )
+        counted = [0]
+
+        def trace(code, event, arg):
+            if code.f_code.co_filename != pipeline.__file__:
+                return None
+            if event == "line":
+                counted[0] += 1
+            return trace
+
+        sys.settrace(trace)
+        try:
+            result = run(
+                frame,
+                Reader(lambda prompt, n: "decline"),
+                Budget(calls=calls_needed(frame)),
+                stop_unresolved=True,
+            )
+        finally:
+            sys.settrace(None)
+        return counted[0] / len(result.records)
+
+    small, large = lines_a_call(8), lines_a_call(32)
+    assert large <= small * 1.25, (small, large)
