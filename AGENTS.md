@@ -1,72 +1,71 @@
 # Repository guide
 
-Gadfly tests whether a decision rests on the evidence it is said to rest on: a frame declares the relation, fixed interventions cut or change it, a battery reads each trial, and fixed rules read the verdict. A Python 3.13 library with no runtime dependencies. Prefer focused fixes over new trials, verdict rules, commands or dependencies.
+Gadfly tests whether a decision rests on the evidence it is said to rest on: a frame declares the relation, fixed interventions cut or change it, a battery reads each trial, and fixed rules read the verdict. Python 3.13 or later, no runtime dependencies; the package is `midwife`, the command `gadfly`. Prefer focused fixes over new trials, rules, commands or dependencies.
 
 ---
 
 ### Map
 
-- Docs: `README.md` (the quick path), `docs/` (the site's pages, sorted by reader), `docs/load-bearing.md` (the essay, CC BY 4.0), `docs/reference.md` (written from the docstrings).
-- Dev: `uv sync`; `uv run pytest` runs offline against fakes, without a model or credentials. The site: Node.js 24, `npm ci`, `npm run docs:dev` or `docs:build`.
+- Docs: `README.md` (the quick path), `docs/` (the site, by reader), `docs/load-bearing.md` (the author's CC BY 4.0 essay), `docs/reference.md` (from the docstrings).
+- Dev: `uv sync`; `uv run pytest` runs offline against fakes. The site: Node.js 24, `npm ci`, `npm run docs:dev` or `docs:build`.
 
 | Task | Source |
 | --- | --- |
-| Frame parsing, canonical JSON, hash, refusals | `midwife/frame.py`, `midwife/frame.schema.json` |
-| What Gadfly refuses: a class for each thing to fix, with its exit status | `midwife/errors.py` |
-| Trial planning, prompts, renaming, placement | `midwife/interventions.py` |
-| Run, budget, cancellation, records | `midwife/pipeline.py`, `midwife/types.py` |
+| Frames: parsing, canonical JSON, hash | `midwife/frame.py`, `midwife/frame.schema.json` |
+| Refusals and warnings, each a class with its exit status | `midwife/errors.py`, held by `tests/test_errors.py` |
+| Trials, prompts, renaming, placement | `midwife/interventions.py` |
+| The run loop, budget, cancellation, records | `midwife/pipeline.py`, `midwife/types.py` |
 | Verdict rules, levels, evidence, obligations | `midwife/verdict.py` |
 | Several frames counted, never combined | `midwife/portfolio.py` |
 | Command line | `midwife/cli.py` |
-| What every critic shares: the loopback call, the label pointer | `midwife/batteries/critic.py` |
-| The shipped batteries | `midwife/batteries/unified.py` (the model router), `egemma.py`, `local_json.py`, `tendora.py` (Tendora's engine; its live test runs only with `TENDORA_PACKAGE`) |
-| Example frames and their kept runs | `examples/*.json`, `examples/runs/<frame>/` |
-| The payments demo's kept runs (Tendora's engine and Gemma, copied from the tendora repository) | `examples/payments-demo/`, played by the watch view, `docs/examples/watch.md` |
-| Predictions, results, findings | `examples/PREDICTIONS.md`, `examples/RESULTS.md`, `examples/FINDINGS.md` |
-| Reading kept runs back; running a frame against eGemma | `examples/read.py`; `examples/climb.py` |
-| Quoted outputs, copies, the API page, frames shown in words | `tools/doc_outputs.py` |
-| A frame's source page on the site, and the frames it publishes | `docs/frames/`, `docs/.vitepress/frames.json` (written by `tools/doc_outputs.py`) |
+| Batteries: the shared loopback call and label pointer, then the shipped ones | `midwife/batteries/critic.py`; `unified.py`, `egemma.py`, `local_json.py`, `tendora.py` (its live test runs only with `TENDORA_PACKAGE`) |
+| Example frames, their kept runs, predictions, results and findings | `examples/*.json`, `examples/runs/<frame>/`, `examples/*.md`; read back with `examples/read.py`, run with `examples/climb.py` |
+| The payments demo's kept runs (Tendora's engine and Gemma), played by the watch view | `examples/payments-demo/`, `docs/examples/watch.md` |
+| Generated docs: transcripts, copies, the API page, frames in words, `frames.json` | `tools/doc_outputs.py` |
 | The watch view's data | `tools/watch_data.py`, written to `docs/public/assets/watch/` |
-| The site: sidebar, Markdown rules, theme, footer | `docs/.vitepress/config.mjs`, `docs/.vitepress/markdown.mjs`, `docs/.vitepress/theme/` |
+| The site: sidebar, Markdown rules, theme, the troubleshooting JSON view | `docs/.vitepress/` (`config.mjs`, `markdown.mjs`, `theme/`, `theme/errors.js`) |
 
 ---
 
 ### Preserve these behaviors
 
-- Fixed rules: a verdict follows from the records by the rules in `midwife/verdict.py`, in their order; no model judges. A rule change is a method change: say so in the docs and test every category it touches.
-- A frame is hashed whole, as canonical JSON. Every record names its frame's hash, and `check_records` refuses records another plan, frame or battery made. Never default, rewrite or repair a frame.
-- Unresolved names the open check; evidence and obligations stay apart, and an obligation is not a passed check.
-- Trial blindness: a battery gets the frame and the prompt, never the trial's id.
-- `run` never starts a call the budget cannot cover and hands each record on as it exists; the command line never writes over a records file.
-- The command line follows [clig.dev](https://clig.dev/), so a script can tell what happened as surely as a person: results on standard output or the file named, any file read or written may be `-` for standard input or output (refused at a terminal), messages on standard error, `--json` on every command, and an exit status for each outcome as `docs/troubleshooting.md` tables it; a refusal spends nothing and makes no file. Nothing is left to silence: an empty result means only "none", and any other reason (refused, excluded, too many to read) is said in words, in text and JSON alike.
-- Errors are Python's, so a person, a script and another model read them alike. Every refusal raises a class named for what the caller must fix ([PEP 8](https://peps.python.org/pep-0008/)): `UsageError`, `FrameError`, `RecordsError`, `BatteryError`, or Python's own file errors ([PEP 3151](https://peps.python.org/pep-3151/)). The class carries its exit status as an attribute, never in the text ([PEP 352](https://peps.python.org/pep-0352/)). The command line prints the last line of a traceback, `Type: message`, then each note ([PEP 678](https://peps.python.org/pep-0678/)) on a line of its own; with `--json`, one object, `{"error": {"type", "exit", "message", "notes", "help"}}`, on standard error. A message names the kind of thing and quotes its value, as Python's own messages do, then says what went wrong and where (`file 'kept.jsonl' holds a lone surrogate at line 3`); a note says why and what to do. Outside a quoted value, no line Gadfly prints holds a second colon. Anything else raised is a bug, and prints its traceback. What a run did not do as asked, though it went on, is a warning ([PEP 230](https://peps.python.org/pep-0230/)), `OpeningWarning` 1 or `StoppedWarning` 3, raised with `warnings.warn` and printed the same way: nothing passes in silence ([PEP 20](https://peps.python.org/pep-0020/)).
-- Shipped batteries: loopback only, no proxy, no redirects, no tools. Credentials never reach a request body, a record or a log. The unified battery sends `data_collection: deny` unless the frame names the exact slug under `trainsOnInputs`, and refuses OpenAI slugs. A failed or timed-out call is an opening, never a label and never dropped.
-- `examples/*.json` and `examples/runs/` never change after their runs: a new idea is a new frame with fresh runs, and predictions are written before the first call.
+- **Fixed rules.** A verdict follows from the records by `midwife/verdict.py`'s rules, in their order; no model judges. A rule change is a method change: say so in the docs and test every category it touches.
+- **Frames and records.** A frame is hashed whole, as canonical JSON, and never defaulted, rewritten or repaired. Every record names its frame's hash, and `check_records` refuses records another plan, frame or battery made.
+- **Findings.** Unresolved names the open check; evidence and obligations stay apart, and an obligation is not a passed check.
+- **Trial blindness.** A battery gets the frame and the prompt, never the trial's id.
+- **Runs.** `run` never starts a call the budget cannot cover and hands each record on as it exists. The command line never writes over a records file, and a refusal spends nothing and makes no file.
+- **Batteries.** Loopback only: no proxy, no redirects, no tools. Credentials never reach a request body, a record or a log. The unified battery sends `data_collection: deny` unless the frame names the exact slug under `trainsOnInputs`, and refuses OpenAI slugs. A failed or timed-out call is an opening, never a label and never dropped.
+- **Kept runs.** `examples/*.json`, `examples/runs/` and the predictions never change after their runs: a new idea is a new frame with fresh runs.
+
+#### Command line, errors and warnings
+
+The command line follows [clig.dev](https://clig.dev/), and its errors are Python's (PEP 8, 20, 230, 352, 3151 and 678), so a person, a script and another model read them alike. `docs/troubleshooting.md` tables every exit status and message, and its tests hold it to the code.
+
+- Results go to standard output or the file named, messages to standard error. Any file may be `-`, read once and refused at a terminal; every command takes `--json`; flags are matched in full only.
+- A refusal is a class for what to fix, its exit status an attribute: `UsageError` 2, `FrameError` 4, `RecordsError` 5, `BatteryError` 6, Python's own file errors 7, `KeyboardInterrupt` 130. It prints as a traceback's last line, `Type: message`, then each note; with `--json`, `{"error": {"type", "exit", "message", "notes", "help"}}` on standard error. Anything else raised is a bug: its traceback, and 70.
+- What a run did not do as asked, though it went on, is a warning raised with `warnings.warn`, printed the same way (`{"warning": ...}`): `OpeningWarning` 1, `StoppedWarning` 3. Nothing passes in silence, and an empty result means only "none".
+- A message names the kind of thing and quotes its value, as Python's own do, then says what went wrong and where (`file 'kept.jsonl' holds a lone surrogate at line 3`); a note says why and what to do. Outside a quoted value, no line Gadfly prints holds a second colon. `tests/test_errors.py` reads the source to hold all of this.
 
 ---
 
 ### Docs
 
-Every page reads the same on GitHub as on the site. The site may add a second view of the same rows, built from the page, as the troubleshooting tables' JSON view does (`docs/.vitepress/theme/errors.js`); nothing of it is written in the Markdown.
+Every page reads the same on GitHub as on the site. The site may add a second view built from the page, as the troubleshooting tables' JSON view does; nothing of it is written in the Markdown.
 
-- GitHub syntax only: GitHub alerts, never `!!!`, `--8<--`, attribute lists, Markdown divs or `:::` lines; `tests/test_docs.py` refuses them.
-- Readers first, machine data second. Never put a JSON or JSONL dump in front of a reader; `test_no_page_shows_a_whole_frame_as_json` refuses a whole frame as code.
-- A frame is shown in words: `<!-- frame PATH -->` and `<!-- end frame -->` hold its readable view, a table for each part in the order a run uses it (the claim, the evidence with the anchors marked `*` and each span linked to its `#L` line in the file, the question, the trials as `plan` gives them with what each tests, how the answers are read, and the setting), which `uv run python tools/doc_outputs.py --write` writes; `test_every_frame_shown_in_words_is_its_frame` keeps it current.
-- The source is one link away: the view ends with "The frame as written ↗", a relative link to the `.json`. GitHub opens its own numbered file view; on the site a Markdown rule sends any link to a published frame's file to its source page, `/frames/<stem>`, which shows the file with numbered `#L` lines, the hash its records name (from `digest`), a way back to the words, and the file to download. `docs/.vitepress/frames.json` lists the published frames, every example and every frame a page shows; `tools/doc_outputs.py` writes it and `test_the_site_publishes_each_frame_with_the_hash_its_records_name` holds it.
-- A short fragment that shows what to type for one key stays as code, and so does a battery's wire format. Kept runs are read through `examples/read.py` transcripts and the watch view, never as JSONL.
-- Generated text is never edited by hand: transcripts (a ```` ```text ```` block whose `$` lines run from the root), copies (`<!-- copy SRC -->`), the API page (`<!-- api MODULE -->`), frames shown in words (`<!-- frame PATH -->`) and `docs/.vitepress/frames.json` come from `uv run python tools/doc_outputs.py --write`; the watch data from `uv run python -m tools.watch_data --write`. Tests fail when either drifts.
-- Shape: `#` for the title only; top-level sections are `###` headings under a `---` rule, parts `####`; section leads of two or three sentences at most, and no paragraph over three; tables only for tabular data, bold run-in lists otherwise (question-to-answer and troubleshooting tables are fine), every cell filled; a sentence before each code block, no comments inside, lines of about 60 characters, wrapped with `\`; at most one alert per section, never two in a row; each link once per page; troubleshooting last.
-- Move text, don't drop it. `test_every_link_lands` checks every relative link and anchor (GitHub's slugs, and `#L` lines in a file); every page is in the sidebar or in `srcExclude`, except a route's template such as `docs/frames/[frame].md`.
-- Site text (the pages under `docs/` and the theme): sentence case and plain words; no "·" separators and no colons as label separators. The README, read on GitHub and PyPI rather than the site, may end in a row of links split by "·", as the router's does. Motion only where it carries something.
-- Theme: each study's colours are tokens in `docs/.vitepress/theme/custom.css`; no text under 15px except code (14px); weights 400 and 600 only.
-- Docs stay generic: they describe Gadfly's own contract, not any caller's use.
+- GitHub syntax only: GitHub alerts, never `!!!`, `--8<--`, attribute lists, Markdown divs or `:::` lines (`tests/test_docs.py` refuses them).
+- Readers first: never a JSON or JSONL dump in front of a reader. A frame is shown in words between `<!-- frame PATH -->` and `<!-- end frame -->`, a table for each part in the order a run uses it, ending with "The frame as written ↗", a relative link to its `.json`; on the site that opens `/frames/<stem>`, the file with numbered `#L` lines and the hash its records name. A short fragment of what to type, and a battery's wire format, stay code; kept runs are read through `examples/read.py` transcripts and the watch view.
+- Generated text is never edited by hand: transcripts (a ```` ```text ```` block whose `$` lines run from the root), copies (`<!-- copy SRC -->`), the API page (`<!-- api MODULE -->`), frames in words and `docs/.vitepress/frames.json` come from `uv run python tools/doc_outputs.py --write`, the watch data from `uv run python -m tools.watch_data --write`. Tests fail on drift.
+- Shape: `#` for the title only; `###` sections under a `---` rule, parts `####`; a lead or paragraph of three sentences at most; tables only for tabular data (question-to-answer and troubleshooting tables too), every cell filled, bold run-in lists otherwise; a sentence before each code block, no comments inside, lines of about 60 characters wrapped with `\`; one alert a section at most, never two in a row; each link once a page; troubleshooting last.
+- Move text, don't drop it. `test_every_link_lands` checks every relative link and anchor; every page is in the sidebar or `srcExclude`, a route's template aside.
+- Site text: sentence case and plain words, no "·" separators, no colons as label separators (the README may end in a row of links split by "·"). Colours are tokens in `theme/custom.css`; no text under 15px but code (14px); weights 400 and 600; motion only where it carries something; a state shown by more than colour.
+- Docs stay generic: Gadfly's own contract, not any caller's use.
 
 ---
 
 ### Validate and commit
 
-- Checks: `uv run ruff check .`, `uv run ruff format --check .`, `uv run pytest` (85% coverage; `GADFLY_ATP_PLANS` adds the After the Poem replay) and `npm run docs:build`, which fails on a dead link. CI runs them on Python 3.13 to 3.15.
+- Checks: `uv run ruff check .`, `uv run ruff format --check .`, `uv run pytest` (85% coverage; `GADFLY_ATP_PLANS` adds the After the Poem replay) and `npm run docs:build`, which fails on a dead link. CI runs them on Python 3.13 to 3.15, every action pinned to its release's commit.
 - A behavior change or a fix comes with a test that fails on the old code and passes after.
-- A live run spends a provider's calls: count them first with `gadfly plan` or `calls_needed`, and run only when the task includes it.
-- Release: a tag `vX.Y.Z` that names `pyproject.toml`'s version runs `.github/workflows/publish.yml`, which tests, builds, checks and publishes the `midwife` package to PyPI by trusted publishing; the site publishes from `main` once CI has passed. CI pins every action to its release's commit.
-- Commits only when asked; never push. Subject `area: what changed` in at most 72 characters, a blank line, then a body hard-wrapped at 72; check with `git log --format=%B origin/main..main | awk 'length > 72'`.
+- A live run spends a provider's calls: count them first (`gadfly plan`, `calls_needed`), and run only when the task includes it.
+- Release: a tag `vX.Y.Z` naming `pyproject.toml`'s version runs `.github/workflows/publish.yml`, which tests, builds and publishes `midwife` to PyPI by trusted publishing; the site publishes from `main` once CI has passed.
+- Commits only when asked; never push. Subject `area: what changed` in at most 72 characters, a blank line, then a body hard-wrapped at 72 (`git log --format=%B origin/main..main | awk 'length > 72'`).
