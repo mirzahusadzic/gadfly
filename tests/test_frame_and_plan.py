@@ -202,6 +202,13 @@ def test_a_frame_is_plain_json_or_refused(raw, value):
         parse(raw)
 
 
+def test_a_number_too_long_to_write_is_refused(raw):
+    # Python writes no integer past its digit limit, so none could be hashed
+    raw["baseline"] = {"pinned": 10**5000}
+    with pytest.raises(FrameError, match="plain JSON"):
+        parse(raw)
+
+
 class CountingRandom:
     """A seeded random source that counts its draws (and always ties)."""
 

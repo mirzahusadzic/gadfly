@@ -383,7 +383,14 @@ def _plain_json(value: Any, where: str) -> None:
     elif isinstance(value, float):
         if not math.isfinite(value):
             raise FrameError(f"{where} is not plain JSON, as {value!r} is not a JSON number")
-    elif not (value is None or isinstance(value, bool | int)):
+    elif isinstance(value, int) and not isinstance(value, bool):
+        try:
+            str(value)
+        except ValueError:  # past Python's limit on digits: no hash could hold it
+            raise FrameError(
+                f"{where} is not plain JSON, as a number is too long to write"
+            ) from None
+    elif not (value is None or isinstance(value, bool)):
         raise FrameError(
             f"{where} is not plain JSON, as a {type(value).__name__} is not a JSON value"
         )

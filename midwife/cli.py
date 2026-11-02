@@ -96,14 +96,19 @@ def read_text(path: str, refusal: type[GadflyError]) -> str:
         raise refusal(f"{_named(path)} is not UTF-8 text") from None
 
 
-def load_json(path: str, text: str, refusal: type[GadflyError], line: int = 1) -> Any:
+def load_json(path: str, text: str, refusal: type[GadflyError], line: int | None = None) -> Any:
     """`text` as JSON, or a `refusal` that names its file and where it
-    broke; `line` is where `text` starts in the file."""
+    broke; `line` is where `text` starts in the file, when it is one line."""
+    at = f" at line {line}" if line else ""
     try:
         return json.loads(text)
     except json.JSONDecodeError as error:
-        where = f"line {line + error.lineno - 1}, column {error.colno}"
+        where = f"line {(line or 1) + error.lineno - 1}, column {error.colno}"
         raise refusal(f"{_named(path)} is not JSON at {where} ({error.msg})") from None
+    except RecursionError:  # deeper than Python reads
+        raise refusal(f"{_named(path)} nests too deep to read{at}") from None
+    except ValueError:  # a number past Python's limit on digits
+        raise refusal(f"{_named(path)} holds a number too long to read{at}") from None
 
 
 def _named(path: str) -> str:

@@ -1283,10 +1283,10 @@ read_text(path, refusal)
 #### load_json
 
 `text` as JSON, or a `refusal` that names its file and where it
-broke; `line` is where `text` starts in the file.
+broke; `line` is where `text` starts in the file, when it is one line.
 
 ```python
-load_json(path, text, refusal, line=1)
+load_json(path, text, refusal, line=None)
 ```
 
 #### load_records

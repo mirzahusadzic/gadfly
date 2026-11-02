@@ -131,7 +131,7 @@ def test_an_openings_reason_holds_no_colon():
 # words, numbers, and Python's words in parentheses; any value a caller or a
 # service supplied is quoted, as Python's own messages quote one
 UNQUOTED = {
-    "what", "where", "key", "stopped", "self.prog", "line", "pin", "status_line",
+    "what", "where", "at", "key", "stopped", "self.prog", "line", "pin", "status_line",
     "error.msg", "error.code", "tried", "said", "MAX_TIMEOUT", "frame.quorum", "len(unread)",
     "type(reason).__name__", "type(error).__name__", "type(value).__name__", "kind.__name__",
     "', '.join(EFFORTS)", "', '.join(wrong)",

@@ -507,3 +507,23 @@ def test_report_and_plan_print_one_colon_to_a_line(capsys):
                 seen += len(lines)
                 assert [line for line in lines if line.count(": ") > 1] == [], argv
     assert seen > 1000
+
+
+@pytest.mark.parametrize(
+    ("command", "text", "said", "status"),
+    [
+        ("plan", '{"n": ' + "9" * 5000 + "}", "FrameError: file 'in.json' holds a number", 4),
+        ("plan", "[" * 100_000 + "]" * 100_000, "FrameError: file 'in.json' nests", 4),
+        ("report", '{"n": ' + "9" * 5000 + "}\n", "RecordsError: file 'in.json' holds a number", 5),
+        ("portfolio", "[" * 100_000 + "]" * 100_000, "RecordsError: file 'in.json' nests", 5),
+    ],
+)
+def test_json_python_cannot_read_is_a_refusal_not_a_bug(
+    tmp_path, capsys, monkeypatch, command, text, said, status
+):
+    monkeypatch.chdir(tmp_path)
+    Path("in.json").write_text(text)
+    argv = [command, REFUND, "in.json"] if command == "report" else [command, "in.json"]
+    assert main(argv) == status
+    err = capsys.readouterr().err
+    assert err.startswith(said) and "Traceback" not in err
