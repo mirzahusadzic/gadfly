@@ -188,11 +188,8 @@ def _unasked(
     checks all those readings share, and the trials left. None while an answer
     could read otherwise; the rules then read each as having no level."""
     whole = {"baseline", "repeat"} if _read_once(frame)["standing"].get("stable") else set()
-    short = {
-        t: not s
-        for t, s in samples.items()
-        if not t.startswith("ablation-") and _left(frame, s, t in whole)
-    }  # each trial left, and whether it was never asked at all
+    # each trial left, each anchor alone included, and whether it was never asked
+    short = {t: not s for t, s in samples.items() if _left(frame, s, t in whole)}
     outcomes = _outcomes(frame, x, samples) if short else None
     if outcomes is None:
         return None

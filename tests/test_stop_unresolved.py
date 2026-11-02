@@ -146,6 +146,24 @@ def test_unneeded_reads_a_trial_cut_short_as_still_open(raw):
     assert unneeded(frame, x, asked) == {"sham-1", "sham-2", "bypass"}
 
 
+def test_a_stopped_finding_names_each_anchor_alone_it_left(raw):
+    raw["anchors"], raw["interventions"]["eachAnchor"] = ["r2", "r3"], True
+    raw["standing"] = {"quorum": 1, "agree": 1}
+    frame = situate(raw)
+    # the baseline and its repeat disagree: no reading gets as far as the ablation
+    stopped = run(
+        frame,
+        Reader(lambda prompt, n: "grant" if n == 1 else "decline"),
+        Budget(calls=calls_needed(frame)),
+        stop_unresolved=True,
+    )
+    assert (len(stopped.records), stopped.unasked) == (2, 7)
+    assert judge(frame, stopped.records)[0].evidence[-1] == (
+        "not asked: ablation, ablation-r2, ablation-r3, sham-1, presentation, bypass, "
+        "control; whatever they gave, it reads unresolved"
+    )
+
+
 def test_the_command_line_stops_and_says_so(tmp_path, capsys):
     frame = json.loads(REFUND.read_text())  # one call a trial, a control declared
     frame["battery"] = {"kind": "rules"}
