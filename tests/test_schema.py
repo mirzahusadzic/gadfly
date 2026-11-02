@@ -53,6 +53,8 @@ def test_every_shipped_frame_meets_the_schema_and_the_parser(name):
         lambda r: r.pop("baseline"),
         lambda r: r["interventions"].update(ablation=False),
         lambda r: r["interventions"].update(sham={"draws": 0}),
+        lambda r: r["interventions"].update(sham={"draws": 1, "kind": {}}),
+        lambda r: r["interventions"].update(sham={"draws": 1, "kind": {"": "rule"}}),
         lambda r: r["interventions"].update(eachAnchor="yes"),
         lambda r: r["interventions"].update(placement={"span": "r2"}),
         lambda r: r["observe"].update(labels=["grant"]),
