@@ -202,13 +202,18 @@ def _unasked(
             evidence, obligations = finding.evidence, finding.obligations
         evidence = [e for e in evidence if e in finding.evidence]
         obligations = [o for o in obligations if o in finding.obligations]
+    evidence = evidence or []
+    # under `stable`, answers that split already split every reading: say which
+    split = _split(samples) if whole else None
+    if split and split not in evidence:
+        evidence.insert(0, split)
     said = [
         f"{what}: {', '.join(t for t, never in short.items() if never is unasked)}"
         for what, unasked in (("not asked", True), ("not asked to the end", False))
         if unasked in short.values()
     ]
     said.append("whatever they gave, it reads unresolved")
-    return Finding(x, UNRESOLVED, levels, [*(evidence or []), "; ".join(said)], obligations)
+    return Finding(x, UNRESOLVED, levels, [*evidence, "; ".join(said)], obligations)
 
 
 def unneeded(frame: Frame, x: str, samples: dict[str, list[str | None]]) -> frozenset[str]:
@@ -234,6 +239,17 @@ def unneeded(frame: Frame, x: str, samples: dict[str, list[str | None]]) -> froz
         if _left(frame, samples.get(t, []), t in whole)
         and not (reached and t.startswith("ablation-"))
     )
+
+
+def _split(samples: dict[str, list[str | None]]) -> str | None:
+    """Under `stable`, the line saying the baseline and repeat sessions split,
+    read over all their calls together; None when they agree or there is no
+    repeat."""
+    pooled = samples["baseline"] + samples.get("repeat", [])
+    if "repeat" not in samples or len(set(pooled)) < 2:
+        return None
+    shown = ", ".join("an opening" if s is None else s for s in pooled)
+    return f"the baseline and repeat sessions split ({shown})"
 
 
 def _level_of(frame: Frame, samples: list[str | None], whole: bool) -> str | None:
@@ -507,12 +523,10 @@ def _read(
         say(f"no agreed level in: {', '.join(missing)}")
         return False
     base = levels["baseline"]
-    if _read_once(frame)["standing"].get("stable") and "repeat" in samples:
-        pooled = samples["baseline"] + samples["repeat"]
-        if len(set(pooled)) > 1:
-            shown = ", ".join("an opening" if s is None else s for s in pooled)
-            say(f"the baseline and repeat sessions split ({shown})")
-            return False
+    split = _split(samples) if _read_once(frame)["standing"].get("stable") else None
+    if split:
+        say(split)
+        return False
     if "repeat" in levels and levels["repeat"] != base:
         say(f"repeat gave {levels['repeat']}, baseline {base}: this grain cannot tell")
         return False

@@ -164,6 +164,24 @@ def test_a_stopped_finding_names_each_anchor_alone_it_left(raw):
     )
 
 
+def test_a_stopped_stable_split_still_says_the_sessions_split(raw):
+    raw["standing"] = {"stable": True, "quorum": 3, "agree": 2}
+    frame = situate(raw)
+    # the baseline alone splits (decline, grant, grant): the repeat cannot mend it
+    stopped = run(
+        frame,
+        Reader(lambda prompt, n: "decline" if n == 1 else "grant"),
+        Budget(calls=calls_needed(frame)),
+        stop_unresolved=True,
+    )
+    assert len(stopped.records) == 3
+    assert judge(frame, stopped.records)[0].evidence == [
+        "the baseline and repeat sessions split (decline, grant, grant)",
+        "not asked: repeat, ablation, sham-1, sham-2, presentation, bypass, control; "
+        "whatever they gave, it reads unresolved",
+    ]
+
+
 def test_the_command_line_stops_and_says_so(tmp_path, capsys):
     frame = json.loads(REFUND.read_text())  # one call a trial, a control declared
     frame["battery"] = {"kind": "rules"}
