@@ -179,17 +179,18 @@ def run(
 
     def done_with(x: dict[str, str], trial: Trial) -> bool:
         # asked to stop, an input that reads unresolved whatever comes asks no more;
-        # read from its fixed trials alone, once for each set of them
+        # read from its fixed trials alone, once for each set of them: a trial's
+        # answers only grow, so how many it has names them
         if not stop_unresolved:
             return False
-        known = {
-            t: [*tally[x["id"], t].elements()]
-            + [None] * (answered[x["id"], t] - tally[x["id"], t].total())
-            for t in ids
-            if answered[x["id"], t] and fixed((x["id"], t))
-        }
-        state = (x["id"], tuple((t, tuple(sorted(map(str, s)))) for t, s in sorted(known.items())))
+        done = [t for t in ids if answered[x["id"], t] and fixed((x["id"], t))]
+        state = (x["id"], tuple((t, answered[x["id"], t]) for t in done))
         if state not in spared:
+            known = {
+                t: [*tally[x["id"], t].elements()]
+                + [None] * (answered[x["id"], t] - tally[x["id"], t].total())
+                for t in done
+            }
             spared[state] = unneeded(frame, x["id"], known)
         return trial.id in spared[state]
 

@@ -182,6 +182,32 @@ def test_a_stopped_stable_split_still_says_the_sessions_split(raw):
     ]
 
 
+def test_a_stopped_run_does_not_read_every_answer_again_at_each_call(raw):
+    class Counted(str):
+        rendered = 0  # each time an answer is turned to text
+
+        def __str__(self):
+            Counted.rendered += 1
+            return str.__str__(self)
+
+    raw["body"] = {
+        "spans": [{"id": f"r{i}", "text": f"rule {i}", "kind": "rule"} for i in range(80)]
+    }
+    raw["anchors"] = [f"r{i}" for i in range(40)]
+    raw["interventions"] = {"ablation": True, "eachAnchor": True}
+    raw["allowed"] = {"ablation": ["decline"]}
+    raw["standing"] = {"quorum": 1, "agree": 1}
+    frame = situate(raw)
+    result = run(
+        frame,
+        Reader(lambda prompt, n: Counted("decline")),
+        Budget(calls=calls_needed(frame)),
+        stop_unresolved=True,
+    )
+    # 42 calls: once each is linear; every answer so far, at each call, is 902
+    assert len(result.records) == 42 and Counted.rendered <= 2 * len(result.records)
+
+
 def test_the_command_line_stops_and_says_so(tmp_path, capsys):
     frame = json.loads(REFUND.read_text())  # one call a trial, a control declared
     frame["battery"] = {"kind": "rules"}
