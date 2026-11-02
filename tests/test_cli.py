@@ -429,6 +429,21 @@ def test_a_refused_run_writes_no_records_file(tmp_path, capsys):
     assert not out.exists()
 
 
+def test_the_version_is_one_in_the_package_its_lock_and_the_command(capsys):
+    # a release bumps all three together; the tag must name the same
+    import tomllib
+
+    from midwife import __version__
+
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    locked = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
+    [mine] = [p for p in locked["package"] if p["name"] == "midwife"]
+    assert __version__ == project["project"]["version"] == mine["version"]
+    with pytest.raises(SystemExit):
+        main(["--version"])
+    assert capsys.readouterr().out == f"gadfly {__version__}\n"
+
+
 def test_the_command_line_says_what_it_is_and_how_to_use_it(capsys):
     # clig.dev: a version, help when there is no command, examples and the docs
     with pytest.raises(SystemExit) as shown:

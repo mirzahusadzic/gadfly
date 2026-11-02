@@ -1,3 +1,3 @@
 """Gadfly: counterfactual load-bearing tests over a declared frame."""
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
