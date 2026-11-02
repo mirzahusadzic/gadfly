@@ -1197,6 +1197,14 @@ An instance of the battery class `module:Class`.
 load_battery(spec)
 ```
 
+#### read_text
+
+A file's text, or standard input's for `-`.
+
+```python
+read_text(path)
+```
+
 #### load_records
 
 The records kept in a JSON Lines file, or on standard input for `-`.

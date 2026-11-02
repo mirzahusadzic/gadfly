@@ -71,10 +71,18 @@ def load_battery(spec: str):
     return battery
 
 
+def read_text(path: str) -> str:
+    """A file's text, or standard input's for `-`."""
+    if path != "-":
+        return Path(path).read_text(encoding="utf-8")
+    if sys.stdin.isatty():  # nothing is piped in: say so rather than wait
+        raise ValueError("- reads standard input, which is a terminal: pipe the file in")
+    return sys.stdin.read()
+
+
 def load_records(path: str) -> list[dict[str, Any]]:
     """The records kept in a JSON Lines file, or on standard input for `-`."""
-    text = sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
-    lines = text.splitlines()
+    lines = read_text(path).splitlines()
     return [json.loads(line) for line in lines if line.strip()]
 
 

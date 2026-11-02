@@ -139,6 +139,19 @@ def test_out_dash_streams_the_records_and_report_reads_them_back(capsys, monkeyp
     assert "overall: carried" in capsys.readouterr().out
 
 
+class Terminal(io.StringIO):
+    """Standard input that is a terminal: nothing piped in."""
+
+    def isatty(self):
+        return True
+
+
+def test_dash_at_a_terminal_is_refused_not_waited_on(capsys, monkeypatch):
+    monkeypatch.setattr("sys.stdin", Terminal())
+    assert main(["report", REFUND, "-"]) == 2
+    assert "standard input, which is a terminal" in capsys.readouterr().err
+
+
 def test_out_dash_and_json_are_refused_together(capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, "--out", "-", "--json"]) == 2
