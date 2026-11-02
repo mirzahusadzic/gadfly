@@ -476,7 +476,14 @@ def command_check_frame(args) -> int:
         checked = "parser"
     else:
         checked = "schema and parser"
-        for error in sorted(Draft202012Validator(schema()).iter_errors(raw), key=str):
+        try:  # sorted by where and what, never by the whole instance printed
+            found = sorted(
+                Draft202012Validator(schema()).iter_errors(raw),
+                key=lambda error: ([str(part) for part in error.absolute_path], error.message),
+            )
+        except RecursionError:  # deeper than the schema's checker reads: the parser says so
+            found = []
+        for error in found:
             where = "/" + "/".join(str(part) for part in error.absolute_path)
             problems.append({"at": where, "problem": error.message})
     try:

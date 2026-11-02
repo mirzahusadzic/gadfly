@@ -143,3 +143,12 @@ def test_an_optional_key_set_to_null_is_refused_like_the_schema_does(path):
     assert list(VALIDATOR.iter_errors(raw)), path
     with pytest.raises(FrameError, match="null"):
         parse(raw)
+
+
+@pytest.mark.parametrize("depth", [200, 600, 1000])
+def test_check_frame_refuses_a_deep_frame_as_a_frame_error(tmp_path, capsys, depth):
+    path = tmp_path / "deep.json"
+    path.write_text('{"a": ' + "[" * depth + "]" * depth + "}")
+    assert main(["check-frame", str(path)]) == 4
+    err = capsys.readouterr().err
+    assert err.startswith("FrameError: ") and "Traceback" not in err

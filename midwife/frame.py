@@ -183,9 +183,9 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("a frame is a JSON object")
     try:
         _plain_json(raw, "the frame")
+        raw = copy.deepcopy(raw)  # its own copy, which recurses deeper than the check
     except RecursionError:  # deeper than any frame needs, and than Python reads
         raise FrameError("the frame nests deeper than a frame can") from None
-    raw = copy.deepcopy(raw)
     _no_null_options(raw)
 
     def need(key: str, kind: type, where: dict[str, Any] = raw) -> Any:
