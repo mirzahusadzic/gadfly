@@ -72,6 +72,20 @@ def test_plan_names_what_no_answers_can_give(capsys):
     }
 
 
+def test_plan_says_an_excluded_frame_is_never_carried_or_cooled(tmp_path, capsys):
+    frame = json.loads(Path(REFUND).read_text())
+    frame["outsideScope"] = "refunds above the agent's limit"
+    path = tmp_path / "frame.json"
+    path.write_text(json.dumps(frame))
+    assert main(["plan", str(path)]) == 0
+    assert capsys.readouterr().out.splitlines()[-4:] == [
+        "never carried, whatever the answers",
+        "  declared outside scope: refunds above the agent's limit",
+        "never cooled, whatever the answers",
+        "  declared outside scope: refunds above the agent's limit",
+    ]
+
+
 def test_plan_says_when_the_answers_are_too_many_to_read(tmp_path, capsys):
     raw = json.loads(Path(REFUND).read_text())
     raw["observe"]["labels"] += [f"other-{n}" for n in range(9)]

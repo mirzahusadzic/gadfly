@@ -469,9 +469,10 @@ unneeded(frame, x, samples)
 
 What no answers can make this frame read, found before a call: carried
 or cooled, each with the checks open in every reading that would name it
-but for them (empty when none comes that near). The rules themselves read
-every answer each trial could give; None when the readings would be more
-than OUTCOMES for an input.
+but for them (empty when none comes that near), or the exclusion when the
+frame is declared outside scope. The rules themselves read every answer
+each trial could give; None when the readings would be more than OUTCOMES
+for an input.
 
 ```python
 unreachable(frame)

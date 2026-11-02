@@ -87,7 +87,8 @@ never carried, whatever the answers: these stay open
 ```
 
 When an input has more than 200,000 answers to read, `plan` says it read
-none rather than guess.
+none rather than guess. A frame declared outside scope is never carried or
+cooled, and `plan` gives the exclusion as the reason.
 
 ---
 

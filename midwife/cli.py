@@ -165,7 +165,8 @@ def command_plan(args) -> int:
         if body["unreachable"] is None:
             print("too many answers to read which categories it can reach")
         for category, held in (body["unreachable"] or {}).items():
-            print(f"never {category}, whatever the answers" + (": these stay open" * bool(held)))
+            stay_open = bool(held) and not frame.outside_scope  # an exclusion is no check
+            print(f"never {category}, whatever the answers" + (": these stay open" * stay_open))
             print("".join(f"  {line}\n" for line in held), end="")
     return 0
 

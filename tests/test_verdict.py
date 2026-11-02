@@ -606,6 +606,10 @@ def test_unreachable_gives_up_rather_than_read_too_many_answers(raw):
     assert unreachable(situate(raw)) is None
 
 
-def test_unreachable_leaves_a_declared_exclusion_to_its_owner(raw):
+@pytest.mark.parametrize("carriage", ["all-checks", "listed"])
+def test_unreachable_names_both_categories_an_exclusion_rules_out(raw, carriage):
+    # the trials do not test the owner's exclusion: no answer reads carried or cooled
     raw["outsideScope"] = "refunds above the agent's limit"
-    assert unreachable(situate(raw)) == {}
+    raw["carriage"] = carriage
+    said = ["declared outside scope: refunds above the agent's limit"]
+    assert unreachable(situate(raw)) == {CARRIED: said, COOLED: said}

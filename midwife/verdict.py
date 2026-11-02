@@ -252,11 +252,13 @@ def _level_of(frame: Frame, samples: list[str | None], whole: bool) -> str | Non
 def unreachable(frame: Frame) -> dict[str, list[str]] | None:
     """What no answers can make this frame read, found before a call: carried
     or cooled, each with the checks open in every reading that would name it
-    but for them (empty when none comes that near). The rules themselves read
-    every answer each trial could give; None when the readings would be more
-    than OUTCOMES for an input."""
-    if _read_once(frame).get("outsideScope"):
-        return {}  # the exclusion is the owner's; no answer decides it
+    but for them (empty when none comes that near), or the exclusion when the
+    frame is declared outside scope. The rules themselves read every answer
+    each trial could give; None when the readings would be more than OUTCOMES
+    for an input."""
+    scope = _read_once(frame).get("outsideScope")
+    if scope:  # the exclusion is the owner's: no answer reads either category
+        return {category: [f"declared outside scope: {scope}"] for category in (CARRIED, COOLED)}
     blocked: dict[str, dict[str, list[str]]] = {CARRIED: {}, COOLED: {}}
     for x in frame.inputs:
         outcomes = _outcomes(frame, x["id"], {})
