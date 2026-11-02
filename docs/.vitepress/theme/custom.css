@@ -681,6 +681,7 @@
 .vp-doc table.gf-errors.gf-as-json { display: table; width: 100%; }
 .vp-doc table.gf-errors.gf-as-json :is(th, td):not(.gf-json) { display: none; }
 .vp-doc table.gf-errors.gf-as-json .gf-json { display: table-cell; }
+.vp-doc table.gf-errors.gf-as-json tr.gf-plain td { display: table-cell; }
 .vp-doc .gf-json pre {
   margin: 0 0 8px;
   padding: 12px 16px;

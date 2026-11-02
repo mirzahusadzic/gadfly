@@ -74,6 +74,10 @@ export function showErrors(page) {
     head.append(' prints it, on standard error');
     table.tHead.rows[0].append(head);
     for (const [row, objects] of rows) {
+      if (!objects.length) {
+        row.classList.add('gf-plain'); // no error or warning of its own: its words stay
+        continue;
+      }
       const cell = row.insertCell();
       cell.className = 'gf-json';
       cell.colSpan = 2;
