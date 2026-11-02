@@ -1,5 +1,6 @@
 """The command line, as a person runs it: plan, run, report, portfolio."""
 
+import io
 import json
 import subprocess
 import sys
@@ -105,6 +106,30 @@ def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):
     document = json.loads(capsys.readouterr().out)
     assert document["overall"]["category"] == "carried"
     assert document["findings"][0]["levels"]["ablation"] == "grant"
+
+
+def test_out_dash_streams_the_records_and_report_reads_them_back(capsys, monkeypatch):
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    assert main([*argv, "--out", "-"]) == 0
+    told = capsys.readouterr()
+    assert [json.loads(line)["trial"] for line in told.out.splitlines()][:2] == [
+        "baseline",
+        "repeat",
+    ]
+    assert told.err == (  # the records own standard output: the rest is a message
+        "wrote 8/8 calls to standard output\n"
+        f"to read the verdict: pipe them to gadfly report {REFUND} -\n"
+    )
+    monkeypatch.setattr("sys.stdin", io.StringIO(told.out))
+    assert main(["report", REFUND, "-"]) == 0
+    assert "overall: carried" in capsys.readouterr().out
+
+
+def test_out_dash_and_json_are_refused_together(capsys):
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    assert main([*argv, "--out", "-", "--json"]) == 2
+    told = capsys.readouterr()
+    assert told.out == "" and "both print to standard output" in told.err
 
 
 def test_run_never_writes_over_kept_records(tmp_path, capsys):
@@ -271,6 +296,13 @@ def test_ctrl_c_keeps_what_was_made_and_says_how_to_finish(tmp_path, capsys):
     err = capsys.readouterr().err
     assert "stopped by Ctrl-C after 2 calls" in err and f"--kept {out}" in err
     assert "Traceback" not in err and len(out.read_text().splitlines()) == 2
+
+
+def test_ctrl_c_with_out_dash_says_where_the_records_went(capsys):
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Interrupted", "--calls", "8"]
+    assert main([*argv, "--out", "-"]) == 130
+    told = capsys.readouterr()
+    assert len(told.out.splitlines()) == 2 and "they went to standard output" in told.err
 
 
 def test_a_garbled_reply_still_writes_every_record(tmp_path):

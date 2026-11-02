@@ -114,7 +114,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | Flag | Value | Effect |
 | --- | --- | --- |
 | `--battery` | `module:Class`, required | The battery, imported from the current directory. |
-| `--out` | a new file, required | Where the records go, one JSON line each. |
+| `--out` | a new file or `-`, required | Where the records go, one JSON line each; `-` sends them to standard output and what `run` prints to standard error. |
 | `--calls` | a whole number, required | The most calls to make. |
 | `--output-tokens` | a whole number, 64 by default | Each call's cap, a battery's own drafting included. |
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |
@@ -124,6 +124,14 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | `--stop-unresolved` | flag | Asks the baseline, repeat, ablation, control, presentation and placement first, then stops asking an input once no answer its other trials could give would resolve it. The verdict reads the category a whole run would and names the trials not asked. |
 | `--parallel` | a whole number, 1 by default | Makes that many calls at once, for a battery that takes them (the unified battery does; eGemma, with its rate limit, does not). A first Ctrl-C lets the calls already out end and keeps them; a second stops at once. |
 | `--json` | flag | Prints the calls planned and made, the openings by reason, and why it stopped, as JSON. |
+
+With `--out -` the records stream to standard output, and `report` reads
+them from standard input when its records are `-`:
+
+```bash
+uv run gadfly run frame.json --battery mine:Reader \
+  --calls 40 --out - | uv run gadfly report frame.json -
+```
 
 #### Run in slices
 

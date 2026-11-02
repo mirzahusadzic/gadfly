@@ -1198,7 +1198,7 @@ load_battery(spec)
 
 #### load_records
 
-The records kept in a JSON Lines file.
+The records kept in a JSON Lines file, or on standard input for `-`.
 
 ```python
 load_records(path)

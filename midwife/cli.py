@@ -72,8 +72,9 @@ def load_battery(spec: str):
 
 
 def load_records(path: str) -> list[dict[str, Any]]:
-    """The records kept in a JSON Lines file."""
-    lines = Path(path).read_text(encoding="utf-8").splitlines()
+    """The records kept in a JSON Lines file, or on standard input for `-`."""
+    text = sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
+    lines = text.splitlines()
     return [json.loads(line) for line in lines if line.strip()]
 
 
@@ -182,12 +183,20 @@ def command_run(args) -> int:
                 f"{args.kept}: a kept record holds a lone surrogate, which no file can hold"
             ) from None
     out = Path(args.out)
-    if out.exists():  # a new file: never another run's
+    streamed = args.out == "-"  # the records own standard output; the rest is a message
+    if streamed and args.json:
+        raise ValueError("--json and --out - both print to standard output: choose a file")
+    if not streamed and out.exists():  # a new file: never another run's
         raise FileExistsError(f"{out} exists: kept records are never written over")
-    if not out.parent.is_dir():  # found out before a call is spent, not after
+    if not streamed and not out.parent.is_dir():  # found out before a call is spent
         raise FileNotFoundError(f"{out.parent} is not a folder: make it, or choose another --out")
-    if not os.access(out.parent, os.W_OK):
+    if not streamed and not os.access(out.parent, os.W_OK):
         raise PermissionError(f"{out.parent} cannot be written: choose another --out")
+    where, say = ("standard output", sys.stderr) if streamed else (str(out), sys.stdout)
+
+    def opened():
+        return sys.stdout if streamed else out.open("x", encoding="utf-8")
+
     files = []  # the file is made by the first record, so a refused run leaves none
     made = []
     # a run takes minutes: in a terminal, count the calls as they are made
@@ -196,7 +205,7 @@ def command_run(args) -> int:
     def keep(record: Record) -> None:
         line = json.dumps(record.as_dict(), ensure_ascii=False) + "\n"  # before any file is made
         if not files:
-            files.append(out.open("x", encoding="utf-8"))
+            files.append(opened())
             for old in kept:  # the kept records first, so the new file is the whole run
                 files[0].write(json.dumps(old, ensure_ascii=False) + "\n")
         files[0].write(line)
@@ -220,23 +229,27 @@ def command_run(args) -> int:
     except KeyboardInterrupt:
         # every record made so far is already in its file: say how to finish
         kept_where = (
-            f"they are in {out}; finish with --kept {out} and a new --out"
-            if files
-            else ("no record was kept")
+            "no record was kept"
+            if not files
+            else f"they went to {where}; finish with them as --kept and a new --out"
+            if streamed
+            else f"they are in {out}; finish with --kept {out} and a new --out"
         )
         print(f"\ngadfly: stopped by Ctrl-C after {len(made)} calls; {kept_where}", file=sys.stderr)
         return 130
     finally:
-        for file in files:
-            file.close()
+        if not streamed:
+            for file in files:
+                file.close()
         if progress and made:
             print(file=sys.stderr)
     if not result.records and result.stopped:  # nothing was spent: a refusal, not a run
         raise ValueError(result.stopped)
     if not files:  # nothing was left to ask: the new file, empty or kept, is still the whole run
-        with out.open("x", encoding="utf-8") as whole:
-            whole.writelines(json.dumps(old, ensure_ascii=False) + "\n" for old in kept)
-        files.append(whole)
+        files.append(opened())
+        files[0].writelines(json.dumps(old, ensure_ascii=False) + "\n" for old in kept)
+        if not streamed:
+            files[0].close()
     # a service that is down answers every call with an opening: say so, so a
     # run that spent its calls on nothing does not read as a finished one
     openings = Counter(r.opening for r in result.records if r.opening is not None)
@@ -259,24 +272,34 @@ def command_run(args) -> int:
         before = (
             f", after {len(kept)} kept record{'s' * (len(kept) != 1)}" if kept and files else ""
         )
-        print(f"wrote {len(result.records)}/{result.planned} calls to {out}{before}")
+        print(f"wrote {len(result.records)}/{result.planned} calls to {where}{before}", file=say)
         if result.settled:
-            print(f"settled: {result.settled} calls not made, their trials' levels already fixed")
+            print(
+                f"settled: {result.settled} calls not made, their trials' levels already fixed",
+                file=say,
+            )
         if result.unasked:
             print(
                 f"unasked: {result.unasked} calls not made, "
-                "their input unresolved whatever they gave"
+                "their input unresolved whatever they gave",
+                file=say,
             )
         if openings:
             reason, count = openings.most_common(1)[0]
             total = sum(openings.values())
             print(
-                f'openings: {total} of {len(result.records)} calls, most often "{reason}" ({count})'
+                f"openings: {total} of {len(result.records)} calls, "
+                f'most often "{reason}" ({count})',
+                file=say,
             )
         if result.stopped:
-            print(f"stopped: {result.stopped}")
-        if files:
-            print(f"to read the verdict: gadfly report {args.frame} {out}")
+            print(f"stopped: {result.stopped}", file=say)
+        read = (
+            f"pipe them to gadfly report {args.frame} -"
+            if streamed
+            else f"gadfly report {args.frame} {out}"
+        )
+        print(f"to read the verdict: {read}", file=say)
     return status
 
 
@@ -369,7 +392,7 @@ def parser() -> argparse.ArgumentParser:
     execute = commands.add_parser("run", help="run a battery and keep records as JSON Lines")
     execute.add_argument("frame", help="the frame, a JSON file")
     execute.add_argument("--battery", required=True, help="module:Class")
-    execute.add_argument("--out", required=True, help="a new JSON Lines file")
+    execute.add_argument("--out", required=True, help="a new JSON Lines file, or - for stdout")
     execute.add_argument("--calls", required=True, type=int, help="the most calls to make")
     execute.add_argument("--output-tokens", type=int, default=64, help="each answer's cap")
     execute.add_argument("--token-budget", type=int, help="the most output tokens in all")
@@ -391,7 +414,7 @@ def parser() -> argparse.ArgumentParser:
 
     report = commands.add_parser("report", help="judge a kept JSON Lines file")
     report.add_argument("frame", help="the frame the records were made under")
-    report.add_argument("records", help="the records, a JSON Lines file")
+    report.add_argument("records", help="the records, a JSON Lines file, or - for stdin")
     report.add_argument("--json", action="store_true", help="print JSON instead of text")
     report.set_defaults(func=command_report)
 
