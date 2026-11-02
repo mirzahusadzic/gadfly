@@ -19,6 +19,7 @@ directory.
 from __future__ import annotations
 
 import argparse
+import functools
 import importlib
 import json
 import os
@@ -408,19 +409,23 @@ def parser() -> argparse.ArgumentParser:
         description="Test whether a decision rests on the evidence you think it does.",
         epilog=EXAMPLES,
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,  # a shortened flag would change meaning when one is added
     )
     root.add_argument("--version", action="version", version=f"gadfly {__version__}")
     commands = root.add_subparsers(dest="command", metavar="command")
+    command = functools.partial(commands.add_parser, allow_abbrev=False)
 
-    show = commands.add_parser("plan", help="show trials and call count without spending")
+    show = command("plan", help="show trials and call count without spending")
     show.add_argument("frame", help="the frame, a JSON file, or - for stdin")
     show.add_argument("--json", action="store_true", help="print JSON instead of text")
     show.set_defaults(func=command_plan)
 
-    execute = commands.add_parser("run", help="run a battery and keep records as JSON Lines")
+    execute = command("run", help="run a battery and keep records as JSON Lines")
     execute.add_argument("frame", help="the frame, a JSON file, or - for stdin")
     execute.add_argument("--battery", required=True, help="module:Class")
-    execute.add_argument("--out", required=True, help="a new JSON Lines file, or - for stdout")
+    execute.add_argument(
+        "--out", "-o", "--output", required=True, help="a new JSON Lines file, or - for stdout"
+    )
     execute.add_argument("--calls", required=True, type=int, help="the most calls to make")
     execute.add_argument("--output-tokens", type=int, default=64, help="each answer's cap")
     execute.add_argument("--token-budget", type=int, help="the most output tokens in all")
@@ -440,18 +445,18 @@ def parser() -> argparse.ArgumentParser:
     execute.add_argument("--json", action="store_true", help="print JSON instead of text")
     execute.set_defaults(func=command_run)
 
-    report = commands.add_parser("report", help="judge a kept JSON Lines file")
+    report = command("report", help="judge a kept JSON Lines file")
     report.add_argument("frame", help="the frame the records were made under, or - for stdin")
     report.add_argument("records", help="the records, a JSON Lines file, or - for stdin")
     report.add_argument("--json", action="store_true", help="print JSON instead of text")
     report.set_defaults(func=command_report)
 
-    check = commands.add_parser("check-frame", help="check a frame before any call")
+    check = command("check-frame", help="check a frame before any call")
     check.add_argument("frame", help="the frame, a JSON file, or - for stdin")
     check.add_argument("--json", action="store_true", help="print JSON instead of text")
     check.set_defaults(func=command_check_frame)
 
-    portfolio = commands.add_parser("portfolio", help="count verdicts across report files")
+    portfolio = command("portfolio", help="count verdicts across report files")
     portfolio.add_argument(
         "reports", nargs="+", help="documents from `gadfly report --json`, one may be -"
     )

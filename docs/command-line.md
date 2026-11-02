@@ -116,7 +116,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | Flag | Value | Effect |
 | --- | --- | --- |
 | `--battery` | `module:Class`, required | The battery, imported from the current directory. |
-| `--out` | a new file or `-`, required | Where the records go, one JSON line each; `-` sends them to standard output and what `run` prints to standard error. |
+| `--out`, also `-o` or `--output` | a new file or `-`, required | Where the records go, one JSON line each; `-` sends them to standard output and what `run` prints to standard error. |
 | `--calls` | a whole number, required | The most calls to make. |
 | `--output-tokens` | a whole number, 64 by default | Each call's cap, a battery's own drafting included. |
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |

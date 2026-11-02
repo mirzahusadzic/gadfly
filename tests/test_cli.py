@@ -235,6 +235,22 @@ def test_a_run_its_budget_cuts_short_exits_with_3(tmp_path, capsys):
     assert len(out.read_text().splitlines()) == 3
 
 
+@pytest.mark.parametrize("name", ["-o", "--output"])
+def test_the_records_file_takes_the_usual_names_too(tmp_path, capsys, name):
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    assert main([*argv, name, str(out)]) == 0
+    assert len(out.read_text().splitlines()) == 8
+
+
+def test_a_flag_is_named_in_full(tmp_path, capsys):
+    # a shortened flag would change meaning the day a longer one is added
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
+    with pytest.raises(SystemExit) as stopped:
+        main([*argv, "--out", str(tmp_path / "records.jsonl"), "--stop"])
+    assert stopped.value.code == 2 and "unrecognized arguments: --stop" in capsys.readouterr().err
+
+
 def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     status, first = run_refund(tmp_path, "--only", "baseline")
     rest = tmp_path / "rest.jsonl"
