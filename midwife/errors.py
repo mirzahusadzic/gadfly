@@ -13,6 +13,10 @@ A file the command line cannot read or write is Python's own error
 
 from __future__ import annotations
 
+# The statuses no GadflyError carries: Python's own file errors, Ctrl-C, and
+# anything else raised, which is a bug (EX_SOFTWARE)
+FILE, INTERRUPTED, BUG = 7, 130, 70
+
 
 class GadflyError(ValueError):
     """A refusal: the message says what went wrong, each note what to do."""

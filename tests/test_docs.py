@@ -364,28 +364,74 @@ def _printed():
 
 
 def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
-    # the page quotes messages word for word, so a changed message must change it too
+    # the page quotes messages and notes word for word, each row under its
+    # class, so a changed message must change it too
+    from midwife import errors
+
     printed = _printed()
-    quoted = []
+    classes = {name: name for name in ("UsageError", "FrameError", "RecordsError", "BatteryError")}
+    classes |= dict.fromkeys(
+        ("FileNotFoundError", "FileExistsError", "PermissionError"), "File errors"
+    )
+    classes["KeyboardInterrupt"] = "KeyboardInterrupt"
+    assert {name for name in classes if hasattr(errors, name)} == {
+        kind.__name__ for kind in errors.GadflyError.__subclasses__()
+    }
+
+    def known(text: str, kind: str = "") -> bool:
+        if text.startswith("No module named"):
+            return True  # Python's own words, as the battery's import gave them
+        if any(pattern.fullmatch(text) for pattern in printed):
+            return True
+        # a file error names its path, then Python's words said plainly
+        return (
+            kind in classes
+            and classes[kind] == "File errors"
+            and any(pattern.fullmatch(text.partition(" ")[2]) for pattern in printed)
+        )
+
+    quoted, unknown, astray, section = 0, [], [], ""
     for row in (ROOT / "docs/troubleshooting.md").read_text(encoding="utf-8").splitlines():
-        if row.startswith("| `"):
-            cell = row.split(" | ")[0][2:]
-            quoted += [a or b for a, b in re.findall(r"``(.+?)``|`([^`]+)`", cell)]
-    unknown = []
-    for text in quoted:
-        if text.startswith("gadfly: "):
-            message = text.removeprefix("gadfly: ")
-        elif text.startswith("stopped: "):
-            message = text.removeprefix("stopped: ")  # why a run stopped, as run says it
-        elif text.startswith('"') and text.endswith('"'):
-            message = text[1:-1]  # an opening, as run names it
-        else:
+        if row.startswith("### "):
+            section = row[4:]
+        if not row.startswith("| `"):
             continue
-        if message.startswith(("[Errno", "No module named")):
-            continue  # Python's own words
-        if not any(pattern.fullmatch(message) for pattern in printed):
-            unknown.append(message)
-    assert quoted and unknown == []
+        cells = row.split(" | ")
+        for a, b in re.findall(r"``(.+?)``|`([^`]+)`", cells[0][2:]):
+            text = a or b
+            kind, _, message = text.partition(": ")
+            if kind in classes:
+                astray += [] if classes[kind] == section else [f"{kind} under {section}"]
+            elif kind == "stopped":  # why a run stopped, as run says it
+                pass
+            elif text.startswith('"') and text.endswith('"'):
+                kind, message = "", text[1:-1]  # an opening, as run names it
+            else:
+                continue
+            quoted += 1
+            unknown += [] if known(message, kind) else [message]
+        note = re.match(r"`([^`]+)`", cells[1])  # what Gadfly prints to do, first
+        if note:
+            unknown += [] if known(note[1]) else [note[1]]
+    assert quoted > 30 and unknown == [] and astray == []
+
+
+def test_the_exit_statuses_troubleshooting_tables_are_the_codes():
+    from midwife import errors
+
+    table = {}
+    page = (ROOT / "docs/troubleshooting.md").read_text(encoding="utf-8")
+    for row in page.split("### Exit statuses", 1)[1].split("\n---\n", 1)[0].splitlines():
+        cells = row.split(" | ")
+        if row.startswith("| ") and cells[0][2:].isdigit():
+            for name in re.findall(r"`(\w+)`", cells[1]) or [cells[1]]:
+                table[name] = int(cells[0][2:])
+    statuses = {kind.__name__: kind.exit for kind in errors.GadflyError.__subclasses__()}
+    statuses |= dict.fromkeys(
+        ("FileNotFoundError", "FileExistsError", "PermissionError"), errors.FILE
+    )
+    statuses |= {"KeyboardInterrupt": errors.INTERRUPTED, "any other": errors.BUG}
+    assert {name: table.get(name) for name in statuses} == statuses
 
 
 SITE = "https://mirzahusadzic.github.io/gadfly/"

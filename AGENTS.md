@@ -12,6 +12,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 | Task | Source |
 | --- | --- |
 | Frame parsing, canonical JSON, hash, refusals | `midwife/frame.py`, `midwife/frame.schema.json` |
+| What Gadfly refuses: a class for each thing to fix, with its exit status | `midwife/errors.py` |
 | Trial planning, prompts, renaming, placement | `midwife/interventions.py` |
 | Run, budget, cancellation, records | `midwife/pipeline.py`, `midwife/types.py` |
 | Verdict rules, levels, evidence, obligations | `midwife/verdict.py` |
@@ -37,7 +38,8 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 - Unresolved names the open check; evidence and obligations stay apart, and an obligation is not a passed check.
 - Trial blindness: a battery gets the frame and the prompt, never the trial's id.
 - `run` never starts a call the budget cannot cover and hands each record on as it exists; the command line never writes over a records file.
-- The command line follows [clig.dev](https://clig.dev/), so a script can tell what happened as surely as a person: results on standard output or the file named, any file read or written may be `-` for standard input or output (refused at a terminal), messages on standard error as `gadfly: <reason>`, `--json` on every command, and an exit status for each outcome as `docs/command-line.md` tables it (2: refused, nothing spent, no file). Nothing is left to silence: an empty result means only "none", and any other reason (refused, excluded, too many to read) is said in words, in text and JSON alike.
+- The command line follows [clig.dev](https://clig.dev/), so a script can tell what happened as surely as a person: results on standard output or the file named, any file read or written may be `-` for standard input or output (refused at a terminal), messages on standard error, `--json` on every command, and an exit status for each outcome as `docs/troubleshooting.md` tables it; a refusal spends nothing and makes no file. Nothing is left to silence: an empty result means only "none", and any other reason (refused, excluded, too many to read) is said in words, in text and JSON alike.
+- Errors are Python's, so a person, a script and another model read them alike. Every refusal raises a class named for what the caller must fix ([PEP 8](https://peps.python.org/pep-0008/)): `UsageError`, `FrameError`, `RecordsError`, `BatteryError`, or Python's own file errors ([PEP 3151](https://peps.python.org/pep-3151/)). The class carries its exit status as an attribute, never in the text ([PEP 352](https://peps.python.org/pep-0352/)). The command line prints the last line of a traceback, `Type: message`, then each note ([PEP 678](https://peps.python.org/pep-0678/)) on a line of its own; with `--json`, one object, `{"error": {"type", "exit", "message", "notes", "help"}}`, on standard error. A message says what went wrong, a note what to do, and no line Gadfly prints holds a second colon. Anything else raised is a bug, and prints its traceback.
 - Shipped batteries: loopback only, no proxy, no redirects, no tools. Credentials never reach a request body, a record or a log. The unified battery sends `data_collection: deny` unless the frame names the exact slug under `trainsOnInputs`, and refuses OpenAI slugs. A failed or timed-out call is an opening, never a label and never dropped.
 - `examples/*.json` and `examples/runs/` never change after their runs: a new idea is a new frame with fresh runs, and predictions are written before the first call.
 
@@ -45,7 +47,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 
 ### Docs
 
-Every page reads the same on GitHub as on the site.
+Every page reads the same on GitHub as on the site. The site may add a second view of the same rows, built from the page, as the troubleshooting tables' JSON view does (`docs/.vitepress/theme/errors.js`); nothing of it is written in the Markdown.
 
 - GitHub syntax only: GitHub alerts, never `!!!`, `--8<--`, attribute lists, Markdown divs or `:::` lines; `tests/test_docs.py` refuses them.
 - Readers first, machine data second. Never put a JSON or JSONL dump in front of a reader; `test_no_page_shows_a_whole_frame_as_json` refuses a whole frame as code.

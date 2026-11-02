@@ -1,7 +1,8 @@
 // VitePress's default theme in Gadfly's faces and colours (custom.css), with
 // the gadfly before the site's name (GadflyMark.vue), the colour menu
 // (ThemeMenu.vue), the charts (MermaidDiagram.vue), the foot of every page
-// (SiteFooter.vue) and the watch view.
+// (SiteFooter.vue), the watch view and the troubleshooting page's JSON view
+// (errors.js).
 import { useRoute, withBase } from 'vitepress';
 import DefaultTheme from 'vitepress/theme-without-fonts';
 import { h, nextTick, onMounted, watch } from 'vue';
@@ -9,6 +10,7 @@ import GadflyMark from './GadflyMark.vue';
 import MermaidDiagram from './MermaidDiagram.vue';
 import SiteFooter from './SiteFooter.vue';
 import ThemeMenu from './ThemeMenu.vue';
+import { showErrors } from './errors.js';
 import './custom.css';
 import './watch.css';
 
@@ -41,5 +43,9 @@ export default {
       });
     onMounted(mount);
     watch(() => route.path, mount);
+    // The troubleshooting page's error tables, also as --json prints them.
+    const errors = () => nextTick(() => showErrors(document));
+    onMounted(errors);
+    watch(() => route.path, errors);
   },
 };

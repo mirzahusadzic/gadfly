@@ -655,3 +655,43 @@
 }
 .gf-source .line:target { background: var(--vp-c-default-soft); }
 .gf-source .line:target a { color: var(--vp-c-brand-1); }
+
+/* The troubleshooting page's error tables (errors.js): a switch above each to
+ * see its rows as --json prints them. The chosen view is marked by weight, an
+ * underline and its border, never by colour alone. */
+.gf-view { display: flex; gap: 8px; justify-content: flex-end; margin: 16px 0 -8px; }
+.gf-view button {
+  padding: 2px 12px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 400;
+  color: var(--vp-c-text-2);
+}
+.gf-view button[aria-pressed='true'] {
+  border-color: var(--vp-c-text-2);
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.gf-view button:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+.vp-doc table.gf-errors .gf-json { display: none; }
+.vp-doc table.gf-errors.gf-as-json { display: table; width: 100%; }
+.vp-doc table.gf-errors.gf-as-json :is(th, td):not(.gf-json) { display: none; }
+.vp-doc table.gf-errors.gf-as-json .gf-json { display: table-cell; }
+.vp-doc .gf-json pre {
+  margin: 0 0 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--vp-code-block-bg);
+  font: 14px/1.6 var(--vp-font-family-mono);
+}
+.vp-doc .gf-json .line {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-left: calc(var(--hang, 2) * 1ch);
+  text-indent: calc(var(--hang, 2) * -1ch);
+}

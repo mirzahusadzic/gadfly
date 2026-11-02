@@ -31,7 +31,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from . import __version__
+from . import __version__, errors
 from .errors import BatteryError, FrameError, GadflyError, RecordsError, UsageError, noted
 from .frame import schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
@@ -518,7 +518,7 @@ def main(argv: list[str] | None = None) -> int:
         return refused(error, "--json" in argv)
     except Exception:
         traceback.print_exc()
-        return 70  # EX_SOFTWARE: Gadfly's fault, not the caller's
+        return errors.BUG  # Gadfly's fault, not the caller's
 
 
 def refused(error: BaseException, as_json: bool) -> int:
@@ -527,9 +527,10 @@ def refused(error: BaseException, as_json: bool) -> int:
     if isinstance(error, GadflyError):
         status, anchor, message = error.exit, type(error).__name__.lower(), str(error)
     elif isinstance(error, OSError):
-        status, anchor, message = 7, "file-errors", _plain(error)
+        status, anchor, message = errors.FILE, "file-errors", _plain(error)
     else:
-        status, anchor, message = 130, "keyboardinterrupt", str(error) or "stopped by Ctrl-C"
+        status, anchor = errors.INTERRUPTED, "keyboardinterrupt"
+        message = str(error) or "stopped by Ctrl-C"
     kind, notes = type(error).__name__, list(getattr(error, "__notes__", []))
     if as_json:
         said = {"type": kind, "exit": status, "message": message, "notes": notes}
@@ -563,7 +564,7 @@ class Parser(argparse.ArgumentParser):
         parsed, extra = self.parse_known_args(args, namespace)
         if extra:  # the command's own mistake, pointing at its own help
             parser = self.commands.get(getattr(parsed, "command", None), self)
-            parser.error(f"unrecognized arguments: {' '.join(extra)}")
+            parser.error(f"unrecognized arguments {' '.join(extra)}")
         return parsed
 
     def error(self, message: str):
