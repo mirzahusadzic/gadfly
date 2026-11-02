@@ -243,7 +243,8 @@ def command_run(args) -> int:
         raise UsageError(
             "--json and --out - both print to standard output", "choose a file for --out"
         )
-    if not streamed and out.exists():  # a new file: never another run's
+    # a new file: never another run's, nor what a link, even a broken one, points at
+    if not streamed and os.path.lexists(out):
         raise noted(
             FileExistsError(f"file {str(out)!r} exists already"),
             "kept records are never written over; choose a new --out, or finish it with --kept",

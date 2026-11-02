@@ -527,3 +527,14 @@ def test_json_python_cannot_read_is_a_refusal_not_a_bug(
     assert main(argv) == status
     err = capsys.readouterr().err
     assert err.startswith(said) and "Traceback" not in err
+
+
+def test_a_link_where_the_records_would_go_is_refused_before_a_call(tmp_path, capsys):
+    from tests.fixtures.refund import Counted
+
+    out = tmp_path / "records.jsonl"
+    out.symlink_to(tmp_path / "nowhere.jsonl")  # a link to nothing: exists() says no
+    Counted.calls = 0
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Counted", "--calls", "8"]
+    assert main([*argv, "--out", str(out)]) == 7
+    assert Counted.calls == 0 and capsys.readouterr().err.startswith("FileExistsError: ")
