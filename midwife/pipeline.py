@@ -21,12 +21,21 @@ import itertools
 import re
 import signal
 import threading
+import warnings
 from collections import Counter, defaultdict, deque
 from collections.abc import Callable, Iterable
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, replace
 
-from .errors import BatteryError, GadflyError, RecordsError, UsageError, quoted
+from .errors import (
+    BatteryError,
+    GadflyError,
+    OpeningWarning,
+    RecordsError,
+    StoppedWarning,
+    UsageError,
+    quoted,
+)
 from .frame import Frame, digest, parse
 from .interventions import Trial, prompt, trial_ids
 from .interventions import plan as plan_trials
@@ -132,8 +141,10 @@ def run(
     }  # a malformed row counts for nothing here; check_records refuses it below
     planned = len(frame.inputs) * len(wanted) * frame.quorum - sum(t in wanted for _, t, _ in done)
     if planned > budget.calls:
-        return RunResult(
-            (), planned, f"the plan needs {planned} calls; the budget allows {budget.calls}"
+        return _warned(
+            RunResult(
+                (), planned, f"the plan needs {planned} calls; the budget allows {budget.calls}"
+            )
         )
     everything = plan(frame)
     trials = [trial for trial in everything if trial.id in wanted]
@@ -234,7 +245,7 @@ def run(
         return None
 
     def ended(stopped: str | None = None) -> RunResult:
-        return RunResult(tuple(records), planned, stopped, skipped, unasked)
+        return _warned(RunResult(tuple(records), planned, stopped, skipped, unasked), level=4)
 
     if parallel == 1:
         for x, trial, index in calls:
@@ -330,6 +341,32 @@ def run(
     if interrupted:
         raise KeyboardInterrupt
     return ended(stopped)
+
+
+def _warned(result: RunResult, level: int = 3) -> RunResult:
+    """The result, once what the run did not do as asked is raised as a
+    warning (PEP 230): calls that came back with no answer, and a stop before
+    the plan's end. Nothing passes in silence; a caller may make either an
+    error with Python's own warning filters. `level` points the warning at
+    run's caller."""
+    openings = Counter(r.opening for r in result.records if r.opening is not None)
+    if openings:
+        reason, times = openings.most_common(1)[0]
+        many = sum(openings.values())
+        warnings.warn(
+            OpeningWarning(
+                f"{many} of {len(result.records)} calls came back as openings, "
+                f"most often {reason!r} ({times} times)"
+            ),
+            stacklevel=level,
+        )
+    if result.stopped:
+        made, stopped = len(result.records), result.stopped
+        warnings.warn(
+            StoppedWarning(f"the run stopped after {made} of {result.planned} calls; {stopped}"),
+            stacklevel=level,
+        )
+    return result
 
 
 def judge(frame: Frame, records: Iterable[Record | dict]) -> list[Finding]:

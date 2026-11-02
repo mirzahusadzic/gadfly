@@ -2,9 +2,10 @@
 
 Each problem is listed by what Gadfly prints. A refusal prints what the last
 line of a Python traceback would, its class and what went wrong, and on the
-next line, when it can, what to do; the class says what to fix and gives the
-exit status. With `--json`, the same goes to standard error as one object, and
-on the site each table below can show its rows that way.
+next line, when it can, what to do; a warning, for what a run did not do as
+asked though it went on, prints the same way. The class says what to fix and
+gives the exit status, and with `--json` each is one object on standard error,
+as each table below can show on the site.
 
 ---
 
@@ -17,13 +18,13 @@ alike.
 | Exit | Type | What it means |
 | --- | --- | --- |
 | 0 | none | done |
-| 1 | none | nothing was read: every call came back as an opening, or `check-frame` did not accept the frame |
+| 1 | `OpeningWarning` | every call came back with no answer, so nothing was read |
 | 2 | `UsageError` | the command or the call asks for what cannot be done, and nothing was spent |
-| 3 | none | the run stopped early, so its records are partial; `--kept` finishes them |
+| 3 | `StoppedWarning` | the run stopped before its plan's end, so its records are partial; `--kept` finishes them |
 | 4 | `FrameError` | the frame is refused |
 | 5 | `RecordsError` | records or a report are not this frame's run |
 | 6 | `BatteryError` | the battery cannot be made, set up or reached |
-| 7 | `FileNotFoundError`, `FileExistsError`, `PermissionError` | a file or a folder cannot be read or written |
+| 7 | `FileNotFoundError`, `FileExistsError`, `PermissionError`, `IsADirectoryError`, `NotADirectoryError` | a file or a folder cannot be read or written |
 | 70 | any other | a bug in Gadfly, which prints its traceback |
 | 130 | `KeyboardInterrupt` | stopped by Ctrl-C |
 | 141 | none | the program reading its output stopped reading (`\| head`), so the command ended quietly, as any Unix tool does |
@@ -45,14 +46,16 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: - reads standard input, which is a terminal` | `pipe the file in, or name it`. |
 | `UsageError: standard input is read once` | `name - for one file at most`. |
 | `UsageError: --json and --out - both print to standard output` | `choose a file for --out`. |
+| `UsageError: the token budget (0) is spent` | `--token-budget must cover one call's --output-tokens`. Nothing was spent and no file made. |
 
 ---
 
 ### FrameError
 
 The frame is refused as written, and Gadfly never repairs it.
-`gadfly check-frame` names each refusal and where it is, without a call, and
-[Write a frame](write-a-frame.md#troubleshooting) lists the common ones.
+`gadfly check-frame` prints each refusal as a `FrameError` and where it is,
+without a call, and [Write a frame](write-a-frame.md#troubleshooting) lists the
+common ones.
 
 | You see | What to do |
 | --- | --- |
@@ -125,13 +128,32 @@ Ctrl-C stops a run, and every record made so far is already in its file.
 
 ---
 
-### Openings and early stops
+### OpeningWarning
 
-A call that comes back without an answer is an opening, which `run` counts and
-names. Neither is an error: the run goes on, and says so when it ends.
+Calls came back with no answer, as openings: each is kept, and reads as no
+answer. The run goes on, and `run` exits with 1 only when every call did.
 
-| You see | What it means, and what to do |
+| You see | What to do |
 | --- | --- |
+| `OpeningWarning: 10 of 10 calls came back as openings, most often 'eGemma could not be reached (ConnectionRefusedError)' (10 times)` | `nothing was read; run again into a new file once it answers`. Nothing answers at `EGEMMA_URL`, by default `http://127.0.0.1:8000`: start eGemma, or point the variable at it. |
+| `"the router could not be reached (...)"` or `"the evaluator could not be reached (...)"` | The same for the router, at `http://127.0.0.1:18766`, or for your evaluator, at the frame's `battery.url`. |
+| `"eGemma answered 401"` or `"the router answered 401"` | The key or the token is wrong. |
+| `"eGemma answered 503 after 3 retries"` | eGemma stayed busy or has no model loaded; the battery waits and retries before it gives up. Check eGemma's own log. |
+| `"the router reports 'openrouter-data-policy'"` | No OpenRouter endpoint for that model keeps no data, and the frame does not consent to one that trains on its inputs. Choose another model, or pin endpoints with `battery.endpoints`. |
+
+---
+
+### StoppedWarning
+
+The run stopped before its plan's end, so its records are partial, and `run`
+exits with 3. The records made are kept, and `--kept` finishes them.
+
+| You see | What to do |
+| --- | --- |
+| `StoppedWarning: the run stopped after 3 of 8 calls; the token budget (30) is spent` | `finish with --kept 'records.jsonl' and a new --out`. Raise `--token-budget` first. |
+| `StoppedWarning: the run stopped after 1 of 8 calls; the battery reported 900 output tokens for a call capped at 64` | `finish with --kept 'records.jsonl' and a new --out`. The battery spent more output tokens on one call than `--output-tokens` allows, and that call's record is kept. A battery that writes before it answers spends tokens on the whole call: set `--output-tokens` to what a whole call may spend. |
+
+--- | --- |
 | `openings: 10 of 10 calls, most often "eGemma could not be reached (ConnectionRefusedError)" (10)` | Nothing answers at `EGEMMA_URL`, by default `http://127.0.0.1:8000`. Start eGemma, or point the variable at it. The calls were spent, and `run` exits with 1, so run again into a new file. |
 | `"the router could not be reached (...)"` or `"the evaluator could not be reached (...)"` | The same for the router, at `http://127.0.0.1:18766`, or for your evaluator, at the frame's `battery.url`. |
 | `"eGemma answered 401"` or `"the router answered 401"` | The key or the token is wrong. |

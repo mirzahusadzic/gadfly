@@ -44,6 +44,8 @@ dev = [
 [tool.pytest.ini_options]
 addopts = "--cov=midwife --cov-report=term-missing --cov-fail-under=85"
 testpaths = ["tests"]
+# a run warns of its openings and stops; tests that mean to hear them use pytest.warns
+filterwarnings = ["ignore::midwife.errors.GadflyWarning"]
 pythonpath = ["."]
 
 [tool.ruff]

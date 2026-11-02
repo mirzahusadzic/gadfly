@@ -36,8 +36,10 @@ function said(row, exits, anchor) {
   for (const code of row.cells[0].querySelectorAll('code')) {
     const [, type, message] = code.textContent.match(/^(\w+): ([\s\S]*)$/) || [];
     if (!(type in exits)) continue;
-    const error = { type, exit: exits[type], message, notes: notes(row.cells[1]) };
-    objects.push(JSON.stringify({ error: { ...error, help: HELP + anchor } }, null, 2));
+    const said = { type, exit: exits[type], message, notes: notes(row.cells[1]), help: HELP + anchor };
+    // a refusal prints {"error": ...}, a warning {"warning": ...}, as the command does
+    const key = type.endsWith('Warning') ? 'warning' : 'error';
+    objects.push(JSON.stringify({ [key]: said }, null, 2));
   }
   return objects;
 }

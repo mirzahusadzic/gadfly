@@ -369,14 +369,17 @@ def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
     from midwife import errors
 
     printed = _printed()
-    classes = {name: name for name in ("UsageError", "FrameError", "RecordsError", "BatteryError")}
-    classes |= dict.fromkeys(
-        ("FileNotFoundError", "FileExistsError", "PermissionError"), "File errors"
+    raised = [*errors.GadflyError.__subclasses__(), *errors.GadflyWarning.__subclasses__()]
+    classes = {kind.__name__: kind.__name__ for kind in raised}
+    files = (
+        "FileNotFoundError",
+        "FileExistsError",
+        "PermissionError",
+        "IsADirectoryError",
+        "NotADirectoryError",
     )
+    classes |= dict.fromkeys(files, "File errors")
     classes["KeyboardInterrupt"] = "KeyboardInterrupt"
-    assert {name for name in classes if hasattr(errors, name)} == {
-        kind.__name__ for kind in errors.GadflyError.__subclasses__()
-    }
 
     def known(text: str, kind: str = "") -> bool:
         if text.startswith("No module named"):
@@ -426,10 +429,16 @@ def test_the_exit_statuses_troubleshooting_tables_are_the_codes():
         if row.startswith("| ") and cells[0][2:].isdigit():
             for name in re.findall(r"`(\w+)`", cells[1]) or [cells[1]]:
                 table[name] = int(cells[0][2:])
-    statuses = {kind.__name__: kind.exit for kind in errors.GadflyError.__subclasses__()}
-    statuses |= dict.fromkeys(
-        ("FileNotFoundError", "FileExistsError", "PermissionError"), errors.FILE
+    raised = [*errors.GadflyError.__subclasses__(), *errors.GadflyWarning.__subclasses__()]
+    statuses = {kind.__name__: kind.exit for kind in raised}
+    files = (
+        "FileNotFoundError",
+        "FileExistsError",
+        "PermissionError",
+        "IsADirectoryError",
+        "NotADirectoryError",
     )
+    statuses |= dict.fromkeys(files, errors.FILE)
     statuses |= {"KeyboardInterrupt": errors.INTERRUPTED, "any other": errors.BUG}
     assert {name: table.get(name) for name in statuses} == statuses
 

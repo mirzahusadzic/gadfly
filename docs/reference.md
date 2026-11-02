@@ -259,6 +259,15 @@ BatteryError   6  the battery: its module, its settings, its service
 A file the command line cannot read or write is Python's own error
 (PEP 3151), exit 7. Each class is a ValueError, as every refusal was.
 
+What a run did not do as asked, though it went on and kept its records, is
+a warning (PEP 230), raised with `warnings.warn`, which a caller may make an
+error with Python's own filters (`-W error::midwife.errors.OpeningWarning`):
+
+```python
+OpeningWarning  1  calls came back with no answer (1 when every one did)
+StoppedWarning  3  the run stopped before its plan's end
+```
+
 #### GadflyError
 
 A refusal: the message says what went wrong, each note what to do.
@@ -316,6 +325,32 @@ cannot reach what it needs.
 
 ```python
 class BatteryError(GadflyError)
+```
+
+#### GadflyWarning
+
+What a run did not do as asked, though it went on and kept its
+records.
+
+```python
+class GadflyWarning(UserWarning)
+```
+
+#### OpeningWarning
+
+Calls came back with no answer, as openings; exit 1 when every call did,
+as then nothing was read.
+
+```python
+class OpeningWarning(GadflyWarning)
+```
+
+#### StoppedWarning
+
+The run stopped before its plan's end, so its records are partial.
+
+```python
+class StoppedWarning(GadflyWarning)
 ```
 <!-- end api -->
 
@@ -1373,6 +1408,15 @@ give its exit status: a GadflyError's own, 7 for a file, 130 for Ctrl-C.
 
 ```python
 refused(error, as_json)
+```
+
+#### warned
+
+Say a warning as Python's own line for it, `Type: message`, then its
+notes, or as JSON; give its exit status.
+
+```python
+warned(warning, as_json)
 ```
 
 #### Parser

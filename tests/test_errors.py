@@ -13,6 +13,7 @@ from midwife.types import Budget
 
 ROOT = Path(__file__).parent.parent
 REFUSALS = {"UsageError", "FrameError", "RecordsError", "BatteryError"}
+WARNINGS = {"OpeningWarning", "StoppedWarning"}
 # Python's own, said by the command line: a file it cannot use, or Ctrl-C;
 # and the exit itself
 PYTHONS = {"FileExistsError", "FileNotFoundError", "PermissionError", "KeyboardInterrupt"}
@@ -134,6 +135,7 @@ UNQUOTED = {
     "what", "where", "at", "key", "stopped", "self.prog", "line", "pin", "status_line",
     "error.msg", "error.code", "tried", "said", "MAX_TIMEOUT", "frame.quorum", "len(unread)",
     "type(reason).__name__", "type(error).__name__", "type(value).__name__", "kind.__name__",
+    "many", "times", "made", "result.planned", "len(result.records)",
     "', '.join(EFFORTS)", "', '.join(wrong)",
 }  # fmt: skip
 
@@ -151,6 +153,8 @@ def worded(path: Path):
                 yield from call.args
             elif isinstance(call, ast.Call) and getattr(call.func, "id", "") == "refusal":
                 yield from call.args
+        elif isinstance(node, ast.Call) and getattr(node.func, "id", "") in WARNINGS:
+            yield from node.args
         elif isinstance(node, ast.keyword) and node.arg == "opening":
             yield node.value
         elif isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "opening":
@@ -177,3 +181,26 @@ def test_every_value_a_refusal_or_an_opening_names_is_quoted():
                     if value not in UNQUOTED and not value.startswith(("quoted(", "_named(")):
                         stray.append(f"{path.relative_to(ROOT)}:{part.lineno} {{{value}}}")
     assert stray == []
+
+
+def test_a_run_says_what_it_did_not_do_as_asked_with_warnings(raw):
+    # nothing passes in silence (PEP 20): openings and an early stop are warnings
+    # (PEP 230), which a caller may make errors with Python's own filters
+    import warnings
+
+    from midwife.errors import GadflyWarning, OpeningWarning, StoppedWarning
+    from tests.fixtures.refund import Unreachable
+
+    raw["battery"] = {"kind": "rule-reader"}
+    frame = situate(raw)
+    n = calls_needed(frame)
+    with pytest.warns(OpeningWarning, match=rf"^{n} of {n} calls came back as openings"):
+        run(frame, Unreachable(), Budget(calls=n))
+    with pytest.warns(StoppedWarning, match=rf"^the run stopped after 3 of {n} calls; the token"):
+        run(frame, Unreachable(), Budget(calls=n, output_tokens_per_call=10, tokens=30))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", OpeningWarning)
+        with pytest.raises(OpeningWarning):
+            run(frame, Unreachable(), Budget(calls=calls_needed(frame)))
+    assert (OpeningWarning.exit, StoppedWarning.exit) == (1, 3)
+    assert issubclass(OpeningWarning, GadflyWarning) and issubclass(GadflyWarning, UserWarning)

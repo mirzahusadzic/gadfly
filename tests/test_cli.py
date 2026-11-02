@@ -223,14 +223,19 @@ def test_run_says_when_its_calls_came_back_as_openings(tmp_path, capsys):
     out = tmp_path / "records.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Unreachable", "--calls", "8"]
     assert main([*argv, "--out", str(out)]) == 1  # every call opened: nothing was read
-    assert capsys.readouterr().out.splitlines()[1] == (
-        "openings: 8 of 8 calls, most often "
-        '"the reader could not be reached (ConnectionRefused)" (8)'
-    )
+    assert capsys.readouterr().err.splitlines() == [
+        "OpeningWarning: 8 of 8 calls came back as openings, most often "
+        "'the reader could not be reached (ConnectionRefused)' (8 times)",
+        "nothing was read; run again into a new file once it answers",
+    ]
     assert main([*argv, "--out", str(tmp_path / "again.jsonl"), "--json"]) == 1
-    assert json.loads(capsys.readouterr().out)["openings"] == {
+    told = capsys.readouterr()
+    assert json.loads(told.out)["openings"] == {
         "the reader could not be reached (ConnectionRefused)": 8
     }
+    warning = json.loads(told.err)["warning"]
+    assert (warning["type"], warning["exit"]) == ("OpeningWarning", 1)
+    assert warning["help"].endswith("troubleshooting#openingwarning")
     (tmp_path / "fine").mkdir()
     status, _ = run_refund(tmp_path / "fine")
     assert status == 0 and "openings" not in capsys.readouterr().out
@@ -254,8 +259,11 @@ def test_a_run_its_budget_cuts_short_exits_with_3(tmp_path, capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     budget = ["--output-tokens", "10", "--token-budget", "30"]
     assert main([*argv, *budget, "--out", str(out)]) == 3  # the records are partial
-    told = capsys.readouterr().out
-    assert "wrote 3/8 calls" in told and "stopped: the token budget (30) is spent" in told
+    told = capsys.readouterr()
+    assert "wrote 3/8 calls" in told.out and told.err.splitlines() == [
+        "StoppedWarning: the run stopped after 3 of 8 calls; the token budget (30) is spent",
+        f"finish with --kept {str(out)!r} and a new --out",
+    ]
     assert len(out.read_text().splitlines()) == 3
 
 

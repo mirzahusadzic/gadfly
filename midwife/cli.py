@@ -28,12 +28,23 @@ import re
 import signal
 import sys
 import traceback
+import warnings
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
 from . import __version__, errors
-from .errors import BatteryError, FrameError, GadflyError, RecordsError, UsageError, noted
+from .errors import (
+    BatteryError,
+    FrameError,
+    GadflyError,
+    GadflyWarning,
+    OpeningWarning,
+    RecordsError,
+    StoppedWarning,
+    UsageError,
+    noted,
+)
 from .frame import schema
 from .pipeline import calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
@@ -293,17 +304,19 @@ def command_run(args) -> int:
             print(f"\r{len(made)} calls made", end="", file=sys.stderr, flush=True)
 
     try:
-        result = run(
-            frame,
-            battery,
-            Budget(args.calls, args.output_tokens, args.token_budget),
-            on_record=keep,
-            only=args.only,
-            kept=kept,
-            settle=args.settle,
-            stop_unresolved=args.stop_unresolved,
-            parallel=args.parallel,
-        )
+        with warnings.catch_warnings(record=True) as caught:  # said below, as refusals are
+            warnings.simplefilter("always", GadflyWarning)
+            result = run(
+                frame,
+                battery,
+                Budget(args.calls, args.output_tokens, args.token_budget),
+                on_record=keep,
+                only=args.only,
+                kept=kept,
+                settle=args.settle,
+                stop_unresolved=args.stop_unresolved,
+                parallel=args.parallel,
+            )
     except KeyboardInterrupt as interrupt:
         # every record made so far is already in its file: say how to finish
         stopped = f"stopped by Ctrl-C after {len(made)} calls"
@@ -330,7 +343,17 @@ def command_run(args) -> int:
         if progress and made:
             print(file=sys.stderr)
     if not result.records and result.stopped:  # nothing was spent: a refusal, not a run
-        raise UsageError(result.stopped, "gadfly plan shows the calls a whole run needs")
+        raise UsageError(
+            result.stopped,
+            "gadfly plan shows the calls a whole run needs"
+            if result.stopped.startswith("the plan needs")
+            else "--token-budget must cover one call's --output-tokens",
+        )
+    for warning in caught:  # any other code's warning, shown as Python would
+        if not issubclass(warning.category, GadflyWarning):
+            warnings.showwarning(
+                warning.message, warning.category, warning.filename, warning.lineno
+            )
     if not files:  # nothing was left to ask: the new file, empty or kept, is still the whole run
         files.append(opened())
         files[0].writelines(json.dumps(old, ensure_ascii=False) + "\n" for old in kept)
@@ -377,22 +400,20 @@ def command_run(args) -> int:
                 "their input unresolved whatever they gave",
                 file=say,
             )
-        if openings:
-            reason, count = openings.most_common(1)[0]
-            total = sum(openings.values())
-            print(
-                f"openings: {total} of {len(result.records)} calls, "
-                f'most often "{reason}" ({count})',
-                file=say,
-            )
-        if result.stopped:
-            print(f"stopped: {result.stopped}", file=say)
         read = (
             f"pipe them to gadfly report {args.frame} -"
             if streamed
             else f"gadfly report {args.frame} {out}"
         )
         print(f"to read the verdict: {read}", file=say)
+    # what the run did not do as asked: its warnings, with what to do
+    for warning in (w.message for w in caught if issubclass(w.category, GadflyWarning)):
+        if isinstance(warning, OpeningWarning) and status == OpeningWarning.exit:
+            warning.add_note("nothing was read; run again into a new file once it answers")
+        if isinstance(warning, StoppedWarning):
+            kept_as = "them" if streamed else repr(str(out))
+            warning.add_note(f"finish with --kept {kept_as} and a new --out")
+        warned(warning, args.json)
     return status
 
 
@@ -437,12 +458,13 @@ def command_check_frame(args) -> int:
         if frame and not problems:
             result.update(frame=frame.name, hash=frame.hash, calls=calls_needed(frame))
         print(json.dumps(result, indent=2))
-    elif problems:
+    elif problems:  # each a FrameError, gathered rather than raised at the first
         for problem in problems:
-            print(f"{problem['at']}: {problem['problem']}")
+            at = "" if problem["at"] == "/" else f" at {problem['at']}"
+            print(f"FrameError: {problem['problem']}{at}", file=sys.stderr)
     else:
         print(f"ok ({checked}): {frame.name} ({frame.hash}), {calls_needed(frame)} calls")
-    return 1 if problems else 0
+    return FrameError.exit if problems else 0
 
 
 def command_portfolio(args) -> int:
@@ -580,11 +602,22 @@ def refused(error: BaseException, as_json: bool) -> int:
     else:
         status, anchor = errors.INTERRUPTED, "keyboardinterrupt"
         message = str(error) or "stopped by Ctrl-C"
-    kind, notes = type(error).__name__, list(getattr(error, "__notes__", []))
+    return _said("error", error, status, message, anchor, as_json)
+
+
+def warned(warning: GadflyWarning, as_json: bool) -> int:
+    """Say a warning as Python's own line for it, `Type: message`, then its
+    notes, or as JSON; give its exit status."""
+    anchor = type(warning).__name__.lower()
+    return _said("warning", warning, warning.exit, str(warning), anchor, as_json)
+
+
+def _said(key: str, said: BaseException, status: int, message: str, anchor: str, as_json: bool):
+    kind, notes = type(said).__name__, list(getattr(said, "__notes__", []))
     if as_json:
-        said = {"type": kind, "exit": status, "message": message, "notes": notes}
-        said["help"] = f"{TROUBLESHOOTING}#{anchor}"
-        print(json.dumps({"error": said}, indent=2), file=sys.stderr)
+        body = {"type": kind, "exit": status, "message": message, "notes": notes}
+        body["help"] = f"{TROUBLESHOOTING}#{anchor}"
+        print(json.dumps({key: body}, indent=2), file=sys.stderr)
     else:
         print(f"{kind}: {message}", *notes, sep="\n", file=sys.stderr)
     return status

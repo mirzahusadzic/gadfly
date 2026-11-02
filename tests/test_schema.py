@@ -83,11 +83,16 @@ def test_check_frame_says_ok_or_where_the_frame_is_wrong(tmp_path, capsys):
     raw["interventions"]["sham"] = {"draws": 0}
     path = tmp_path / "frame.json"
     path.write_text(json.dumps(raw))
-    assert main(["check-frame", str(path), "--json"]) == 1
+    assert main(["check-frame", str(path), "--json"]) == 4  # FrameError's status
     result = json.loads(capsys.readouterr().out)
     assert result["ok"] is False and result["checked"] == "schema and parser"
     assert [p["at"] for p in result["problems"]] == ["/interventions/sham", "/"]
     assert result["problems"][1]["problem"] == "the body has no span 'r9'"
+    # in words, each problem is a FrameError, gathered rather than raised at the first
+    assert main(["check-frame", str(path)]) == 4
+    told = capsys.readouterr()
+    assert told.out == "" and told.err.splitlines()[-1] == "FrameError: the body has no span 'r9'"
+    assert told.err.startswith("FrameError: ") and " at /interventions/sham" in told.err
 
 
 def _drift(change):

@@ -9,6 +9,13 @@ that says what went wrong, and notes that say what to do (PEP 678).
 
 A file the command line cannot read or write is Python's own error
 (PEP 3151), exit 7. Each class is a ValueError, as every refusal was.
+
+What a run did not do as asked, though it went on and kept its records, is
+a warning (PEP 230), raised with `warnings.warn`, which a caller may make an
+error with Python's own filters (`-W error::midwife.errors.OpeningWarning`):
+
+    OpeningWarning  1  calls came back with no answer (1 when every one did)
+    StoppedWarning  3  the run stopped before its plan's end
 """
 
 from __future__ import annotations
@@ -68,3 +75,23 @@ class BatteryError(GadflyError):
     cannot reach what it needs."""
 
     exit = 6
+
+
+class GadflyWarning(UserWarning):
+    """What a run did not do as asked, though it went on and kept its
+    records."""
+
+    exit = 0
+
+
+class OpeningWarning(GadflyWarning):
+    """Calls came back with no answer, as openings; exit 1 when every call did,
+    as then nothing was read."""
+
+    exit = 1
+
+
+class StoppedWarning(GadflyWarning):
+    """The run stopped before its plan's end, so its records are partial."""
+
+    exit = 3
