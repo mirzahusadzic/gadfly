@@ -844,3 +844,17 @@ def test_a_battery_of_your_own_raising_gadflys_error_is_quoted(
     lines = capsys.readouterr().err.splitlines()
     assert lines[1] == "it said 'no key: set it\\nforged line'", lines
     assert not any(line.startswith("forged") for line in lines)
+
+
+@pytest.mark.parametrize("text", ["{not json", b"\xff\xfe"])
+def test_check_frame_refuses_a_frame_that_is_not_json_in_its_one_shape(tmp_path, capsys, text):
+    # a frame that is not text or not JSON is one problem at /, as any other
+    frame = tmp_path / "frame.json"
+    frame.write_bytes(text.encode() if isinstance(text, str) else text)
+    assert main(["check-frame", str(frame), "--json"]) == 4
+    error = json.loads(capsys.readouterr().err)["error"]
+    assert error["type"] == "FrameError" and error["checked"] == "JSON"
+    assert [p["at"] for p in error["problems"]] == ["/"]
+    assert error["problems"][0]["problem"] == error["message"]
+    assert main(["check-frame", str(frame)]) == 4
+    assert capsys.readouterr().err.startswith(f"FrameError: {error['message']}\n")

@@ -499,29 +499,35 @@ def command_report(args) -> int:
 def command_check_frame(args) -> int:
     """`gadfly check-frame`: the frame's shape against the schema (when
     jsonschema is installed), then the parser's authoritative refusal."""
-    raw = load_json(args.frame, read_text(args.frame, FrameError), FrameError)
-    problems = []
     try:
-        from jsonschema import Draft202012Validator
-    except ImportError:
-        checked = "parser"
-    else:
-        checked = "schema and parser"
-        try:  # sorted by where and what, never by the whole instance printed
-            found = sorted(
-                Draft202012Validator(schema()).iter_errors(raw),
-                key=lambda error: ([str(part) for part in error.absolute_path], error.message),
-            )
-        except RecursionError:  # deeper than the schema's checker reads: the parser says so
-            found = []
-        for error in found:
-            where = "/" + "/".join(str(part) for part in error.absolute_path)
-            problems.append({"at": where, "problem": error.message, "notes": []})
-    try:
-        frame = situate(raw)
-    except FrameError as error:
+        raw = load_json(args.frame, read_text(args.frame, FrameError), FrameError)
+    except FrameError as error:  # not text or not JSON: one problem, and nothing more to check
         notes = list(getattr(error, "__notes__", []))
-        frame, problems = None, [*problems, {"at": "/", "problem": str(error), "notes": notes}]
+        raw, checked, problems = None, "JSON", [{"at": "/", "problem": str(error), "notes": notes}]
+    else:
+        checked, problems = "parser", []
+    if raw is not None:
+        try:
+            from jsonschema import Draft202012Validator
+        except ImportError:
+            pass
+        else:
+            checked = "schema and parser"
+            try:  # sorted by where and what, never by the whole instance printed
+                found = sorted(
+                    Draft202012Validator(schema()).iter_errors(raw),
+                    key=lambda error: ([str(part) for part in error.absolute_path], error.message),
+                )
+            except RecursionError:  # deeper than the schema's checker reads: the parser says so
+                found = []
+            for error in found:
+                where = "/" + "/".join(str(part) for part in error.absolute_path)
+                problems.append({"at": where, "problem": error.message, "notes": []})
+        try:
+            frame = situate(raw)
+        except FrameError as error:
+            notes = list(getattr(error, "__notes__", []))
+            frame, problems = None, [*problems, {"at": "/", "problem": str(error), "notes": notes}]
     if problems and args.json:  # one FrameError, as every refusal is, listing them all
         said = {"type": "FrameError", "exit": FrameError.exit, "message": problems[0]["problem"]}
         said |= {"notes": problems[0]["notes"], "help": f"{TROUBLESHOOTING}#frameerror"}
