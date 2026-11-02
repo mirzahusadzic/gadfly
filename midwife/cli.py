@@ -49,7 +49,7 @@ docs: https://mirzahusadzic.github.io/gadfly/command-line
 
 def load_frame(path: str):
     """The frame in a JSON file, checked and hashed."""
-    return situate(json.loads(Path(path).read_text(encoding="utf-8")))
+    return situate(load_json(path, read_text(path)))
 
 
 def load_battery(spec: str):
@@ -80,10 +80,21 @@ def read_text(path: str) -> str:
     return sys.stdin.read()
 
 
+def load_json(path: str, text: str, line: int = 1) -> Any:
+    """`text` as JSON, or a refusal that names its file and where it broke;
+    `line` is where `text` starts in the file."""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as error:
+        where = f"line {line + error.lineno - 1}, column {error.colno}"
+        name = "standard input" if path == "-" else path
+        raise ValueError(f"{name} is not JSON at {where}: {error.msg}") from None
+
+
 def load_records(path: str) -> list[dict[str, Any]]:
     """The records kept in a JSON Lines file, or on standard input for `-`."""
     lines = read_text(path).splitlines()
-    return [json.loads(line) for line in lines if line.strip()]
+    return [load_json(path, text, n) for n, text in enumerate(lines, 1) if text.strip()]
 
 
 def render_report(frame, records: list[dict[str, Any]]) -> str:
@@ -333,7 +344,7 @@ def command_report(args) -> int:
 def command_check_frame(args) -> int:
     """`gadfly check-frame`: the frame's shape against the schema (when
     jsonschema is installed), then the parser's authoritative refusal."""
-    raw = json.loads(Path(args.frame).read_text(encoding="utf-8"))
+    raw = load_json(args.frame, Path(args.frame).read_text(encoding="utf-8"))
     problems = []
     try:
         from jsonschema import Draft202012Validator
@@ -363,7 +374,7 @@ def command_check_frame(args) -> int:
 
 def command_portfolio(args) -> int:
     """`gadfly portfolio`: several reports counted side by side."""
-    documents = [json.loads(Path(path).read_text(encoding="utf-8")) for path in args.reports]
+    documents = [load_json(path, Path(path).read_text(encoding="utf-8")) for path in args.reports]
     summary = summarize([entry_from(document) for document in documents])
     if args.json:
         print(json.dumps(summary, indent=2))

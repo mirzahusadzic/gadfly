@@ -152,6 +152,24 @@ def test_dash_at_a_terminal_is_refused_not_waited_on(capsys, monkeypatch):
     assert "standard input, which is a terminal" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize(
+    ("command", "text", "said"),
+    [
+        ("plan", '{"name":\n', "is not JSON at line 2, column 1: Expecting value"),
+        ("check-frame", "[1,", "is not JSON at line 1, column 4: Expecting value"),
+        ("report", "{}\nnot json\n", "is not JSON at line 2, column 1: Expecting value"),
+        ("portfolio", "{", "is not JSON at line 1, column 2: Expecting property name"),
+    ],
+)
+def test_a_file_that_is_not_json_is_named_with_its_line(tmp_path, capsys, command, text, said):
+    name = {"report": "records.jsonl", "portfolio": "report.json"}.get(command, "frame.json")
+    path = tmp_path / name
+    path.write_text(text)
+    argv = [command, REFUND, str(path)] if command == "report" else [command, str(path)]
+    assert main(argv) == 2
+    assert capsys.readouterr().err.startswith(f"gadfly: {path} {said}")
+
+
 def test_out_dash_and_json_are_refused_together(capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, "--out", "-", "--json"]) == 2

@@ -1205,6 +1205,15 @@ A file's text, or standard input's for `-`.
 read_text(path)
 ```
 
+#### load_json
+
+`text` as JSON, or a refusal that names its file and where it broke;
+`line` is where `text` starts in the file.
+
+```python
+load_json(path, text, line=1)
+```
+
 #### load_records
 
 The records kept in a JSON Lines file, or on standard input for `-`.
