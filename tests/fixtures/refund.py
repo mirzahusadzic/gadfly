@@ -120,3 +120,17 @@ class InterruptingAtOnce(RuleReader):
         if self.calls == 3:
             raise KeyboardInterrupt
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class Exiting(RuleReader):
+    """The rule reader that calls sys.exit(0) on its second call, as a battery
+    should never do."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def observe(self, frame, prompt, max_output_tokens):
+        self.calls += 1
+        if self.calls == 2:
+            raise SystemExit(0)
+        return super().observe(frame, prompt, max_output_tokens)

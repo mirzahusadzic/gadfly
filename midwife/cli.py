@@ -603,7 +603,11 @@ def main(argv: list[str] | None = None) -> int:
         named = [vars(args).get(key) for key in ("frame", "records", "kept")]
         if [*named, *vars(args).get("reports", [])].count("-") > 1:
             raise UsageError("standard input is read once", "name - for one file at most")
-        return args.func(args)
+        try:
+            return args.func(args)
+        except SystemExit:  # no command of Gadfly's exits so: a battery's sys.exit, a bug
+            traceback.print_exc()
+            return errors.BUG
     except (GadflyError, OSError, KeyboardInterrupt) as error:
         status = refused(error, as_json)
         if getattr(error, "running", 0):  # a call hung in its thread would hold the exit

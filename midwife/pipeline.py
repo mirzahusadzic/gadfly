@@ -322,10 +322,15 @@ def run(
             if not running:
                 break
             finished, _ = wait(running, return_when=FIRST_COMPLETED)
+            raised = None  # what a worker raised past _observe, once the rest are kept
             for seq, call in sorted((running.pop(call), call) for call in finished):
-                call.result()  # what a worker raised past _observe, raised here
+                if call.exception() is not None:
+                    raised = raised or call.exception()
+                    continue
                 stopped = keep_call(seq) or stopped
-    except KeyboardInterrupt as interrupt:
+            if raised is not None:
+                raise raised
+    except (KeyboardInterrupt, SystemExit) as interrupt:
         # raised here, not held: every call made is spent, so keep each
         # one that ended; after a second Ctrl-C, wait for none still out,
         # as a call hung in its thread cannot be stopped

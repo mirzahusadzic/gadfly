@@ -720,3 +720,10 @@ def test_a_battery_that_lacks_a_module_is_a_battery_error(
         and lines[1] == "it said \"No module named 'no_such_module_anywhere'\""
     )
     sys.modules.pop("refusing_import", None)
+
+
+def test_a_battery_that_exits_is_a_bug_not_a_success(tmp_path, capsys):
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Exiting", "--calls", "8"]
+    assert main([*argv, "--out", str(out)]) == 70
+    assert "SystemExit" in capsys.readouterr().err

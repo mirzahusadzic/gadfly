@@ -374,3 +374,34 @@ def test_a_stable_split_in_a_trial_cut_short_is_said_first(raw):
     assert [r.observation for r in cut.records] == ["decline", "grant"]
     [finding] = judge(frame, cut.records)
     assert finding.evidence[0] == "the baseline and repeat sessions split (decline, grant)"
+
+
+def test_a_call_that_ends_after_another_raises_is_still_kept(raw):
+    # every call made is spent: one that ends after its neighbour raised is kept
+    import threading
+    import time
+
+    gate = threading.Barrier(2)
+
+    class Raising(Reader):
+        concurrent = True
+
+        def observe(self, frame, prompt, max_output_tokens):
+            first = threading.current_thread().name.endswith("_0")
+            gate.wait(timeout=5)
+            if not first:
+                raise SystemExit(3)
+            time.sleep(0.1)  # ends after its neighbour raised
+            return Observation(label="decline", usage={})
+
+    frame = situate(raw)
+    kept = []
+    with pytest.raises(SystemExit):
+        run(
+            frame,
+            Raising(None),
+            Budget(calls=calls_needed(frame)),
+            parallel=2,
+            on_record=kept.append,
+        )
+    assert len(kept) == 1
