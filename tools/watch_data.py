@@ -36,7 +36,18 @@ FRAMES = [
     "10c2-incident-both",
     "11-eu-clause",
     "12-payroll-access",
+    "19-router-waist",
 ]
+# The reader each example names: Gemma through eGemma, unless its battery asks
+# for another model by name.
+NAMED = {"openrouter/meta/muse-spark-1.3-contributor": "Muse"}
+# The model each example's records say served it, as the view says who read it
+MODELS = {
+    "google/gemma-4-26B-A4B-it-qat-q4_0-gguf": "Gemma 4 26B-A4B, instruction-tuned, on this "
+    "machine through eGemma",
+    "meta/muse-spark-1.3-contributor": "Muse Spark 1.3 Contributor, Meta's model, through "
+    "OpenRouter",
+}
 
 
 def watched(stem: str) -> dict:
@@ -45,9 +56,10 @@ def watched(stem: str) -> dict:
     trials = plan(frame)
     prompts = {(x["id"], t.id): prompt(frame, t, x) for x in frame.inputs for t in trials}
     digests = {key: digest(text) for key, text in prompts.items()}  # each prompt's, once
-    runs = []
+    runs, served = [], set()
     for kept in runs_of(path):
         records = load_records(str(kept))
+        served |= {r["served"].partition("@")[0] for r in records}
         for r in records:
             if digests[r["input"], r["trial"]] != r["prompt"]:
                 raise SystemExit(f"{kept}: {r['input']}/{r['trial']} was asked another prompt")
@@ -68,7 +80,13 @@ def watched(stem: str) -> dict:
                 "overall": overall(findings).category,
             }
         )
-    return {**watched_frame(frame, trials, prompts, f"examples/{stem}.json"), "runs": runs}
+    reader = NAMED.get(frame.battery.get("model", ""), "Gemma")
+    if len(served) > 1 or not served <= MODELS.keys():
+        raise SystemExit(f"{stem}: its runs name {sorted(served)}, not one model the view knows")
+    data = {**watched_frame(frame, trials, prompts, f"examples/{stem}.json"), "reader": reader}
+    for model in served:  # none without runs
+        data["readBy"] = f"{MODELS[model]} ({model})"
+    return {**data, "runs": runs}
 
 
 def watched_frame(frame, trials, prompts, file: str) -> dict:

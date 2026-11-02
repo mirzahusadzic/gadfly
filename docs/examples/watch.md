@@ -7,12 +7,13 @@ at a time: on the left, exactly what the reader read in that trial; on the
 right, what it answered, what that shows, and the checks filling in until the
 verdict. Pick an example, press play, or click any trial.
 
-<div class="gadfly-watch" data-frames="upgrade,16-restore-inversion,17-clock-asked,18c-restore-cited,07-sql-rule,09-sync-sms,11-eu-clause,12-payroll-access,10c2-incident-both" data-group="payments-demo"></div>
+<div class="gadfly-watch" data-frames="upgrade,16-restore-inversion,17-clock-asked,18c-restore-cited,07-sql-rule,09-sync-sms,11-eu-clause,12-payroll-access,10c2-incident-both,19-router-waist" data-group="payments-demo"></div>
 
 The view plays the runs kept in `examples/runs/` and `examples/payments-demo/`,
 written for it by `tools/watch_data.py`, and every prompt it shows is checked
 against the digest its records carry. On GitHub the view does not run;
-`examples/read.py` and `gadfly report` read the same runs back as text.
+`examples/read.py` and `gadfly report` read the same runs back as text. Each
+example names the model that read it, as its records report.
 
 ---
 

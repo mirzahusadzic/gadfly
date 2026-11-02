@@ -49,10 +49,18 @@
     unresolved: "Gadfly cannot tell yet.",
     "outside scope": "The owner has said this is not theirs to promise.",
   };
+  // carried while the link it rests through was never cut: a frame that names
+  // the category with that check open says so
+  const UNLINKED = "The answer really rests on that line. The link that ties it to this case was not tested.";
 
   // Names in the frames' prose (calls, files, snake_case names) are set as code.
   const CODE = /[\w.]+\([^()]*\)|[\w./-]+\.(?:py|txt|md|json|toml|ya?ml)\b|\b(?:[a-z][a-z0-9]*\.)*[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g;
   const cache = new Map();
+
+  function said(finding) {
+    const open = finding.obligations.some((o) => o.startsWith("no hidden fallback"));
+    return finding.category === "carried" && open ? UNLINKED : SAY[finding.category] || "";
+  }
 
   const el = (tag, cls, content) => {
     const node = document.createElement(tag);
@@ -102,7 +110,7 @@
   // says so, with the words its answers read as.
   function key(d, slot, run) {
     const p = el("p", "w-key");
-    const reader = run.reader || "Gemma";
+    const reader = run.reader || d.reader || "Gemma";
     if (run.instruction === null) {
       p.append(`${reader} is sent the statements and the question, not an instruction; its answer reads as `);
       d.labels.forEach((label, i, all) => p.append(i ? (i === all.length - 1 ? " or " : ", ") : "", word(label, slot)));
@@ -491,7 +499,7 @@
 
       const trial = atVerdict ? null : d.trials[step];
       drawAsk(d, slot, run);
-      drawDoc(trial, d, run.reader || "Gemma");
+      drawDoc(trial, d, run.reader || d.reader || "Gemma");
       drawSide(trial, d, run, finding, slot, first, played);
       follow();
     }
@@ -506,6 +514,7 @@
         el("p", "w-question", rich(question)),
         ...(role ? [el("p", "w-role", role)] : []),
         key(d, slot, run),
+        ...(d.readBy ? [el("p", "w-key", `Read by ${d.readBy}.`)] : []),
       );
     }
 
@@ -576,7 +585,7 @@
     function drawSide(trial, d, run, finding, slot, first, played) {
       const parts = [];
       if (trial) {
-        const reader = run.reader || "Gemma";
+        const reader = run.reader || d.reader || "Gemma";
         const [, does, asks] = TRIALS[trial.kind] || ["", trial.kind, ""];
         const head = el("div", "w-head");
         head.append(
@@ -607,8 +616,8 @@
 
       if (!trial) {
         const v = el("div", "w-verdict");
-        v.append(el("p", "w-caption", `The verdict for ${state.input}`), el("p", "w-category", finding.category), el("p", "w-say", SAY[finding.category] || ""));
-        const reason = why(finding.category, list, run.reader || "Gemma");
+        v.append(el("p", "w-caption", `The verdict for ${state.input}`), el("p", "w-category", finding.category), el("p", "w-say", said(finding)));
+        const reason = why(finding.category, list, run.reader || d.reader || "Gemma");
         if (reason) v.append(el("p", "w-reason", reason));
         const words = el("details", "w-words");
         words.append(el("summary", null, "In Gadfly's words"));
