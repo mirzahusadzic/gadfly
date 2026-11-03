@@ -227,7 +227,7 @@
 .w-dolls .d-row { display: flex; align-items: flex-end; justify-content: center; }
 .w-dolls .d-doll {
   all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
-  cursor: pointer; margin: 0 calc(var(--d-ratio) * min(1.1rem, 2vw)); opacity: 0.62;
+  cursor: pointer; margin: 0 calc(var(--d-ratio) * min(1.1rem, 2vw)); opacity: 0.78;
   transition: opacity 0.3s;
 }
 .w-dolls .d-doll:focus-visible { outline: 2px solid var(--w-accent); outline-offset: 4px; border-radius: 6px; }
