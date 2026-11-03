@@ -354,6 +354,50 @@ trial lifts the paint of the lines it cuts.
 
 ---
 
+### Run it live
+
+`examples/dolls.py` reads the kept runs back and calls no model. Live, each
+frame goes to Muse through unified-model-router, as its runs did, with the
+router running on this machine
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/22-kiran-paper.json
+Kiran (6035528933c8b7f1ff189a8dd14752b6ecaa552cea25862ce5c00b2c1f82f29a): 21 calls
+  baseline     body 5ce1e8a38590  nothing
+  repeat       body 5ce1e8a38590  nothing, asked again
+  ablation     body 9566e6e966ab  cuts paper
+  sham-1       body 205ebfeb1007  cuts trim
+  sham-2       body 4d28964453bf  cuts dots
+  presentation body 471fba3c69f8  renames paper to note
+  control      body 53b85b467c22  cuts body, scarf, face, hair, eyes, cheeks, lips, flower, trim, motif, leaves, glints, dots, lashes, brows, fine, motif2, flowers, nose, hem, paper
+```
+
+These commands ask Kiran with the paper once, fresh, beside the kept runs and
+never into them, and read the verdict; Muse thinks before it answers, so each
+call may spend up to 8,000 output tokens:
+
+```bash
+uv run gadfly run examples/22-kiran-paper.json \
+  --battery midwife.batteries.unified:Unified \
+  --calls 21 --output-tokens 8000 --out kiran.jsonl
+uv run gadfly report examples/22-kiran-paper.json kiran.jsonl
+```
+
+`examples/climb.py` asks a frame until firm, as the kept runs were made: one
+run at a time, up to five, 105 calls at most, each run kept beside the
+frame's. Kept runs count as runs made, so the three frames here are asked
+nothing more; a copy under a name of its own starts fresh:
+
+```bash
+cp examples/22-kiran-paper.json examples/my-kiran.json
+uv run python examples/climb.py examples/my-kiran.json \
+  --firm midwife.batteries.unified:Unified
+```
+
+---
+
 ### Try next
 
 1. Draw another set from `examples/matryoshka.py`'s pools, with other names
