@@ -192,7 +192,7 @@ def render_report(frame, records: list[dict[str, Any]]) -> str:
     combined = overall(findings)
     unasked = _settled_calls(frame, records)
     rows = [
-        f"frame: {frame.name} ({frame.hash})",
+        f"frame: {plain(frame.name)} ({frame.hash})",
         f"records: {len(records)} of {calls_needed(frame)} planned calls"
         + (f"; {unasked} missing, none able to change a level" if unasked else ""),
         f"overall: {combined.category}",
@@ -271,7 +271,7 @@ def command_plan(args) -> int:
     if args.json:
         print(json.dumps(body, indent=2))
     else:
-        print(f"{body['frame']} ({body['hash']}): {body['calls']} calls")
+        print(f"{plain(body['frame'])} ({body['hash']}): {body['calls']} calls")
         if power is not None:
             print(f"power: {_powered(power)}")
         for trial in trials:
@@ -653,7 +653,7 @@ def command_check_frame(args) -> int:
         result.update(frame=frame.name, hash=frame.hash, calls=calls_needed(frame))
         print(json.dumps(result, indent=2))
     else:
-        print(f"ok ({checked}): {frame.name} ({frame.hash}), {calls_needed(frame)} calls")
+        print(f"ok ({checked}): {plain(frame.name)} ({frame.hash}), {calls_needed(frame)} calls")
     return FrameError.exit if problems else 0
 
 

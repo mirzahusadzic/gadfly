@@ -300,6 +300,8 @@ is_plain(value)
 
 A value as a line prints it: as it is when it is one plain name, else
 quoted as Python's repr, so it can neither end a label nor start a line.
+A name that ends in a colon is quoted too: printed before a space, its
+colon would end a label.
 
 ```python
 plain(value)

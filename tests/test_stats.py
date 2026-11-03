@@ -278,3 +278,15 @@ def test_stats_reads_standard_input_once(raw, monkeypatch, capsys):
         monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(raw)))
         assert main([*argv, "--resamples", "0"]) == 2
         assert "UsageError: standard input is read once" in capsys.readouterr().err
+
+
+def test_a_name_ending_in_a_colon_prints_quoted(raw, tmp_path, capsys):
+    raw["name"] = "weird:"
+    frame, runs = kept(raw, RuleReader(), runs=1)
+    path, records = write(tmp_path, frame, runs)
+    for argv in (["stats", path, *records, "--resamples", "0"], ["report", path, records[0]],
+                 ["plan", path, "--agreement", "0.9"]):  # fmt: skip
+        assert main(argv) in (0, 1)
+        out = capsys.readouterr().out.splitlines()
+        assert [line for line in out if line.count(": ") > 1] == [], argv
+        assert f"'weird:' ({frame.hash})" in out[0]

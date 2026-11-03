@@ -53,8 +53,10 @@ def is_plain(value: str) -> bool:
 
 def plain(value: str) -> str:
     """A value as a line prints it: as it is when it is one plain name, else
-    quoted as Python's repr, so it can neither end a label nor start a line."""
-    return value if is_plain(value) else repr(value)
+    quoted as Python's repr, so it can neither end a label nor start a line.
+    A name that ends in a colon is quoted too: printed before a space, its
+    colon would end a label."""
+    return value if is_plain(value) and not value.endswith(":") else repr(value)
 
 
 def quoted(values: Iterable[str]) -> str:
