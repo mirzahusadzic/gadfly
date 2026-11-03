@@ -499,6 +499,40 @@
   }
 }
 
+/* A code block over twelve lines shows the first twelve, and a button under
+ * them the rest (markdown.mjs, fold.js). Its label says what it will do, and
+ * its chevron points that way; the cut above it is dashed while folded. */
+.vp-doc div[class*='language-']:has(> button.fold[aria-expanded='false']) .fold-rest { display: none; }
+.vp-doc div[class*='language-'] > pre:has(+ button.fold) { padding-bottom: 12px; }
+.vp-doc div[class*='language-'] > button.fold {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 24px 10px;
+  border-top: 1px dashed var(--vp-c-divider);
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--vp-c-text-2);
+}
+.vp-doc div[class*='language-'] > button.fold[aria-expanded='true'] { border-top-style: solid; }
+.vp-doc div[class*='language-'] > button.fold:hover { color: var(--vp-c-brand-1); }
+.vp-doc div[class*='language-'] > button.fold:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: -2px; }
+.vp-doc div[class*='language-'] > button.fold::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-top: -4px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+.vp-doc div[class*='language-'] > button.fold[aria-expanded='true']::before { margin-top: 4px; transform: rotate(-135deg); }
+@media print {
+  .vp-doc .fold-rest { display: inline !important; }
+  .vp-doc div[class*='language-'] > button.fold { display: none; }
+}
+
 /* Tables: rules across, none down, the header row in the caption voice. */
 .vp-doc table,
 .vp-doc :is(th, td) { font-size: 15px; line-height: 24px; }

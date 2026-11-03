@@ -2,6 +2,7 @@
 quote, copy and document is what the code prints, copies and declares."""
 
 import ast
+import functools
 import importlib
 import inspect
 import itertools
@@ -285,6 +286,41 @@ def test_every_brushstroke_on_a_doll_is_a_line_it_says():
     page = (ROOT / "docs/examples/dolls.md").read_text(encoding="utf-8")
     [marker] = re.findall(r"^<!-- watch dolls ([\w -]+) -->$", page, re.M)
     assert [s for s in dolls["order"] if s not in ("climb", "gate")] == marker.split()
+
+
+@functools.cache
+def _harness(name):
+    """What a Node harness in tests/ printed, read once a run."""
+    done = subprocess.run(
+        ["node", str(ROOT / f"tests/{name}.mjs")], capture_output=True, text=True, check=True
+    )
+    return json.loads(done.stdout)
+
+
+def test_a_long_code_block_shows_its_first_twelve_lines():
+    # the site's renderer (tests/fold_harness.mjs): over twelve lines, the
+    # rest folds under a button that names the count; the copy keeps every
+    # line; twelve or fewer, and a chart, are left whole
+    seen = _harness("fold_harness")
+    assert seen["twelve"] == {
+        "shown": 12,
+        "hidden": 0,
+        "restOpensOnBreak": None,
+        "button": None,
+        "whole": True,
+    }
+    for n in (13, 45):
+        block = seen["thirteen" if n == 13 else "fortyFive"]
+        assert block == {
+            "shown": 12,
+            "hidden": n - 12,
+            "restOpensOnBreak": True,
+            "button": {"label": f"Show all {n} lines", "other": "Show the first 12 lines"},
+            "whole": True,
+        }
+    assert seen["mermaid"] is False
+    assert seen["opened"] == ["true", "Show the first 12 lines", False]
+    assert seen["closed"] == ["false", "Show all 45 lines", True]  # its button kept in sight
 
 
 def test_the_doll_stage_keeps_to_what_the_reader_picked():

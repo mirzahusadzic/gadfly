@@ -44,7 +44,7 @@ export function watchMarkers(md) {
       const unknown = stems.filter((stem) => !index[stem]);
       if (unknown.length) throw new Error(`${state.env.relativePath} plays no frame named ${unknown.join(', ')}`);
       const names = stems.map((stem) => index[stem].name);
-      // `watch dolls` stands the doll stage over the frames, which it plays in order
+      // `watch dolls` stands the doll stage beside the question, and plays the frames in order
       const dolls = marker[1] ? ' data-dolls="dolls"' : '';
       token.content = `<div class="gadfly-watch"${dolls} data-frames="${stems.join(',')}" data-names="${names.join(',')}"></div>\n`;
     }
@@ -125,3 +125,34 @@ export const hangingLines = () => ({
     node.properties.style = `--indent:${indent};--hang:${column || indent}`;
   },
 });
+
+/** A code block longer than FOLD lines shows its first FOLD, and a button under
+ * them shows the rest (theme/fold.js); GitHub shows it whole. */
+export const FOLD = 12;
+
+/** The lines after the first FOLD, together with the line break before each,
+ * in a span of their own, so that hiding it leaves no empty line. */
+export const foldedLines = () => ({
+  name: 'gadfly:folded-lines',
+  code(node) {
+    const lines = node.children.filter((child) => child.type === 'element');
+    if (lines.length <= FOLD) return;
+    const rest = node.children.splice(node.children.indexOf(lines[FOLD - 1]) + 1);
+    node.children.push({ type: 'element', tagName: 'span', properties: { class: 'fold-rest' }, children: rest });
+  },
+});
+
+/** The button that folds and unfolds a long block, last in its box, after the
+ * copy button's code; its other label waits in data-other. */
+export function foldedFences(md) {
+  const fence = md.renderer.rules.fence;
+  md.renderer.rules.fence = (tokens, index, options, env, self) => {
+    const html = fence(tokens, index, options, env, self);
+    if (!html.includes('<span class="fold-rest">')) return html;
+    const lines = tokens[index].content.replace(/\n$/, '').split('\n').length;
+    const button =
+      `<button type="button" class="fold" aria-expanded="false" data-other="Show the first ${FOLD} lines">` +
+      `Show all ${lines} lines</button>`;
+    return html.replace(/<\/div>$/, `${button}</div>`);
+  };
+}

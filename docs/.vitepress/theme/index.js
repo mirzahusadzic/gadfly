@@ -1,8 +1,8 @@
 // VitePress's default theme in Gadfly's faces and colours (custom.css), with
 // the gadfly before the site's name (GadflyMark.vue), the colour menu
 // (ThemeMenu.vue), the charts (MermaidDiagram.vue), the foot of every page
-// (SiteFooter.vue), the watch view and the troubleshooting page's JSON view
-// (errors.js).
+// (SiteFooter.vue), the watch view, the troubleshooting page's JSON view
+// (errors.js) and the fold of a long code block (fold.js).
 import { useRoute, withBase } from 'vitepress';
 import DefaultTheme from 'vitepress/theme-without-fonts';
 import { h, nextTick, onMounted, watch } from 'vue';
@@ -11,6 +11,7 @@ import MermaidDiagram from './MermaidDiagram.vue';
 import SiteFooter from './SiteFooter.vue';
 import ThemeMenu from './ThemeMenu.vue';
 import { showErrors } from './errors.js';
+import { foldButtons } from './fold.js';
 import './custom.css';
 import './watch.css';
 
@@ -47,5 +48,7 @@ export default {
     const errors = () => nextTick(() => showErrors(document));
     onMounted(errors);
     watch(() => route.path, errors);
+    // A long code block's button, on whichever page it is.
+    onMounted(() => foldButtons(document));
   },
 };

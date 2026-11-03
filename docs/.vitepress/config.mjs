@@ -6,7 +6,16 @@ import { copyFileSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createCssVariablesTheme } from 'shiki';
 import { defineConfig } from 'vitepress';
-import { frameLinks, githubMath, githubSlug, hangingLines, mermaidFences, watchMarkers } from './markdown.mjs';
+import {
+  foldedFences,
+  foldedLines,
+  frameLinks,
+  githubMath,
+  githubSlug,
+  hangingLines,
+  mermaidFences,
+  watchMarkers,
+} from './markdown.mjs';
 import { writeNotices } from './notices.mjs';
 import { HEAD } from './theme/theme.js';
 
@@ -133,10 +142,11 @@ export default defineConfig({
     // here, where the outline's is a range.
     headers: { level: [2, 3, 4] },
     anchor: { slugify: githubSlug },
-    codeTransformers: [hangingLines()],
+    codeTransformers: [hangingLines(), foldedLines()],
     config(md) {
       md.use(githubMath);
       md.use(mermaidFences);
+      md.use(foldedFences);
       md.use(frameLinks);
       md.use(watchMarkers);
     },
