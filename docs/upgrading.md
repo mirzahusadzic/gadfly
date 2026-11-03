@@ -9,10 +9,9 @@ does not exist; `--refresh-package midwife` makes it look again.
 
 ---
 
-### To 0.9.0, not yet released
+### To 0.9.0
 
-On `main`, for the next release. No verdict changes, and these five things a
-caller of 0.8.0 meets do:
+No verdict changes, and these five things a caller of 0.8.0 meets do:
 
 | In 0.8.0 | In 0.9.0 | What to do |
 | --- | --- | --- |
