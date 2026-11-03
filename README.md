@@ -71,8 +71,6 @@ gadfly --version
 uvx --from midwife gadfly --help
 ```
 
-Coming from 0.6.0, [Upgrading to
-0.7.0](https://mirzahusadzic.github.io/gadfly/upgrading) lists what changed.
 To use it from Python, add it to your project with `uv add midwife` or
 `pip install midwife`, then `import midwife`. The examples read records kept
 in the repository, so to run them, clone it:
@@ -261,4 +259,4 @@ to `docs/.vitepress/dist`, failing on a dead link.
 
 ---
 
-[Troubleshooting](https://mirzahusadzic.github.io/gadfly/troubleshooting) · [Fonts and libraries](https://mirzahusadzic.github.io/gadfly/notices) · [Apache-2.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSE) · [The essay under CC BY 4.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSES/CC-BY-4.0.txt)
+[Upgrading to 0.7.0](https://mirzahusadzic.github.io/gadfly/upgrading) · [Troubleshooting](https://mirzahusadzic.github.io/gadfly/troubleshooting) · [Fonts and libraries](https://mirzahusadzic.github.io/gadfly/notices) · [Apache-2.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSE) · [The essay under CC BY 4.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSES/CC-BY-4.0.txt)
