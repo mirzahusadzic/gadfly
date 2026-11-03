@@ -11,7 +11,7 @@ does not exist; `--refresh-package midwife` makes it look again.
 
 ### To 0.9.0, not yet released
 
-On `main`, for the next release. No verdict changes, and these four things a
+On `main`, for the next release. No verdict changes, and these five things a
 caller of 0.8.0 meets do:
 
 | In 0.8.0 | In 0.9.0 | What to do |
@@ -20,6 +20,7 @@ caller of 0.8.0 meets do:
 | A router trickling its `GET /health` answer could hold the check past the battery's timeout | The answer is read whole within the timeout, or the run is refused as before, when the router cannot be asked | Nothing, with a router that answers in time |
 | A call pinned to one endpoint, whose answer named no provider, recorded the model alone in `served` | It records that endpoint's tag too, as 0.8.0 said | Nothing |
 | `report`, `plan` and `check-frame` printed a frame name ending in a colon bare | They print it quoted, as `stats` does | Nothing; the frame's hash is unchanged |
+| A mistyped required flag, such as `run --battry`, was refused as the flag missing | It is named, `unrecognized arguments --battry`, before any flag that is missing; the status is 2 as before | Nothing, unless a script read the old words |
 
 New, and opt-in: `gadfly stats` and `midwife.stats`, which say beside each
 verdict how firm it is over the kept runs; `gadfly plan --agreement`,
