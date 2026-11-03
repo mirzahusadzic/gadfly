@@ -907,9 +907,13 @@ What this battery promises, whatever the frame says:
   the loopback address named and nowhere else;
 - each call has a deadline (`timeout` seconds for the whole answer), the
   budget's cap on output tokens, and a cap on what it reads back;
-- each record names what served it: the model the response names and the
-  endpoint the router reports; `endpoints` pins the endpoints the router may
-  use, in order and without fallbacks, so one endpoint reads a quorum;
+- each record names what served it: the model the response names, and the
+  provider the router reports (`X-Codex-Router-Report: provider`, asked when
+  the router lists it), or, for one pinned endpoint, that endpoint's tag;
+  never a provider the router calls unknown;
+- `endpoints` pins the endpoints the router may use, in order and without
+  fallbacks, through the router's `X-Codex-Router-Endpoints`, so one endpoint
+  reads a quorum; the router must list endpoint pins at `GET /health`;
 - the router's token comes from the environment or the router's own env file
   and is never logged, returned or recorded.
 
@@ -931,6 +935,15 @@ policy, unless the frame names its model under trainsOnInputs.
 policy(frame)
 ```
 
+#### pinned
+
+The router's header that pins this frame's endpoints, in order and
+without fallbacks; none when the frame names none.
+
+```python
+pinned(frame)
+```
+
 #### capabilities
 
 What the router lists under `capabilities` at its health address,
@@ -942,8 +955,8 @@ capabilities(url, timeout)
 
 #### payload
 
-The request body. No `tools` key, ever; the data policy goes in a
-header (`policy`).
+The request body. No `tools` key, ever; the data policy and the
+endpoints go in the router's headers (`policy`, `pinned`).
 
 ```python
 payload(frame, text, max_output_tokens)
@@ -952,7 +965,9 @@ payload(frame, text, max_output_tokens)
 #### parse_stream
 
 The answer's text, its usage, an opening if the call did not complete,
-and the model the response names, from the router's server-sent events.
+and what served it, from the router's server-sent events: the model the
+response names, then the provider the router reports, or the tag of the
+one endpoint the call was pinned to, joined by " via ".
 A stream still coming at `deadline` (on `clock`) is cut there, and a
 connection that times out or fails mid-stream keeps what arrived.
 

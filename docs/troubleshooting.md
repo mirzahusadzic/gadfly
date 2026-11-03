@@ -98,6 +98,8 @@ reach what it needs, and no call was made.
 | `BatteryError: file '/Users/you/.egemma/key' is empty` | `the environment variable EGEMMA_API_KEY_FILE names it; write eGemma's key into it`. |
 | `BatteryError: the router takes no data policy` | `update the router, so that each call reaches only endpoints that keep no data`. The `unified` battery sends each call under the router's deny data policy, and the router's `GET /health` does not list it. |
 | `BatteryError: the router at 'http://127.0.0.1:18766/health' could not be asked what it takes` | `start the router, or install it`. The `unified` battery asks the router, before any call, whether it takes the deny data policy. |
+| `BatteryError: the router takes no endpoint pins` | `update the router, or leave battery.endpoints out`. The `unified` battery pins a frame's endpoints through the router's own header, and the router's `GET /health` does not list it. |
+| `BatteryError: battery.endpoints lists 1 to 16 endpoint tags` | `each a tag the router knows, with no comma or space around it`. |
 | `BatteryError: no router token` | `set the environment variable CODEX_ROUTER_TOKEN, or install the router`. The `unified` battery found no token in the variable or in the router's own settings file. |
 | `BatteryError: this frame asks for battery 'egemma', not 'unified'` | A frame names its battery in `battery.kind`, and another battery is another frame. Pass the one it names. |
 | `BatteryError: 'midwife.frame:parse' is not a battery` | `a battery has a name, check() and observe()`. The name after the colon is found, but it is not a battery class or object. |

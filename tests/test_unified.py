@@ -12,7 +12,7 @@ import pytest
 
 from midwife.batteries import unified
 from midwife.batteries.critic import pointed, read_label
-from midwife.batteries.unified import Unified, parse_stream, payload, policy
+from midwife.batteries.unified import Unified, parse_stream, payload, pinned, policy
 from midwife.errors import BatteryError
 from midwife.pipeline import situate
 from tests.fakes import Fake
@@ -20,6 +20,7 @@ from tests.fakes import Fake
 TOKEN = "ab" * 32
 LISTS = unified.capabilities  # the router's health, asked as the battery asks it
 DENY = {"x-codex-router-data-policy": "deny"}
+FULL = {"dataPolicies": ["deny"], "endpointPins": True, "reports": ["provider"]}
 
 
 def sse(*events):
@@ -44,8 +45,9 @@ def token(monkeypatch, tmp_path):
 
 @pytest.fixture(autouse=True)
 def listed(monkeypatch):
-    # a router that takes the deny data policy, unless a test asks its own
-    monkeypatch.setattr(unified, "capabilities", lambda url, timeout: {"dataPolicies": ["deny"]})
+    # a router that takes the deny data policy and endpoint pins, and reports
+    # what served each call, unless a test asks its own
+    monkeypatch.setattr(unified, "capabilities", lambda url, timeout: dict(FULL))
 
 
 @pytest.fixture
@@ -197,28 +199,74 @@ def test_deepseek_is_sent_with_deny_unless_the_frame_consents(raw, token):
         assert policy(situate(raw)) == {}
 
 
-def test_a_call_records_the_model_and_endpoint_that_served(raw, token, router):
+@pytest.mark.parametrize(
+    "reported, served",
+    [
+        ({"provider": "Anthropic"}, "deepseek/deepseek-v4.1-flash via Anthropic"),
+        (
+            {"provider": "unknown", "endpoint": "fireworks"},
+            "deepseek/deepseek-v4.1-flash via fireworks",
+        ),
+        ({"provider": "unknown"}, "deepseek/deepseek-v4.1-flash"),  # never a guess
+        ({}, "deepseek/deepseek-v4.1-flash"),
+    ],
+)
+def test_a_call_records_what_the_router_reports_served_it(raw, token, router, reported, served):
     body = sse(
         {"type": "response.output_text.delta", "delta": json.dumps({"label": "decline"})},
-        {"type": "response.completed", "response": {"model": "deepseek/deepseek-v4.1-flash"}},
+        {
+            "type": "response.completed",
+            "response": {"model": "deepseek/deepseek-v4.1-flash", **reported},
+        },
     )
-    fake = router((200, {"x-provider-name": "DeepInfra"}, body))
-    observation = Unified(fake.url).observe(situate(raw), "p", 16)
-    assert observation.served == "deepseek/deepseek-v4.1-flash via DeepInfra"
+    fake = router((200, {}, body))
+    battery = Unified(fake.url)
+    battery.check(situate(raw))
+    assert battery.observe(situate(raw), "p", 16).served == served
+    [(headers, _)] = fake.requests
+    assert headers["x-codex-router-report"] == "provider"
+
+
+def test_what_served_a_call_is_asked_only_of_a_router_that_reports_it(
+    raw, token, router, monkeypatch
+):
+    monkeypatch.setattr(unified, "capabilities", lambda url, timeout: {"dataPolicies": ["deny"]})
+    fake = router((200, {}, answer("decline")))
+    battery = Unified(fake.url)
+    battery.check(situate(raw))
+    battery.observe(situate(raw), "p", 16)
+    [(headers, _)] = fake.requests
+    assert "x-codex-router-report" not in headers
 
 
 def test_named_endpoints_are_pinned_without_fallbacks(raw, token):
     # a quorum read by one endpoint, not spread over whichever the router picks
-    raw["battery"].update(model="deepseek/deepseek-v4.1-flash-1017", endpoints=["deepinfra/fp8"])
+    raw["battery"].update(
+        model="deepseek/deepseek-v4.1-flash-1017", endpoints=["deepinfra/fp8", "fireworks"]
+    )
     Unified().check(situate(raw))
-    assert payload(situate(raw), "t", 8)["provider"] == {
-        "order": ["deepinfra/fp8"],
-        "allow_fallbacks": False,
-    }  # the router keeps them to no data under the deny policy
-    assert policy(situate(raw)) == DENY
-    raw["battery"]["endpoints"] = "deepinfra/fp8"
-    with pytest.raises(ValueError, match="endpoints lists"):
-        Unified().check(situate(raw))
+    assert pinned(situate(raw)) == {"x-codex-router-endpoints": "deepinfra/fp8,fireworks"}
+    assert "provider" not in payload(situate(raw), "t", 8)  # the router's header, not its field
+    assert policy(situate(raw)) == DENY  # the router keeps pinned endpoints to no data too
+    for endpoints in ("deepinfra/fp8", [f"e{i}" for i in range(17)], ["a,b"], [" fireworks"]):
+        raw["battery"]["endpoints"] = endpoints
+        with pytest.raises(ValueError, match="endpoints lists"):
+            Unified().check(situate(raw))
+
+
+def test_a_pin_goes_as_the_routers_header_and_needs_a_router_that_takes_it(
+    raw, token, router, monkeypatch
+):
+    raw["battery"]["endpoints"] = ["fireworks"]
+    fake = router((200, {}, answer("decline")))
+    battery = Unified(fake.url)
+    battery.check(situate(raw))
+    battery.observe(situate(raw), "p", 16)
+    [(headers, body)] = fake.requests
+    assert headers["x-codex-router-endpoints"] == "fireworks" and "provider" not in body
+    monkeypatch.setattr(unified, "capabilities", lambda url, timeout: {"dataPolicies": ["deny"]})
+    with pytest.raises(BatteryError, match="the router takes no endpoint pins"):
+        Unified(fake.url).check(situate(raw))
 
 
 def test_consent_to_training_is_a_list_of_slugs_never_a_substring(raw, token):

@@ -64,7 +64,7 @@ does.
 
 | Battery | Reads with | Guarantees and recorded provenance |
 |---|---|---|
-| `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/unified-model-router), named as the router names its models | loopback, no tools, no proxy, no redirects, the router's deny data policy unless the exact model slug is listed under `trainsOnInputs`, checked at the router's `GET /health` before any call; refuses OpenAI slugs; `endpoints` pins the endpoints the router may use; records the model and endpoint that served |
+| `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/unified-model-router), named as the router names its models | loopback, no tools, no proxy, no redirects, the router's deny data policy unless the exact model slug is listed under `trainsOnInputs`, checked at the router's `GET /health` before any call; refuses OpenAI slugs; `endpoints` pins up to 16 endpoints the router may use, through the router's own header; records the model, and the provider the router reports or a single pinned endpoint's tag |
 | `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced; Gemma thinks first with `reasoning: true` |
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 | `tendora` | Tendora's engine server, from its demo package, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
@@ -168,7 +168,7 @@ consent, retention, credential and recording rules.
 | provider collection | the router's deny data policy, `X-Codex-Router-Data-Policy: deny`, unless the exact model slug is in `trainsOnInputs` | stays on this machine by contract | stays on this machine | stays on this machine; the engine reads a new text through eGemma unless offline | unknown |
 | credentials | router token from environment or its env file; never placed in a request body or record | key from environment/file; sent only as an Authorization header | none sent | none sent | unknown |
 | deadline | whole call, `timeout` seconds, even mid-line | whole call, per attempt | whole call, `battery.timeout` (30 s, at most an hour) | whole call, `battery.timeout` (60 s, at most an hour) | unknown |
-| verification | model and endpoint recorded when the router reports them | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | the engine's version, revision and packs, from its reply | unknown |
+| verification | the model, and the provider the router reports or a single pinned endpoint's tag; never a provider the router calls unknown | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | the engine's version, revision and packs, from its reply | unknown |
 
 #### Costs
 
@@ -200,8 +200,10 @@ usage, served
 ```
 
 `served` is what the service reports, not a statement of trust, and a local
-runner may leave it empty. A model route records the model the response names
-and the provider's endpoint header, when present.
+runner may leave it empty. The `unified` battery records the model the
+response names, then the provider the router reports, or, for a call pinned to
+one endpoint, that endpoint's tag; a provider the router does not yet know is
+left out, never guessed.
 
 ---
 

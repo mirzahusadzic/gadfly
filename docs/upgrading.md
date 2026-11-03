@@ -9,13 +9,16 @@ category. The site follows `main`, so a release not yet out says so.
 ### To 0.8.0, not yet released
 
 On `main`, for the next release: the `unified` battery speaks to the router
-through the router's own data-policy header, and needs a router that takes it.
+only through the router's own headers, its data policy, its endpoint pins and
+its report of what served a call, and needs a router that takes them.
 
 | In 0.7 | In 0.8.0 | What to do |
 | --- | --- | --- |
 | The `unified` battery asked for endpoints that keep no data with a field in each request's body | Each call goes under the router's `X-Codex-Router-Data-Policy: deny`, unless the frame names its model under `trainsOnInputs` | Nothing, with a router that takes it |
 | A call went to the router unasked | Before the first call, the battery reads the router's `GET /health`, and refuses to run, a `BatteryError` (6), when the router does not list the policy or cannot be asked | Update the router, or start it |
 | A model whose provider trains, by the router's list but not Gadfly's, went out with that field | The router refuses it, and the call comes back as an opening that names the model | Choose another model, or name it under `trainsOnInputs` |
+| `battery.endpoints` went out as a field in each request's body | It goes as the router's `X-Codex-Router-Endpoints`, up to 16 tags with no comma or space, and a router whose `GET /health` does not list endpoint pins is refused before any call | Update the router; keep a pin to 16 tags |
+| `served` named the model, and an endpoint only when a header the router never sent was there | It names the model, then the provider the router reports, or the tag of a single pinned endpoint; a provider the router does not yet know is left out | Nothing; read the provider from `served` when it is there |
 
 ---
 

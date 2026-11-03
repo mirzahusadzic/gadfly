@@ -33,9 +33,13 @@ What this battery promises, whatever the frame says:
   the loopback address named and nowhere else;
 - each call has a deadline (`timeout` seconds for the whole answer), the
   budget's cap on output tokens, and a cap on what it reads back;
-- each record names what served it: the model the response names and the
-  endpoint the router reports; `endpoints` pins the endpoints the router may
-  use, in order and without fallbacks, so one endpoint reads a quorum;
+- each record names what served it: the model the response names, and the
+  provider the router reports (`X-Codex-Router-Report: provider`, asked when
+  the router lists it), or, for one pinned endpoint, that endpoint's tag;
+  never a provider the router calls unknown;
+- `endpoints` pins the endpoints the router may use, in order and without
+  fallbacks, through the router's `X-Codex-Router-Endpoints`, so one endpoint
+  reads a quorum; the router must list endpoint pins at `GET /health`;
 - the router's token comes from the environment or the router's own env file
   and is never logged, returned or recorded.
 """
@@ -78,6 +82,7 @@ EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 # the router refuses a model whose provider trains (HTTP 409, data_policy) and
 # reaches only endpoints that keep no data.
 DATA_POLICY = "deny"
+MAX_ENDPOINTS = 16  # the most tags the router's endpoints header takes
 # Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
 # which the router reaches only with the caller's Codex sign-in.
 ROUTED_PREFIXES = ("anthropic/", "openrouter/", "deepseek/", "ultra-spark/")
@@ -123,6 +128,13 @@ def policy(frame: Frame) -> dict[str, str]:
     return {} if consented(frame.battery) else {"x-codex-router-data-policy": DATA_POLICY}
 
 
+def pinned(frame: Frame) -> dict[str, str]:
+    """The router's header that pins this frame's endpoints, in order and
+    without fallbacks; none when the frame names none."""
+    endpoints = frame.battery.get("endpoints")
+    return {"x-codex-router-endpoints": ",".join(endpoints)} if endpoints else {}
+
+
 def capabilities(url: str, timeout: float) -> dict:
     """What the router lists under `capabilities` at its health address,
     which takes no token; empty when it lists nothing."""
@@ -139,8 +151,8 @@ def capabilities(url: str, timeout: float) -> dict:
 
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
-    """The request body. No `tools` key, ever; the data policy goes in a
-    header (`policy`)."""
+    """The request body. No `tools` key, ever; the data policy and the
+    endpoints go in the router's headers (`policy`, `pinned`)."""
     battery = frame.battery
     if not isinstance(battery.get("model"), str) or not battery["model"].strip():
         raise BatteryError("battery.model is a slug the router serves (GET /v1/models)")
@@ -163,11 +175,6 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     }
     if battery.get("reasoning"):
         body["reasoning"] = {"effort": battery["reasoning"]}
-    if battery.get("endpoints"):
-        # One endpoint reads every run, or the call fails: the router's own
-        # endpoint preference applies only to a request that names none, and
-        # under the deny policy the router keeps these endpoints to no data.
-        body["provider"] = {"order": list(battery["endpoints"]), "allow_fallbacks": False}
     return body
 
 
@@ -201,22 +208,24 @@ def parse_stream(
     lines, deadline: float | None = None, clock=time.monotonic
 ) -> tuple[str, dict[str, int], str | None, str]:
     """The answer's text, its usage, an opening if the call did not complete,
-    and the model the response names, from the router's server-sent events.
+    and what served it, from the router's server-sent events: the model the
+    response names, then the provider the router reports, or the tag of the
+    one endpoint the call was pinned to, joined by " via ".
     A stream still coming at `deadline` (on `clock`) is cut there, and a
     connection that times out or fails mid-stream keeps what arrived."""
     deltas: list[str] = []
     usage: dict[str, int] = {}
     final_text = ""
     status = None
-    model = ""
+    served = ""
     read = 0
     try:
         for raw in lines:
             read += len(raw)
             if read > MAX_RESPONSE_BYTES:
-                return "".join(deltas), usage, "the answer exceeded the size cap", model
+                return "".join(deltas), usage, "the answer exceeded the size cap", served
             if deadline is not None and clock() > deadline:
-                return "".join(deltas), usage, "the call passed its timeout", model
+                return "".join(deltas), usage, "the call passed its timeout", served
             line = raw.decode("utf-8", "replace").strip() if isinstance(raw, bytes) else raw.strip()
             if not line.startswith("data:"):
                 continue
@@ -233,8 +242,12 @@ def parse_stream(
                 response = event.get("response")
                 response = response if isinstance(response, dict) else {}
                 status = kind.rsplit(".", 1)[1]
-                if isinstance(response.get("model"), str):
-                    model = response["model"]
+                model = response.get("model") if isinstance(response.get("model"), str) else ""
+                by = response.get("provider")
+                if not (isinstance(by, str) and by and by != "unknown"):  # never a guess
+                    by = response.get("endpoint")
+                by = by[:200] if isinstance(by, str) else ""
+                served = " via ".join(part for part in (model, by) if part)
                 reported = response.get("usage")
                 for key, value in (reported if isinstance(reported, dict) else {}).items():
                     if isinstance(value, int) and not isinstance(value, bool):
@@ -244,14 +257,14 @@ def parse_stream(
                         if isinstance(part, dict) and part.get("type") == "output_text":
                             final_text += str(part.get("text", ""))
     except TimeoutError:
-        return "".join(deltas) or final_text, usage, "the call passed its timeout", model
+        return "".join(deltas) or final_text, usage, "the call passed its timeout", served
     except OSError as error:
         opening = f"the connection failed ({type(error).__name__})"
-        return "".join(deltas) or final_text, usage, opening, model
+        return "".join(deltas) or final_text, usage, opening, served
     text = "".join(deltas) or final_text
     if status != "completed":
-        return text, usage, f"the call ended {status or 'without completing'}", model
-    return text, usage, None, model
+        return text, usage, f"the call ended {status or 'without completing'}", served
+    return text, usage, None, served
 
 
 class Unified:
@@ -268,6 +281,7 @@ class Unified:
     ):
         self.url, self.timeout, self.clock = loopback(url, "the router"), timeout, clock
         self.health = urlparse(self.url)._replace(path="/health", query="", fragment="").geturl()
+        self.reports = False  # whether to ask what served each call; check() reads it
 
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this battery must not serve: another
@@ -300,6 +314,11 @@ class Unified:
             and all(isinstance(e, str) and e for e in endpoints)
         ):
             raise BatteryError("battery.endpoints lists the router's endpoint tags, in order")
+        if len(endpoints) > MAX_ENDPOINTS or any("," in e or e != e.strip() for e in endpoints):
+            raise BatteryError(
+                f"battery.endpoints lists 1 to {MAX_ENDPOINTS} endpoint tags",
+                "each a tag the router knows, with no comma or space around it",
+            )
         if battery.get("reasoning") not in (None, *EFFORTS):
             raise BatteryError(f"battery.reasoning is one of {', '.join(EFFORTS)}")
         check_output(battery)
@@ -312,13 +331,29 @@ class Unified:
                 "name it under battery.trainsOnInputs to send the body there",
             )
         _token()  # no token, no run: refuse before the first call, not at each
-        if policy(frame):  # a router without the policy could reach an endpoint that keeps data
-            taken = capabilities(self.health, self.timeout).get("dataPolicies")
-            if not (isinstance(taken, list) and DATA_POLICY in taken):
-                raise BatteryError(
-                    "the router takes no data policy",
-                    "update the router, so that each call reaches only endpoints that keep no data",
-                )
+        # A router without the policy could reach an endpoint that keeps data,
+        # and one without pins could spread a quorum: either refuses the run.
+        # What served each call is asked only of a router that reports it.
+        needed = bool(policy(frame)) or bool(pinned(frame))
+        try:
+            listed = capabilities(self.health, self.timeout)
+        except BatteryError:
+            if needed:
+                raise
+            listed = {}
+        taken = listed.get("dataPolicies")
+        if policy(frame) and not (isinstance(taken, list) and DATA_POLICY in taken):
+            raise BatteryError(
+                "the router takes no data policy",
+                "update the router, so that each call reaches only endpoints that keep no data",
+            )
+        if pinned(frame) and listed.get("endpointPins") is not True:
+            raise BatteryError(
+                "the router takes no endpoint pins",
+                "update the router, or leave battery.endpoints out",
+            )
+        reports = listed.get("reports")
+        self.reports = isinstance(reports, list) and "provider" in reports
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
         """One call through the router: the prompt under the frame's
@@ -333,6 +368,8 @@ class Unified:
                 "content-type": "application/json",
                 "x-codex-router-token": _token(),
                 **policy(frame),
+                **pinned(frame),
+                **({"x-codex-router-report": "provider"} if self.reports else {}),
             },
         )
         deadline = self.clock() + self.timeout
@@ -349,8 +386,7 @@ class Unified:
                         )
                     return Observation(label=None, opening=f"the router reports {diagnostic!r}")
                 lines = _lines(response, deadline, self.clock)
-                text, usage, opening, model = parse_stream(lines, deadline, self.clock)
-                endpoint = response.headers.get("x-provider-name", "")[:200]
+                text, usage, opening, served = parse_stream(lines, deadline, self.clock)
         except urllib.error.HTTPError as error:
             if (
                 error.code == 409
@@ -367,7 +403,6 @@ class Unified:
             return Observation(
                 label=None, opening=f"the router could not be reached ({type(reason).__name__})"
             )
-        served = " via ".join(part for part in (model, endpoint) if part)
         if opening:
             return Observation(label=None, opening=opening, raw=text, usage=usage, served=served)
         label, opening = read_label(text, frame)
