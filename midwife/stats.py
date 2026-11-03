@@ -263,16 +263,23 @@ def stability(
     the fixed rules read every draw, so no model judges anything. A verdict
     that comes out the same in 97% of draws is firm; one at 55% rests on a
     call or two. The draws are seeded by the frame's hash and the run's
-    place, so the same records always give the same shares. An input whose
+    place, and made in the plan's order, so the same records always give
+    the same shares, in whatever order they were kept. An input whose
     trials were each asked once in a run has nothing to draw again, and gets
     no shares for that run."""
     if isinstance(resamples, bool) or not isinstance(resamples, int) or resamples < 1:
         raise UsageError("resamples is a whole number of draws, at least 1")
     shares = []
+    inputs = {x["id"]: n for n, x in enumerate(frame.inputs)}
+    trials = {trial: n for n, trial in enumerate(trial_ids(frame))}
     for place, records in enumerate(_runs(frame, runs)):
         rng = random.Random(int(frame.hash[:16], 16) + place)
         groups: dict[tuple[str, str], list[dict]] = defaultdict(list)
-        for record in records:
+        # in the order a run one call at a time asks them, however they were
+        # kept: calls made at once are kept as they end
+        for record in sorted(
+            records, key=lambda r: (inputs[r["input"]], trials[r["trial"]], r["run"])
+        ):
             groups[record["input"], record["trial"]].append(record)
         tally: dict[str, Counter] = defaultdict(Counter)
         for _ in range(resamples):

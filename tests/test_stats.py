@@ -238,3 +238,10 @@ def test_a_label_named_opening_is_counted_apart_from_the_openings(raw, tmp_path,
     path, records = write(tmp_path, frame, [labelled, unreachable])
     assert main(["stats", path, *records, "--resamples", "0"]) == 0
     assert "  sham-1          6 calls  opening 3, 3 openings  top 50%" in capsys.readouterr().out
+
+
+def test_the_same_calls_give_the_same_shares_in_whatever_order_they_were_kept(raw):
+    frame, wavering = kept(raw, Wavering(), runs=2)
+    first = stats.stability(frame, wavering, 200)
+    shuffled = [list(reversed(records)) for records in wavering]
+    assert stats.stability(frame, shuffled, 200) == first
