@@ -260,7 +260,7 @@ def compare(
 
 
 def stability(
-    frame: Frame, runs: Sequence[Iterable[dict]], resamples: int = RESAMPLES
+    frame: Frame, runs: Sequence[Iterable[dict]], resamples: int = RESAMPLES, *, start: int = 0
 ) -> list[dict[str, dict[str, float]]]:
     """For each run, how often each input's verdict comes out each way when
     every trial's calls are drawn again, with replacement, as many as it had:
@@ -270,13 +270,16 @@ def stability(
     place, and made in the plan's order, so the same records always give
     the same shares, in whatever order they were kept. An input whose
     trials were each asked once in a run has nothing to draw again, and gets
-    no shares for that run."""
+    no shares for that run. `start` is the place of the first run given, when
+    they are the later runs of a frame's: each is drawn as at its own place."""
     if isinstance(resamples, bool) or not isinstance(resamples, int) or resamples < 1:
         raise UsageError("resamples is a whole number of draws, at least 1")
+    if isinstance(start, bool) or not isinstance(start, int) or start < 0:
+        raise UsageError("start is a run's place, a whole number from 0")
     shares = []
     inputs = {x["id"]: n for n, x in enumerate(frame.inputs)}
     trials = {trial: n for n, trial in enumerate(trial_ids(frame))}
-    for place, records in enumerate(_runs(frame, runs)):
+    for place, records in enumerate(_runs(frame, runs), start):
         rng = random.Random(int(frame.hash[:16], 16) + place)
         groups: dict[tuple[str, str], list[dict]] = defaultdict(list)
         # in the order a run one call at a time asks them, however they were

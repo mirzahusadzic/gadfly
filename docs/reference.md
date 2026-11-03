@@ -801,10 +801,11 @@ call or two. The draws are seeded by the frame's hash and the run's
 place, and made in the plan's order, so the same records always give
 the same shares, in whatever order they were kept. An input whose
 trials were each asked once in a run has nothing to draw again, and gets
-no shares for that run.
+no shares for that run. `start` is the place of the first run given, when
+they are the later runs of a frame's: each is drawn as at its own place.
 
 ```python
-stability(frame, runs, resamples=RESAMPLES)
+stability(frame, runs, resamples=RESAMPLES, *, start=0)
 ```
 
 #### observed

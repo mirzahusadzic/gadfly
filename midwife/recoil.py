@@ -250,9 +250,10 @@ def _charged(usage: dict[str, Any], cap: int) -> int:
 def _read(
     frame: Frame, runs: Sequence[Sequence[dict[str, Any]]], place: int
 ) -> tuple[list[Finding], dict]:
-    # a run's findings, and its draws seeded by its place, as gadfly stats reads them
+    # a run's findings, and its draws seeded by its place, as gadfly stats
+    # reads them: that run alone, so each place is drawn once
     findings = judge_records(frame, list(runs[place]))
-    drawn = stability(frame, runs[: place + 1])[place]
+    [drawn] = stability(frame, [runs[place]], start=place)
     shares = {f.input: drawn.get(f.input, {}).get(f.category, 0.0) for f in findings}
     return findings, shares
 

@@ -395,6 +395,25 @@ def test_kept_runs_count_as_runs_made_so_a_firm_frame_is_asked_nothing():
     assert again.runs == first.runs and again.category == "carried"
 
 
+def test_until_firm_reads_each_kept_run_once(monkeypatch):
+    # each place's draws are made from its own run, once, not again for every
+    # later place: the work grows with the runs, not their square (pass 12, P1)
+    from midwife import stats
+
+    middle = dolls()[1]
+    after = with_slip(middle)
+    runs = [until_firm(after, DollReader(), budget(after)).runs[0] for _ in range(4)]
+    checked = []
+    real = stats.check_records
+    monkeypatch.setattr(stats, "check_records", lambda *a, **k: checked.append(1) or real(*a, **k))
+    asked = until_firm(after, None, Budget(calls=1), kept=runs, most=4)
+    assert len(checked) == len(runs) == 4
+    assert asked.shares == {
+        x: shares.get(asked.findings[0].category, 0.0)
+        for x, shares in stats.stability(after, runs)[-1].items()
+    }
+
+
 def test_until_firm_never_starts_a_run_the_budget_cannot_cover():
     middle = dolls()[1]
     after = with_slip(middle)

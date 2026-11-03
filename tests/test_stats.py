@@ -106,6 +106,21 @@ def test_stability_is_seeded_and_firm_for_a_steady_reader(raw):
         stats.stability(frame, wavering, 0)
 
 
+def test_stability_draws_later_runs_as_at_their_own_places(raw):
+    # a run given alone, with its place, is drawn as among all the runs, so a
+    # caller reading one place at a time draws each run once (pass 12, P1)
+    frame, wavering = kept(raw, Wavering(), runs=3)
+    whole = stats.stability(frame, wavering, 50)
+    alone = [
+        stats.stability(frame, [records], 50, start=p)[0] for p, records in enumerate(wavering)
+    ]
+    assert alone == whole
+    assert stats.stability(frame, wavering[1:], 50, start=1) == whole[1:]
+    for start in (-1, 1.5, True):
+        with pytest.raises(UsageError, match="^start is a run's place, a whole number from 0$"):
+            stats.stability(frame, wavering, 50, start=start)
+
+
 def test_only_the_same_readers_calls_on_the_same_prompt_are_pooled(raw):
     frame, runs = kept(raw, RuleReader(), runs=1)
     other_raw = json.loads(frame.source)
