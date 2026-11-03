@@ -247,10 +247,11 @@
       add("says", paper(1, 222, true));
       add("notmine", `<g transform="rotate(${SLIP.turn} 100 222)"><path d="M118,232 l8,-8 M118,224 l8,8" stroke="#8e2c22" stroke-width="2.6" stroke-linecap="round"/></g>`);
     }
-    add("decoy", `<g><path d="M150,58 h40 a8,8 0 0 1 8,8 v18 a8,8 0 0 1 -8,8 h-24 l-10,10 l2,-10 h-8 a8,8 0 0 1 -8,-8 v-18 a8,8 0 0 1 8,-8 z" fill="#fff" stroke="#6d655b" stroke-width="1.4"/><circle cx="160" cy="75" r="2.6" fill="#6d655b"/><circle cx="170" cy="75" r="2.6" fill="#6d655b"/><circle cx="180" cy="75" r="2.6" fill="#6d655b"/></g>`);
     add("shine", `<path d="M62,40 q-12,16 -10,42" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="5" stroke-linecap="round"/><path d="M26,210 q-8,34 2,72" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="6" stroke-linecap="round"/>`);
     root.append(markup(`<path class="d-halo" d="${SIL}" fill="none" stroke-width="9"/>`));
     add("shape", `<path d="${SIL}" fill="none" stroke="#3a2a22" stroke-width="1.8"/>`);
+    // what others say of the doll stands out from it, over its outline
+    add("decoy", `<g><path d="M150,58 h40 a8,8 0 0 1 8,8 v18 a8,8 0 0 1 -8,8 h-24 l-10,10 l2,-10 h-8 a8,8 0 0 1 -8,-8 v-18 a8,8 0 0 1 8,-8 z" fill="#fff" stroke="#6d655b" stroke-width="1.4"/><circle cx="160" cy="75" r="2.6" fill="#6d655b"/><circle cx="170" cy="75" r="2.6" fill="#6d655b"/><circle cx="180" cy="75" r="2.6" fill="#6d655b"/></g>`);
     return { root, regions };
   }
 

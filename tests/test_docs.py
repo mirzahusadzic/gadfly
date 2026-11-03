@@ -300,6 +300,7 @@ def test_the_doll_stage_keeps_to_what_the_reader_picked():
     assert seen["walked"]["caption"].startswith("Amani is walked, never asked")
     assert seen["takeover"] == {"asked": [["select", "22-kiran-paper"]], "captionKept": True}
     assert seen["gate"] == {"afterGate": 1, "afterTrial": 1, "afterPick": 0}
+    assert seen["decoyOnTop"]  # the decoy's bubble over the outline, never under it
 
 
 def test_the_watch_views_controls_wait_for_its_first_frame():

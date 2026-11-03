@@ -82,6 +82,9 @@ const isCut = (name, part) => regions(doll(name)).find((g) => g.dataset.part ===
 const marked = () => row.children.filter((fig) => fig.classes.has('is-reframed')).length;
 const seen = {};
 
+// what others say of a doll is drawn last, over its outline and ring
+seen.decoyOnTop = doll('Kiran').children[0].children.at(-1).dataset.part === 'decoy';
+
 // a walked doll picked while Kiran's frame plays: the view holds, and Kiran's
 // trials no longer paint the stage
 hooks.frame(kirans, frames[kirans]);
