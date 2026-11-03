@@ -814,7 +814,7 @@ def command_successor(args) -> int:
     frame = load_frame(args.frame)
     source, piece = _piece(args)
     changes = dict(_set(key, value) for key, value in args.set or [])
-    draft = recoil.successor(frame, args.hole, piece, **changes)
+    draft = recoil.successor(frame, args.hole, piece, after=args.after, **changes)
     try:
         after = situate(draft)
     except FrameError as error:
@@ -832,6 +832,7 @@ def command_successor(args) -> int:
             **_which(after),
             "of": _which(frame),
             "hole": args.hole,
+            "after": args.after,
             "piece": {**_piece_document(piece), "from": _which(source)},
             "reframes": changed,
             "out": None if out is None else str(out),
@@ -842,7 +843,9 @@ def command_successor(args) -> int:
     if out is None:  # the frame owns standard output; the rest is a message
         sys.stdout.write(text)
     say = sys.stderr if out is None else sys.stdout
-    print(f"successor: {_short(after)}, of {_short(frame)}, its hole {args.hole} filled", file=say)
+    placed = "" if args.after is None else f", after span {args.after}"
+    filled = f"its hole {args.hole} filled{placed}"
+    print(f"successor: {_short(after)}, of {_short(frame)}, {filled}", file=say)
     if changed:
         asks = "so it asks another question, read against no category"
         print(f"reframes: {', '.join(changed)}, {asks}", file=say)
@@ -1169,6 +1172,11 @@ def parser() -> argparse.ArgumentParser:
     drafted.add_argument("frame", help="the frame the piece fits, a JSON file, or - for stdin")
     drafted.add_argument("--hole", required=True, help="the hole the piece fills")
     piece(drafted)
+    drafted.add_argument(
+        "--after",
+        metavar="SPAN",
+        help="place the piece right after this span, the line it amends (default: last)",
+    )
     drafted.add_argument(
         "--set",
         nargs=2,

@@ -19,6 +19,10 @@ of 0.9.1 meets does:
 | --- | --- | --- |
 | A successor that added, changed or dropped a hole besides the one it filled asked the same question | `reframes` lists `holes`, and `gate` reads the successor as a reframing | Close only the hole the piece fills; a frame that takes in more is a new frame |
 
+New: `successor(..., after=SPAN)` and `gadfly successor --after SPAN` place
+the piece right after the line it amends, for a reader that reads each span
+as a line; its ablation is still the frame's body byte for byte.
+
 ---
 
 ### To 0.9.1

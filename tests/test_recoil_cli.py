@@ -188,6 +188,23 @@ def test_successor_drafts_the_frame_a_fit_is_asked_again_as(capsys):
     ]
 
 
+def test_successor_places_the_piece_after_the_line_it_amends(capsys):
+    argv = ["successor", KIRAN, "--hole", "paper", "--from", MIRZA, "--span", "says"]
+    assert main([*argv, "--after", "name"]) == 0
+    said = capsys.readouterr()
+    draft = json.loads(said.out)
+    paper = found(load_frame(MIRZA), "says")
+    assert draft == successor(load_frame(KIRAN), "paper", paper, after="name")
+    ids = [each["id"] for each in draft["body"]["spans"]]
+    assert ids[ids.index("name") + 1] == "paper"
+    assert said.err.splitlines()[0].endswith("its hole paper filled, after span name")
+    assert main([*argv, "--after", "name", "--json"]) == 0
+    document = json.loads(capsys.readouterr().out)
+    assert document["after"] == "name" and document["draft"] == draft
+    assert main([*argv, "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["after"] is None
+
+
 def test_successor_writes_a_new_file_and_never_over_one(tmp_path, capsys):
     out = tmp_path / "kiran.json"
     argv = ["successor", KIRAN, "--hole", "paper", "--from", MIRZA, "--span", "says"]
@@ -240,6 +257,14 @@ def test_successor_says_when_it_asks_another_question(capsys):
             ["--hole", "paper", "--span", "face"],
             2,
             ["UsageError: hole 'paper' is of kind 'kiran-paper', and the piece is of kind 'paint'"],
+        ),
+        (
+            ["--hole", "paper", "--span", "says", "--after", "nope"],
+            2,
+            [
+                "UsageError: frame 'Kiran' has no span 'nope' to place the piece after",
+                "name one of its spans, the line the piece amends",
+            ],
         ),
         (
             ["--hole", "paper", "--span", "says", "--set", "standing", "three"],

@@ -77,8 +77,10 @@ so a walk is lookups and comparisons, and makes no call.
 
 A fit is asked again as a successor: the frame with the piece as a span that
 quotes it by `source`, and the piece as its anchor. `successor` drafts it for
-the frame's author and writes nothing, since a frame is its author's. Its
-ablation cuts the piece, which gives back the frame's own body byte for byte.
+the frame's author and writes nothing, since a frame is its author's. The
+piece comes last, or right after the span `after` names, the line it amends;
+either way its ablation cuts it and gives back the frame's own body byte for
+byte.
 
 The successor's category is the gate. The piece itself climbs on whatever the
 gate says; what the gate decides is whether the frame's own decision climbs

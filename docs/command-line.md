@@ -278,6 +278,10 @@ uv run gadfly successor examples/dolls/2-kiran.json \
   --span says --out kiran.json
 ```
 
+`--after SPAN` places the piece right after that span, the line it amends,
+for a reader that reads each span as a line; without it the piece comes last.
+Either way its ablation gives back the frame's body byte for byte.
+
 `--set KEY VALUE` sets any other key to a JSON value, such as the trials that
 read the anchor, and may repeat. It says whether the draft asks another
 question, which `gate` reads as a reframing: on standard error while the frame

@@ -53,6 +53,7 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: missing one of --span, --decision` | `gadfly walk --help shows its arguments`. The piece is one of the spans of the frame `--from` names, or its decision read as a label: name one with `--span` or `--decision`, not both. |
 | `UsageError: --decision and --span cannot be given together` | `gadfly walk --help shows its arguments`. The piece is a span of the frame `--from` names, or its decision: name one. |
 | `UsageError: missing --battery` or `UsageError: missing frames` | `gadfly run --help shows its arguments`. A flag or a file the command needs was not given; its help names each, and a mistyped flag is named as unrecognized instead. |
+| `UsageError: frame 'Kiran' has no span 'nope' to place the piece after` | `name one of its spans, the line the piece amends`. `--after`, or `after` in Python, names a span of the frame the piece fills. |
 | `UsageError: frame 'Kiran' has no hole 'nope'` | Name with `--hole` one of the frame's `holes`; `gadfly walk` names the holes a piece fits. |
 | `UsageError: hole 'paper' is of kind 'kiran-paper', and the piece is of kind 'paint'` | A piece fills only a hole of its own kind. Choose the piece the walk found fitting, or another hole. |
 | `UsageError: --set 'standing' is given 'three', which is not JSON` | `give the value as JSON, quoted for the shell`. A text is JSON in double quotes, so the shell needs them kept, as in `'"text"'`. |

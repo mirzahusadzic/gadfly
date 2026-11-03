@@ -354,6 +354,22 @@ def test_a_boy_by_his_own_word_reframes_the_girlish_set():
     assert largest.raw["observe"]["labels"] == ["girls", "unclear"]  # the set as asked stands
 
 
+def test_a_piece_placed_after_the_line_it_amends_cuts_back_to_the_frame():
+    # a reader that reads each span as a line takes the piece beside the
+    # line it amends; cut, the frame is as it was, byte for byte
+    second, slip = dolls()[1], found(dolls()[4], "slip")
+    draft = successor(second, "says", slip, after="binding", **TRIALS)
+    ids = [each["id"] for each in draft["body"]["spans"]]
+    assert ids[ids.index("binding") + 1] == "says" and ids[-1] != "says"
+    after = parse(draft)
+    assert reframes(second, after) == []
+    ablation = next(trial for trial in plan(after) if trial.id == "ablation")
+    question = second.inputs[0]
+    assert prompt(after, ablation, question) == prompt(second, plan(second)[0], question)
+    with pytest.raises(UsageError, match="has no span 'nope' to place the piece after"):
+        successor(second, "says", slip, after="nope")
+
+
 def test_a_successor_that_changes_another_hole_reframes():
     # what a frame can take in is part of its question: a successor that
     # adds a hole after the find, changes one, or drops one unfilled asks

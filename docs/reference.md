@@ -936,11 +936,13 @@ walk(piece, start, frames)
 A draft of the successor a fit is asked as, for the frame's author to
 finish and keep: the piece a span with the hole's id, quoting the text it
 was found as by its SHA-256, and the frame's one anchor; the hole closed.
-`changes` sets any other key, such as the trials that read the anchor.
-Nothing is written, and the draft is not checked: parse it.
+The piece's span comes last, or right after the span `after` names, as
+the line it amends; either way its ablation is the frame's body, byte
+for byte. `changes` sets any other key, such as the trials that read the
+anchor. Nothing is written, and the draft is not checked: parse it.
 
 ```python
-successor(frame, hole, piece, **changes)
+successor(frame, hole, piece, *, after=None, **changes)
 ```
 
 #### reframes

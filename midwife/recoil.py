@@ -172,12 +172,16 @@ def walk(piece: Piece, start: Frame, frames: Iterable[Frame]) -> Walk:
     return Walk(piece, tuple(fits), tuple(passed), tuple(sorted(frontier)))
 
 
-def successor(frame: Frame, hole: str, piece: Piece, **changes: Any) -> dict[str, Any]:
+def successor(
+    frame: Frame, hole: str, piece: Piece, *, after: str | None = None, **changes: Any
+) -> dict[str, Any]:
     """A draft of the successor a fit is asked as, for the frame's author to
     finish and keep: the piece a span with the hole's id, quoting the text it
     was found as by its SHA-256, and the frame's one anchor; the hole closed.
-    `changes` sets any other key, such as the trials that read the anchor.
-    Nothing is written, and the draft is not checked: parse it."""
+    The piece's span comes last, or right after the span `after` names, as
+    the line it amends; either way its ablation is the frame's body, byte
+    for byte. `changes` sets any other key, such as the trials that read the
+    anchor. Nothing is written, and the draft is not checked: parse it."""
     holes = {h["id"]: h["kind"] for h in frame.holes}
     if hole not in holes:
         raise UsageError(f"frame {frame.name!r} has no hole {hole!r}")
@@ -186,8 +190,18 @@ def successor(frame: Frame, hole: str, piece: Piece, **changes: Any) -> dict[str
             f"hole {hole!r} is of kind {holes[hole]!r}, and the piece is of kind {piece.kind!r}"
         )
     raw = copy.deepcopy(frame.raw)
+    spans = raw["body"]["spans"]
+    at = len(spans)
+    if after is not None:
+        ids = [each["id"] for each in spans]
+        if after not in ids:
+            raise UsageError(
+                f"frame {frame.name!r} has no span {after!r} to place the piece after",
+                "name one of its spans, the line the piece amends",
+            )
+        at = ids.index(after) + 1
     span = {"id": hole, "text": piece.text, "kind": piece.kind}
-    raw["body"]["spans"].append({**span, "source": {"sha256": piece.sha256}})
+    spans.insert(at, {**span, "source": {"sha256": piece.sha256}})
     raw["anchors"] = [hole]
     left = [h for h in raw["holes"] if h["id"] != hole]
     if left:
