@@ -1130,7 +1130,8 @@ pinned(frame)
 #### capabilities
 
 What the router lists under `capabilities` at its health address,
-which takes no token; empty when it lists nothing.
+which takes no token; empty when it lists nothing. The whole answer, its
+body too, is read within `timeout` seconds.
 
 ```python
 capabilities(url, timeout)

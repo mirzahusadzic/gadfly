@@ -470,3 +470,29 @@ def test_a_frame_without_a_model_is_a_battery_error_not_a_key_error(raw, token):
     del raw["battery"]["model"]
     with pytest.raises(ValueError, match="battery.model"):
         Unified().observe(situate(raw), "p", 16)
+
+
+def test_the_routers_health_is_read_whole_within_its_timeout(monkeypatch):
+    # a router that sends its head, then trickles the body: the check must
+    # end at its deadline, not whenever the trickle does
+    class Trickle:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def read(self, amount=None):
+            time.sleep(0.3)
+            return b'{"capabilities": {}}'
+
+        def read1(self, amount=None):
+            time.sleep(0.05)
+            return b" "
+
+    monkeypatch.setattr(unified, "capabilities", LISTS)
+    monkeypatch.setattr(unified, "opened", lambda request, timeout: Trickle())
+    started = time.monotonic()
+    with pytest.raises(BatteryError, match="could not be asked what it takes"):
+        unified.capabilities("http://127.0.0.1:18766/health", 0.1)
+    assert time.monotonic() - started < 0.25

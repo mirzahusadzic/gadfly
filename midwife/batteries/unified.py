@@ -67,6 +67,7 @@ from .critic import (
     output_schema,
     read_error,
     read_label,
+    read_reply,
     wait_at_most,
 )
 
@@ -145,10 +146,12 @@ def _pinned(battery: dict) -> dict[str, str]:
 
 def capabilities(url: str, timeout: float) -> dict:
     """What the router lists under `capabilities` at its health address,
-    which takes no token; empty when it lists nothing."""
+    which takes no token; empty when it lists nothing. The whole answer, its
+    body too, is read within `timeout` seconds."""
+    deadline = time.monotonic() + timeout
     try:
         with opened(urllib.request.Request(url, method="GET"), timeout) as response:
-            reply = json.loads(response.read(MAX_RESPONSE_BYTES))
+            reply = json.loads(read_reply(response, deadline, time.monotonic))
     except (urllib.error.URLError, OSError, ValueError):
         raise BatteryError(
             f"the router at {url!r} could not be asked what it takes",
