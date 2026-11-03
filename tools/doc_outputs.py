@@ -311,6 +311,11 @@ def frames(page: str) -> list[Copy]:
     ]
 
 
+def _times(n: int) -> str:
+    # "asked once", never "asked 1 times"
+    return "once" if n == 1 else f"{n} times"
+
+
 def _cell(text: str) -> str:
     return _text(text).replace("|", "\\|")
 
@@ -411,7 +416,7 @@ def readable(source: str, page: str) -> str:
     ])  # fmt: skip
     out += [
         "",
-        f"**The trials**, each asked {frame.quorum} times, {calls_needed(frame)} calls in all:",
+        f"**The trials**, each asked {_times(frame.quorum)}, {calls_needed(frame)} calls in all:",
         "",
         "| Trial | What changes | What it tests |",
         "|---|---|---|",

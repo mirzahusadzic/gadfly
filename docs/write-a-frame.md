@@ -42,7 +42,7 @@ the order a run uses it, each span linked to its line in the file;
 | Answers | `grant`, `decline` or `unclear` |
 | Instruction | Decide the request under the policy. |
 
-**The trials**, each asked 1 times, 8 calls in all:
+**The trials**, each asked once, 8 calls in all:
 
 | Trial | What changes | What it tests |
 |---|---|---|

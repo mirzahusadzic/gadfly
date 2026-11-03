@@ -236,6 +236,13 @@ def test_the_watch_view_refuses_what_it_cannot_play(monkeypatch):
         watch_data.encoded(stem)
 
 
+def test_a_frame_in_words_says_how_often_each_trial_is_asked():
+    # the refund fixture asks each trial once, and the words say so
+    page = (ROOT / "docs/write-a-frame.md").read_text(encoding="utf-8")
+    assert "**The trials**, each asked once, 8 calls in all:" in page
+    assert not re.search(r"asked 1 times", "\n".join((ROOT / p).read_text() for p in PAGES))
+
+
 def test_the_watch_view_counts_the_asks_of_one_run():
     # a trial is asked quorum times in each run; three runs are kept, so a
     # count without "in this run" reads as a count of runs
