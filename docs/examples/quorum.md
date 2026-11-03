@@ -61,7 +61,7 @@ hashed with it: raising them after seeing the answers makes another frame.
 The bypass cuts the provider's measured latency, the connection between the
 requirement and this design: the requirement matters only because the provider
 is slower than it. The frame names no `allowed.bypass`, so any move from the
-baseline would clear that check.
+baseline would clear that check; [Bypass](bypass.md) names one.
 
 > [!NOTE]
 > **Predicted before the first call**

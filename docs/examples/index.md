@@ -6,7 +6,8 @@ reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
 [eGemma](https://github.com/mirzahusadzic/egemma) on one machine, except in rungs
 19 and 20, read by Muse Spark 1.3 Contributor through the unified model router,
 which in rung 20 also writes what it reads; reading an example back needs no
-model.
+model. Each frame is a rung of the ladder, named by its number: rung 16 is
+`16-restore-inversion.json`, and rungs 1 to 6 are those of Your first frame.
 
 - **Predictions first:** `examples/PREDICTIONS.md` holds what each step
   expected, written before its first call.
@@ -15,17 +16,18 @@ model.
   design was worked out; only the reading shown is kept.
 - **Nothing edited after:** a wrong prediction stays in, and so does a frame
   that turned out to be built wrong; a corrected frame is a new one beside it.
-- **Cheap to run:** 6,560 calls in all, across code review, design review,
-  contracts, access rules, incidents, migrations and performance work, and
-  not one failed (`examples/FINDINGS.md`).
+- **Cheap to run:** 6,560 kept calls in all, across code review, design
+  review, contracts, access rules, incidents, migrations and performance
+  work, and not one failed (`examples/FINDINGS.md`). Rung 20's 180 made two
+  model calls each, the maker's and the reader's.
 
 ---
 
 ### The ladder
 
-The examples climb. Each step is one or two frames on a new domain or grain,
+The examples climb. Each step is a frame or a few on a new domain or grain,
 and it teaches one more thing Gadfly does, on top of the steps before it.
-[Your first frame](../first-frame.md) is the first step.
+Your first frame is the first step.
 
 | Step | Frames | Teaches | Domain, grain |
 |---|---|---|---|
@@ -71,13 +73,17 @@ small on purpose: one model a frame, three to five runs a frame, each trial
 asked five times with four to agree, so each step says how narrow its result
 is.
 
-`examples/RESULTS.md` sets every result against its prediction, and
+`examples/RESULTS.md` sets every result against its prediction,
 `examples/FINDINGS.md` gathers what they showed about the reader, the service
-and Gadfly.
+and Gadfly, and [Statistics](../statistics.md) says how firm a verdict is
+over its runs.
 
 ---
 
 ### Every result at a glance
+
+From rung 16 on, frames are read under `carriage: listed`, so a carried
+there names the category with its open checks beside it.
 
 | Example | Domain, grain | Does the decision rest on… | Per run, read by Gemma unless named |
 |---|---|---|---|
@@ -86,10 +92,10 @@ and Gadfly.
 | `08-clock-rule.json` | code review, one repository rule | the rule against `datetime.now()`? | the rule decides; unresolved, no bypass declared |
 | `09-sync-sms.json` | architecture, one requirement | the 300 ms requirement? | cooled in two runs of three |
 | `10a`-`10d` | debugging, fixing, optimizing, alerting; one test or two metrics | which of two routes to the cause? | the metrics decide every task; the rollback alone decides the fix, not the cause; with both, either can go (cooled) |
-| `11-eu-clause.json` | contract into engineering, one clause | the clause keeping data in the EU? | the clause carries; applied without the line that makes it the customer's |
+| `11-eu-clause.json` | contract into engineering, one clause | the clause keeping data in the EU? | the clause decides, but unresolved: applied without the line that makes it the customer's |
 | `12-payroll-access.json` | security, one grant, three requesters | the grant to Finance? | Dana carried, Sam unresolved, the backup job cooled |
-| `13`, `13b` | data migration, a section, then one line | the status saying the table is unused? | the section carries; "no reads in 30 days" carries nothing |
-| `14-orders-latency.json` | optimizing, one goal, five paths | the latency goal? | four paths carried whatever their cost; the timeout rejected |
+| `13`, `13b` | data migration, a section, then one line | the status saying the table is unused? | the section decides, unresolved with no bypass declared; "no reads in 30 days" carries nothing, cooled in two runs of three |
+| `14-orders-latency.json` | optimizing, one goal, five paths | the latency goal? | the index and the read model carried in every run, the cache in two and the batch in one, whatever their cost; the timeout rejected |
 | `15-invoice-export.json` | implementing, one test, four processes | the passing test? | the test decides, never the process |
 | `16-restore-inversion.json` | access, one rule, two cases | the approval rule, and does the answer turn with it? | the answer turns every time; unresolved, a sham of the anchor's role and a default refusal |
 | `17-clock-asked.json` | code review, one rule, the diff asked about | the clock rule, and does the review turn with the diff? | carried in two runs of three; the review turns to approve |

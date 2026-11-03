@@ -34,8 +34,9 @@ Gadfly is a test harness for that belief:
 - **Fixed rules, not another AI, turn the pattern into a verdict:**
   - *carried*: it rests on that line, for the reason you claimed;
   - *cooled*: it doesn't need that line, something else decides;
-  - *misaligned*: the line matters, but the decision moves the wrong way, or names and order sway it;
-  - *unresolved*: it can't tell yet, and it names the missing check.
+  - *coupled but misaligned*: the line matters, but the decision moves the wrong way, or names and order sway it;
+  - *unresolved*: it can't tell yet, and it names the missing check;
+  - *outside scope*: whoever receives the decision says that line isn't theirs to promise.
 
 Anyone can re-read the kept answers later without the AI.
 
@@ -45,6 +46,8 @@ Anyone can re-read the kept answers later without the AI.
 - It applies a customer's contract clause without the line saying the customer signed it.
 - With no evidence either way, it blames the service named in the symptom instead of saying "I don't know".
 - It drops a database table without the one line showing nobody reads it.
+- An incident's cause, written up from its signals, carries the rollback;
+  a status update written from the same signals drops it.
 
 [Your first frame](first-frame.md) builds one such test, a trial at a time.
 

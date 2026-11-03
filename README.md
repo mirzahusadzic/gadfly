@@ -47,7 +47,9 @@ that matches names the category.
 
 Every finding keeps its **evidence** (why this category) apart from its
 **obligations** (what the trials did not settle), and an obligation is not a
-passed check. Under the default `carriage: all-checks`, a category waits
+passed check.
+
+Under the default `carriage: all-checks`, a category waits
 for the checks it needs: carried for every carriage check, cooled for a
 control that moved, outside scope for the owner's scope check. Until then
 the finding is unresolved, and any other open check is listed beside the
@@ -107,6 +109,9 @@ Gadfly its key; the address has a default.
   README says. A frame names it as `"battery": {"kind": "tendora", "url":
   ...}`, with no key, and each input is a saved check's own case and
   question.
+- **A crossing, a maker then a reader:** a frame names both, as
+  `"battery": {"kind": "crossing", "maker": {...}, "reader": {...}}`;
+  `Crossing()` makes and reads through the router.
 - **Your own class:** any class whose `name` is the frame's `battery.kind`,
   passed to `run` as `--battery module:Class`.
 
@@ -126,7 +131,8 @@ uv run gadfly report examples/rung1.json check.jsonl
 
 Every example is a real experiment: a frame, the predictions written before
 its first call, and the records of each run, read by Gemma 4 26B through
-eGemma, or for rung 19 by Muse Spark 1.3 Contributor through the router.
+eGemma, or for rungs 19 and 20 by Muse Spark 1.3 Contributor through the
+router, which in rung 20 also writes what it reads.
 Reading one back calls no model:
 
 ```text
@@ -220,6 +226,10 @@ too.
   refuses.
 - **[Reading a verdict](https://mirzahusadzic.github.io/gadfly/reading-a-verdict):** the rules in order, and
   evidence apart from obligations.
+- **[Statistics](https://mirzahusadzic.github.io/gadfly/statistics):** how firm a verdict is over its kept
+  runs, beside it and never changing it.
+- **[Crossings](https://mirzahusadzic.github.io/gadfly/crossings):** a decision made from something
+  written from the evidence, with the maker inside the reading.
 - **[Batteries](https://mirzahusadzic.github.io/gadfly/batteries):** the shipped scorers, their privacy
   guarantees, and writing your own.
 - **[Architecture and limits](https://mirzahusadzic.github.io/gadfly/architecture):** what Gadfly keeps, and

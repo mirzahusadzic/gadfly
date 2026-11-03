@@ -144,6 +144,11 @@ def described(path: Path) -> str:
         for trial, v in frame.allowed.items()
     )
     lines.append(f"allowed: {allowed}")
+    # how the answers are read, when not as every step before rung 16 reads them
+    if frame.raw.get("carriage") == "listed":
+        lines.append("carriage: listed, so a category is named with its open checks beside it")
+    if frame.raw["standing"].get("stable"):
+        lines.append("stable: the baseline and the repeat must not split")
     return "\n".join(lines)
 
 

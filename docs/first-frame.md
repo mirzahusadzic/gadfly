@@ -18,7 +18,7 @@ This page climbs one real experiment a step at a time. A dependency bot opens a
 pull request that bumps a made-up library, quill, from 2.4.1 to 3.0.0. Our code
 calls `quill.retry_after()`, and quill 3.0.0's changelog removes it.
 
-The reviewer is Gemma 4 26B, served on this machine by eGemma. Does its
+The reviewer is Gemma 4 26B, served by eGemma on one machine. Does its
 decision to hold the upgrade rest on that changelog line?
 
 Each step below is a frame in `examples/` (`rung1.json` to `rung6.json`, each
@@ -113,6 +113,9 @@ words, in the order a run uses it, each span linked to its line in the file:
   the instruction (`observe`) say what each answer means. Define every label in
   the instruction. A reader left to guess what a label means answers a
   different question.
+- **The reading and the setting** say how the answers are read, and whose
+  decision it is, where it acts and where it goes. They are hashed too, and
+  [Write a frame](write-a-frame.md#the-keys) has every key.
 
 What Gemma receives per call is the instruction, then the spans one per line, a
 line `---`, and the question. It must answer with one label. Each trial is asked

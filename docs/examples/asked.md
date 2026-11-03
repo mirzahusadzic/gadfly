@@ -50,6 +50,8 @@ trials:
   input-inversion  inverts the input's datetime.now() -> clock.now()
   control       cuts every span
 allowed: ablation -> approve, unclear; inputInversion -> approve
+carriage: listed, so a category is named with its open checks beside it
+stable: the baseline and the repeat must not split
 ```
 
 > [!NOTE]

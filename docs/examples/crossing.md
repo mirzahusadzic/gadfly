@@ -50,6 +50,7 @@ trials:
   presentation  renames deploy -> release
   control       cuts latency, pool
 allowed: ablation -> investigate, keep
+carriage: listed, so a category is named with its open checks beside it
 ```
 
 > [!NOTE]
@@ -131,13 +132,31 @@ cause section says that nothing given explains the rise; the commander
 investigates. Renamed to a release, the section still names the change, and
 the control leaves nothing to explain.
 
+The first run's verdict is carried, with two checks open beside it, as
+`carriage: listed` names them:
+
+```text
+$ uv run python examples/read.py \
+    examples/20-incident-cause.json --verdict 1
+rollback: carried
+  levels: baseline rollback, repeat rollback, ablation investigate, sham-1 rollback, presentation rollback, control keep
+  evidence: ablation moved it rollback -> investigate; held under presentation, 1 sham
+  evidence: the control moved it rollback -> keep
+  open: no hidden fallback (no bypass trial was declared)
+  open: materialization (the frame does not say the observation is the form the recipient receives)
+```
+
+No bypass was declared, and the frame does not declare `materialized`: the
+commander receives the cause section, not the reader's label.
+
 ---
 
 ### 20b: the status update
 
 The same frame, but the maker is told to write "the customer-facing status
 update for an incident from the signals and changes given. In one or two
-sentences of plain words, say what customers experienced."
+sentences of plain words, say what customers experienced. Do not recommend an
+action."
 
 > [!NOTE]
 > **Predicted before the first call**
@@ -254,6 +273,10 @@ transcripts above read the same runs.
 - **Each call is two:** 180 kept calls made 360 calls to Muse, the maker's
   and the reader's, and each kept call spent 689 to 2,118 output tokens.
 
-Try next: have 20's maker write for an executive in one sentence, and see
+---
+
+### Try next
+
+Have 20's maker write for an executive in one sentence, and see
 whether the cause survives; or take the first run's cause section as a span
 of its own, name its SHA-256 as its `source`, and read it alone.

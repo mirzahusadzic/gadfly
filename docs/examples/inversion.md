@@ -13,7 +13,14 @@
 Every trial before this step asks whether an answer rests on its line. This one
 asks whether it follows the line's sense: turn the rule around, and the answer
 must turn too. The statements are Tendora's demo, Payments On-Call
-(Apache-2.0), and the question is whether Jordan may restore the database.
+(Apache-2.0), which the [Payments demo](payments-demo.md) reads whole, and the
+question is whether Jordan may restore the database.
+
+From this step on, each frame is read under `carriage: listed`: a category is
+named at once, with the checks still open beside it, where the steps before
+held it back as unresolved. Rungs 16 to 18 also declare `stable`, so a
+baseline and repeat that split leave the finding unresolved before anything
+else is read; the frame's last lines say both.
 
 ---
 
@@ -74,6 +81,8 @@ trials:
   inversion     inverts the incident commander approves the restore -> the incident commander does not approve the restore
   control       cuts every span
 allowed: ablation -> Yes, No, open; inversion -> Yes, No, open
+carriage: listed, so a category is named with its open checks beside it
+stable: the baseline and the repeat must not split
 ```
 
 > [!NOTE]
@@ -122,7 +131,8 @@ approved: unresolved
 That sham cut "Jordan keeps break-glass credentials in the password vault", a
 statement of the anchor's own role, and a restore without its credentials
 reads as No on 5 of 15 calls. The control, every statement cut, kept Yes:
-Gemma answers from the case alone, and monotonicity is open beside it.
+Gemma answers from the case alone, and monotonicity, the check that cutting
+more never moves the answer less, is open beside it.
 
 Without approval, the No rests on no statement at all:
 

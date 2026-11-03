@@ -36,8 +36,8 @@ verdicts, each run's calls drawn again 200 times
 
 Five of five against none of five is a p-value of 0.0079 on its own, but the
 run tests seven trials against the baseline at once, and Holm's adjustment
-for that makes it 0.056. Pooled over the frame's three kept runs, the same
-move is fifteen of fifteen, and no chance explains it:
+for that makes it 0.056. Pooled over three of the frame's five kept runs, the
+same move is fifteen of fifteen, and no chance explains it:
 
 ```text
 $ uv run gadfly stats examples/upgrade.json \
@@ -165,9 +165,11 @@ Two frames that send the same reader the same prompt make the same call, so
 `--pool FRAME RECORDS` adds the other frame's calls to the counts. Gadfly
 pools a call only when the battery line, the instruction and the labels are
 the same and its prompt's hash is one of this frame's, and refuses a frame
-that asks another reader. A call keeps its own input; one whose prompt two
-inputs share, under an input named otherwise, is left out. Pooled calls are counted, never judged, since
-their frame's plan is not this one's.
+that asks another reader.
+
+A call keeps its own input, and one whose prompt two inputs share, under an
+input named otherwise, is left out. Pooled calls are counted, never judged,
+since their frame's plan is not this one's.
 
 ---
 

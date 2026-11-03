@@ -88,7 +88,9 @@ that matches names the category.
 
 Every finding keeps its **evidence** (why this category) apart from its
 **obligations** (what the trials did not settle), and an obligation is not a
-passed check. Under the default `carriage: all-checks`, a category waits
+passed check.
+
+Under the default `carriage: all-checks`, a category waits
 for the checks it needs: carried for every carriage check, cooled for a
 control that moved, outside scope for the owner's scope check. Until then
 the finding is unresolved, and any other open check is listed beside the
@@ -128,7 +130,9 @@ Every page reads on GitHub as it does here.
 |---|---|
 | write a frame and check it before any call | [Write a frame](write-a-frame.md) |
 | choose trials and estimate their calls | [Interventions](interventions.md) |
+| test a decision made from something written from the evidence | [Crossings](crossings.md) |
 | read evidence apart from obligations | [Reading a verdict](reading-a-verdict.md) |
+| say how firm a verdict is over several runs | [Statistics](statistics.md) |
 | use a model, a local service or your own scorer | [Batteries](batteries.md) |
 | run, report and check frames from a terminal | [Command line](command-line.md) |
 | look up a word such as anchor, grain or quorum | [Glossary](glossary.md) |

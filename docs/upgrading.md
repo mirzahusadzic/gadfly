@@ -11,7 +11,16 @@ does not exist; `--refresh-package midwife` makes it look again.
 
 ### To 0.9.0, not yet released
 
-On `main`, for the next release: nothing a caller of 0.8.0 meets changes.
+On `main`, for the next release. No verdict changes, and these four things a
+caller of 0.8.0 meets do:
+
+| In 0.8.0 | In 0.9.0 | What to do |
+| --- | --- | --- |
+| An endpoint tag with a space or a control character inside it went to the router | It is refused before any call, a `BatteryError` (6), for a reader's line and a crossing maker's alike | Name each tag as the router lists it |
+| A router trickling its `GET /health` answer could hold the check past the battery's timeout | The answer is read whole within the timeout, or the run is refused as before, when the router cannot be asked | Nothing, with a router that answers in time |
+| A call pinned to one endpoint, whose answer named no provider, recorded the model alone in `served` | It records that endpoint's tag too, as 0.8.0 said | Nothing |
+| `report`, `plan` and `check-frame` printed a frame name ending in a colon bare | They print it quoted, as `stats` does | Nothing; the frame's hash is unchanged |
+
 New, and opt-in: `gadfly stats` and `midwife.stats`, which say beside each
 verdict how firm it is over the kept runs; `gadfly plan --agreement`,
 which says before a run how often its quorum can reach a level; and a span's

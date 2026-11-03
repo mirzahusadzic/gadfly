@@ -10,7 +10,7 @@ where you meet it.
 
 A frame is the whole experiment, written as JSON and checked before any call.
 These fragments are from `examples/upgrade.json`, the frame
-[Write a frame](write-a-frame.md) starts from:
+[Your first frame](first-frame.md) climbs:
 
 ```json
 "anchors": ["removed"],
@@ -36,8 +36,12 @@ These fragments are from `examples/upgrade.json`, the frame
   anchor.
 - **Input:** one case of the test domain, the question the reader is asked.
 - **Labels:** the answers a reader may give, each defined in the instruction.
-- **Allowed:** what the ablation may produce, and, for a bypass, the one
-  opening it must expose.
+- **Allowed:** what the ablation may produce, and, for a bypass, the
+  answers that expose the opening, such as `unclear`.
+- **Designated opening:** in the essay, the typed result a reader should
+  give without the connection; Gadfly reads it as the labels
+  `allowed.bypass` names, apart from the openings a failed or unreadable call
+  returns.
 - **Quorum and agree:** how many times each trial is asked, and how many
   answers must be alike to give it a level.
 - **Materialized:** a declaration that the observation is the form the
@@ -119,12 +123,31 @@ pr: carried
 - **Evidence:** why the rules named the category.
 - **Obligation, or open check:** what the trials did not settle; it is never
   a passed check.
-- **Carriage checks:** the essay's five: required influence, presentation
-  invariance, no hidden fallback, traceability and materialization.
+- **Carriage checks:** the checks a carried needs, as a verdict names them
+  when open: no hidden fallback, presentation invariance, specificity,
+  monotonicity, materialization, and direction where a frame turns its
+  evidence or its question. Ablation is the essay's required influence, and
+  the records its traceability.
+- **No hidden fallback:** the bypass moved the answer as allowed, so it rests
+  on the evidence through the connection the frame names.
+- **Specificity:** no sham moved the answer, so the ablation's move is about
+  the anchors, not any cut.
+- **Monotonicity:** cutting more never moved the answer less: a control or
+  cumulative trial that cuts the anchors and more did not leave the answer
+  where the ablation moved it from.
+- **Direction:** an inversion or input inversion turned the answer to what
+  the frame allows.
 - **Discrimination:** whether the reader can move at all, which a control
   that moved settles.
-- **Categories:** `carried`, `coupled but misaligned`, `cooled`,
-  `unresolved` and `outside scope`, none of them a score.
+- **Categories:** five, none of them a score. `carried`: the decision rests
+  on the anchors, for the reason claimed. `coupled but misaligned`: the
+  anchors matter, but the answer moves where the frame does not allow, or
+  wording or order moves it. `cooled`: the decision does not need the
+  anchors, and a control showed the reader can move. `unresolved`: the
+  evidence cannot tell yet, and the open check is named. `outside scope`:
+  the receiving owner excludes the relation, with their check recorded.
+- **Stable and session:** with `standing.stable`, the baseline and the
+  repeat, each a session of `quorum` calls, must not split.
 - **Agreement and power:** how often a reader gives its usual answer, and
   how often a quorum then reaches a level; `gadfly plan --agreement` and
   `gadfly stats` print them.
@@ -159,6 +182,8 @@ A run asks a battery each trial's prompt and keeps what comes back.
   answer, and optionally a cap on all output tokens.
 - **Prediction:** what you expect each trial to give, written before the
   first call; the examples keep theirs.
+- **Rung:** an example frame, by its number on the ladder: rung 16 is
+  `16-restore-inversion.json`, and rungs 1 to 6 build up Your first frame.
 - **Refusal:** an error Gadfly raises instead of guessing, a class named
   for what to fix (`FrameError`, `RecordsError` and others) with its own exit
   status; [Troubleshooting](troubleshooting.md) tables each one.

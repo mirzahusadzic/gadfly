@@ -22,9 +22,14 @@
 | it rests on the evidence through the connection you claim | `bypass`, with `allowed.bypass` | [Bypass](bypass.md) |
 | the reader can move at all, so that cooled means something | `control` | [Cooled](cooled.md), [A frame built wrong](built-wrong.md) |
 | it rests somewhere else too | `cumulative` | [Cumulative](cumulative.md) |
+| several anchors carry it together, or each alone | `eachAnchor` | [Each anchor alone](each-anchor.md) |
 | it moves the way the promise says | `allowed.ablation` | [Misaligned](misaligned.md) |
+| it turns when the evidence turns | `inversion`, with `allowed.inversion` | [Inversion](inversion.md) |
+| it follows what is asked | `inputInversion`, with `allowed.inputInversion` | [Asked](asked.md) |
 | several cases of one promise read alike | several `inputs` | [Several inputs](inputs.md), [Paths](paths.md) |
 | a finer cut tells more | another frame at another `grain` | [Grain](grain.md) |
+| it survives being written up before it is decided | the `crossing` battery | [Crossing](crossing.md) |
+| a verdict rests on its calls, or on one or two | nothing: `gadfly stats` reads the kept runs | [Crossing](crossing.md#how-firm-each-reading-is) |
 
 ---
 
@@ -41,7 +46,8 @@
    a report reads them without a model.
 5. **Set the result against the prediction.** A wrong prediction stays in.
 6. **Run it more than once** when the result matters, and read each run as one
-   draw.
+   draw; `gadfly stats` says how firm the verdicts are over all of them
+   ([Statistics](../statistics.md)).
 7. **Never edit a frame after its runs.** A frame that asked the wrong question
    gets a new version beside it, with the reason, and the old one keeps its runs.
 
@@ -57,9 +63,10 @@ uv run gadfly run examples/09-sync-sms.json \
 uv run gadfly report examples/09-sync-sms.json my-run.jsonl
 ```
 
-This reads a kept frame fresh, without adding to its runs. Each kept run was
-made by `examples/climb.py`, which runs a frame against eGemma and keeps the
-run beside the others.
+This reads a kept frame fresh, without adding to its runs. Each kept run
+Gemma read was made by `examples/climb.py`, which runs a frame against
+eGemma and keeps the run beside the others; Muse read rungs 19 and 20
+through the router, with the `unified` and `crossing` batteries.
 
 A reader other than the one recorded (another model, another revision, another
 temperature) is a new experiment: write its predictions down first.

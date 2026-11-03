@@ -252,10 +252,12 @@ before a live run.
 The cap is the whole call's. A battery that writes before it answers reports
 every output token it spent in `usage`, so set `--output-tokens`
 (`Budget.output_tokens_per_call`) to what a whole call may spend: a call that
-reports more stops the run after it. A cap of your own, on money or time,
-goes through `run(cancelled=...)`, which is asked before every call.
-`run(settle=True)` spends fewer calls: a trial stops once its level can no
-longer change, and the verdict reads as it would over every call.
+reports more stops the run after it.
+
+A cap of your own, on money or time, goes through `run(cancelled=...)`,
+which is asked before every call. `run(settle=True)` spends fewer calls: a
+trial stops once its level can no longer change, and the verdict reads as
+it would over every call.
 
 
 #### Record provenance

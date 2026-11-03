@@ -30,7 +30,9 @@ that matches names the category.
 
 Every finding keeps its **evidence** (why this category) apart from its
 **obligations** (what the trials did not settle), and an obligation is not a
-passed check. Under the default `carriage: all-checks`, a category waits
+passed check.
+
+Under the default `carriage: all-checks`, a category waits
 for the checks it needs: carried for every carriage check, cooled for a
 control that moved, outside scope for the owner's scope check. Until then
 the finding is unresolved, and any other open check is listed beside the

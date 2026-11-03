@@ -28,9 +28,8 @@ call.
 | `control` | spans any reader needs | whether the scorer can move at all; cooled needs it to | `quorum` calls |
 
 A sham never cuts a span declared under `cumulative`. The frame says that
-span may carry the relation, so cutting it would test nothing. This is a
-change to how shams are planned; no kept example's plan changes, as none
-drew one.
+span may carry the relation, so cutting it would test nothing; no kept
+example drew one.
 
 A sham matches the anchors by length in characters, within their kind, so
 `kind` is how a frame chooses the unit a sham matches. To cut as many lines
@@ -56,12 +55,12 @@ holds, and neither settles everything.
 | `repeat` | a split level is unstable at this quorum | the observed level recurred | that the input is representative |
 | `ablation` | the anchors influenced the outcome | no operative influence here | that another span is not a fallback |
 | `ablation-<anchor>` | that anchor is needed on its own | the other anchors carry it without this one | a category: it is evidence only |
-| `cumulative` | support moved elsewhere | the initial cut removed the effect | carriage on its own |
+| `cumulative` | after an ablation that held, it rests elsewhere too | after an ablation that moved, cutting more moved it less, so monotonicity stays open | carriage on its own |
 | `sham` | the scorer responds to irrelevant same-kind text | the ablation's change is more specific | that every possible irrelevant change is controlled |
 | `presentation` | wording drives the observation | the tested wording change is invariant | that all paraphrases are |
 | `placement` | the span's place drives the observation | the tested move is invariant | that every reordering is |
-| `inversion` | the answer follows the relation's sense | after a carried ablation, the reading drops the sense: coupled but misaligned | that every way of stating the sense is read |
-| `input-inversion` | the answer follows what is asked | after a carried ablation, the reading drops what is asked: coupled but misaligned | that every way of asking is read |
+| `inversion` | the answer follows the relation's sense | after an ablation that moved as allowed, the reading drops the sense: coupled but misaligned | that every way of stating the sense is read |
+| `input-inversion` | the answer follows what is asked | after an ablation that moved as allowed, the reading drops what is asked: coupled but misaligned | that every way of asking is read |
 | `bypass` | a hidden connection still carries the relation | no tested fallback is visible | receiving-system materialization |
 | `control` | the scorer can move under a required removal | the scorer or task is insensitive | that it moves for the right reason |
 
@@ -135,11 +134,10 @@ baseline's own label never counts:
 "allowed": {"ablation": ["open"], "inversion": ["Yes", "No", "open"]}
 ```
 
-It is read after a carried ablation. An inversion that stays at the baseline,
-or reaches a label `allowed.inversion` does not list, is coupled but
-misaligned; one with no agreed level leaves direction open. It is a change
-to the method, read only when a frame declares it, so no earlier frame reads
-differently.
+It is read after an ablation that moved as allowed. An inversion that stays
+at the baseline, or reaches a label `allowed.inversion` does not list, is
+coupled but misaligned; one with no agreed level leaves direction open. A
+frame that declares none reads as it would without the trial.
 
 Its limits are three. A who-question may rightly keep its answer when a
 description of the person is inverted, so a person declares the phrase. A

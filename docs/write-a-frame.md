@@ -193,7 +193,7 @@ Gadfly refuses a trial that would repeat another before it spends a call.
 | `ablation` | `true` | it is missing or not true |
 | `eachAnchor` | true or false | it is not true or false, or the frame has one anchor |
 | `cumulative` | a list of span ids | it adds no span to the anchors |
-| `sham` | `true`, or `{"draws": n}` with `n >= 1` and an optional `kind` mapping anchors to the kind their shams are drawn from | `n` is not a whole number of at least 1, or `kind` names a span that is no anchor, a kind no span has, or the anchor's own kind |
+| `sham` | `true` for one draw, or `{"draws": n}` with `n >= 1` and an optional `kind` mapping anchors to the kind their shams are drawn from | `n` is not a whole number of at least 1, or `kind` names a span that is no anchor, a kind no span has, or the anchor's own kind |
 | `presentation` | words mapped to their replacements | a word repeats in any case, or it renames nothing the reader reads |
 | `placement` | `{"span": id, "after": id}` | the two spans are one, or the move leaves the order as it is |
 | `inversion` | phrases of the anchors mapped to their inversions | a phrase repeats in any case, is in no anchor, or is in a span that is not one; the map changes no anchor; or `allowed.inversion` is missing |

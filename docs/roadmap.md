@@ -17,6 +17,11 @@ each answering one need and keeping its contracts.
 | Stopping at unresolved | `gadfly run --stop-unresolved` | the category a whole run reads |
 | Records through a pipe | `gadfly run --out -`, `gadfly report FRAME -` | each record written as it exists, never over a file |
 | Errors and warnings as classes | `midwife.errors`, `--json` on every command | one exit status a class, and every message tabled |
+| Inversion and input inversion | `"inversion"` and `"inputInversion"`, with their `allowed` | old frames' hashes and plans |
+| Each anchor alone | `"eachAnchor": true` | every category: its trials are evidence only |
+| Statistics beside a verdict | `gadfly stats`, `gadfly plan --agreement`, `midwife.stats` | every verdict as the rules read it; the same draws for the same records |
+| Crossing battery | `"battery": {"kind": "crossing", "maker": ..., "reader": ...}` | each side's own guarantees; the maker never sees the input; one cap for the call |
+| A span's source | `"source": {"sha256": ..., "from": ...}` on a span | the span's text, held to the hash byte for byte |
 
 ---
 
@@ -57,6 +62,18 @@ details.
   another model could tell a bad frame from a bad battery only by reading
   the words, and openings and early stops were lines with no class. Each is
   now a Python error or warning, with its own exit status.
+- **[Inversion and input inversion](interventions.md#inversion-asks-for-a-direction):**
+  cutting shows that an answer depends on a line, not that it follows the
+  line's sense, or what is asked.
+- **[Each anchor alone](interventions.md#each-anchor-alone-says-how-several-carry-it):**
+  with two anchors the ablation cuts both, so it cannot tell a chain of rules
+  from two routes either of which is enough.
+- **[Statistics](statistics.md):** five calls a trial are evidence, not proof,
+  and nothing said whether a verdict rested on all of its calls or on one.
+- **[Crossings](crossings.md):** a decision is often made from something
+  written from the evidence, and a trial could not reach the writing.
+- **A span's source:** a frame could quote text it said came from across a
+  boundary without anything holding it to that text.
 
 ---
 
@@ -74,10 +91,10 @@ The examples point at these, most useful first. None is built yet.
    portfolio` is a start.
 3. **Comparing readers:** run one frame on Gemma, Claude or a panel of human
    reviewers, which makes the essay's handoff measurable.
-4. **Changes beyond cutting:** change a value (400 ms becomes 100 ms) or add
-   contrary evidence, which tests direction, not only dependence.
-5. **Better statistics:** report counts with ranges, and keep the
-   temperature with the answers.
+4. **Adding evidence:** add contrary evidence, beyond the cuts, the renames,
+   the moves and the inversion's turned words.
+5. **The temperature with the answers:** keep in each record the temperature
+   its call was made at, which a frame that names none leaves unknown.
 6. **Help writing frames:** beyond the dead ends `plan` names, a warning
    when a control leaves a line that still points to the answer, as in
    [A frame built wrong](examples/built-wrong.md). It flags problems and never

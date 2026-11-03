@@ -212,7 +212,7 @@ def test_the_totals_the_docs_quote_are_the_kept_runs():
     assert f"{off} of {gemma:,} calls differed from their trial's majority" in findings
     assert f"{incident} of them are in the incident frames" in findings
     assert f"**No call failed.** {gemma:,} calls: no error" in findings
-    assert f"{total:,} calls in all" in ladder
+    assert f"{total:,} kept calls in all" in ladder
 
 
 def test_the_rung_generator_never_changes_a_kept_frame(tmp_path, monkeypatch):

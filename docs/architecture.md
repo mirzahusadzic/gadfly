@@ -61,6 +61,7 @@ flowchart TB
         ST["<b>Your records</b><br/>file, database, fixture"]
         subgraph B["Batteries: one Protocol"]
             UN["<b>unified</b><br/>an LLM critic"]
+            CR["<b>crossing</b><br/>a maker, then a reader"]
             EB["<b>egemma</b><br/>Gemma 4"]
             LJ["<b>local-json</b><br/>your evaluator"]
             TD["<b>tendora</b><br/>Tendora's engine"]
@@ -86,6 +87,7 @@ flowchart TB
     EB --> ES
     LJ --> LE
     TD --> TS
+    CR -.->|"by default"| RT
     RU -->|"each record"| ST
     ST --> JU
     JU -->|"finding"| YOU
@@ -99,7 +101,7 @@ flowchart TB
     classDef group fill:#8a96a814,stroke:#8a96a8,stroke-width:2px,stroke-dasharray:6 4
     class YOU person
     class SI,PL,RU,JU engine
-    class UN,EB,LJ,TD,OW interface
+    class UN,EB,LJ,TD,CR,OW interface
     class RT,ES,LE,TS service
     class ST kept
     class M,G,B,K group
@@ -195,13 +197,17 @@ guarantees.
 - **Strict, so often unresolved:** one trial without an agreed level makes a
   finding unresolved, and one such input makes the frame's overall category
   unresolved. Unresolved names the open check; it is not a failure.
-- **Thin statistics:** a trial's level is `agree` of `quorum` calls, 4 of 5
-  in every example, with no confidence range. A frame that names no
-  temperature gets the battery's default, and its records do not say what that
-  was.
+- **Statistics beside, never inside:** a trial's level is `agree` of
+  `quorum` calls, 4 of 5 in every step of the ladder. [Statistics](statistics.md) puts
+  ranges, tests and redrawn verdicts beside it and changes none. A frame that
+  names no temperature gets the battery's default, and its records do not
+  say what that was.
 - **It cuts, renames and moves, never adds:** a decision that follows from a
   default, such as access denied because nothing grants it, cannot be moved by
   cutting evidence, as [Several inputs](examples/inputs.md) shows.
+- **A crossing reads its maker and reader together:** cooled through an
+  artefact does not say which side lost the anchor; reading the artefact in
+  a frame of its own tells them apart, as [Crossings](crossings.md) shows.
 - **It reads what a decision rests on, not whether it is right:** blocking a
   customer without the line saying they signed may well be good caution, as in
   [Bypass](examples/bypass.md).

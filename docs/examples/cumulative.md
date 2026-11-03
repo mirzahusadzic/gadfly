@@ -15,6 +15,9 @@ rollback and the metrics, and an engineer may take either, one faster than the
 other, to the same answer. Then cutting one route asks whether the decision
 needs it, and cutting both asks whether it rests on the other.
 
+10c2 is the second version of a frame: [A frame built wrong](built-wrong.md),
+the next step, keeps the first, 10c, and shows why it was replaced.
+
 ---
 
 ### The frame

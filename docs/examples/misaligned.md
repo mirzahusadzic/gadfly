@@ -171,7 +171,7 @@ The rule is read before cooled and carried, and no later check can clear it.
 Most of 10a's task-runs are unresolved: with only the elimination, the debug
 and alert baselines split, and a trial without a level comes first. A run's
 overall reading is misaligned when any input is, so two of 10a's three runs
-read misaligned too.
+read misaligned too; [Several inputs](inputs.md) reads `overall` in full.
 
 Placement left every level it could be compared with where it was: where the
 rollback sits did not matter.

@@ -1,10 +1,12 @@
 # Command line
 
 `gadfly` checks, plans, runs and reports frames from a terminal, using only
-the public pipeline. Each command takes a frame file, and `run` and `report`
-also take a file of records, one JSON object per line. `uv run python -m
-midwife` is the same command. `gadfly` alone prints its help with examples,
-and `gadfly --version` its version.
+the public pipeline. Most commands take a frame file, `report` and `stats`
+its records, one JSON object per line, and `portfolio` the reports of
+several frames.
+
+`uv run python -m midwife` is the same command. `gadfly` alone prints its
+help with examples, and `gadfly --version` its version.
 
 ---
 

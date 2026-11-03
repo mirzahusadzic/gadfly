@@ -144,7 +144,7 @@ run, and the transcripts above read the same runs.
   is weaker.
 - A fallback is not always wrong. Here it may be what a careful engineer would do
   too; the verdict does not judge that, it says the decision does not rest on
-  the line the frame says it does.
+  the clause through the line that makes it the customer's.
 
 ---
 

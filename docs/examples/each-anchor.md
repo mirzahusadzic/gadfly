@@ -15,8 +15,9 @@
 With two anchors, the ablation cuts both, so it cannot tell a chain of rules
 from two routes either of which is enough. `eachAnchor` also cuts each one
 alone, and after a moved ablation one line says how they carry it. The
-statements are Tendora's demo, Payments On-Call (Apache-2.0), and each
-question is asked as the demo's own saved checks ask it.
+statements are Tendora's demo, Payments On-Call (Apache-2.0), which the
+[Payments demo](payments-demo.md) reads whole, and each question is asked as
+the demo's own saved checks ask it.
 
 ---
 
@@ -77,6 +78,8 @@ trials:
   sham-1        cuts s13, s25
   control       cuts every span
 allowed: ablation -> No, open
+carriage: listed, so a category is named with its open checks beside it
+stable: the baseline and the repeat must not split
 ```
 
 > [!NOTE]
@@ -126,7 +129,8 @@ x: carried
 s15 alone moves it to No, so it carries the answer. s14 alone split three
 Yes to two No in that run, so it has no agreed level, and the evidence says
 so without changing the category. Runs 1 and 2 split at the baseline or the
-repeat, and read unresolved before the ablation is read.
+repeat, which `stable` does not allow, and read unresolved before the
+ablation is read.
 
 ---
 
@@ -181,8 +185,9 @@ run 3: unresolved
 
 With no case, Gemma says No to every prompt, every statement cut included:
 a default, so the scorer cannot tell. Given a case both routes reach
-(18b2), it says Yes on most calls but splits in every run, even under the
-shams, and cutting Priya's route moves it more than cutting Alex's.
+(18b2), it says Yes on most calls but splits in every run. A sham moved it
+as far as cutting Priya's route did (No 9, Yes 6 each), and further than
+cutting Alex's.
 
 ---
 
@@ -194,8 +199,6 @@ and the checks filling in until the verdict. On GitHub the view does not
 run, and the transcripts above read the same runs.
 
 <!-- watch 18c-restore-cited 18-notify-chain 18b-access-logs 18b2-access-logs-both -->
-
----
 
 ---
 
