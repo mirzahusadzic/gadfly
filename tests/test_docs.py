@@ -302,6 +302,15 @@ def test_the_doll_stage_keeps_to_what_the_reader_picked():
     assert seen["gate"] == {"afterGate": 1, "afterTrial": 1, "afterPick": 0}
 
 
+def test_the_watch_views_controls_wait_for_its_first_frame():
+    # Play, Back and Next pressed while the first frame still loads do
+    # nothing, rather than throw (tests/watch_harness.mjs; pass 11, F8)
+    done = subprocess.run(
+        ["node", str(ROOT / "tests/watch_harness.mjs")], capture_output=True, text=True, check=True
+    )
+    assert json.loads(done.stdout) == {"Back": "nothing", "Play": "nothing", "Next": "nothing"}
+
+
 def test_the_watch_view_shows_what_a_crossings_maker_wrote():
     # the reader read the artefact, not the trial's body, so the view keeps
     # each call's artefact, and says when its record kept only the start

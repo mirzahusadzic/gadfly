@@ -451,17 +451,26 @@
       state.input = inputSelect.value;
       compare();
     });
+    // the controls wait for a frame: before one loads they do nothing
     back.addEventListener("click", () => {
+      if (!state.data) return;
       story.on = false;
       stop();
       show(Math.max(0, state.step - 1), true);
     });
     next.addEventListener("click", () => {
+      if (!state.data) return;
       story.on = false;
       stop();
       show(Math.min(last(), state.step + 1), true);
     });
-    play.addEventListener("click", () => (state.timer ? ((story.on = false), stop()) : start()));
+    play.addEventListener("click", () => {
+      if (!state.data) return;
+      if (state.timer) {
+        story.on = false;
+        stop();
+      } else start();
+    });
 
     const last = () => state.data.trials.length; // the step after the last trial is the verdict
 
