@@ -4,6 +4,9 @@ Each release that changes what a caller meets has a section here, the newest
 first. In none of them does a verdict change: every kept run reads to the same
 category. The site follows `main`, so a release not yet out says so.
 
+Just after a release, uv may still answer from its cache that the new version
+does not exist; `--refresh-package midwife` makes it look again.
+
 ---
 
 ### To 0.8.0
