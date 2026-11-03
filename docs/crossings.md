@@ -15,10 +15,10 @@ A crossing changes the grain, and the locus moves with it. Which way a frame
 reads it depends on whether the artefact can be made again:
 
 - **Out, through a maker that runs again:** the frame's spans are the
-  evidence on the near side, and the `crossing` battery has a maker write the
-  artefact from each trial's body before a reader decides from it. Every
-  trial changes the evidence before the maker sees it, so ablation asks
-  whether the decision still moves when the maker never saw the anchors.
+  evidence on the near side, and a maker writes the artefact from each
+  trial's body before a reader decides from it. Every trial changes the
+  evidence before the maker sees it, so ablation asks whether the decision
+  still moves when the maker never saw the anchors.
 - **In, from an artefact made once:** a poem already written, a report
   already filed, a dream told the morning after. Nothing can make it again
   from changed evidence, so a frame reads its lines as they are, with any
@@ -30,55 +30,19 @@ tested where it happens.
 
 ---
 
-### The crossing battery
+### A frame that crosses out
 
-The battery line names the maker and the reader, each in a line of its own.
-The frame's instruction and labels are the reader's; the maker's
-instruction is in its line, and the frame's hash names both:
+Write it as any frame: the evidence on the near side is its spans, and the
+question the far side answers is its input. The frame's instruction and
+labels are the reader's, and its `crossing` names the artefact, such as "the
+cause section the commander reads".
 
-```json
-"battery": {
-  "kind": "crossing",
-  "maker": {
-    "kind": "unified",
-    "model": "anthropic/claude-sonnet-5-5",
-    "instruction": "Write the incident's cause in two sentences."
-  },
-  "reader": {
-    "kind": "unified",
-    "model": "anthropic/claude-sonnet-5-5",
-    "reasoning": "low"
-  }
-}
-```
-
-`Crossing` with no arguments makes and reads through the unified model
-router, and each line is held to every check of the
-[unified battery](batteries.md#the-shipped-batteries). Give each call room
-for both answers:
-
-```text
-gadfly run incident.json \
-    --battery midwife.batteries.crossing:Crossing \
-    --calls 150 --output-tokens 4000 \
-    --out incident.jsonl
-```
-
-- **What the maker sees:** the trial's body alone, never the input and never
-  which trial it serves.
-- **What the reader sees:** the artefact, the `---` line, and the input, as
-  any battery sees a body and its input.
-- **What a call spends:** the maker is given half of `--output-tokens`, and
-  the reader what the maker left, so the cap and the token budget hold for
-  the call as a whole.
-- **What a record keeps:** `served` reads `made by …, read by …`, and the raw
-  answer holds the artefact's SHA-256 whole, with as much of its text and of
-  the reader's answer as fit the record's 2,000 characters.
-- **When a side fails:** an artefact not made is an opening that says so
-  (`the maker made nothing (…)`), and the reader is not asked; a reading
-  not made says so too (`the reader gave no label (…)`). A side that
-  reports nothing, or a spend that is not a count, is charged all it was
-  given.
+The battery line names the maker, with its own instruction of what to write,
+and the reader, so the frame's hash names both. The `crossing` battery runs
+it, and [Batteries](batteries.md#a-maker-before-the-reader) holds that line,
+what each side sees and spends, and how to write a maker in Python. The
+[crossing example](examples/crossing.md) writes one incident up two ways, as
+a cause section and as a status update.
 
 ---
 
@@ -105,32 +69,6 @@ baseline's artefact on its own, in a frame of its own: its span is the
 artefact, its `source` is the SHA-256 the crossing's record kept, and its
 anchor is the artefact itself. If the reader moves there but not through the
 crossing, the maker lost it.
-
----
-
-### From Python
-
-A maker is any object with a `name`, `check(line)` and
-`make(line, text, max_output_tokens)`, which returns a `Made`; any battery
-reads. `Function` makes a maker of a plain function of the body's text:
-
-```python
-from midwife.batteries.crossing import Crossing, Function
-from midwife.batteries.egemma import EGemma
-
-
-def cause(body: str) -> str:
-    if "connection pool" in body:
-        return "The deploy shrank the connection pool."
-    return "The cause is not known yet."
-
-
-crossing = Crossing(Function("incident-cause", cause), EGemma())
-```
-
-Kept in a module of your own, `--battery yourmodule:crossing` runs it. The
-function's line is `{"kind": "incident-cause"}`, so the frame's hash names
-the function by that name alone: give a changed function a new name.
 
 ---
 

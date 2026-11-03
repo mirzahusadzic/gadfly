@@ -68,7 +68,7 @@ does.
 | `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced; Gemma thinks first with `reasoning: true` |
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 | `tendora` | Tendora's engine server, from its demo package, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
-| `crossing` | a maker, then a reader: the maker writes an artefact from the trial's body, and the reader decides from it, as [Crossings](crossings.md) explains | each side's own guarantees, through the router the unified battery's; the maker never sees the input; the cap is shared between the two; records the artefact's SHA-256 and what made and read it |
+| `crossing` | a maker, then a reader: the maker writes an artefact from the trial's body, and the reader decides from it | each side's own guarantees, through the router the unified battery's; the maker never sees the input; the cap is shared between the two; records the artefact's SHA-256 and what made and read it |
 | your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
 
 #### Addresses and keys
@@ -155,6 +155,76 @@ since the engine is sent one statement a line. The battery refuses either
 before any call, as it does a rename that turns an input out of its form
 or two inputs into one question.
 
+#### A maker before the reader
+
+The `crossing` battery runs a [crossing](crossings.md) out through a maker
+that runs again: the maker writes an artefact from each trial's body, and a
+reader decides from it. Its line names each side in a line of its own. The
+frame's instruction and labels are the reader's, the maker's instruction is
+in its line, and the frame's hash names both:
+
+```json
+"battery": {
+  "kind": "crossing",
+  "maker": {
+    "kind": "unified",
+    "model": "anthropic/claude-sonnet-5-5",
+    "instruction": "Write the incident's cause in two sentences."
+  },
+  "reader": {
+    "kind": "unified",
+    "model": "anthropic/claude-sonnet-5-5",
+    "reasoning": "low"
+  }
+}
+```
+
+`Crossing` with no arguments makes and reads through the unified model
+router, and each side's line is held to every check of the `unified`
+battery. Give each call room for both answers:
+
+```text
+gadfly run incident.json \
+    --battery midwife.batteries.crossing:Crossing \
+    --calls 150 --output-tokens 4000 \
+    --out incident.jsonl
+```
+
+- **What the maker sees:** the trial's body alone, never the input and never
+  which trial it serves.
+- **What the reader sees:** the artefact, the `---` line, and the input, as
+  any battery sees a body and its input.
+- **What a call spends:** the maker is given half of `--output-tokens`, and
+  the reader what the maker left, so the cap and the token budget hold for
+  the call as a whole.
+- **When a side fails:** an artefact not made is an opening that says so
+  (`the maker made nothing (…)`), and the reader is not asked; a reading
+  not made says so too (`the reader gave no label (…)`). A side that
+  reports nothing, or a spend that is not a count, is charged all it was
+  given.
+
+A maker of your own is any object with a `name`, `check(line)` and
+`make(line, text, max_output_tokens)`, which returns a `Made`; any battery
+reads. `Function` makes a maker of a plain function of the body's text:
+
+```python
+from midwife.batteries.crossing import Crossing, Function
+from midwife.batteries.egemma import EGemma
+
+
+def cause(body: str) -> str:
+    if "connection pool" in body:
+        return "The deploy shrank the connection pool."
+    return "The cause is not known yet."
+
+
+crossing = Crossing(Function("incident-cause", cause), EGemma())
+```
+
+Kept in a module of your own, `--battery yourmodule:crossing` runs it. The
+function's line is `{"kind": "incident-cause"}`, so the frame's hash names
+the function by that name alone: give a changed function a new name.
+
 #### Privacy and routing
 
 The shipped batteries keep these promises, and a battery of your own owns its
@@ -206,7 +276,7 @@ response names, then the provider the router reports, or, for a call pinned to
 one endpoint, that endpoint's tag; a provider the router does not yet know is
 left out, never guessed. The `crossing` battery records `made by …, read by …`,
 and its raw answer keeps the artefact's SHA-256 whole, beside as much of the
-artefact and the reader's answer as fit.
+artefact and the reader's answer as fit the record's 2,000 characters.
 
 ---
 

@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > **This step**
 >
-> - **Teaches:** the [crossing battery](../crossings.md), where a maker
+> - **Teaches:** a [crossing](../crossings.md), where a maker
 >   writes what the reader reads, so the verdict says whether the evidence
 >   survived the writing; the same evidence carried through one artefact
 >   and cooled through another.
