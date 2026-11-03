@@ -86,6 +86,36 @@ text that is there. Nothing below a fit is invalidated by it.
 
 ---
 
+### Kinds of recoil
+
+- **Within one frame, down the grains:** the frames share one shape, the same
+  question, labels and promise, each at a smaller grain, and the piece climbs
+  inside that shape to the frame whose hole it fits.
+- **Across a grain, where the question changes:** a decision climbs to a frame
+  that asks something else, as a doll's answer climbs to its set. Where it
+  fits, the frame asked again would ask another question: a reframing.
+- **Sideways, between frames of one grain:** not built, under Later.
+
+---
+
+### Climbing without asking again
+
+Recoil is content-addressed, as a build is. A frame is its hash, it names its
+parents by the SHA-256 of the texts it quotes, and a piece fits a hole by kind,
+so a walk is lookups and comparisons, and makes no call.
+
+- **Only a fit is asked again:** a frame the piece does not fit keeps its hash,
+  and its kept runs still hold, as a cache's entry does. A successor only adds
+  a span, so every frame that quotes the old text still finds it.
+- **A decision climbs the same way:** it is another piece, and another walk.
+  Where it fits, the frame is asked again only if the successor does not
+  reframe; a reframing asks nothing.
+- **Asked, not rebuilt:** unlike a compiler's, a reader's answer is not the
+  same every time, so a fit is not built once but asked lightly until its
+  verdict is firm. Kept runs are read, never asked again.
+
+---
+
 ### Asked until firm
 
 A successor is asked lightly, and again only while it must be. `until_firm`

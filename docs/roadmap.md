@@ -103,6 +103,9 @@ The examples point at these, most useful first. None is built yet.
    when a control leaves a line that still points to the answer, as in
    [A frame built wrong](examples/built-wrong.md). It flags problems and never
    writes a frame from a result.
+7. **Icons for the trials:** in the watch view, a small set of icons, one for
+   the ablation, the sham and each other trial, that reads at the size of the
+   view's text and is never told apart by colour alone.
 
 ---
 

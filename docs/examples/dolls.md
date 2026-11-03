@@ -58,6 +58,24 @@ found in Mirza: The paper says: "My name is Kiran, and I am a boy."
 
 ---
 
+### Which recoil this is
+
+Two kinds, both in this one set:
+
+- **Within one frame, down the grains:** Kiran, Sasha, Robin and Mirza are one
+  frame, the same question, labels, instruction and promise, at a grain one
+  doll smaller each time. The paper's words are found at the finest grain and
+  climb inside that one shape to the coarser doll whose hole they fit.
+- **Across a grain, where the question changes:** "Kiran reads boy" climbs to
+  Amani, who stands for the whole set and asks another question, "Is this a
+  set of girls?". That is why Amani is reframed, not asked again.
+
+No doll says it is smaller than its sister: the order is carried by the
+shapes, in the lines that say which doll sits inside which, and in the
+drawing.
+
+---
+
 ### 22c: Mirza, holding a paper that is not Mirza's
 
 The question is "What am I?", and the instruction says nothing of paint. The
