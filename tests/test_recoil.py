@@ -686,3 +686,18 @@ def test_the_stability_docs_name_the_share_until_firm_holds_to():
     from midwife.recoil import FIRM
 
     assert f"{FIRM:.0%} of draws is firm" in inspect.getdoc(stability)
+
+
+def test_the_troubleshooting_tables_name_what_recoil_refuses():
+    # a frame resting on its holes alone is refused when planned, and the
+    # tables say so in the words the refusal uses (pass 11, F13)
+    from pathlib import Path
+
+    waiting = matryoshka()[1]
+    waiting["anchors"] = []
+    with pytest.raises(FrameError) as refused:
+        plan(parse(waiting))
+    tables = (Path(__file__).parent.parent / "docs/troubleshooting.md").read_text()
+    said = str(refused.value).replace("'second doll'", "'Kiran'")
+    assert f"`FrameError: {said}`" in tables
+    assert "`FrameError: the body holds no span`" in tables

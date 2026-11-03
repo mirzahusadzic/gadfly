@@ -65,6 +65,9 @@ common ones.
 | `FrameError: span 'r2' names a source that is not {sha256, from}` | `sha256 is 64 lowercase hex digits; from, if given, says where the text came from`. |
 | `FrameError: the body has no span 'r9'` | `anchors name spans of the body`. Name as anchors only the ids of its spans. |
 | `FrameError: required influence is tested by ablation, and none is declared` | `set ablation to true`. |
+| `FrameError: frame 'Kiran' rests on its holes alone, so no trial has an anchor to cut` | `fill a hole first, in the frame midwife.recoil.successor drafts`. A frame whose anchors are all holes is walked by [recoil](breadth/recoil.md), never planned or run. |
+| `FrameError: the body holds no span` | `a frame's evidence is one span or more`. Holes stand in for anchors, never for the evidence. |
+| `FrameError: holes name span 'paper', which the body has` | `a hole is what the body lacks`. Give the hole an id no span has. |
 
 ---
 

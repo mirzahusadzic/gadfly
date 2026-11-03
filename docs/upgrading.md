@@ -31,7 +31,9 @@ far side of a boundary; `midwife.batteries.unified.request_body` builds the
 router request both sides send.
 
 A frame may also declare `holes`, what its body is missing, and `offers`, the
-kind its decision climbs as; a frame without them keeps its hash.
+kind its decision climbs as; a frame without them keeps its hash. A frame
+whose anchors are all holes is walked, never planned: `plan` and
+`calls_needed` refuse it with a `FrameError` until a hole is filled.
 `midwife.recoil` carries a piece found further down a chain of frames up to
 the holes it fills, and asks each fit again until its verdict is firm.
 
