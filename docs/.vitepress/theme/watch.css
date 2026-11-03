@@ -254,6 +254,9 @@
   content: ""; margin-top: 0.25rem; border: 0.4rem solid transparent; border-top-color: var(--w-accent);
 }
 .w-dolls .d-name.is-cut { text-decoration: line-through; color: var(--w-muted); }
+/* the gate's mark, in words beside the dashed ring */
+.w-dolls .d-note { font-size: var(--w-ui); color: var(--w-muted); font-style: italic; }
+.w-dolls .d-note[hidden] { display: none; }
 .w-dolls .d-region { transition: opacity 0.6s; }
 .w-dolls .d-region.is-cut { opacity: 0; }
 .w-dolls .d-region.is-gone { opacity: 0.25; }
@@ -261,6 +264,10 @@
 /* one line kept for the caption, which most need at most, set to the right
    so that it ends under the dolls */
 .w-dolls .d-caption { grid-column: 1 / -1; margin: 0; text-align: right; color: var(--w-muted); min-height: 1lh; }
+/* what each visit draws, and the box that shows the set as it was read */
+.w-dolls .d-original { grid-column: 1 / -1; margin: 0; text-align: right; color: var(--w-muted); }
+.w-dolls .d-original label { white-space: nowrap; cursor: pointer; color: var(--w-ink); }
+.w-dolls .d-original input { accent-color: var(--w-accent); margin: 0 0.25rem 0 0; vertical-align: -0.1em; }
 /* a doll asked twice, its two frames, always shown: in the card's top right
    corner, over the smallest dolls, so the dolls keep their height */
 .w-dolls .d-variants { position: absolute; top: 0.9375rem; right: 1.0625rem; display: flex; gap: 0.5rem; }
@@ -269,7 +276,7 @@
 @media screen and (max-width: 44.9375em) {
   .w-ask.has-dolls { grid-template-columns: minmax(0, 1fr); }
   .w-dolls .d-row { order: -2; }
-  .w-dolls :is(.d-caption, .d-variants) { order: -1; text-align: center; }
+  .w-dolls :is(.d-caption, .d-original, .d-variants) { order: -1; text-align: center; }
   .w-dolls .d-doll svg { height: calc(var(--d-ratio) * min(12.5rem, 28vw)); }
   .w-dolls .d-variants { position: static; justify-content: center; margin-top: 0.5rem; }
 }

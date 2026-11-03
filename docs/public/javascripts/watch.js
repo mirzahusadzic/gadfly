@@ -462,6 +462,16 @@
       }
     };
 
+    // a line as the doll stage tells it this visit, its names and colours
+    // drawn afresh, or as it was read when the reader asks for that
+    const told = (id, text) => {
+      let out = text;
+      staged(() => {
+        out = hooks.text?.(state.stem, id, text) ?? text;
+      });
+      return out;
+    };
+
     // a reader's own step ends the sequence, and stops a climb or gate under way
     const takeOver = () => {
       story.on = false;
@@ -744,7 +754,7 @@
         if (span.anchor) li.classList.add("is-anchor");
         if (hidden) li.classList.add("is-hidden");
         if (shown.moved === id) li.classList.add("is-moved");
-        li.append(el("span", "w-line-text", plain(hidden ? span.text : textOf[id] ?? span.text, marks)));
+        li.append(el("span", "w-line-text", plain(told(id, hidden ? span.text : textOf[id] ?? span.text), marks)));
         const tags = el("span", "w-tags");
         if (span.anchor) tags.append(el("span", "w-tag is-anchor", "line under test"));
         if (hidden) tags.append(el("span", "w-tag is-hidden", "hidden"));
@@ -880,6 +890,9 @@
               hold() {
                 story.on = false; // a walked doll picked: the view holds still
                 stop();
+              },
+              redraw() {
+                if (state.data) show(state.step, false); // the lines told the other way
               },
             }, data);
             story.order = data.order;

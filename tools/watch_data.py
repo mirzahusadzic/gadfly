@@ -305,12 +305,19 @@ def titled() -> dict:
     return {"group": "Payments demo, Tendora and Gemma", "examples": listed}
 
 
+# the design words a doll's lines name as colours: what a visit's picture
+# may give each doll from another's design, its motif and flower its own
+COLOURS = ("body", "scarf", "trim", "dots", "hair", "eyes", "hem")
+
+
 def dolls() -> dict:
     """The doll stage's data, read from the frames and kept runs with no
     model: each doll's own lines and the design they name, the frames that
     ask it, where the paper's words climb and fit (`midwife.recoil.walk`), and
-    the gate Kiran's kept runs set, with what it does to the largest doll."""
-    from examples.matryoshka import THEMES
+    the gate Kiran's kept runs set, with what it does to the largest doll; and
+    what each visit's picture may draw its names and colours from, with the
+    lines that name a colour as templates the original design fills exactly."""
+    from examples.matryoshka import LINES, NAMES, THEMES
     from midwife.frame import load, parse
     from midwife.recoil import found, gate, successor, until_firm, walk
     from midwife.types import Budget
@@ -398,6 +405,15 @@ def dolls() -> dict:
             f"question, and {above.name} as it was asked stands.",
         },
         "order": DOLL_ORDER,
+        "variation": {
+            "names": NAMES,
+            "colours": [{k: theme[k] for k in COLOURS} for theme in THEMES],
+            "templates": {
+                id: say({k: "{" + k + "}" for k in COLOURS})
+                for id, _, _, say in LINES
+                if id in COLOURS
+            },
+        },
     }
 
 

@@ -69,8 +69,36 @@ const box = new Node('div');
 const hooks = window.gadflyDolls.stage(box, {
   select: (stem) => asked.push(['select', stem]),
   hold: () => asked.push(['hold']),
+  redraw: () => asked.push(['redraw']),
 }, data);
-const [row, caption, variants] = box.children;
+const [row, caption, original, variants] = box.children;
+const seen = {};
+
+// each visit's picture: every doll named from another region of the pool,
+// every line that names a doll or a colour told as the picture shows them;
+// the box under the caption shows the set as it was read, word for word
+const labels = row.children.map((fig) => fig.children[1].textContent);
+const regionOf = Object.fromEntries(Object.entries(data.variation.names).flatMap(([region, names]) => names.map((n) => [n, region])));
+const kiranLines = Object.fromEntries([...data.dolls[1].lines, ...data.dolls[1].extra].map((l) => [l.id, l.text]));
+const scarf = hooks.text(kirans, 'scarf', kiranLines.scarf).match(/^My headscarf is (.+) and covers my head and shoulders\.$/);
+const visit = {
+  regions: new Set(labels.map((n) => regionOf[n])).size,
+  pooled: labels.every((n) => n in regionOf),
+  named: hooks.text(kirans, 'name', kiranLines.name) === `My name is ${labels[1]}.`,
+  paper: hooks.text(kirans, 'paper', kiranLines.paper).includes(`My name is ${labels[1]}, and I am a boy.`),
+  scarf: Boolean(scarf) && data.variation.colours.some((c) => c.scarf === scarf[1]),
+  renamedFrom: hooks.text(kirans, 'inside', kiranLines.inside) === `${labels[1]} sits inside ${labels[0]}.`,
+};
+const box_ = original.children[1].children[0]; // the checkbox in its label
+box_.checked = true;
+box_.listeners.change[0]();
+const namesAsRead = row.children.map((fig) => fig.children[1].textContent);
+visit.asRead = {
+  names: namesAsRead,
+  lines: Object.entries(kiranLines).every(([id, text]) => hooks.text(kirans, id, text) === text),
+  redrawn: asked.splice(0),
+};
+seen.visit = visit;
 const doll = (name) => row.children.find((fig) => fig.children[1].textContent === name);
 const regions = (fig) => {
   const all = [];
@@ -80,7 +108,6 @@ const regions = (fig) => {
 };
 const isCut = (name, part) => regions(doll(name)).find((g) => g.dataset.part === part)?.classes.has('is-cut');
 const marked = () => row.children.filter((fig) => fig.classes.has('is-reframed')).length;
-const seen = {};
 
 // what others say of a doll is drawn last, over its outline and ring
 seen.decoyOnTop = doll('Kiran').children[0].children.at(-1).dataset.part === 'decoy';
@@ -105,12 +132,15 @@ seen.takeover = { asked: asked.splice(0), captionKept: caption.textContent === t
 hooks.frame(kirans, frames[kirans]);
 await hooks.gate();
 const afterGate = marked();
+const noteShown = !doll('Amani').children[2].hidden && doll('Amani').children[2].textContent;
 const selectedAfterGate = row.children.filter((fig) => fig.getAttribute('aria-pressed') === 'true').length;
 const travellingAfterGate = row.classes.has('is-travelling');
 hooks.trial({ removed: [] }, frames[kirans]);
-seen.gate = { afterGate, afterTrial: marked() };
+seen.gate = { afterGate, afterTrial: marked(), note: noteShown };
 hooks.frame(mirzas, frames[mirzas]);
 seen.gate.afterPick = marked();
+const amaniNote = doll('Amani').children[2];
+seen.gate.noteAfterPick = amaniNote.hidden;
 seen.gate.selectionBack = selectedAfterGate === 1 && !travellingAfterGate;
 
 // Kiran's two frames stay on the stage whichever doll plays, the one played

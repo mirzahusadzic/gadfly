@@ -255,10 +255,52 @@
     return { root, regions };
   }
 
+  // ---- each visit's picture: other names, each from another region, and
+  // each doll in another's colours, its motif and flower its own
+  function drawVisit(data, random) {
+    const shuffled = (list) => {
+      const out = [...list];
+      for (let i = out.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+      return out;
+    };
+    const regions = shuffled(Object.values(data.variation.names));
+    const colours = shuffled(data.variation.colours);
+    const names = {}, given = {};
+    data.dolls.forEach((doll, n) => {
+      names[doll.name] = regions[n][Math.floor(random() * regions[n].length)];
+      given[doll.name] = colours[n % colours.length];
+    });
+    return { names, colours: given };
+  }
+  const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   // ---- the stage: five dolls beside one watch view's question
   function stage(box, api, data) {
     const random = rng(Math.floor(Math.random() * 2 ** 31));
     const byName = Object.fromEntries(data.dolls.map((d) => [d.name, d]));
+    // the picture is this visit's: names and colours drawn afresh, every line
+    // that names them told so, while the box under the caption shows the set
+    // as it was read, each line word for word
+    const visit = drawVisit(data, random);
+    let asRead = false;
+    const naming = new RegExp(`(?<!\\p{L})(${data.dolls.map((d) => escape(d.name)).join("|")})(?!\\p{L})`, "gu");
+    const renamed = (text) => (asRead ? text : text.replace(naming, (name) => visit.names[name]));
+    const looks = (doll) =>
+      asRead ? doll : { ...doll, name: visit.names[doll.name], design: { ...doll.design, ...visit.colours[doll.name] } };
+    // a doll's line as this visit tells it: a colour it names from the
+    // visit's design, and every doll by the visit's name
+    function told(doll, id, said) {
+      if (asRead) return said;
+      const line = doll && [...doll.lines, ...doll.extra].find((l) => l.id === id);
+      const template = data.variation.templates[id];
+      const filled = template && line && said === line.text
+        ? template.replace(/\{(\w+)\}/g, (_, key) => looks(doll).design[key])
+        : said;
+      return renamed(filled);
+    }
     const row = document.createElement("div");
     row.className = "d-row";
     const caption = document.createElement("p");
@@ -269,15 +311,22 @@
     let narration = "";
     const say = (text) => {
       narration = text;
-      caption.textContent = text;
+      caption.textContent = renamed(text);
     };
+    // what this visit draws, said beside the box that shows the set as read
+    const original = document.createElement("p");
+    original.className = "d-original";
+    const asReadBox = document.createElement("input");
+    asReadBox.type = "checkbox";
+    const asReadLabel = document.createElement("label");
+    asReadLabel.append(asReadBox, " Show them as they were read");
+    original.append("Each visit draws the dolls' names and colours afresh. ", asReadLabel);
     // the frames of a doll asked more than once, always shown, the one
     // played pressed, so nothing comes and goes as the sequence moves on
     const variants = document.createElement("div");
     variants.className = "d-variants";
     variants.setAttribute("role", "group");
     const twice = data.dolls.filter((d) => d.frames.length > 1);
-    variants.setAttribute("aria-label", twice.map((d) => `${d.name}'s frames`).join(", "));
     variants.append(
       ...twice.flatMap((d) => d.frames).map((s) => {
         const b = document.createElement("button");
@@ -290,21 +339,42 @@
         return b;
       }),
     );
-    box.replaceChildren(row, caption, variants);
+    box.replaceChildren(row, caption, original, variants);
     const drawn = data.dolls.map((doll, place) => {
       const fig = document.createElement("button");
       fig.type = "button";
       fig.className = "d-doll";
       fig.style.setProperty("--d-ratio", RATIO[place]);
-      const { root, regions } = draw(doll, place, random);
       const name = document.createElement("span");
       name.className = "d-name";
-      name.textContent = doll.name;
-      fig.append(root, name);
-      fig.setAttribute("aria-label", `${doll.name}, ${doll.frames.length ? "asked" : "walked, never asked"}`);
+      const note = document.createElement("span"); // what the gate made of it
+      note.className = "d-note";
+      note.textContent = "reframed";
+      note.hidden = true;
       fig.addEventListener("click", () => select(doll.name, true));
       row.append(fig);
-      return { doll, fig, regions, name };
+      return { doll, fig, regions: {}, name, note, place };
+    });
+    // every doll painted as this visit shows it, or as it was read, its name
+    // beneath; a trial's cuts are painted again by settle
+    function picture() {
+      for (const entry of drawn) {
+        const look = looks(entry.doll);
+        const { root, regions } = draw(look, entry.place, random);
+        entry.regions = regions;
+        entry.name.textContent = look.name;
+        entry.fig.replaceChildren(root, entry.name, entry.note);
+        entry.fig.setAttribute("aria-label", `${look.name}, ${entry.doll.frames.length ? "asked" : "walked, never asked"}`);
+      }
+      variants.setAttribute("aria-label", twice.map((d) => `${looks(d).name}'s frames`).join(", "));
+    }
+    picture();
+    asReadBox.addEventListener("change", () => {
+      asRead = asReadBox.checked;
+      picture();
+      settle();
+      caption.textContent = renamed(narration);
+      api.redraw?.();
     });
     // what the view plays, what its trial left, and a count that each new
     // pick or frame moves on, so a climb or gate already under way stops
@@ -334,7 +404,10 @@
 
     function unmark() {
       row.classList.remove("is-travelling");
-      for (const entry of drawn) entry.fig.classList.remove("is-reframed", "is-passing");
+      for (const entry of drawn) {
+        entry.fig.classList.remove("is-reframed", "is-passing");
+        entry.note.hidden = true;
+      }
     }
     // the selection leaves the doll the view plays, for the one the words pass
     function pass(entry) {
@@ -393,18 +466,20 @@
       }
     }
     // the gate: the decision climbs to the largest doll, the selection with
-    // it, and that doll is reframed, and stays marked so until another doll
-    // is picked; the selection goes back to the doll the view plays
+    // it and held there, and that doll is reframed, and stays marked so, its
+    // ring and a word under its name, until another doll is picked; the
+    // selection goes back to the doll the view plays
     async function gate() {
       const mine = turn;
       const g = data.gate;
       const entry = drawn.find((e) => e.doll.name === g.fits);
       pass(entry);
       say(g.caption);
-      await wait(reduced ? 300 : 1400);
+      await wait(reduced ? 600 : 2800);
       if (turn !== mine) return; // a reader took over: the stage is theirs
       row.classList.remove("is-travelling");
       entry.fig.classList.replace("is-passing", "is-reframed");
+      entry.note.hidden = false;
     }
     const wait = (ms) => new Promise((done) => setTimeout(done, ms));
     // a reader's own step in the view: a climb or gate under way stops where
@@ -424,13 +499,18 @@
       if (!g || !fig) return;
       const entry = drawn.find((x) => x.fig === fig);
       const line = [...entry.doll.lines, ...entry.doll.extra].find((l) => l.id === g.dataset.part);
-      if (line) caption.textContent = `${entry.doll.name} says \u201c${line.text}\u201d`;
+      if (line) caption.textContent = `${looks(entry.doll).name} says \u201c${told(entry.doll, line.id, line.text)}\u201d`;
     });
     row.addEventListener("pointerout", (e) => {
-      if (e.target.closest(".d-region")) caption.textContent = narration;
+      if (e.target.closest(".d-region")) caption.textContent = renamed(narration);
     });
 
-    return { frame, trial, climb, gate, cancel };
+    // a line of a frame's, as this visit tells it, for the view's own panel
+    function text(stem, id, said) {
+      return told(byName[data.frames[stem]?.doll], id, said);
+    }
+
+    return { frame, trial, climb, gate, cancel, text };
   }
 
   window.gadflyDolls = { stage };

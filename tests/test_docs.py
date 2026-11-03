@@ -306,7 +306,14 @@ def test_the_doll_stage_keeps_to_what_the_reader_picked():
     assert seen["walked"]["asked"] == [["hold"]] and seen["walked"]["amaniTrimCut"] is False
     assert seen["walked"]["caption"].startswith("Amani is walked, never asked")
     assert seen["takeover"] == {"asked": [["select", "22-kiran-paper"]], "captionKept": True}
-    assert seen["gate"] == {"afterGate": 1, "afterTrial": 1, "afterPick": 0, "selectionBack": True}
+    assert seen["gate"] == {
+        "afterGate": 1,
+        "afterTrial": 1,
+        "note": "reframed",  # in words, beside the ring
+        "afterPick": 0,
+        "noteAfterPick": True,
+        "selectionBack": True,
+    }
     assert seen["decoyOnTop"]  # the decoy's bubble over the outline, never under it
 
 
@@ -325,6 +332,41 @@ def test_kirans_two_frames_stay_on_the_stage_whichever_doll_plays():
     unpressed = [["With the paper", "false"], ["With a decoy too", "false"]]
     assert variants["mirza"] == variants["amani"] == unpressed
     assert variants["kiran"] == [["With the paper", "true"], ["With a decoy too", "false"]]
+
+
+def test_each_visit_draws_the_dolls_names_and_colours_and_shows_them_as_read():
+    # for the picture, each visit names every doll from another region of
+    # the pool and paints it in another's colours, and every line that names
+    # a doll or a colour says so; the box under the caption gives back the
+    # set as it was read, every line word for word
+    visit = _harness("stage_harness")["visit"]
+    assert visit == {
+        "regions": 5,
+        "pooled": True,
+        "named": True,
+        "paper": True,
+        "scarf": True,
+        "renamedFrom": True,
+        "asRead": {
+            "names": ["Amani", "Kiran", "Sasha", "Robin", "Mirza"],
+            "lines": True,
+            "redrawn": [["redraw"]],
+        },
+    }
+
+
+def test_a_dolls_own_design_fills_its_colour_lines_word_for_word():
+    # the templates a visit refills give back the sentences Muse read when
+    # filled with the doll's own design, so the set shown as read is exact
+    dolls = watch_data.dolls()
+    templates = dolls["variation"]["templates"]
+    filled = 0
+    for doll in dolls["dolls"]:
+        for line in doll["lines"]:
+            if line["id"] in templates:
+                assert templates[line["id"]].format(**doll["design"]) == line["text"]
+                filled += 1
+    assert filled >= 25 and set(templates) == set(watch_data.COLOURS)
 
 
 def test_a_readers_step_stops_a_climb_or_gate_under_way():
