@@ -676,3 +676,13 @@ def test_a_body_with_no_span_is_refused_beside_holes_too():
     assert not Draft202012Validator(schema()).is_valid(empty)
     with pytest.raises(FrameError, match="the body holds no span"):
         parse(empty)
+
+
+def test_the_stability_docs_name_the_share_until_firm_holds_to():
+    # the share a verdict must reach to be firm is one number, in the code
+    # and in what the docs say of it (pass 11, F12)
+    import inspect
+
+    from midwife.recoil import FIRM
+
+    assert f"{FIRM:.0%} of draws is firm" in inspect.getdoc(stability)
