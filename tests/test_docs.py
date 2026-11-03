@@ -837,6 +837,25 @@ def test_code_sits_in_the_sidebars_colour_and_reads_at_5_to_1():
     assert off == []
 
 
+def test_a_folded_blocks_button_reads_at_5_to_1_on_every_study():
+    # its label and its hover are inks of the code itself, held at 5:1 on
+    # the code's ground in every study, a dark terminal on a light page too
+    css = THEMES.read_text(encoding="utf-8")
+    fold = re.search(r"> button\.fold \{(.*?)\}", css, re.S).group(1)
+    hover = re.search(r"> button\.fold:hover \{(.*?)\}", css, re.S).group(1)
+    inks = [re.search(r"\bcolor: var\(--([a-z-]+)\)", rule).group(1) for rule in (fold, hover)]
+    faint = []
+    for name, body in re.findall(r"\[data-theme='([a-z]+)'\] \{(.*?)\n\}", css, re.S):
+        ground = re.search(r"--gf-console-bg: (#[0-9a-f]{6});", body).group(1)
+        for ink in inks:
+            colour = re.search(rf"--{ink}: (#[0-9a-f]{{6}});", body)
+            if colour is None:
+                faint.append(f"{name}: {ink} is not one of its code's inks")
+            elif _contrast(colour.group(1), ground) < 5:
+                faint.append(f"{name}: {ink} at {_contrast(colour.group(1), ground):.2f}")
+    assert faint == []
+
+
 def test_the_line_under_test_stands_off_its_panel_for_every_eye():
     # the wash marks the line under test on a panel: lighter or darker than
     # it, never only another hue, and apart under red-green colour blindness

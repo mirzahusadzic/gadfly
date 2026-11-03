@@ -501,7 +501,9 @@
 
 /* A code block over twelve lines shows the first twelve, and a button under
  * them the rest (markdown.mjs, fold.js). Its label says what it will do, and
- * its chevron points that way; the cut above it is dashed while folded. */
+ * its chevron points that way; the cut above it is dashed while folded. It is
+ * set in the code's own inks, which every study keeps at 5:1 on its code,
+ * dark terminal or light. */
 .vp-doc div[class*='language-']:has(> button.fold[aria-expanded='false']) .fold-rest { display: none; }
 .vp-doc div[class*='language-'] > pre:has(+ button.fold) { padding-bottom: 12px; }
 .vp-doc div[class*='language-'] > button.fold {
@@ -510,13 +512,13 @@
   gap: 10px;
   width: 100%;
   padding: 8px 24px 10px;
-  border-top: 1px dashed var(--vp-c-divider);
+  border-top: 1px dashed color-mix(in srgb, currentColor 40%, transparent);
   font-size: 15px;
   line-height: 24px;
-  color: var(--vp-c-text-2);
+  color: var(--shiki-token-comment);
 }
 .vp-doc div[class*='language-'] > button.fold[aria-expanded='true'] { border-top-style: solid; }
-.vp-doc div[class*='language-'] > button.fold:hover { color: var(--vp-c-brand-1); }
+.vp-doc div[class*='language-'] > button.fold:hover { color: var(--shiki-foreground); }
 .vp-doc div[class*='language-'] > button.fold:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: -2px; }
 .vp-doc div[class*='language-'] > button.fold::before {
   content: '';
