@@ -116,7 +116,7 @@ input review
   presentation   15 calls  waist 15  top 100% (80%-100%), at most 20% differ from waist
   control        15 calls  adapter 15  top 100% (80%-100%), p 1.3e-08 against waist (Holm 6.4e-08)
 verdicts, each run's calls drawn again 200 times
-  run 1, review  carried; drawn again carried 70%, unresolved 30%, cooled 0%
+  run 1, review  carried; drawn again carried 70%, unresolved 30%, cooled under 1%
   run 2, review  carried; drawn again carried 100%
   run 3, review  carried; drawn again carried 100%
 ```

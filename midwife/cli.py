@@ -289,6 +289,19 @@ def _percent(share: float) -> str:
     return f"{round(100 * share)}%"
 
 
+def _parts(shares: dict[str, float]) -> str:
+    # shares of a whole, as whole percents that add up to 100 (largest
+    # remainders), a share too small for one percent said as under 1%
+    exact = {key: 100 * share for key, share in shares.items()}
+    whole = {key: int(value) for key, value in exact.items()}
+    short = round(sum(exact.values())) - sum(whole.values())
+    for key in sorted(exact, key=lambda key: exact[key] - whole[key], reverse=True)[:short]:
+        whole[key] += 1
+    return ", ".join(
+        f"{plain(key)} {whole[key]}%" if whole[key] else f"{plain(key)} under 1%" for key in exact
+    )
+
+
 def _powered(power: stats.Power) -> str:
     # one line: what the quorum can resolve at the reader's agreement
     return (
@@ -364,7 +377,7 @@ def command_stats(args) -> int:
     redrawn = shares or [{}] * len(verdicts)
     for place, (found, drawn) in enumerate(zip(verdicts, redrawn, strict=True), 1):
         for x, category in found.items():
-            again = ", ".join(f"{c} {_percent(s)}" for c, s in drawn.get(x, {}).items())
+            again = _parts(drawn[x]) if drawn.get(x) else ""
             if again:
                 again = f"; drawn again {again}"
             elif shares:  # its trials were each asked once: a draw is the run itself

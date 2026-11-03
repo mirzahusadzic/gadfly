@@ -256,3 +256,15 @@ def test_power_is_a_probability_at_any_quorum_and_says_what_it_counts(raw, tmp_p
     path.write_text(json.dumps(raw))
     assert main(["plan", str(path), "--agreement", "0.9"]) == 0
     assert "and all 7 trials the plan asks of an input " in capsys.readouterr().out
+
+
+def test_redrawn_shares_add_up_to_the_whole():
+    from midwife.cli import _parts
+
+    assert _parts({"carried": 0.695, "unresolved": 0.295, "cooled": 0.01}) == (
+        "carried 70%, unresolved 29%, cooled 1%"
+    )
+    assert _parts({"carried": 0.7, "unresolved": 0.2975, "cooled": 0.0025}) == (
+        "carried 70%, unresolved 30%, cooled under 1%"
+    )
+    assert _parts({"cooled": 1.0}) == "cooled 100%"

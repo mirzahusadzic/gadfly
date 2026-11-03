@@ -222,7 +222,7 @@ input rollback
 verdicts, each run's calls drawn again 200 times
   run 1, rollback  cooled; drawn again cooled 100%
   run 2, rollback  cooled; drawn again cooled 100%
-  run 3, rollback  cooled; drawn again cooled 70%, unresolved 30%
+  run 3, rollback  cooled; drawn again cooled 71%, unresolved 29%
 ```
 
 The third run's verdict is cooled in seven draws of ten and otherwise
