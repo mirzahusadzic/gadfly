@@ -354,6 +354,19 @@ def test_a_readers_own_step_ends_the_doll_sequence():
     }
 
 
+def test_the_later_of_two_quick_picks_is_the_one_shown():
+    # a frame that arrives after a later pick's shows nothing (pass 12, W1)
+    race = _harness("watch_harness")["race"]
+    assert race == {"pressed": ["false", "true"], "shows": ["20b-incident-status"]}
+
+
+def test_an_address_naming_no_run_opens_the_first():
+    # ?run=abc names no run: the view opens on run 1, and throws nothing
+    # (pass 12, W6)
+    seen = _harness("watch_harness")
+    assert seen["badRun"] == ["true"] and seen["thrown"] == []
+
+
 def test_the_watch_views_controls_wait_for_its_first_frame():
     # Play, Back and Next pressed while the first frame still loads do
     # nothing, rather than throw (tests/watch_harness.mjs; pass 11, F8)

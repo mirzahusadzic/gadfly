@@ -515,23 +515,28 @@
     // a pick never starts the view, only Play does: what was playing plays on
     // from the first trial, what was paused stays paused; the first frame,
     // playing null, plays if the view is in sight by the time it arrives
+    let loads = 0; // the latest pick wins: an earlier one that arrives later shows nothing
     async function load(stem, run = 0, quiet = false, playing = state.timer !== null) {
       stop();
+      const mine = ++loads;
       state.stem = stem;
       frameSelect.value = stem;
       for (const b of examples.children) b.setAttribute("aria-pressed", String(b.dataset.stem === stem));
       root.classList.add("is-loading");
+      let d;
       try {
-        state.data = await fetchFrame(stem);
+        d = await fetchFrame(stem);
       } catch (error) {
-        stage.replaceChildren(el("p", "w-error", `Could not load ${error.message}.`));
+        if (mine === loads) stage.replaceChildren(el("p", "w-error", `Could not load ${error.message}.`));
         return;
       } finally {
-        root.classList.remove("is-loading");
+        if (mine === loads) root.classList.remove("is-loading");
       }
-      const d = state.data;
+      if (mine !== loads) return;
+      state.data = d;
       state.input = d.inputs[0].id;
-      state.run = Math.min(Math.max(run, 0), d.runs.length - 1);
+      // a run the address names, or the first: ?run=abc or 1.5 names none
+      state.run = Number.isInteger(run) ? Math.min(Math.max(run, 0), d.runs.length - 1) : 0;
       inputSelect.replaceChildren(...d.inputs.map((x) => new Option(x.id, x.id)));
       caseField.hidden = d.inputs.length < 2;
       const readers = d.runs.every((r) => r.reader);
