@@ -327,6 +327,33 @@ def test_kirans_two_frames_stay_on_the_stage_whichever_doll_plays():
     assert variants["kiran"] == [["With the paper", "true"], ["With a decoy too", "false"]]
 
 
+def test_a_readers_step_stops_a_climb_or_gate_under_way():
+    # Back, Next or a chip during the climb or the gate: it stops at its next
+    # step and the stage shows the frame the view plays; a gate's mark
+    # already made stays (pass 12, W2)
+    cancel = _harness("stage_harness")["cancel"]
+    assert cancel == {
+        "caption": True,
+        "passing": 0,
+        "travelling": False,
+        "gateMarked": 0,
+        "markKept": 1,
+    }
+
+
+def test_a_readers_own_step_ends_the_doll_sequence():
+    # the verdict chip, as every reader's step, ends the sequence and tells
+    # the stage to stop; Play stops a climb under way and plays the frame
+    # again; a frame played to its end after the reader's step goes no
+    # further (pass 12, W2, W3)
+    assert _harness("watch_harness")["story"] == {
+        "verdict": ["cancel"],
+        "replay": ["cancel"],
+        "afterVerdictPlayed": [],
+        "back": ["cancel"],
+    }
+
+
 def test_the_watch_views_controls_wait_for_its_first_frame():
     # Play, Back and Next pressed while the first frame still loads do
     # nothing, rather than throw (tests/watch_harness.mjs; pass 11, F8)

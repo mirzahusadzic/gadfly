@@ -440,7 +440,9 @@
     const askText = el("div", "w-ask-text");
     root.replaceChildren(bar, ask, top, stage);
     let hooks = {};
-    const story = { on: false, order: [] }; // on once the stage stands
+    // on once the stage stands; each turn of the sequence, and each reader's
+    // step, moves turn on, so a sequence step already under way goes no further
+    const story = { on: false, order: [], turn: 0 };
     // the stage draws beside the view and never stops it: should it fail,
     // it is taken away, and the frames play on without it
     const unstage = (error) => {
@@ -459,30 +461,44 @@
       }
     };
 
+    // a reader's own step ends the sequence, and stops a climb or gate under way
+    const takeOver = () => {
+      story.on = false;
+      story.turn++;
+      staged(() => hooks.cancel?.());
+    };
+
     frameSelect.addEventListener("change", () => load(frameSelect.value));
     inputSelect.addEventListener("change", () => {
+      takeOver();
       state.input = inputSelect.value;
       compare();
     });
     // the controls wait for a frame: before one loads they do nothing
     back.addEventListener("click", () => {
       if (!state.data) return;
-      story.on = false;
+      takeOver();
       stop();
       show(Math.max(0, state.step - 1), true);
     });
     next.addEventListener("click", () => {
       if (!state.data) return;
-      story.on = false;
+      takeOver();
       stop();
       show(Math.min(last(), state.step + 1), true);
     });
     play.addEventListener("click", () => {
       if (!state.data) return;
       if (state.timer) {
-        story.on = false;
+        takeOver();
         stop();
-      } else start();
+        return;
+      }
+      // played again: a climb or gate under way stops, and the sequence
+      // goes on from this frame
+      story.turn++;
+      staged(() => hooks.cancel?.());
+      start();
     });
 
     const last = () => state.data.trials.length; // the step after the last trial is the verdict
@@ -527,6 +543,7 @@
           const b = el("button", "w-run", readers ? r.reader : String(i + 1));
           b.type = "button";
           b.addEventListener("click", () => {
+            takeOver();
             state.run = i;
             compare();
           });
@@ -585,13 +602,15 @@
     // the order: the climb of the paper's words, the next frame, or the gate
     async function onward() {
       if (!story.on) return;
+      const mine = story.turn; // a reader's step, or Play, moves it on: this goes no further
+      const going = () => story.on && story.turn === mine;
       try {
         for (let i = story.order.indexOf(state.stem) + 1; i < story.order.length; i++) {
           const next = story.order[i];
           if (next === "climb") await hooks.climb?.();
           else if (next === "gate") return await hooks.gate?.();
-          else return story.on ? await load(next, 0, true, true) : undefined;
-          if (!story.on) return;
+          else return going() ? await load(next, 0, true, true) : undefined;
+          if (!going()) return;
         }
       } catch (error) {
         unstage(error); // the stage goes; the frames play on without it
@@ -631,7 +650,7 @@
             : el("span", "w-step-answer is-pending", "…");
           b.append(answer);
           b.addEventListener("click", () => {
-            story.on = false;
+            takeOver();
             stop();
             show(i, true);
           });
@@ -643,6 +662,7 @@
           if (atVerdict) b.setAttribute("aria-current", "step");
           b.append(el("span", "w-step-name", "Verdict"), el("span", "w-step-answer is-pending", atVerdict ? finding.category : "…"));
           b.addEventListener("click", () => {
+            takeOver();
             stop();
             show(last(), true);
           });
@@ -822,6 +842,7 @@
             chip.type = "button";
             chip.setAttribute("aria-pressed", String(f.input === state.input));
             chip.addEventListener("click", () => {
+              takeOver();
               state.input = f.input;
               inputSelect.value = f.input;
               stop();

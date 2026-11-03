@@ -400,6 +400,15 @@
       entry.fig.classList.replace("is-passing", "is-reframed");
     }
     const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+    // a reader's own step in the view: a climb or gate under way stops where
+    // it is, and the selection and caption go back to the frame the view
+    // plays; a gate's mark already made stays
+    function cancel() {
+      turn++;
+      row.classList.remove("is-travelling");
+      for (const entry of drawn) entry.fig.classList.remove("is-passing");
+      if (current?.stem) caption.textContent = data.frames[current.stem].caption;
+    }
 
     // the hover names what a region says
     row.addEventListener("pointerover", (e) => {
@@ -411,7 +420,7 @@
       if (line) caption.textContent = `${entry.doll.name} says \u201c${line.text}\u201d`;
     });
 
-    return { frame, trial, climb, gate };
+    return { frame, trial, climb, gate, cancel };
   }
 
   window.gadflyDolls = { stage };

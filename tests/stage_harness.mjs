@@ -122,6 +122,25 @@ seen.variants.kiran = pressed();
 doll('Amani').click();
 seen.variants.amani = pressed();
 
+// a reader's own step in the view, as Back, during a climb or a gate: it
+// stops at its next step, and the stage shows the frame the view plays; a
+// gate's mark already made stays (pass 12, W2)
+hooks.frame(mirzas, frames[mirzas]);
+const own = caption.textContent;
+const climbingBack = hooks.climb();
+hooks.cancel();
+await climbingBack;
+const cut = { caption: caption.textContent === own, passing: row.children.filter((fig) => fig.classes.has('is-passing')).length, travelling: row.classes.has('is-travelling') };
+hooks.frame(kirans, frames[kirans]);
+const gatingBack = hooks.gate();
+hooks.cancel();
+await gatingBack;
+cut.gateMarked = marked();
+await hooks.gate();
+hooks.cancel();
+cut.markKept = marked();
+seen.cancel = cut;
+
 // the climb: the selection travels up with the paper's words, doll by doll,
 // never jumping, and rests on Kiran until Kiran's frame is shown
 hooks.frame(mirzas, frames[mirzas]);
