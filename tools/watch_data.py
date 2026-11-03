@@ -46,7 +46,7 @@ MODELS = {
     "google/gemma-4-26B-A4B-it-qat-q4_0-gguf": "Gemma 4 26B-A4B, instruction-tuned, on this "
     "machine through eGemma",
     "meta/muse-spark-1.3-contributor": "Muse Spark 1.3 Contributor, Meta's model, through "
-    "OpenRouter",
+    "unified-model-router",
 }
 
 
