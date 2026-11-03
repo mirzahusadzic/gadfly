@@ -318,3 +318,53 @@ fallback listed beside it as open.
 | control | the summary, provider and gadfly lines | adapter | high |
 
 Predicted: carried in every run, with no hidden fallback open beside it.
+
+## Rung 20: across a boundary, a cause and a status update
+
+Written before any call of these frames. An incident's signals and changes
+reach the incident commander only through a report someone writes from
+them. Both frames hold the same six lines, the same question ("Should
+deploy 42 be rolled back now?") and the same reader; they differ only in
+what the maker writes. In 20 it writes the report's cause section, and in
+20b the status update customers read. The anchor is the line that says
+deploy 42 cut the database connection pool from 50 to 5.
+
+Frames: `examples/20-incident-cause.json` (282805e3…) and
+`examples/20b-incident-status.json` (20f39215…), 3 runs of 30 calls each,
+through the crossing battery. Muse Spark 1.3 Contributor writes and reads,
+each at reasoning `low`, through the unified model router. Its tier trains
+on what it receives, so both lines name it under `trainsOnInputs`, and every
+line is an invented incident. Each call is capped at 8,000 output tokens,
+half of them the maker's.
+
+The maker sees the signals and changes alone, never the question, so a
+report written without the pool line cannot name deploy 42 at all. No
+bypass is declared, and the frames say so with `carriage: listed`.
+
+### Rung 20: the cause section
+
+| trial | cuts | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | rollback | high |
+| ablation | the pool change | investigate | high |
+| sham-1 | deploy 41's change to the logs | rollback | high |
+| presentation | deploy renamed release | rollback | high |
+| control | the latency and the pool change | keep | high |
+
+Predicted: carried in every run, with no hidden fallback open beside it.
+
+### Rung 20b: the status update
+
+| trial | cuts | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | investigate | medium |
+| ablation | the pool change | investigate | high |
+| sham-1 | deploy 41's change to the logs | investigate | medium |
+| presentation | deploy renamed release | investigate | medium |
+| control | the latency and the pool change | keep | medium |
+
+Predicted: cooled in every run. A status update says what customers
+saw, not what changed, so the commander investigates with or without the
+pool line: the decision does not rest on it across this crossing. The
+confidence is medium because an update that names "a recent change" could
+carry enough for a rollback, and the frame would then read carried.

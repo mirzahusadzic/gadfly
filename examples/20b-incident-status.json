@@ -1,0 +1,106 @@
+{
+  "name": "incident-status",
+  "relation": "the rollback rests on the pool change in deploy 42, through the status update customers read",
+  "locus": "the incident's signals and changes, before anyone writes them up",
+  "role": "the incident commander",
+  "grain": "one signal or one change",
+  "purpose": "decide whether to roll a deploy back",
+  "trajectory": "signals and changes, the report the maker writes from them, the commander's decision",
+  "crossing": "the status update the commander reads",
+  "promise": "the commander rolls back only if the status update carries the pool change in deploy 42; a status update written for customers may not carry it, and then the decision does not rest on it",
+  "baseline": "every signal and change, written up by the maker; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "latency",
+        "kind": "signal",
+        "text": "p99 latency of ledger-api rose from 120 ms to 900 ms and stayed there."
+      },
+      {
+        "id": "pool",
+        "kind": "change",
+        "text": "Deploy 42, the only change before the rise, cut ledger-api's database connection pool from 50 to 5."
+      },
+      {
+        "id": "errors",
+        "kind": "signal",
+        "text": "The error rate held at 0.1%."
+      },
+      {
+        "id": "cpu",
+        "kind": "signal",
+        "text": "CPU use on the ledger-api hosts held near 40%."
+      },
+      {
+        "id": "database",
+        "kind": "signal",
+        "text": "The database reported normal query times throughout, with most of its 200 connections idle."
+      },
+      {
+        "id": "logs",
+        "kind": "change",
+        "text": "Deploy 41, two days earlier, changed only the format of ledger-api's logs."
+      }
+    ]
+  },
+  "anchors": [
+    "pool"
+  ],
+  "inputs": [
+    {
+      "id": "rollback",
+      "text": "Should deploy 42 be rolled back now?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "rollback",
+      "investigate",
+      "keep"
+    ],
+    "instruction": "You are the incident commander. Use only the incident report given. Answer rollback if the report names a change made by the deploy in question as the likely cause, investigate if it shows a problem but not that this deploy caused it, keep if it shows no problem."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": true,
+    "presentation": {
+      "deploy": "release"
+    },
+    "control": [
+      "latency",
+      "pool"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "investigate",
+      "keep"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "carriage": "listed",
+  "battery": {
+    "kind": "crossing",
+    "maker": {
+      "kind": "unified",
+      "model": "openrouter/meta/muse-spark-1.3-contributor",
+      "instruction": "You write the customer-facing status update for an incident from the signals and changes given. In one or two sentences of plain words, say what customers experienced. Do not recommend an action.",
+      "reasoning": "low",
+      "trainsOnInputs": [
+        "openrouter/meta/muse-spark-1.3-contributor"
+      ]
+    },
+    "reader": {
+      "kind": "unified",
+      "model": "openrouter/meta/muse-spark-1.3-contributor",
+      "reasoning": "low",
+      "trainsOnInputs": [
+        "openrouter/meta/muse-spark-1.3-contributor"
+      ]
+    }
+  }
+}
