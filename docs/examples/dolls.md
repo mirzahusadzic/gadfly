@@ -70,6 +70,13 @@ Two kinds, both in this one set:
   Amani, who stands for the whole set and asks another question, "Is this a
   set of girls?". That is why Amani is reframed, not asked again.
 
+Within the one shape nothing can reframe, since Kiran's question already has
+every label the paper's words need; here only the root, where the question
+changes, can. A piece that needed a label no doll has, a paper saying "I am a
+robot", would reframe Kiran too. Going down, a reframed root can reframe the
+children whose question came from it; the walk only climbs, and that
+direction is still to come.
+
 No doll says it is smaller than its sister: the order is carried by the
 shapes, in the lines that say which doll sits inside which, and in the
 drawing.

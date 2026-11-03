@@ -170,6 +170,9 @@ declares how the two questions compare.
   so a frame that quotes an artefact could climb to the crossing that made it.
 - **Offering down:** a piece only climbs, so one found above its hole is never
   offered to it.
+- **Reframing down:** going up, only a frame whose question changes can
+  reframe, often the root; going down, a reframed frame can reframe the
+  frames whose question came from it, each opened as a reframing in turn.
 - **Shuffled sentences:** sentences shuffled within a frame, or across frames
   and grains, each shuffle a frame of its own. The walk follows each text by
   its hash, so it holds while every sentence moves whole.
