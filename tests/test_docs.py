@@ -360,6 +360,11 @@ def test_the_later_of_two_quick_picks_is_the_one_shown():
     assert race == {"pressed": ["false", "true"], "shows": ["20b-incident-status"]}
 
 
+def test_a_stage_that_cannot_stand_gives_the_picker_back():
+    # the frames play on without the dolls, and can be picked (pass 12, W4)
+    assert _harness("watch_harness")["unstaged"] == {"picker": True, "card": ["w-ask-text"]}
+
+
 def test_an_address_naming_no_run_opens_the_first():
     # ?run=abc names no run: the view opens on run 1, and throws nothing
     # (pass 12, W6)

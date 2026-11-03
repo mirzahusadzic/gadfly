@@ -451,6 +451,7 @@
       dollBox?.remove();
       dollBox = null;
       ask.classList.remove("has-dolls");
+      exampleField.hidden = !root.dataset.group && stems.length < 2; // the picker is back
       if (error) console.error(error);
     };
     const staged = (call) => {
