@@ -9,6 +9,15 @@ does not exist; `--refresh-package midwife` makes it look again.
 
 ---
 
+### To 0.9.0, not yet released
+
+On `main`, for the next release: nothing a caller of 0.8.0 meets changes.
+New, and opt-in: `gadfly stats` and `midwife.stats`, which say beside each
+verdict how firm it is over the kept runs, and `gadfly plan --agreement`,
+which says before a run how often its quorum can reach a level.
+
+---
+
 ### To 0.8.0
 
 0.8.0's `unified` battery speaks to the router only through the router's own

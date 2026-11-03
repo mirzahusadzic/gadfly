@@ -125,6 +125,11 @@ pr: carried
   that moved settles.
 - **Categories:** `carried`, `coupled but misaligned`, `cooled`,
   `unresolved` and `outside scope`, none of them a score.
+- **Agreement and power:** how often a reader gives its usual answer, and
+  how often a quorum then reaches a level; `gadfly plan --agreement` and
+  `gadfly stats` print them.
+- **Stability:** how often a run's verdict comes out the same when its calls
+  are drawn again, read by the same fixed rules; `gadfly stats` prints it.
 
 ---
 

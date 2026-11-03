@@ -14,12 +14,14 @@ and on GitHub. For narrative guidance start with
   `Battery`.
 - **[`midwife.verdict`](#midwifeverdict):** categories, levels, evidence and
   obligations.
+- **[`midwife.stats`](#midwifestats):** how firm each trial and verdict is,
+  and how likely a quorum is to reach a level.
 - **[`midwife.interventions`](#midwifeinterventions):** trial planning,
   prompts and presentation renaming.
 - **`midwife.batteries.*`:** the shipped loopback batteries, two critics,
   `local-json` and `tendora`.
 - **[`midwife.cli`](#midwifecli):** the `gadfly` command, with plan, run,
-  report, check-frame and portfolio.
+  report, stats, check-frame and portfolio.
 - **[`midwife.portfolio`](#midwifeportfolio):** several frames' verdicts
   counted, never combined.
 
@@ -633,6 +635,175 @@ for ordered labels, those below (or above) the baseline.
 
 ```python
 allowed_for(frame, base, trial="ablation")
+```
+<!-- end api -->
+
+<!-- api midwife.stats -->
+
+---
+
+### midwife.stats
+
+Statistics beside the verdict: how firm each trial's answers are, how
+likely a quorum is to reach a level at all, whether a trial moved the answer
+or held it, and how often a run's verdict comes out the same when its calls
+are drawn again.
+
+Nothing here changes a verdict. The fixed rules in `midwife.verdict` read
+every category from the records; this module only says how much the calls
+behind a category support it, so a run of five calls is not read as if it
+were five hundred. Every number is computed from kept records, and the draws
+are seeded by the frame's hash, so the same records always give the same
+report.
+
+#### wilson
+
+The Wilson score interval for `hits` of `n`: where the true share most
+likely lies (95% by default). Unlike hits/n it stays honest at small n:
+4 of 5 is anywhere from 38% to 96%.
+
+```python
+wilson(hits, n, z=Z)
+```
+
+#### at_least
+
+The chance that at least `k` of `n` calls give the reader's usual
+answer, when each gives it with chance `p`.
+
+```python
+at_least(k, n, p)
+```
+
+#### fisher
+
+Fisher's exact test, two-sided, for the table [[a, b], [c, d]]: the
+chance of a split at least this uneven if the two rows read alike.
+
+```python
+fisher(a, b, c, d)
+```
+
+#### holm
+
+Holm's adjustment: each p-value as it stands among the others, so that
+of many trials tested at once, chance alone passes 5% only 5% of the
+time.
+
+```python
+holm(pvalues)
+```
+
+#### Power
+
+How likely a quorum is to reach a level, before a call is made.
+
+```python
+@dataclass(frozen=True)
+class Power
+```
+
+##### Power.as_dict
+
+The fields as a plain dict, as `--json` prints them.
+
+```python
+as_dict()
+```
+
+#### power
+
+The chance that a trial, and every trial an input needs, reaches a
+level, for a reader that gives its usual answer with chance `agreement`.
+A trial with no level leaves its input unresolved, so this is the most
+a run can resolve, whatever the evidence. An input that no input
+inversion turns needs one trial fewer.
+
+```python
+power(frame, agreement)
+```
+
+#### agreement
+
+The share of calls that gave their trial's most common answer in their
+own run: how steadily the reader answers when nothing changes between
+its calls. An opening never agrees. None when there are no calls.
+
+```python
+agreement(runs)
+```
+
+#### pooled
+
+Calls made under other frames that are this frame's calls in all but
+name: the same battery line, instruction and labels, and the same prompt.
+Each comes back as a call of this frame's trial with that prompt (its
+own trial when it has one), for counting, never for a verdict, since its
+frame's plan is not this one's.
+
+```python
+pooled(frame, others)
+```
+
+#### TrialStats
+
+One trial's calls for one input, pooled over runs, against the
+baseline's most common answer.
+
+```python
+@dataclass(frozen=True)
+class TrialStats
+```
+
+##### TrialStats.as_dict
+
+The fields as a plain dict, as `--json` prints them.
+
+```python
+as_dict()
+```
+
+#### compare
+
+Each input's trials over all the runs given, and `extra` calls pooled
+in (see `pooled`): how many gave each answer, how firm the most common
+is, whether the trial moved the baseline's answer (Fisher's exact test,
+Holm-adjusted across the input's trials), and, for a repeat,
+presentation, placement or sham, at most how many of its answers could
+differ from the baseline's (the upper end of a 95% interval): "held" with
+15 calls means less than with 150.
+
+```python
+compare(frame, runs, extra=())
+```
+
+#### stability
+
+For each run, how often each input's verdict comes out each way when
+every trial's calls are drawn again, with replacement, as many as it had:
+the fixed rules read every draw, so no model judges anything. A verdict
+that comes out the same in 97% of draws is firm; one at 55% rests on a
+call or two. The draws are seeded by the frame's hash and the run's
+place, so the same records always give the same shares.
+
+```python
+stability(frame, runs, resamples=RESAMPLES)
+```
+
+#### observed
+
+Each run's verdict for each input, as the fixed rules read it.
+
+```python
+observed(frame, runs)
+```
+
+#### require_runs
+
+Refuse a report with no calls to count.
+
+```python
+require_runs(runs)
 ```
 <!-- end api -->
 
@@ -1417,6 +1588,17 @@ without a call.
 
 ```python
 command_plan(args)
+```
+
+#### command_stats
+
+`gadfly stats`: how firm each trial's answers are over the kept runs,
+whether each trial moved the baseline's answer, how likely the quorum was
+to reach a level, and how often each run's verdict comes out the same
+when its calls are drawn again. No verdict changes.
+
+```python
+command_stats(args)
 ```
 
 #### command_run

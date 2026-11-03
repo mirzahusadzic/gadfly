@@ -34,7 +34,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from . import __version__, errors
+from . import __version__, errors, stats
 from .errors import (
     BatteryError,
     FrameError,
@@ -265,10 +265,15 @@ def command_plan(args) -> int:
         ],
         "unreachable": unreachable(frame),
     }
+    power = None if args.agreement is None else stats.power(frame, args.agreement)
+    if power is not None:
+        body["power"] = power.as_dict()
     if args.json:
         print(json.dumps(body, indent=2))
     else:
         print(f"{body['frame']} ({body['hash']}): {body['calls']} calls")
+        if power is not None:
+            print(f"power: {_powered(power)}")
         for trial in trials:
             print(f"  {trial.id:12} body {trial.body_hash[:12]}  {_change(frame, trial)}")
         if body["unreachable"] is None:
@@ -277,6 +282,88 @@ def command_plan(args) -> int:
             stay_open = bool(held) and not frame.outside_scope  # an exclusion is no check
             print(f"never {category}, whatever the answers" + (": these stay open" * stay_open))
             print("".join(f"  {line}\n" for line in held), end="")
+    return 0
+
+
+def _percent(share: float) -> str:
+    return f"{round(100 * share)}%"
+
+
+def _powered(power: stats.Power) -> str:
+    # one line: what the quorum can resolve at the reader's agreement
+    return (
+        f"at {_percent(power.agreement)} agreement, a trial reaches a level of "
+        f"{power.agree} of {power.quorum} {_percent(power.trial)} of the time, and all "
+        f"{power.trials} trials an input needs {_percent(power.input)}"
+    )
+
+
+def command_stats(args) -> int:
+    """`gadfly stats`: how firm each trial's answers are over the kept runs,
+    whether each trial moved the baseline's answer, how likely the quorum was
+    to reach a level, and how often each run's verdict comes out the same
+    when its calls are drawn again. No verdict changes."""
+    frame = load_frame(args.frame)
+    runs = [load_records(path) for path in args.records]
+    others = [(load_frame(other), load_records(records)) for other, records in args.pool or []]
+    extra = stats.pooled(frame, others)
+    stats.require_runs([*runs, extra])
+    compared = stats.compare(frame, runs, extra)
+    measured = stats.agreement(runs)
+    power = None if measured is None else stats.power(frame, measured)
+    verdicts = stats.observed(frame, runs)
+    shares = stats.stability(frame, runs, args.resamples) if args.resamples else []
+    calls = sum(len(records) for records in runs)
+    if args.json:
+        body = {
+            "frame": frame.name,
+            "hash": frame.hash,
+            "runs": args.records,
+            "calls": calls,
+            "pooled": len(extra),
+            "agreement": measured,
+            "power": None if power is None else power.as_dict(),
+            "inputs": {x: [row.as_dict() for row in rows] for x, rows in compared.items()},
+            "verdicts": verdicts,
+            "resamples": args.resamples,
+            "stability": shares,
+        }
+        print(json.dumps(body, indent=2))
+        return 0
+    pooled = f", and {len(extra)} calls pooled from {len(others)} other frames" if extra else ""
+    print(f"frame: {plain(frame.name)} ({frame.hash})")
+    print(f"records: {len(runs)} run{'s' * (len(runs) != 1)}, {calls} calls{pooled}")
+    if measured is not None:
+        print(
+            f"agreement: {_percent(measured)} of calls give their trial's most common answer "
+            "in their own run"
+        )
+        print(f"power: {_powered(power)}")
+    for x, rows in compared.items():
+        print(f"input {plain(x)}")
+        for row in rows:
+            answers = ", ".join(f"{plain(label)} {n}" for label, n in row.answers.items())
+            line = (
+                f"  {row.trial:13} {row.calls:3} calls  {answers}  top {_percent(row.share)} "
+                f"({_percent(row.low)}-{_percent(row.high)})"
+            )
+            if row.differ is not None:
+                line += f", at most {_percent(row.differ)} differ from {plain(row.baseline)}"
+            elif row.moved is not None:
+                line += (
+                    f", p {row.moved:.2g} against {plain(row.baseline)} (Holm {row.adjusted:.2g})"
+                )
+            print(line)
+    if shares:
+        print(f"verdicts, each run's calls drawn again {args.resamples} times")
+    redrawn = shares or [{}] * len(verdicts)
+    for place, (found, drawn) in enumerate(zip(verdicts, redrawn, strict=True), 1):
+        for x, category in found.items():
+            again = ", ".join(f"{c} {_percent(s)}" for c, s in drawn.get(x, {}).items())
+            print(
+                f"  run {place}, {plain(x)}  {category}"
+                + (f"; drawn again {again}" if again else "")
+            )
     return 0
 
 
@@ -589,6 +676,11 @@ def parser() -> argparse.ArgumentParser:
 
     show = command("plan", help="show trials and call count without spending")
     show.add_argument("frame", help="the frame, a JSON file, or - for stdin")
+    show.add_argument(
+        "--agreement",
+        type=float,
+        help="how often the reader gives its usual answer, from 0 to 1: shows the quorum's power",
+    )
     show.add_argument("--json", action="store_true", help="print JSON instead of text")
     show.set_defaults(func=command_plan)
 
@@ -634,8 +726,26 @@ def parser() -> argparse.ArgumentParser:
     )
     portfolio.add_argument("--json", action="store_true", help="print JSON instead of text")
     portfolio.set_defaults(func=command_portfolio)
+    counted = command("stats", help="how firm each trial and verdict is over kept runs")
+    counted.add_argument("frame", help="the frame the records were made under, or - for stdin")
+    counted.add_argument("records", nargs="+", help="kept runs, JSON Lines files, one may be -")
+    counted.add_argument(
+        "--pool",
+        nargs=2,
+        action="append",
+        metavar=("FRAME", "RECORDS"),
+        help="calls another frame made with the same reader and prompt; may repeat",
+    )
+    counted.add_argument(
+        "--resamples",
+        type=int,
+        default=stats.RESAMPLES,
+        help="draws of each run for its verdict's stability; 0 leaves them out",
+    )
+    counted.add_argument("--json", action="store_true", help="print JSON instead of text")
+    counted.set_defaults(func=command_stats)
     root.commands = {"plan": show, "run": execute, "report": report, "check-frame": check}
-    root.commands["portfolio"] = portfolio
+    root.commands.update(portfolio=portfolio, stats=counted)
     return root
 
 

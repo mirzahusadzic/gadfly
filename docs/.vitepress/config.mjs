@@ -60,6 +60,7 @@ const sidebar = [
       { text: 'Write a frame', link: '/write-a-frame' },
       { text: 'Interventions', link: '/interventions' },
       { text: 'Reading a verdict', link: '/reading-a-verdict' },
+      { text: 'Statistics', link: '/statistics' },
       { text: 'Batteries', link: '/batteries' },
     ],
   },

@@ -20,9 +20,10 @@ a command reads may be `-`, standard input, once in a command.
 | Command | Calls a model | Prints | Exit status |
 | --- | --- | --- | --- |
 | `check-frame FRAME` | no | `ok`, the frame's hash and its calls, or each problem as a `FrameError` and where it is | 0 when accepted, 4 when not; a refusal's |
-| `plan FRAME` | no | each trial, its kind and its body's hash, and the call count | 0; a refusal's |
+| `plan FRAME` | no | each trial, its kind and its body's hash, and the call count; with `--agreement`, how often the quorum reaches a level | 0; a refusal's |
 | `run FRAME` | yes, up to `--calls` | the calls written and how to read the verdict, then an `OpeningWarning` for calls that came back as openings and a `StoppedWarning` for an early stop | 0; 1 when every call came back as an opening, stopped early or not; 3 when stopped early, its records partial; 130 when stopped by Ctrl-C; 141 when its reader stops reading; a refusal's |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0; a refusal's |
+| `stats FRAME RECORDS...` | no | each trial's answers over the kept runs, how firm they are and how far they moved or held, the quorum's power, and how often each run's verdict comes out the same when its calls are drawn again | 0; a refusal's |
 | `portfolio REPORT...` | no | frames counted by category, the obligations they share, and frames whose inputs disagree | 0; a refusal's |
 
 ---
@@ -193,6 +194,37 @@ pr: carried
 It opens with the frame, the records and the overall category, then each
 input's finding; the [example report](breadth/report-example.md) reads one
 with three inputs.
+
+---
+
+### How firm a verdict is
+
+`stats` reads the kept runs of one frame and reports, beside each verdict,
+how much its calls support it; [Statistics](statistics.md) explains each
+number. It calls no model and changes no verdict:
+
+```text
+$ uv run gadfly stats examples/upgrade.json \
+    examples/runs/upgrade/1.jsonl --resamples 0
+frame: quill-upgrade (569c71692864ab0fcfbfcd41baaa0011ee213bc0b90ca9bcb95dd40b7f085679)
+records: 1 run, 40 calls
+agreement: 100% of calls give their trial's most common answer in their own run
+power: at 100% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 8 trials an input needs 100%
+input pr
+  baseline        5 calls  hold 5  top 100% (57%-100%)
+  repeat          5 calls  hold 5  top 100% (57%-100%), at most 43% differ from hold
+  ablation        5 calls  merge 5  top 100% (57%-100%), p 0.0079 against hold (Holm 0.056)
+  sham-1          5 calls  hold 5  top 100% (57%-100%), at most 43% differ from hold
+  sham-2          5 calls  hold 5  top 100% (57%-100%), at most 43% differ from hold
+  presentation    5 calls  hold 5  top 100% (57%-100%), at most 43% differ from hold
+  bypass          5 calls  merge 5  top 100% (57%-100%), p 0.0079 against hold (Holm 0.056)
+  control         5 calls  merge 5  top 100% (57%-100%), p 0.0079 against hold (Holm 0.056)
+  run 1, pr  carried
+```
+
+`--pool FRAME RECORDS` adds the calls another frame made with the same
+reader on the same prompts, and `--resamples` sets how many times each run's
+calls are drawn again, 0 for none.
 
 ---
 

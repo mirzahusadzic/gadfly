@@ -17,6 +17,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 | The run loop, budget, cancellation, records | `midwife/pipeline.py`, `midwife/types.py` |
 | Verdict rules, levels, evidence, obligations | `midwife/verdict.py` |
 | Several frames counted, never combined | `midwife/portfolio.py` |
+| Statistics beside a verdict: intervals, tests, power, stability, pooling | `midwife/stats.py`, `gadfly stats` |
 | Command line | `midwife/cli.py` |
 | Batteries: the shared loopback call and label pointer, then the shipped ones | `midwife/batteries/critic.py`; `unified.py`, `egemma.py`, `local_json.py`, `tendora.py` (its live test runs only with `TENDORA_PACKAGE`) |
 | Example frames, their kept runs, predictions, results and findings | `examples/*.json`, `examples/runs/<frame>/`, `examples/*.md`; read back with `examples/read.py`, run with `examples/climb.py` |
