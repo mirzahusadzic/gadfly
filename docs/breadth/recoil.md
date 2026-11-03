@@ -6,7 +6,8 @@ the frames it fits; the others pass it on at no cost.
 
 > [!NOTE]
 > `midwife.recoil` is a Python API, with no command yet. A test holds it to a
-> case, a set of nesting dolls, through Gadfly's own runs and verdicts.
+> case, a set of nesting dolls, through Gadfly's own runs and verdicts, and
+> [Five dolls, one kid](../examples/dolls.md) runs it with a real reader.
 
 ---
 
@@ -160,12 +161,12 @@ own word does. The second doll's word is lost, and turns up in the smallest.
    many routes and visited once. Without the largest's frame, both quotes of
    it are the frontier, and the walk is not complete.
 3. The second doll asked again with its word is firm after one light run, and
-   carried: a boy by his word, unclear without it, whatever the paint. Its
+   carried: a boy by its own word, unclear without it, whatever the paint. Its
    ablation's prompt is the doll as it was unpacked, byte for byte.
 4. A reader that guesses from the paint when the word is cut answers girl,
    where the frame allows only unclear: coupled but misaligned, caught.
 5. The second doll's decision, `second doll reads boy`, climbs to the largest
-   and fits. The set was taken for girls by its paint, so a boy inside, by his
+   and fits. The set was taken for girls by its paint, so a boy inside, by its
    own word, needs a label it lacks: a reframing, and the set as asked stands.
 6. Where the second doll is asked about its chipped base instead, its word
    still fits, but the successor reads cooled, and nothing climbs.
