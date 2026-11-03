@@ -14,6 +14,7 @@ from midwife import pipeline
 from midwife.cli import load_records
 from midwife.frame import digest
 from midwife.pipeline import calls_needed, judge, overall, situate
+from midwife.recoil import until_firm
 from midwife.types import Budget, Observation
 from midwife.verdict import CARRIED as CAR
 from midwife.verdict import COOLED as COO
@@ -55,6 +56,7 @@ REPORTED: dict[str, list[list[str]]] = {
     "19-router-waist": [[CAR]] * 3,
     "20-incident-cause": [[CAR]] * 3,
     "20b-incident-status": [[COO]] * 3,
+    "21-second-doll-word": [[CAR]],
     "rung1": [[UNR]] * 5,
     "rung2": [[UNR]] * 5,
     "rung3": [[UNR]] * 5,
@@ -65,11 +67,16 @@ REPORTED: dict[str, list[list[str]]] = {
 }
 
 
+# Frames asked one light run at a time until their verdict was firm
+# (`midwife.recoil.until_firm`): each keeps the runs it needed, no more.
+UNTIL_FIRM = {"21-second-doll-word"}
+
+
 @pytest.mark.parametrize("path", FRAMES, ids=lambda p: p.stem)
 def test_every_kept_run_is_its_frames_whole_plan(path):
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
     kept = runs_of(path)
-    assert len(kept) >= 3, "an example keeps at least three runs"
+    assert len(kept) >= 3 or path.stem in UNTIL_FIRM, "an example keeps at least three runs"
     for run in kept:
         records = load_records(str(run))
         assert len(records) == calls_needed(frame)
@@ -130,7 +137,7 @@ def test_a_run_that_stops_at_unresolved_reads_every_kept_run_alike():
             read = [f.category for f in judge(frame, stopped)]
             assert read == [f.category for f in judge(frame, records)], each
             asked, kept = asked + len(stopped), kept + len(records)
-    assert (asked, kept) == (4960, 6560)
+    assert (asked, kept) == (4981, 6581)
 
 
 def test_only_the_approved_restore_raises_monotonicity():
@@ -143,6 +150,18 @@ def test_only_the_approved_restore_raises_monotonicity():
                 if any(o.startswith("monotonicity") for o in f.obligations):
                     raised[path.stem, f.input] += 1
     assert raised == {("16-restore-inversion", "approved"): 3, ("18c-restore-cited", "x"): 2}
+
+
+@pytest.mark.parametrize("stem", sorted(UNTIL_FIRM))
+def test_a_frame_asked_until_firm_kept_the_runs_it_needed_and_no_more(stem):
+    # read again from its kept runs, it is firm at its last run and not before:
+    # the runs stopped where the rule says to disengage, and none was dropped
+    path = EXAMPLES / f"{stem}.json"
+    frame = situate(json.loads(path.read_text(encoding="utf-8")))
+    runs = [load_records(str(run)) for run in runs_of(path)]
+    never = Budget(calls=1)  # no run fits: whatever is not firm from the kept runs stays so
+    assert until_firm(frame, None, never, kept=runs).firm
+    assert not until_firm(frame, None, never, kept=runs[:-1]).firm
 
 
 def test_every_frame_has_its_reported_verdicts():

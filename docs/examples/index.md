@@ -4,7 +4,7 @@ Every example here is an experiment, not a demonstration: a frame, the
 predictions written before its first call, and the records of every run. The
 reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
 [eGemma](https://github.com/mirzahusadzic/egemma) on one machine, except in rungs
-19 and 20, read by Muse Spark 1.3 Contributor through the unified model router,
+19 to 21, read by Muse Spark 1.3 Contributor through the unified model router,
 which in rung 20 also writes what it reads; reading an example back needs no
 model. Each frame is a rung of the ladder, named by its number: rung 16 is
 `16-restore-inversion.json`, and rungs 1 to 6 are those of Your first frame.
@@ -16,7 +16,7 @@ model. Each frame is a rung of the ladder, named by its number: rung 16 is
   design was worked out; only the reading shown is kept.
 - **Nothing edited after:** a wrong prediction stays in, and so does a frame
   that turned out to be built wrong; a corrected frame is a new one beside it.
-- **Cheap to run:** 6,560 kept calls in all, across code review, design
+- **Cheap to run:** 6,581 kept calls in all, across code review, design
   review, contracts, access rules, incidents, migrations and performance
   work, and not one failed (`examples/FINDINGS.md`). Rung 20's 180 made two
   model calls each, the maker's and the reader's.
@@ -70,8 +70,8 @@ Then **Watch a run** plays the step's kept runs one trial at a time, and
 every prompt it shows is checked against the digest its records carry. What
 to take from it, and an experiment to try next, close the step. The scale is
 small on purpose: one model a frame, three to five runs a frame, each trial
-asked five times with four to agree, so each step says how narrow its result
-is.
+asked five times with four to agree, or in rung 21 three times with two,
+until firm, so each step says how narrow its result is.
 
 `examples/RESULTS.md` sets every result against its prediction,
 `examples/FINDINGS.md` gathers what they showed about the reader, the service

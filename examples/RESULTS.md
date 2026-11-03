@@ -334,3 +334,29 @@ spent 689 to 2,118 output tokens, the maker's and the reader's together.
 Drawn again 200 times, every run of 20 is carried every time; 20b's third
 run, with its one control call at investigate, is cooled in 70% of draws
 and unresolved otherwise.
+
+## Rung 21: a doll's own word, found in the smallest
+
+Read by Muse Spark 1.3 Contributor at reasoning `low` through the unified
+battery, asked lightly by `midwife.recoil.until_firm`: three calls a trial
+with two to agree, one run of 21 calls at a time until the verdict was
+firm. Calls per trial:
+
+| trial | what it cuts or changes | answers |
+|---|---|---|
+| baseline | nothing | boy 3 |
+| repeat | nothing, asked again | boy 3 |
+| ablation | the word | unclear 3 |
+| sham-1 | the second doll's colour and headscarf | boy 3 |
+| sham-2 | the second doll's apron | boy 3 |
+| presentation | slip renamed card | boy 3 |
+| control | the paint and the word | unclear 3 |
+| per run | | carried, firm after one run |
+
+Predicted carried, firm after one run, with medium confidence that the
+doll without its word stays unclear rather than girl: right in every
+trial. Every call agreed, so the first run read carried in every draw and
+`until_firm` asked no second; each call spent 154 to 1,131 output tokens,
+14,981 in all. The walk carried the slip past the fourth and third dolls
+with no call, and the gate sent `second doll reads boy` up to the largest
+doll, whose frame asks only girls or unclear: a reframing, asked nothing.

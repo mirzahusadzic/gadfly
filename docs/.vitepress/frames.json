@@ -114,6 +114,11 @@
     "name": "incident-status",
     "hash": "20f39215d11cccf3c12fe64fc07f7430cd17c89f286a9ef416fc68703edc40fe"
   },
+  "21-second-doll-word": {
+    "path": "examples/21-second-doll-word.json",
+    "name": "second doll",
+    "hash": "7147b8c3361a8e32b144759f551c22a941de24bfb72ba9d6c9e5110aa455abc1"
+  },
   "rung1": {
     "path": "examples/rung1.json",
     "name": "quill-upgrade-rung-1",
