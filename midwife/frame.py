@@ -263,7 +263,7 @@ def parse(raw: dict[str, Any]) -> Frame:
     _check_holes(raw, known)
 
     anchors = tuple(need("anchors", list))
-    if not anchors:
+    if not anchors and not raw.get("holes"):  # holes stand in while a piece is awaited
         raise FrameError("a relation rests on at least one anchor")
     missing = [anchor for anchor in anchors if anchor not in known]
     if missing:
@@ -555,7 +555,7 @@ def _check_interventions(
             "eachAnchor cuts each of several anchors alone, and one is the ablation again"
         )
     for key in ("bypass", "control"):
-        if set(interventions.get(key) or []) == set(anchors):
+        if key in interventions and set(interventions[key] or []) == set(anchors):
             raise FrameError(f"{key} removes exactly the anchors, so it is the ablation again")
     if "cumulative" in interventions and set(interventions["cumulative"]) <= set(anchors):
         raise FrameError("cumulative adds no span to the anchors, so it is the ablation again")

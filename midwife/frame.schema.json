@@ -91,7 +91,13 @@
       }
     },
     "anchors": {
-      "$ref": "#/$defs/ids"
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The spans the relation rests on, at least one unless holes stand in for them."
     },
     "inputs": {
       "type": "array",
@@ -446,5 +452,19 @@
     "scopeCheck": [
       "outsideScope"
     ]
+  },
+  "if": {
+    "not": {
+      "required": [
+        "holes"
+      ]
+    }
+  },
+  "then": {
+    "properties": {
+      "anchors": {
+        "minItems": 1
+      }
+    }
   }
 }

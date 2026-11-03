@@ -17,6 +17,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
 
+from .errors import FrameError
 from .frame import Frame, Span, digest
 
 
@@ -160,6 +161,7 @@ TRIAL_IDS = {"inputInversion": "input-inversion"}
 def trial_ids(frame: Frame) -> list[str]:
     """The ids `plan` gives its trials, in its order, without building any
     trial's body: what a budget is counted from."""
+    _anchored(frame)
     iv = frame.interventions
     ids = ["baseline", *(["repeat"] if iv.get("repeat") else []), "ablation"]
     if iv.get("eachAnchor"):
@@ -175,8 +177,19 @@ def trial_ids(frame: Frame) -> list[str]:
     return ids
 
 
+def _anchored(frame: Frame) -> None:
+    # a frame whose holes stand in for its anchors has nothing yet to cut
+    if not frame.anchors:
+        raise FrameError(
+            f"frame {frame.name!r} rests on its holes alone, so no trial has an anchor to cut",
+            "fill a hole first, in the frame midwife.recoil.successor drafts",
+        )
+
+
 def plan(frame: Frame) -> list[Trial]:
-    """The trials of one input, in a fixed order."""
+    """The trials of one input, in a fixed order. A frame whose holes stand
+    in for its anchors is refused: it is walked, not asked."""
+    _anchored(frame)
     spans, iv = frame.spans, frame.interventions
     trials = [Trial("baseline", "baseline", (), (), spans)]
     if iv.get("repeat"):

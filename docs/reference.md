@@ -66,7 +66,8 @@ situate = midwife.frame.parse
 
 Another name for `plan` in `midwife.interventions`:
 
-The trials of one input, in a fixed order.
+The trials of one input, in a fixed order. A frame whose holes stand
+in for its anchors is refused: it is walked, not asked.
 
 ```python
 plan = midwife.interventions.plan
@@ -1103,7 +1104,8 @@ trial_ids(frame)
 
 #### plan
 
-The trials of one input, in a fixed order.
+The trials of one input, in a fixed order. A frame whose holes stand
+in for its anchors is refused: it is walked, not asked.
 
 ```python
 plan(frame)

@@ -491,3 +491,27 @@ def test_a_successor_closes_only_the_hole_it_fills():
     assert draft["anchors"] == ["says"] and draft["body"]["spans"][-1] == span(
         "says", SLIP, "statement", quoted=True
     )
+
+
+def test_holes_stand_in_for_anchors_until_a_piece_fills_one():
+    from jsonschema import Draft202012Validator
+
+    from midwife.frame import schema
+
+    waiting = matryoshka()[1]
+    waiting["anchors"] = []  # its word is lost: the hole is all it rests on
+    del waiting["interventions"]["repeat"]
+    frame = parse(waiting)
+    assert Draft202012Validator(schema()).is_valid(waiting)
+    # walked, never asked: nothing to cut until the hole is filled
+    with pytest.raises(FrameError, match="rests on its holes alone"):
+        plan(frame)
+    with pytest.raises(FrameError, match="rests on its holes alone"):
+        calls_needed(frame)
+    filled = parse(successor(frame, "says", Piece(SLIP, "statement"), **TRIALS))
+    assert filled.anchors == ("says",) and calls_needed(filled) == 8 * 3
+    # without holes, a frame still rests on at least one anchor
+    del waiting["holes"], waiting["offers"]
+    assert not Draft202012Validator(schema()).is_valid(waiting)
+    with pytest.raises(FrameError, match="rests on at least one anchor"):
+        parse(waiting)
