@@ -1,0 +1,87 @@
+{
+  "name": "smallest doll",
+  "relation": "who the smallest doll is rests on its own word, not its paint",
+  "locus": "the smallest doll's paint and the words it carries",
+  "role": "a collector cataloguing a set of nesting dolls",
+  "grain": "one line of paint or one word",
+  "purpose": "name each doll in the catalogue",
+  "trajectory": "the dolls as unpacked, the collector's reading, the catalogue entry",
+  "crossing": "the doll's entry in the catalogue",
+  "promise": "the smallest doll is named by its own word; without it, unclear, however it is painted",
+  "baseline": "the doll as unpacked, its paint and words as found; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "from",
+        "text": "The fourth doll opens at the waist, and the smallest doll sits inside.",
+        "kind": "inside",
+        "source": {
+          "sha256": "9472cd79d254c751e092883896e580879878b2ba257aa15b162dd809cd1add07"
+        }
+      },
+      {
+        "id": "paint-1",
+        "text": "The smallest doll is painted red, with a blue headscarf.",
+        "kind": "paint"
+      },
+      {
+        "id": "paint-2",
+        "text": "The smallest doll's apron is painted with bluebells.",
+        "kind": "paint"
+      },
+      {
+        "id": "mark",
+        "text": "The set was painted in one workshop.",
+        "kind": "mark",
+        "source": {
+          "sha256": "b0b2fc91c1d98ac9577abbcf247f731fcbf177b2434ae5265b76c244b48ed674"
+        }
+      },
+      {
+        "id": "slip",
+        "text": "On a slip, in its own hand, the second doll wrote \"I am a boy.\"",
+        "kind": "second-doll-word"
+      }
+    ]
+  },
+  "anchors": [
+    "slip"
+  ],
+  "inputs": [
+    {
+      "id": "who",
+      "text": "What does the smallest doll hold?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "a slip",
+      "nothing",
+      "unclear"
+    ],
+    "instruction": "You catalogue a set of painted nesting dolls. Use only the evidence given. Answer a slip if the smallest doll holds a slip of paper, nothing if it holds nothing, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true
+  },
+  "allowed": {
+    "ablation": [
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 3,
+    "agree": 2
+  },
+  "materialized": true,
+  "carriage": "listed",
+  "battery": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": [
+      "openrouter/meta/muse-spark-1.3-contributor"
+    ]
+  }
+}

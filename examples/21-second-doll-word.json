@@ -1,0 +1,102 @@
+{
+  "allowed": {
+    "ablation": [
+      "unclear"
+    ]
+  },
+  "anchors": [
+    "says"
+  ],
+  "baseline": "the second doll as unpacked, with the word found in the smallest doll; nothing changed",
+  "battery": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": [
+      "openrouter/meta/muse-spark-1.3-contributor"
+    ]
+  },
+  "body": {
+    "spans": [
+      {
+        "id": "from",
+        "kind": "inside",
+        "source": {
+          "sha256": "66e18b37593d5b4c5361784b1b21a2cb84b0fc238703cb5381b73c2c02457843"
+        },
+        "text": "The largest doll opens at the waist, and the second doll sits inside."
+      },
+      {
+        "id": "paint-1",
+        "kind": "paint",
+        "text": "The second doll is painted yellow, with a green headscarf."
+      },
+      {
+        "id": "paint-2",
+        "kind": "paint",
+        "text": "The second doll's apron is painted with daisies."
+      },
+      {
+        "id": "opens",
+        "kind": "inside",
+        "text": "The second doll opens at the waist, and the third doll sits inside."
+      },
+      {
+        "id": "says",
+        "text": "On a slip, in its own hand, the second doll wrote \"I am a boy.\"",
+        "kind": "second-doll-word",
+        "source": {
+          "sha256": "a82a1e96d3b9a7c3c51b05401f79a3ea59e71c56aaa897718ecf86303b6a7416"
+        }
+      }
+    ]
+  },
+  "carriage": "listed",
+  "crossing": "the doll's entry in the catalogue",
+  "grain": "one line of paint or one word",
+  "inputs": [
+    {
+      "id": "who",
+      "text": "Is the second doll a boy or a girl?"
+    }
+  ],
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2,
+      "kind": {
+        "says": "paint"
+      }
+    },
+    "presentation": {
+      "slip": "card"
+    },
+    "control": [
+      "paint-1",
+      "paint-2",
+      "says"
+    ]
+  },
+  "locus": "the second doll's paint and the words it carries",
+  "materialized": true,
+  "name": "second doll",
+  "observe": {
+    "instruction": "You catalogue a set of painted nesting dolls. Use only the evidence given. Answer boy if the evidence says the second doll is a boy, girl if it says the second doll is a girl, unclear if the evidence does not decide.",
+    "labels": [
+      "girl",
+      "boy",
+      "unclear"
+    ]
+  },
+  "offers": "role",
+  "promise": "the second doll is named by its own word; without it, unclear, however it is painted",
+  "purpose": "name each doll in the catalogue",
+  "relation": "who the second doll is rests on its own word, not its paint",
+  "role": "a collector cataloguing a set of nesting dolls",
+  "standing": {
+    "agree": 2,
+    "quorum": 3
+  },
+  "trajectory": "the dolls as unpacked, the collector's reading, the catalogue entry"
+}

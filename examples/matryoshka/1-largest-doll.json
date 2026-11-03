@@ -1,0 +1,94 @@
+{
+  "name": "largest doll",
+  "relation": "whose set it is rests on what its dolls say of themselves, not its paint",
+  "locus": "the largest doll's paint and the words it carries",
+  "role": "a collector cataloguing a set of nesting dolls",
+  "grain": "one line of paint or one word",
+  "purpose": "name each doll in the catalogue",
+  "trajectory": "the dolls as unpacked, the collector's reading, the catalogue entry",
+  "crossing": "the doll's entry in the catalogue",
+  "promise": "the set is named by what its dolls say of themselves; without it, unclear, however it is painted",
+  "baseline": "the doll as unpacked, its paint and words as found; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "paint-1",
+        "text": "The largest doll is painted pink from head to hem.",
+        "kind": "paint"
+      },
+      {
+        "id": "paint-2",
+        "text": "The largest doll wears a red headscarf with white flowers.",
+        "kind": "paint"
+      },
+      {
+        "id": "paint-3",
+        "text": "The largest doll's apron is painted with roses.",
+        "kind": "paint"
+      },
+      {
+        "id": "paint-4",
+        "text": "The largest doll holds a basket of painted berries.",
+        "kind": "paint"
+      },
+      {
+        "id": "paint-5",
+        "text": "The largest doll's cheeks are painted rosy, and its lashes long.",
+        "kind": "paint"
+      },
+      {
+        "id": "workshop",
+        "text": "The set was painted in one workshop.",
+        "kind": "mark"
+      },
+      {
+        "id": "opens",
+        "text": "The largest doll opens at the waist, and the second doll sits inside.",
+        "kind": "inside"
+      }
+    ]
+  },
+  "anchors": [],
+  "inputs": [
+    {
+      "id": "who",
+      "text": "Is this a set of girls?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "girls",
+      "unclear"
+    ],
+    "instruction": "You catalogue a set of painted nesting dolls. Use only the evidence given. Answer girls if the evidence says every doll of the set is a girl, unclear if the evidence does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true
+  },
+  "allowed": {
+    "ablation": [
+      "unclear"
+    ]
+  },
+  "standing": {
+    "quorum": 3,
+    "agree": 2
+  },
+  "materialized": true,
+  "carriage": "listed",
+  "battery": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": [
+      "openrouter/meta/muse-spark-1.3-contributor"
+    ]
+  },
+  "holes": [
+    {
+      "id": "inside",
+      "kind": "role"
+    }
+  ]
+}

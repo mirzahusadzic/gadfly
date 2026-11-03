@@ -2,10 +2,14 @@
 
     EGEMMA_API_KEY=... uv run python examples/climb.py rung N [RUNS]
     EGEMMA_API_KEY=... uv run python examples/climb.py FRAME.json [RUNS]
+    uv run python examples/climb.py FRAME.json --firm module:Class
 
 `rung N` (1-6) builds rungN.json from upgrade.json: rung 1 declares only the
 ablation, and each later rung adds one trial. Each run is a new records file
-under examples/runs/<frame>/; a kept file is never written over.
+under examples/runs/<frame>/; a kept file is never written over. With
+`--firm`, the frame is asked one light run at a time through the battery
+named, until its verdict is firm (`midwife.recoil.until_firm`), and the runs
+already kept count as runs made.
 """
 
 from __future__ import annotations
@@ -16,7 +20,7 @@ import time
 from collections import Counter
 from pathlib import Path
 
-from midwife.cli import load_records
+from midwife.cli import load_battery, load_records
 from midwife.cli import main as gadfly
 from midwife.pipeline import calls_needed, judge, situate
 from midwife.verdict import overall
@@ -76,8 +80,50 @@ def climb(path: Path, runs: int) -> None:
         print(f"    {trial:24} {dict(counts.most_common())}")
 
 
+def firm(path: Path, battery: str) -> None:
+    from midwife.recoil import MOST, until_firm
+    from midwife.types import Budget
+
+    frame = situate(json.loads(path.read_text(encoding="utf-8")))
+    out_dir = HERE / "runs" / path.stem
+    out_dir.mkdir(parents=True, exist_ok=True)
+    made = sorted(out_dir.glob("*.jsonl"), key=lambda p: int(p.stem))
+    kept = [load_records(str(p)) for p in made]
+    each = calls_needed(frame)
+    writing = {"file": None, "count": 0, "n": len(kept)}
+
+    def keep(record) -> None:  # each run a file of its own, each record as it exists
+        if writing["count"] % each == 0:
+            if writing["file"]:
+                writing["file"].close()
+            writing["n"] += 1
+            writing["file"] = (out_dir / f"{writing['n']}.jsonl").open("x", encoding="utf-8")
+        writing["file"].write(json.dumps(record.as_dict(), ensure_ascii=False) + "\n")
+        writing["file"].flush()
+        writing["count"] += 1
+
+    began = time.monotonic()
+    try:
+        asked = until_firm(
+            frame, load_battery(battery), Budget(MOST * each, 8000), kept=kept, on_record=keep
+        )
+    finally:
+        if writing["file"]:
+            writing["file"].close()
+    for n, records in enumerate(asked.runs, 1):
+        for finding in judge(frame, list(records)):
+            levels = " ".join(f"{t}={v}" for t, v in finding.levels.items())
+            print(f"run {n}: {finding.category} | {levels}")
+    state = "firm" if asked.firm else f"not firm ({asked.stopped or 'at the most runs'})"
+    took = f"{time.monotonic() - began:.0f} s"
+    print(f"{state}: {asked.category}, shares {asked.shares}, {asked.made} calls made ({took})")
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
+    if "--firm" in args:
+        firm(Path(args[0]), args[args.index("--firm") + 1])
+        raise SystemExit(0)
     if args[0] == "rung":
         path, rest = rung_frame(int(args[1])), args[2:]
     else:
