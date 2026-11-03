@@ -287,6 +287,21 @@ def test_every_brushstroke_on_a_doll_is_a_line_it_says():
     assert [s for s in dolls["order"] if s not in ("climb", "gate")] == marker.split()
 
 
+def test_the_doll_stage_keeps_to_what_the_reader_picked():
+    # the stage driven in Node (tests/stage_harness.mjs): a walked doll
+    # picked holds the view, and later trials paint nothing on it; a climb
+    # under way stops when a reader takes over; the gate's mark stays through
+    # Back and Next until a doll is picked (pass 11, F7, F9, F10)
+    done = subprocess.run(
+        ["node", str(ROOT / "tests/stage_harness.mjs")], capture_output=True, text=True, check=True
+    )
+    seen = json.loads(done.stdout)
+    assert seen["walked"]["asked"] == [["hold"]] and seen["walked"]["amaniTrimCut"] is False
+    assert seen["walked"]["caption"].startswith("Amani is walked, never asked")
+    assert seen["takeover"] == {"asked": [["select", "22-kiran-paper"]], "captionKept": True}
+    assert seen["gate"] == {"afterGate": 1, "afterTrial": 1, "afterPick": 0}
+
+
 def test_the_watch_view_shows_what_a_crossings_maker_wrote():
     # the reader read the artefact, not the trial's body, so the view keeps
     # each call's artefact, and says when its record kept only the start

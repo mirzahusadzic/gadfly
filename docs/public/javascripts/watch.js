@@ -432,14 +432,17 @@
     const story = { on: false, order: [] }; // on once the stage stands
     // the stage draws beside the view and never stops it: should it fail,
     // it is taken away, and the frames play on without it
+    const unstage = (error) => {
+      hooks = {};
+      story.on = false;
+      dollBox?.remove();
+      console.error(error);
+    };
     const staged = (call) => {
       try {
         call();
       } catch (error) {
-        hooks = {};
-        story.on = false;
-        dollBox?.remove();
-        console.error(error);
+        unstage(error);
       }
     };
 
@@ -557,12 +560,16 @@
     // the order: the climb of the paper's words, the next frame, or the gate
     async function onward() {
       if (!story.on) return;
-      for (let i = story.order.indexOf(state.stem) + 1; i < story.order.length; i++) {
-        const next = story.order[i];
-        if (next === "climb") await hooks.climb?.();
-        else if (next === "gate") return hooks.gate?.();
-        else return story.on ? load(next, 0, true) : undefined;
-        if (!story.on) return;
+      try {
+        for (let i = story.order.indexOf(state.stem) + 1; i < story.order.length; i++) {
+          const next = story.order[i];
+          if (next === "climb") await hooks.climb?.();
+          else if (next === "gate") return await hooks.gate?.();
+          else return story.on ? await load(next, 0, true) : undefined;
+          if (!story.on) return;
+        }
+      } catch (error) {
+        unstage(error); // the stage goes; the frames play on without it
       }
     }
 
@@ -819,6 +826,10 @@
               select(stem) {
                 story.on = false; // a doll picked by hand ends the sequence
                 load(stem);
+              },
+              hold() {
+                story.on = false; // a walked doll picked: the view holds still
+                stop();
               },
             }, data);
             story.order = data.order;

@@ -281,7 +281,9 @@
       row.append(fig);
       return { doll, fig, regions, name };
     });
-    let current = null, step = null;
+    // what the view plays, what its trial left, and a count that each new
+    // pick or frame moves on, so a climb or gate already under way stops
+    let current = null, step = null, turn = 0;
 
     // a doll's own regions, and in the frame it is asked in, what the trial
     // left: the lines a trial cut lose their paint
@@ -295,7 +297,6 @@
     }
     function settle() {
       for (const entry of drawn) {
-        entry.fig.classList.remove("is-reframed");
         const asked = current && entry.doll.name === current.doll;
         entry.fig.setAttribute("aria-pressed", String(Boolean(asked)));
         if (asked && step) paint(entry, step.present);
@@ -305,9 +306,18 @@
       if (from) from.regions.says?.classList.toggle("is-gone", Boolean(step?.climbed));
     }
 
+    function unmark() {
+      for (const entry of drawn) entry.fig.classList.remove("is-reframed", "is-passing");
+    }
+
     function select(name, byHand) {
       const doll = byName[name];
       if (!doll.frames.length) {
+        // a walked doll has no run: the view holds still, and its trials no
+        // longer paint the stage
+        turn++;
+        api.hold();
+        unmark();
         current = { doll: name, stem: null };
         step = { present: new Set(doll.lines.map((l) => l.id)), climbed: step?.climbed };
         caption.textContent = `${name} is walked, never asked: no run to play. ${name} says ${doll.lines.length} lines, and none says whether ${name} is a boy or a girl.`;
@@ -320,6 +330,8 @@
 
     // the views' own frame changed, by a doll, a button or the sequence
     function frame(stem, d) {
+      turn++;
+      unmark();
       const asking = data.frames[stem];
       current = { doll: asking.doll, stem };
       const climbed = stem !== data.order[0];
@@ -343,6 +355,7 @@
     }
     // a trial played: its cut lifts its paint
     function trial(t, d) {
+      if (!current?.stem) return; // a walked doll is picked: nothing it says was cut
       const removed = new Set(t ? t.removed : []);
       step = { ...step, present: new Set(d.spans.map((s) => s.id).filter((id) => !removed.has(id))) };
       settle();
@@ -351,6 +364,7 @@
     // between frames, the paper's words climb: each doll above passes them
     // on, until the one whose hole they fit
     async function climb() {
+      const mine = turn;
       const route = [...data.piece.passes, data.piece.fits];
       for (const name of route) {
         const entry = drawn.find((e) => e.doll.name === name);
@@ -360,16 +374,19 @@
           : `${name} passes the paper's words on: ${name}'s hole is for ${name}'s own word.`;
         await wait(reduced ? 300 : 1400);
         entry.fig.classList.remove("is-passing");
+        if (turn !== mine) return; // a reader took over: the stage is theirs
       }
     }
     // the gate: the decision climbs to the largest doll, which is reframed,
     // and stays marked so until another doll is picked
     async function gate() {
+      const mine = turn;
       const g = data.gate;
       const entry = drawn.find((e) => e.doll.name === g.fits);
       entry.fig.classList.add("is-passing");
       caption.textContent = g.caption;
       await wait(reduced ? 300 : 1400);
+      if (turn !== mine) return entry.fig.classList.remove("is-passing");
       entry.fig.classList.replace("is-passing", "is-reframed");
     }
     const wait = (ms) => new Promise((done) => setTimeout(done, ms));
