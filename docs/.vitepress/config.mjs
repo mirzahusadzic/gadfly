@@ -69,7 +69,7 @@ const sidebar = [
       { text: 'Command line', link: '/command-line' },
       { text: 'Python API', link: '/reference' },
       { text: 'Glossary', link: '/glossary' },
-      { text: 'Upgrading to 0.7.0', link: '/upgrading' },
+      { text: 'Upgrading', link: '/upgrading' },
       { text: 'Troubleshooting', link: '/troubleshooting' },
       {
         text: 'Extending Gadfly',

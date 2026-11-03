@@ -258,4 +258,4 @@ to `docs/.vitepress/dist`, failing on a dead link.
 
 ---
 
-[Upgrading to 0.7.0](https://mirzahusadzic.github.io/gadfly/upgrading) · [Troubleshooting](https://mirzahusadzic.github.io/gadfly/troubleshooting) · [Fonts and libraries](https://mirzahusadzic.github.io/gadfly/notices) · [Apache-2.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSE) · [The essay under CC BY 4.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSES/CC-BY-4.0.txt)
+[Upgrading](https://mirzahusadzic.github.io/gadfly/upgrading) · [Troubleshooting](https://mirzahusadzic.github.io/gadfly/troubleshooting) · [Fonts and libraries](https://mirzahusadzic.github.io/gadfly/notices) · [Apache-2.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSE) · [The essay under CC BY 4.0](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSES/CC-BY-4.0.txt)

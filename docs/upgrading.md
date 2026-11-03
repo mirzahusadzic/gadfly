@@ -1,16 +1,32 @@
-# Upgrading to 0.7.0
+# Upgrading
 
-0.7.0 changes what the command line prints and how it ends, and how Gadfly
-raises what it refuses. Verdicts do not change: every kept run reads to the
-same category as in 0.6.0. This page lists what a caller of 0.6.0 meets, and
-what to do.
-
-0.7.1 changes nothing a caller meets: one test that read a refusal's message
-now passes on Python 3.14 and later, as on 3.13.
+Each release that changes what a caller meets has a section here, the newest
+first. In none of them does a verdict change: every kept run reads to the same
+category. The site follows `main`, so a release not yet out says so.
 
 ---
 
-### The command line
+### To 0.8.0, not yet released
+
+On `main`, for the next release: the `unified` battery speaks to the router
+through the router's own data-policy header, and needs a router that takes it.
+
+| In 0.7 | In 0.8.0 | What to do |
+| --- | --- | --- |
+| The `unified` battery asked for endpoints that keep no data with a field in each request's body | Each call goes under the router's `X-Codex-Router-Data-Policy: deny`, unless the frame names its model under `trainsOnInputs` | Nothing, with a router that takes it |
+| A call went to the router unasked | Before the first call, the battery reads the router's `GET /health`, and refuses to run, a `BatteryError` (6), when the router does not list the policy or cannot be asked | Update the router, or start it |
+| A model whose provider trains, by the router's list but not Gadfly's, went out with that field | The router refuses it, and the call comes back as an opening that names the model | Choose another model, or name it under `trainsOnInputs` |
+
+---
+
+### To 0.7.0
+
+0.7.0 changes what the command line prints and how it ends, and how Gadfly
+raises what it refuses; this lists what a caller of 0.6.0 meets, and what to
+do. 0.7.1 changes nothing a caller meets: one test that read a refusal's
+message now passes on Python 3.14 and later, as on 3.13.
+
+#### The command line
 
 | In 0.6.0 | In 0.7.0 | What to do |
 | --- | --- | --- |
@@ -26,9 +42,7 @@ Any file Gadfly reads may now be `-`, standard input, which is refused at a
 terminal. `run --out -` streams the records to standard output and its summary
 to standard error, and a run with nothing left to ask makes its file, empty.
 
----
-
-### JSON output
+#### JSON output
 
 | Command | In 0.6.0 | In 0.7.0 |
 | --- | --- | --- |
@@ -36,9 +50,7 @@ to standard error, and a run with nothing left to ask makes its file, empty.
 | `run --json` | `stopped` and `openings` in its result | Its result also holds `exit`, and `warnings`, each with the status it gives |
 | `check-frame --json` | `{"ok": false, ...}` on standard output for a refused frame | One `FrameError` object on standard error that lists `problems`, each with its notes; `{"ok": true, ...}` on standard output for an accepted one |
 
----
-
-### Frames and Python callers
+#### Frames and Python callers
 
 | In 0.6.0 | In 0.7.0 | What to do |
 | --- | --- | --- |
