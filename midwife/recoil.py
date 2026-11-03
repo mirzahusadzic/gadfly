@@ -30,7 +30,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from .errors import RecordsError, UsageError
-from .frame import Frame
+from .frame import Frame, digest
+from .interventions import plan, prompt
 from .pipeline import calls_needed, run
 from .stats import stability
 from .types import Battery, Budget, Record
@@ -219,6 +220,20 @@ class Firm:
         return overall_of(list(self.findings)).category if self.findings else None
 
 
+def _own(frame: Frame, records: Sequence[dict[str, Any]]) -> None:
+    # a kept run is this frame's, each call once, each trial's body and each
+    # call's prompt the ones its plan makes, as run checks what it is kept
+    trials = {trial.id: trial for trial in plan(frame)}
+    check_records(frame, list(records), {t: trial.body_hash for t, trial in trials.items()})
+    inputs = {x["id"]: x for x in frame.inputs}
+    for record in records:
+        asked = prompt(frame, trials[record["trial"]], inputs[record["input"]])
+        if record["prompt"] != digest(asked):
+            raise RecordsError(
+                f"a kept record of trial {record['trial']!r} was made from another prompt"
+            )
+
+
 def _charged(usage: dict[str, Any], cap: int) -> int:
     # what a call spent, as run charges it: what the battery reports, or the
     # cap when it reports no whole count
@@ -275,7 +290,7 @@ def until_firm(
         records = tuple(r.as_dict() if isinstance(r, Record) else r for r in records)
         if not records:
             raise RecordsError("a kept run holds no records", "give each run's records as a list")
-        check_records(frame, list(records))  # this frame's, and each call once
+        _own(frame, records)
         runs.append(records)
     each, made, spent = calls_needed(frame), 0, 0
     if any(len(records) != each for records in runs):

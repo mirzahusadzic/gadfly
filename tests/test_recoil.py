@@ -594,3 +594,15 @@ def test_a_runs_draws_are_seeded_by_its_place_as_gadfly_stats_reads_them():
         share = stability(probe, [first, second])[1]["x"][finding.category]
         assert asked.shares == {"x": share}
         assert asked.firm is (share >= 0.95)
+
+
+def test_a_kept_run_with_a_prompt_its_frame_never_planned_is_refused():
+    # a kept record names the prompt its call read: one the frame's plan
+    # never makes is another frame's call, refused as run refuses it on
+    # resume (pass 11, F4)
+    middle = dolls()[1]
+    after = with_slip(middle)
+    kept = [dict(r) for r in until_firm(after, DollReader(), budget(after)).runs[0]]
+    kept[0]["prompt"] = "0" * 64
+    with pytest.raises(RecordsError, match="was made from another prompt"):
+        until_firm(after, None, Budget(calls=1), kept=[kept])
