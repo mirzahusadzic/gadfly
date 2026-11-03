@@ -22,6 +22,8 @@ of 0.9.1 meets does:
 New: `successor(..., after=SPAN)` and `gadfly successor --after SPAN` place
 the piece right after the line it amends, for a reader that reads each span
 as a line; its ablation is still the frame's body byte for byte.
+`gadfly successor --text TEXT --kind KIND` takes a piece found in no frame,
+as `Piece(text, kind)` does in Python.
 
 ---
 

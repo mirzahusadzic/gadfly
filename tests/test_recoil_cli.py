@@ -11,7 +11,7 @@ import pytest
 
 from midwife.cli import load_frame, load_records, main
 from midwife.pipeline import situate
-from midwife.recoil import found, gate, sha256, successor, until_firm, walk
+from midwife.recoil import Piece, found, gate, sha256, successor, until_firm, walk
 from midwife.types import Budget
 
 ROOT = Path(__file__).parent.parent
@@ -203,6 +203,60 @@ def test_successor_places_the_piece_after_the_line_it_amends(capsys):
     assert document["after"] == "name" and document["draft"] == draft
     assert main([*argv, "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["after"] is None
+
+
+def test_successor_takes_a_piece_found_in_no_frame_as_its_text_and_kind(capsys):
+    # a piece from a store of its own, as Piece(text, kind) is in Python:
+    # the same text and kind draft the same successor as the span found
+    argv = ["successor", KIRAN, "--hole", "paper", "--text", PAPER, "--kind", "kiran-paper"]
+    assert main(argv) == 0
+    draft = json.loads(capsys.readouterr().out)
+    assert draft == successor(load_frame(KIRAN), "paper", Piece(PAPER, "kiran-paper"))
+    assert main(["successor", KIRAN, "--hole", "paper", "--from", MIRZA, "--span", "says"]) == 0
+    assert json.loads(capsys.readouterr().out) == draft
+    assert main([*argv, "--json"]) == 0
+    document = json.loads(capsys.readouterr().out)
+    assert document["piece"] == {
+        "text": PAPER,
+        "kind": "kiran-paper",
+        "sha256": sha256(PAPER),
+        "from": None,
+    }
+
+
+@pytest.mark.parametrize(
+    "more, said",
+    [
+        (["--text", PAPER], ["missing --kind", "a --text piece fills only a hole of its own kind"]),
+        (
+            ["--text", PAPER, "--kind", "kiran-paper", "--from", MIRZA],
+            [
+                "--from and --text cannot be given together",
+                "a piece is a text of its own, or one found in the frame --from names",
+            ],
+        ),
+        (
+            ["--from", MIRZA, "--span", "says", "--kind", "kiran-paper"],
+            [
+                "--kind is given without --text",
+                "a piece found in a frame is of its span's kind, or the kind its frame offers",
+            ],
+        ),
+        (["--span", "says"], ["missing --from", "name the frame the piece was found in"]),
+        (["--from", MIRZA], ["missing one of --span, --decision, --text"]),
+        (["--text", PAPER, "--span", "says"], ["--span and --text cannot be given together"]),
+    ],
+)
+def test_successor_says_which_piece_it_was_not_given(more, said, capsys):
+    assert main(["successor", KIRAN, "--hole", "paper", *more]) == 2
+    err = told(capsys, "err")
+    assert err[0] == f"UsageError: {said[0]}" and err[1 : len(said)] == said[1:]
+
+
+def test_walk_takes_no_text_piece(capsys):
+    # a walk climbs from the frame a piece was found in, so it needs that frame
+    assert main(["walk", KIRAN, "--from", MIRZA, "--text", PAPER, "--kind", "x"]) == 2
+    assert told(capsys, "err")[0] == "UsageError: unrecognized arguments --text --kind"
 
 
 def test_successor_writes_a_new_file_and_never_over_one(tmp_path, capsys):

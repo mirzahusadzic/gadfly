@@ -50,7 +50,11 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: frame 'Mirza' has no span 'nope'` | Name with `--span` one of the spans of the frame `--from` names, by its id. |
 | `UsageError: frame 'Mirza' offers no kind for its decision to climb as` | `name one under offers`. A decision climbs as a piece of the kind its frame offers; without `offers` it climbs as none. |
 | `UsageError: frame 'Kiran' has no label 'maybe'` | Name with `--decision` one of the frame's labels. |
-| `UsageError: missing one of --span, --decision` | `gadfly walk --help shows its arguments`. The piece is one of the spans of the frame `--from` names, or its decision read as a label: name one with `--span` or `--decision`, not both. |
+| `UsageError: missing one of --span, --decision` | `gadfly walk --help shows its arguments`. The piece is one of the spans of the frame `--from` names, or its decision read as a label: name one with `--span` or `--decision`, not both. `successor` also takes `--text`, so it says `missing one of --span, --decision, --text`. |
+| `UsageError: missing --from` | `name the frame the piece was found in`. `successor` was given `--span` or `--decision` without the frame they come from. |
+| `UsageError: missing --kind` | `a --text piece fills only a hole of its own kind`. Name its kind with `--kind`, as the hole the piece fills names it. |
+| `UsageError: --from and --text cannot be given together` | `a piece is a text of its own, or one found in the frame --from names`. Give `--text` and `--kind` alone, or `--from` with `--span` or `--decision`. |
+| `UsageError: --kind is given without --text` | `a piece found in a frame is of its span's kind, or the kind its frame offers`. Leave out `--kind`, or give the piece as `--text`. |
 | `UsageError: --decision and --span cannot be given together` | `gadfly walk --help shows its arguments`. The piece is a span of the frame `--from` names, or its decision: name one. |
 | `UsageError: missing --battery` or `UsageError: missing frames` | `gadfly run --help shows its arguments`. A flag or a file the command needs was not given; its help names each, and a mistyped flag is named as unrecognized instead. |
 | `UsageError: frame 'Kiran' has no span 'nope' to place the piece after` | `name one of its spans, the line the piece amends`. `--after`, or `after` in Python, names a span of the frame the piece fills. |

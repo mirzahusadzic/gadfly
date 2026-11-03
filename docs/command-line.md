@@ -278,6 +278,10 @@ uv run gadfly successor examples/dolls/2-kiran.json \
   --span says --out kiran.json
 ```
 
+A piece found in no frame given, such as a statement from a store of its
+own, is named with `--text` and `--kind` instead of `--from`; the same text
+and kind draft the same successor as the span they came from.
+
 `--after SPAN` places the piece right after that span, the line it amends,
 for a reader that reads each span as a line; without it the piece comes last.
 Either way its ablation gives back the frame's body byte for byte.

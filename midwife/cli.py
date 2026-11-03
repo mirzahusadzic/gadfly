@@ -711,7 +711,25 @@ def _piece_document(piece) -> dict[str, str]:
 
 def _piece(args):
     # the frame --from names, and the piece found in it: one of its spans
-    # (--span), or its decision read as a label (--decision)
+    # (--span), or its decision read as a label (--decision); or, for
+    # successor, a text found in no frame given (--text), of the --kind named
+    text, kind = getattr(args, "text", None), getattr(args, "kind", None)
+    if text is not None:
+        if args.source is not None:
+            raise UsageError(
+                "--from and --text cannot be given together",
+                "a piece is a text of its own, or one found in the frame --from names",
+            )
+        if kind is None:
+            raise UsageError("missing --kind", "a --text piece fills only a hole of its own kind")
+        return None, recoil.Piece(text, kind)
+    if kind is not None:
+        raise UsageError(
+            "--kind is given without --text",
+            "a piece found in a frame is of its span's kind, or the kind its frame offers",
+        )
+    if args.source is None:
+        raise UsageError("missing --from", "name the frame the piece was found in")
     source = load_frame(args.source)
     if args.span is not None:
         return source, recoil.found(source, args.span)
@@ -833,7 +851,7 @@ def command_successor(args) -> int:
             "of": _which(frame),
             "hole": args.hole,
             "after": args.after,
-            "piece": {**_piece_document(piece), "from": _which(source)},
+            "piece": {**_piece_document(piece), "from": None if source is None else _which(source)},
             "reframes": changed,
             "out": None if out is None else str(out),
             "draft": draft,
@@ -1132,11 +1150,13 @@ def parser() -> argparse.ArgumentParser:
     counted.set_defaults(func=command_stats)
 
     # recoil's steps, each `midwife.recoil`'s function of the same name
-    def piece(sub: argparse.ArgumentParser) -> None:  # the piece, as walk and successor take it
+    def piece(sub: argparse.ArgumentParser, text: bool = False) -> None:
+        # the piece, as walk and successor take it: found in a frame, or for
+        # successor a text of its own, as Python's Piece(text, kind) is
         sub.add_argument(
             "--from",
             dest="source",
-            required=True,
+            required=not text,
             metavar="FRAME",
             help="the frame the piece was found in, a JSON file, or - for stdin",
         )
@@ -1145,6 +1165,11 @@ def parser() -> argparse.ArgumentParser:
         which.add_argument(
             "--decision", metavar="LABEL", help="the piece is that frame's decision, read as LABEL"
         )
+        if text:
+            which.add_argument(
+                "--text", help="the piece is this text, found in no frame; with --kind"
+            )
+            sub.add_argument("--kind", help="the kind of hole the --text piece fills")
 
     def reading(
         sub: argparse.ArgumentParser,
@@ -1171,7 +1196,7 @@ def parser() -> argparse.ArgumentParser:
     drafted = command("successor", help="draft the frame a fit is asked again as")
     drafted.add_argument("frame", help="the frame the piece fits, a JSON file, or - for stdin")
     drafted.add_argument("--hole", required=True, help="the hole the piece fills")
-    piece(drafted)
+    piece(drafted, text=True)
     drafted.add_argument(
         "--after",
         metavar="SPAN",
