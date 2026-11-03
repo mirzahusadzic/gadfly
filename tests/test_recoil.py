@@ -354,6 +354,27 @@ def test_a_boy_by_his_own_word_reframes_the_girlish_set():
     assert largest.raw["observe"]["labels"] == ["girls", "unclear"]  # the set as asked stands
 
 
+def test_a_successor_that_changes_another_hole_reframes():
+    # what a frame can take in is part of its question: a successor that
+    # adds a hole after the find, changes one, or drops one unfilled asks
+    # another question, so a later walk fits nothing nobody predicted
+    second = dolls()[1]
+    added = with_slip(second, holes=[{"id": "late", "kind": "statement"}])
+    assert reframes(second, added) == ["holes"]
+    assert (gate(second, added).gate, gate(second, added).changed) == ("reframing", ("holes",))
+    two = parse({**second.raw, "holes": [*second.raw["holes"], {"id": "base", "kind": "base"}]})
+    filled = parse(successor(two, "says", found(dolls()[4], "slip"), **TRIALS))
+    assert filled.raw["holes"] == [{"id": "base", "kind": "base"}]
+    assert reframes(two, filled) == []  # the other hole kept as it was
+    changed = parse({**filled.raw, "holes": [{"id": "base", "kind": "statement"}]})
+    assert reframes(two, changed) == ["holes"]
+    dropped = {key: value for key, value in filled.raw.items() if key != "holes"}
+    assert reframes(two, parse(dropped)) == ["holes"]
+    # a hole closed with no span of its own filled nothing
+    emptied = parse({**two.raw, "holes": [{"id": "base", "kind": "base"}]})
+    assert reframes(two, emptied) == ["holes"]
+
+
 def test_a_doll_whose_question_does_not_rest_on_its_word_absorbs_it():
     second = matryoshka()[1]
     based = copy.deepcopy(second)

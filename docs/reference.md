@@ -947,7 +947,9 @@ successor(frame, hole, piece, **changes)
 
 The keys a successor changed beyond its evidence, in sorted order:
 none when it only filled a declared hole, and asked it with its own
-trials and standing.
+trials and standing. Its holes are the frame's, less at most the one it
+filled, now a span of its own: a hole added, changed or dropped unfilled
+changes what the frame can take in, and lists `holes`.
 
 ```python
 reframes(before, after)

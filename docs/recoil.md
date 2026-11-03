@@ -125,9 +125,10 @@ the old one. `gate` returns a reframing instead, with what changed, and asks
 nothing; the old frame and its verdict stand.
 
 A successor may change its name, baseline, body, anchors, interventions,
-`allowed`, `standing` and holes: its evidence, and how many calls read it. A
-change to any other key reframes, and a reframing stays open until its author
-declares how the two questions compare.
+`allowed` and `standing`: its evidence, and how many calls read it. Of its
+holes it may only close the one it fills, since what a frame can take in is
+part of its question. A change to any other key or hole reframes, and a
+reframing stays open until its author declares how the two questions compare.
 
 ---
 

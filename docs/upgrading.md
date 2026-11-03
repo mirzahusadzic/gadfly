@@ -10,6 +10,17 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
+### To 0.10.0, not yet released
+
+On `main`, for the next release. No verdict changes, and this thing a caller
+of 0.9.1 meets does:
+
+| In 0.9.1 | In 0.10.0 | What to do |
+| --- | --- | --- |
+| A successor that added, changed or dropped a hole besides the one it filled asked the same question | `reframes` lists `holes`, and `gate` reads the successor as a reframing | Close only the hole the piece fills; a frame that takes in more is a new frame |
+
+---
+
 ### To 0.9.1
 
 No verdict changes, and nothing a caller of 0.9.0 meets changes. New, and

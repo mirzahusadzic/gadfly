@@ -45,7 +45,8 @@ from .verdict import judge as judge_records
 from .verdict import overall as overall_of
 
 # What a successor may change while it fills a declared hole: its evidence,
-# and how many calls read each trial. Any other key asks another question.
+# and how many calls read each trial. Any other key asks another question,
+# and so does any change to its holes but closing the one it fills.
 EVIDENCE = ("name", "baseline", "body", "anchors", "interventions", "allowed", "standing", "holes")
 # What the successor's category does to the recoil.
 GATE = {
@@ -200,10 +201,27 @@ def successor(frame: Frame, hole: str, piece: Piece, **changes: Any) -> dict[str
 def reframes(before: Frame, after: Frame) -> list[str]:
     """The keys a successor changed beyond its evidence, in sorted order:
     none when it only filled a declared hole, and asked it with its own
-    trials and standing."""
+    trials and standing. Its holes are the frame's, less at most the one it
+    filled, now a span of its own: a hole added, changed or dropped unfilled
+    changes what the frame can take in, and lists `holes`."""
     old, new = before.raw, after.raw
     keys = (set(old) | set(new)) - set(EVIDENCE)
-    return sorted(key for key in keys if old.get(key) != new.get(key))
+    changed = {key for key in keys if old.get(key) != new.get(key)}
+    if not _closes_one(old, new):
+        changed.add("holes")
+    return sorted(changed)
+
+
+def _closes_one(old: dict[str, Any], new: dict[str, Any]) -> bool:
+    # the holes as they were, or less the one hole now filled by a span
+    before, after = old.get("holes", []), new.get("holes", [])
+    if after == before:
+        return True
+    spans = {span["id"] for span in new["body"]["spans"]}
+    return any(
+        before[:at] + before[at + 1 :] == after and hole["id"] in spans
+        for at, hole in enumerate(before)
+    )
 
 
 @dataclass(frozen=True)
