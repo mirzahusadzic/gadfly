@@ -385,15 +385,17 @@ uv run gadfly run examples/22-kiran-paper.json \
 uv run gadfly report examples/22-kiran-paper.json kiran.jsonl
 ```
 
-`examples/climb.py` asks a frame until firm, as the kept runs were made: one
-run at a time, up to five, 105 calls at most, each run kept beside the
-frame's. Kept runs count as runs made, so the three frames here are asked
-nothing more; a copy under a name of its own starts fresh:
+`gadfly firm` asks a frame until firm, as the kept runs were made: one run at
+a time, up to five, 105 calls at most, each run kept in the folder `--runs`
+names. Runs already in it count as runs made, so a new folder starts fresh:
 
 ```bash
-cp examples/22-kiran-paper.json examples/my-kiran.json
-uv run python examples/climb.py examples/my-kiran.json \
-  --firm midwife.batteries.unified:Unified
+mkdir kiran-runs
+uv run gadfly firm examples/22-kiran-paper.json \
+  --battery midwife.batteries.unified:Unified \
+  --runs kiran-runs --calls 105 --output-tokens 8000
+uv run gadfly gate examples/dolls/2-kiran.json \
+  examples/22-kiran-paper.json --runs kiran-runs
 ```
 
 ---

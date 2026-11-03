@@ -852,6 +852,9 @@ in nearly every draw of the latest run's calls, and the same as the run before
 it; then it disengages. Runs already kept count as runs made, so a frame
 already firm is asked nothing.
 
+Each step is also a command: `gadfly walk`, `gadfly successor`, `gadfly firm`
+and `gadfly gate`.
+
 #### sha256
 
 The SHA-256 of a text, as a span's `source` names it.
@@ -1912,7 +1915,8 @@ observe(frame, prompt, max_output_tokens)
 
 ### midwife.cli
 
-The command line: plan, run, report, check-frame, portfolio.
+The command line: check-frame, plan, run, report, stats and portfolio,
+and recoil's walk, successor, firm and gate.
 
 ```bash
 uv run gadfly plan examples/upgrade.json
@@ -1924,7 +1928,9 @@ uv run gadfly check-frame my-frame.json
 uv run gadfly portfolio a.json b.json
 ```
 
-It uses only the public pipeline. `run` needs an explicit call budget,
+It uses only the public pipeline, and each command is a public function's
+parity: what Python offers, a command does, and `--json` prints what the
+function returns. `run` needs an explicit call budget,
 writes each record as one JSON line the moment it exists, never writes over
 a file and makes none when it is refused, and says when it stopped early;
 `report` keeps a finding's evidence and its open obligations apart.
@@ -2034,6 +2040,46 @@ command_check_frame(args)
 
 ```python
 command_portfolio(args)
+```
+
+#### command_walk
+
+`gadfly walk`: where a piece climbs from the frame it was found in, up
+through the frames given, without a call (`midwife.recoil.walk`).
+
+```python
+command_walk(args)
+```
+
+#### command_successor
+
+`gadfly successor`: the frame a fit is asked again as, its hole filled
+with the piece (`midwife.recoil.successor`), checked as any frame is and
+written to standard output or a new file, never over one.
+
+```python
+command_successor(args)
+```
+
+#### command_firm
+
+`gadfly firm`: ask a frame one whole run at a time until its verdict is
+firm (`midwife.recoil.until_firm`). The runs --runs keeps count as runs
+made, and each new run is kept there as a new file, record by record.
+
+```python
+command_firm(args)
+```
+
+#### command_gate
+
+`gadfly gate`: what a fit did (`midwife.recoil.gate`), without a call.
+A successor that asks another question is a reframing, read against no
+category; any other is read from the runs --runs keeps, as `until_firm`
+reads them.
+
+```python
+command_gate(args)
 ```
 
 #### parser

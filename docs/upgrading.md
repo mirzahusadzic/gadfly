@@ -38,8 +38,10 @@ whose anchors are all holes is walked, never planned: `plan` and
 the holes it fills, and asks each fit again until its verdict is firm, as
 [Recoil](recoil.md) shows.
 
-`until_firm` says a stop for its budget as a `StoppedWarning`, as `run`
-does, and given no battery it reads the kept runs alone.
+Each recoil step is also a command, `gadfly walk`, `successor`, `firm` and
+`gate`, whose `--json` prints what its function returns. `until_firm` says a
+stop for its budget as a `StoppedWarning`, as `run` does, and given no
+battery it reads the kept runs alone.
 
 ---
 

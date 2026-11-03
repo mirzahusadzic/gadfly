@@ -1,4 +1,5 @@
-"""The command line: plan, run, report, check-frame, portfolio.
+"""The command line: check-frame, plan, run, report, stats and portfolio,
+and recoil's walk, successor, firm and gate.
 
     uv run gadfly plan examples/upgrade.json
     uv run gadfly run examples/upgrade.json \\
@@ -8,7 +9,9 @@
     uv run gadfly check-frame my-frame.json
     uv run gadfly portfolio a.json b.json
 
-It uses only the public pipeline. `run` needs an explicit call budget,
+It uses only the public pipeline, and each command is a public function's
+parity: what Python offers, a command does, and `--json` prints what the
+function returns. `run` needs an explicit call budget,
 writes each record as one JSON line the moment it exists, never writes over
 a file and makes none when it is refused, and says when it stopped early;
 `report` keeps a finding's evidence and its open obligations apart.
@@ -34,7 +37,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from . import __version__, errors, stats
+from . import __version__, errors, recoil, stats
 from .errors import (
     BatteryError,
     FrameError,
@@ -62,6 +65,8 @@ examples:
       --calls 40 --out records.jsonl    make the calls, keeping each record
   gadfly report my-frame.json records.jsonl
                                         read the verdict, with no call
+  gadfly walk frames/*.json --from frames/found.json --span slip
+                                        where a piece climbs, with no call
 
 docs: https://mirzahusadzic.github.io/gadfly/command-line
 """
@@ -406,31 +411,9 @@ def command_run(args) -> int:
         raise UsageError(
             "--json and --out - both print to standard output", "choose a file for --out"
         )
-    # a new file: never another run's, nor what a link, even a broken one, points at
-    if not streamed and out.is_dir() and not out.is_symlink():
-        raise noted(
-            IsADirectoryError(f"{str(out)!r} is a folder, not a file"),
-            "name a new file in it, or choose another --out",
-        )
-    if not streamed and os.path.lexists(out):
-        raise noted(
-            FileExistsError(f"file {str(out)!r} exists already"),
-            "kept records are never written over; choose a new --out, or finish it with --kept",
-        )
-    if not streamed and out.parent.exists() and not out.parent.is_dir():
-        raise noted(
-            NotADirectoryError(f"path {str(out)!r} runs through a file, not a folder"),
-            "choose another --out",
-        )
-    if not streamed and not out.parent.is_dir():  # found out before a call is spent
-        raise noted(
-            FileNotFoundError(f"folder {str(out.parent)!r} does not exist"),
-            "make it, or choose another --out",
-        )
-    if not streamed and not os.access(out.parent, os.W_OK):
-        raise noted(
-            PermissionError(f"folder {str(out.parent)!r} cannot be written"),
-            "choose another --out",
+    if not streamed:
+        _new_file(
+            out, "kept records are never written over; choose a new --out, or finish it with --kept"
         )
     # a path as a shell would take it back, so a colon or a space in it breaks no line
     where, say = ("standard output", sys.stderr) if streamed else (_shell(str(out)), sys.stdout)
@@ -584,6 +567,33 @@ def command_run(args) -> int:
     return status
 
 
+def _new_file(out: Path, exists: str) -> None:
+    # a new file for --out: never another's, nor what a link, even a broken
+    # one, points at, in a folder that can be written; found out before a call
+    if out.is_dir() and not out.is_symlink():
+        raise noted(
+            IsADirectoryError(f"{str(out)!r} is a folder, not a file"),
+            "name a new file in it, or choose another --out",
+        )
+    if os.path.lexists(out):
+        raise noted(FileExistsError(f"file {str(out)!r} exists already"), exists)
+    if out.parent.exists() and not out.parent.is_dir():
+        raise noted(
+            NotADirectoryError(f"path {str(out)!r} runs through a file, not a folder"),
+            "choose another --out",
+        )
+    if not out.parent.is_dir():
+        raise noted(
+            FileNotFoundError(f"folder {str(out.parent)!r} does not exist"),
+            "make it, or choose another --out",
+        )
+    if not os.access(out.parent, os.W_OK):
+        raise noted(
+            PermissionError(f"folder {str(out.parent)!r} cannot be written"),
+            "choose another --out",
+        )
+
+
 def command_report(args) -> int:
     """`gadfly report`: the verdict read from a kept JSON Lines file."""
     frame = load_frame(args.frame)
@@ -680,6 +690,360 @@ def command_portfolio(args) -> int:
     return 0
 
 
+# a run kept in a --runs folder: one JSON Lines file, named by its place
+RUN_FILE = re.compile(r"([1-9][0-9]*)\.jsonl")
+
+
+def _which(frame) -> dict[str, str]:
+    # a frame as a JSON document names it, as every command's names its frame
+    return {"frame": frame.name, "hash": frame.hash}
+
+
+def _short(frame) -> str:
+    # a frame as a line names it: its name and the start of its hash, since a
+    # successor keeps the name of the frame it succeeds
+    return f"{plain(frame.name)} ({frame.hash[:12]})"
+
+
+def _piece_document(piece) -> dict[str, str]:
+    return {"text": piece.text, "kind": piece.kind, "sha256": piece.sha256}
+
+
+def _piece(args):
+    # the frame --from names, and the piece found in it: one of its spans
+    # (--span), or its decision read as a label (--decision)
+    source = load_frame(args.source)
+    if args.span is not None:
+        return source, recoil.found(source, args.span)
+    return source, recoil.decided(source, args.decision)
+
+
+def _set(key: str, value: str) -> tuple[str, Any]:
+    # a key the successor sets, its value given as JSON
+    try:
+        return key, json.loads(value)
+    except (ValueError, RecursionError):
+        raise UsageError(
+            f"--set {key!r} is given {value!r}, which is not JSON",
+            "give the value as JSON, quoted for the shell",
+        ) from None
+
+
+def _bounds(args) -> None:
+    # how firm is firm, and how many runs are read, as until_firm takes them
+    if not 0 < args.firm <= 1:  # NaN included: it is no share
+        raise UsageError("--firm is a share above 0, up to 1")
+    if args.most < 1:
+        raise UsageError("--most is a whole number of runs, at least 1")
+
+
+def _runs_folder(path: str, missing: str, write: bool) -> Path:
+    # the folder --runs names: one that exists, and, to keep new runs, can be written
+    folder = Path(path)
+    if folder.exists() and not folder.is_dir():
+        raise noted(
+            NotADirectoryError(f"{str(folder)!r} is a file, not a folder"),
+            "--runs names the folder that keeps the frame's runs",
+        )
+    if not folder.is_dir():
+        raise noted(FileNotFoundError(f"folder {str(folder)!r} does not exist"), missing)
+    if write and not os.access(folder, os.W_OK):
+        raise noted(
+            PermissionError(f"folder {str(folder)!r} cannot be written"), "choose another --runs"
+        )
+    return folder
+
+
+def _kept_runs(folder: Path, frame, most: int) -> list[tuple[int, Path, list[dict[str, Any]]]]:
+    # the runs a folder keeps, each a file named by its place, 1.jsonl, 2.jsonl
+    # and on, read in that order; each a whole run, and any other file left alone
+    named = sorted(
+        (int(match[1]), path)
+        for path in folder.iterdir()
+        if (match := RUN_FILE.fullmatch(path.name)) and path.is_file()
+    )
+    many = len(named)
+    if many > most:
+        raise UsageError(
+            f"folder {str(folder)!r} keeps {many} runs, more than --most reads",
+            "raise --most, or move the earliest runs out",
+        )
+    each, kept = calls_needed(frame), []
+    for place, path in named:
+        records = load_records(str(path))
+        many = len(records)
+        if many != each:
+            raise RecordsError(
+                f"file {str(path)!r} holds {many} of a run's {each} calls",
+                "a run cut short is never read as firm; move it out of the folder",
+            )
+        kept.append((place, path, records))
+    return kept
+
+
+def command_walk(args) -> int:
+    """`gadfly walk`: where a piece climbs from the frame it was found in, up
+    through the frames given, without a call (`midwife.recoil.walk`)."""
+    source, piece = _piece(args)
+    walked = recoil.walk(piece, source, [load_frame(path) for path in args.frames])
+    if args.json:
+        document = {
+            "piece": {**_piece_document(piece), "from": _which(source)},
+            "fits": [{**_which(frame), "holes": list(holes)} for frame, holes in walked.fits],
+            "passed": [_which(frame) for frame in walked.passed],
+            "frontier": list(walked.frontier),
+            "complete": walked.complete,
+        }
+        print(json.dumps(document, indent=2))
+        return 0
+    print(f"piece: {piece.text!r}, of kind {plain(piece.kind)}, from {_short(source)}")
+    for frame, holes in walked.fits:
+        print(f"fits: {_short(frame)}, hole {', '.join(holes)}")
+    for frame in walked.passed:
+        print(f"passed: {_short(frame)}")
+    for text in walked.frontier:
+        print(f"frontier: {text}, quoted by a frame and held by none given")
+    print(f"complete: {'yes' if walked.complete else 'no'}")
+    return 0
+
+
+def command_successor(args) -> int:
+    """`gadfly successor`: the frame a fit is asked again as, its hole filled
+    with the piece (`midwife.recoil.successor`), checked as any frame is and
+    written to standard output or a new file, never over one."""
+    frame = load_frame(args.frame)
+    source, piece = _piece(args)
+    changes = dict(_set(key, value) for key, value in args.set or [])
+    draft = recoil.successor(frame, args.hole, piece, **changes)
+    try:
+        after = situate(draft)
+    except FrameError as error:
+        error.add_note(f"the successor of frame {frame.name!r} is checked as any frame is")
+        raise
+    out = None if args.out == "-" else Path(args.out)
+    text = json.dumps(draft, indent=2, ensure_ascii=False) + "\n"  # as an author writes a frame
+    if out is not None:
+        _new_file(out, "a frame is never written over; choose a new --out")
+        with out.open("x", encoding="utf-8") as file:
+            file.write(text)
+    changed = recoil.reframes(frame, after)
+    if args.json:  # one document, the draft within it
+        document = {
+            **_which(after),
+            "of": _which(frame),
+            "hole": args.hole,
+            "piece": {**_piece_document(piece), "from": _which(source)},
+            "reframes": changed,
+            "out": None if out is None else str(out),
+            "draft": draft,
+        }
+        print(json.dumps(document, indent=2))
+        return 0
+    if out is None:  # the frame owns standard output; the rest is a message
+        sys.stdout.write(text)
+    say = sys.stderr if out is None else sys.stdout
+    print(f"successor: {_short(after)}, of {_short(frame)}, its hole {args.hole} filled", file=say)
+    if changed:
+        asks = "so it asks another question, read against no category"
+        print(f"reframes: {', '.join(changed)}, {asks}", file=say)
+    else:
+        print("reframes: nothing, so it asks the same question, read from its own runs", file=say)
+    if out is not None:
+        print(f"wrote it to {_shell(str(out))}", file=say)
+    return 0
+
+
+def command_firm(args) -> int:
+    """`gadfly firm`: ask a frame one whole run at a time until its verdict is
+    firm (`midwife.recoil.until_firm`). The runs --runs keeps count as runs
+    made, and each new run is kept there as a new file, record by record."""
+    frame = load_frame(args.frame)
+    _bounds(args)
+    folder = _runs_folder(args.runs, "make it, or choose another --runs", write=True)
+    kept = _kept_runs(folder, frame, args.most)
+    each = calls_needed(frame)
+    if not kept and args.calls < each:  # nothing to read and nothing to ask: refused, as run's
+        raise UsageError(
+            f"a run needs {each} calls; --calls allows {args.calls}",
+            "gadfly plan shows the calls a run needs",
+        )
+    battery = load_battery(args.battery)
+    # a new run's file comes after every name a run could hold, a folder's too
+    last = max(
+        (int(match[1]) for path in folder.iterdir() if (match := RUN_FILE.fullmatch(path.name))),
+        default=0,
+    )
+    files = []  # a run's file is made by its first record, so a refusal leaves none
+    made = []
+    progress = sys.stderr.isatty() and not args.json
+
+    def keep(record: Record) -> None:
+        line = json.dumps(record.as_dict(), ensure_ascii=False) + "\n"  # before any file is made
+        if len(made) % each == 0:  # a run's first record: its own file, after the last
+            if files:
+                files[-1].close()
+            files.append((folder / f"{last + len(files) + 1}.jsonl").open("x", encoding="utf-8"))
+        files[-1].write(line)
+        files[-1].flush()
+        made.append(record)
+        if progress:
+            print(f"\r{len(made)} calls made", end="", file=sys.stderr, flush=True)
+
+    try:
+        with warnings.catch_warnings(record=True) as caught:  # said below, as refusals are
+            warnings.simplefilter("always", GadflyWarning)
+            asked = recoil.until_firm(
+                frame,
+                battery,
+                Budget(args.calls, args.output_tokens, args.token_budget),
+                kept=[records for _, _, records in kept],
+                firm=args.firm,
+                most=args.most,
+                on_record=keep,
+            )
+    except KeyboardInterrupt:
+        # every record made so far is already in its file: say which run is cut short
+        stopped = f"stopped by Ctrl-C after {len(made)} calls"
+        if not files:
+            said = noted(KeyboardInterrupt(f"{stopped}, and no record was kept"))
+        elif len(made) % each:
+            said = noted(
+                KeyboardInterrupt(f"{stopped}; the run cut short is in file {files[-1].name!r}"),
+                "a run cut short is never read as firm; move it out of the folder",
+            )
+        else:
+            said = noted(KeyboardInterrupt(f"{stopped}; each run made is whole and kept"))
+        raise said from None  # one call at a time: none is left out in a thread
+    finally:
+        for file in files:
+            file.close()
+        if progress and made:
+            print(file=sys.stderr)
+    for warning in caught:  # any other code's warning, shown as Python would
+        if not issubclass(warning.category, GadflyWarning):
+            warnings.showwarning(
+                warning.message, warning.category, warning.filename, warning.lineno
+            )
+    openings = Counter(r.opening for r in made if r.opening is not None)
+    status = 1 if made and sum(openings.values()) == len(made) else 3 if asked.stopped else 0
+    raised = []
+    for warning in (w.message for w in caught if issubclass(w.category, GadflyWarning)):
+        gives = warning.exit
+        if isinstance(warning, OpeningWarning):
+            gives = OpeningWarning.exit if status == OpeningWarning.exit else 0
+            if gives:
+                warning.add_note("nothing was read; ask again once it answers")
+        if isinstance(warning, StoppedWarning):
+            warning.add_note(
+                f"the run cut short is in file {files[-1].name!r}; move it out of the folder"
+                if len(made) % each
+                else "raise --calls or --token-budget, and ask again with the same --runs"
+            )
+        raised.append((warning, gives))
+    paths = [path for _, path, _ in kept] + [Path(file.name) for file in files]
+    runs = [
+        {
+            "file": str(paths[place]) if place < len(paths) else None,
+            "kept": place < len(kept),
+            "category": overall(judge(frame, list(records))).category if records else None,
+        }
+        for place, records in enumerate(asked.runs)
+    ]
+    if args.json:  # one document: what until_firm returns, and the warnings within it
+        payload = {
+            **_which(frame),
+            "runs": runs,
+            "made": len(made),
+            "firm": asked.firm,
+            "category": asked.category,
+            "shares": asked.shares,
+            "findings": [finding.as_dict() for finding in asked.findings],
+            "stopped": asked.stopped,
+            "openings": dict(openings.most_common()),
+            "exit": status,
+            "warnings": [described(warning, gives) for warning, gives in raised],
+        }
+        print(json.dumps(payload, indent=2))
+        return status
+    print(f"frame: {plain(frame.name)} ({frame.hash})")
+    for place, read in enumerate(runs, 1):
+        how = "kept" if read["kept"] else "asked now"
+        print(f"run {place}: {plain(read['category'] or 'no category')}, {how}")
+    many = len(asked.runs)
+    state = f"{'yes' if asked.firm else 'no'}, {plain(asked.category or 'no category')}"
+    state += f" after {many} run{'s' * (many != 1)}"
+    shares = asked.shares
+    if len(shares) == 1:
+        state += f", read alike in {_percent(next(iter(shares.values())))} of draws"
+    elif shares:
+        alike = ", ".join(f"{plain(x)} {_percent(share)}" for x, share in shares.items())
+        state += f", read alike in {alike} of draws"
+    if not asked.firm and not asked.stopped and many >= args.most:
+        state += ", as many runs as --most reads"
+    print(f"firm: {state}; {len(made)} calls made now")
+    for warning, _ in raised:
+        notes = list(getattr(warning, "__notes__", []))
+        print(f"{type(warning).__name__}: {warning}", *notes, sep="\n", file=sys.stderr)
+    return status
+
+
+def command_gate(args) -> int:
+    """`gadfly gate`: what a fit did (`midwife.recoil.gate`), without a call.
+    A successor that asks another question is a reframing, read against no
+    category; any other is read from the runs --runs keeps, as `until_firm`
+    reads them."""
+    before, after = load_frame(args.before), load_frame(args.after)
+    _bounds(args)
+    asked = None
+    if not recoil.reframes(before, after):
+        if args.runs is None:
+            raise UsageError(
+                "a successor that asks the same question is read from its own runs",
+                "name the folder that keeps them with --runs; gadfly firm makes them",
+            )
+        missing = "name the folder gadfly firm kept the successor's runs in"
+        folder = _runs_folder(args.runs, missing, write=False)
+        kept = _kept_runs(folder, after, args.most)
+        if not kept:
+            raise UsageError(
+                f"folder {str(folder)!r} keeps no run of the successor",
+                "gadfly firm asks it, and keeps each run there",
+            )
+        runs = [records for _, _, records in kept]
+        asked = recoil.until_firm(
+            after, None, Budget(calls=1), kept=runs, firm=args.firm, most=args.most
+        )
+    opened = recoil.gate(before, after, asked)
+    if args.json:
+        document = {
+            **_which(after),
+            "of": _which(before),
+            "gate": opened.gate,
+            "category": opened.category,
+            "climbs": [_piece_document(piece) for piece in opened.climbs],
+            "changed": list(opened.changed),
+            "open": opened.open,
+            "runs": 0 if asked is None else len(asked.runs),
+            "firm": None if asked is None else asked.firm,
+            "shares": None if asked is None else asked.shares,
+        }
+        print(json.dumps(document, indent=2))
+        return 0
+    print(f"successor: {_short(after)}, of {_short(before)}")
+    if asked is not None:
+        print(f"runs: {len(asked.runs)} read, {'firm' if asked.firm else 'not firm'}")
+    print(f"gate: {opened.gate}")
+    if opened.category:
+        print(f"category: {opened.category}")
+    for piece in opened.climbs:
+        print(f"climbs: {piece.text!r}, of kind {plain(piece.kind)}")
+    if opened.changed:
+        print(f"changed: {', '.join(opened.changed)}")
+    if opened.open:
+        print(f"open: {opened.open}")
+    return 0
+
+
 def parser() -> argparse.ArgumentParser:
     """The command line's arguments."""
     root = Parser(
@@ -763,8 +1127,90 @@ def parser() -> argparse.ArgumentParser:
     )
     counted.add_argument("--json", action="store_true", help="print JSON instead of text")
     counted.set_defaults(func=command_stats)
+
+    # recoil's steps, each `midwife.recoil`'s function of the same name
+    def piece(sub: argparse.ArgumentParser) -> None:  # the piece, as walk and successor take it
+        sub.add_argument(
+            "--from",
+            dest="source",
+            required=True,
+            metavar="FRAME",
+            help="the frame the piece was found in, a JSON file, or - for stdin",
+        )
+        which = sub.add_mutually_exclusive_group(required=True)
+        which.add_argument("--span", help="the piece is this span of that frame")
+        which.add_argument(
+            "--decision", metavar="LABEL", help="the piece is that frame's decision, read as LABEL"
+        )
+
+    def reading(
+        sub: argparse.ArgumentParser,
+    ) -> None:  # how runs are read, as until_firm reads them
+        sub.add_argument(
+            "--firm",
+            type=float,
+            default=recoil.FIRM,
+            help=f"the share of draws that must read each input alike (default {recoil.FIRM})",
+        )
+        sub.add_argument(
+            "--most",
+            type=int,
+            default=recoil.MOST,
+            help=f"the most runs read, kept ones included (default {recoil.MOST})",
+        )
+
+    walked = command("walk", help="where a piece climbs through frames, without spending")
+    walked.add_argument("frames", nargs="+", help="the frames to climb, JSON files, one may be -")
+    piece(walked)
+    walked.add_argument("--json", action="store_true", help="print JSON instead of text")
+    walked.set_defaults(func=command_walk)
+
+    drafted = command("successor", help="draft the frame a fit is asked again as")
+    drafted.add_argument("frame", help="the frame the piece fits, a JSON file, or - for stdin")
+    drafted.add_argument("--hole", required=True, help="the hole the piece fills")
+    piece(drafted)
+    drafted.add_argument(
+        "--set",
+        nargs=2,
+        action="append",
+        metavar=("KEY", "VALUE"),
+        help="set a key of the successor to a JSON value; may repeat",
+    )
+    drafted.add_argument(
+        "--out", "-o", "--output", default="-", help="a new JSON file, or - for stdout (default)"
+    )
+    drafted.add_argument("--json", action="store_true", help="print JSON instead of text")
+    drafted.set_defaults(func=command_successor)
+
+    firmed = command("firm", help="ask a frame run by run until its verdict is firm")
+    firmed.add_argument("frame", help="the frame, a JSON file, or - for stdin")
+    firmed.add_argument("--battery", required=True, help="module:Class")
+    firmed.add_argument(
+        "--runs",
+        required=True,
+        metavar="FOLDER",
+        help="the frame's runs, 1.jsonl and on: kept ones are read, new ones added",
+    )
+    firmed.add_argument("--calls", required=True, type=int, help="the most calls to make")
+    firmed.add_argument("--output-tokens", type=int, default=64, help="each answer's cap")
+    firmed.add_argument("--token-budget", type=int, help="the most output tokens in all")
+    reading(firmed)
+    firmed.add_argument("--json", action="store_true", help="print JSON instead of text")
+    firmed.set_defaults(func=command_firm)
+
+    gated = command("gate", help="read what a fit did, without spending")
+    gated.add_argument("before", help="the frame the piece fits, a JSON file, or - for stdin")
+    gated.add_argument("after", help="its successor, a JSON file, or - for stdin")
+    gated.add_argument(
+        "--runs", metavar="FOLDER", help="the successor's runs, as gadfly firm keeps them"
+    )
+    reading(gated)
+    gated.add_argument("--json", action="store_true", help="print JSON instead of text")
+    gated.set_defaults(func=command_gate)
+
     root.commands = {"plan": show, "run": execute, "report": report, "check-frame": check}
     root.commands.update(portfolio=portfolio, stats=counted)
+    root.commands.update(walk=walked, successor=drafted, firm=firmed, gate=gated)
     return root
 
 
@@ -789,8 +1235,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.command is None:  # no command: what the tool does, not an error
             command_line.print_help()
             return 0
-        named = [vars(args).get(key) for key in ("frame", "records", "kept")]
-        for many in ("records", "reports"):  # stats takes several records, portfolio reports
+        named = [vars(args).get(key) for key in ("frame", "records", "kept", "source")]
+        named += [vars(args).get(key) for key in ("before", "after")]  # gate's two frames
+        # stats takes several records, portfolio reports, walk frames
+        for many in ("records", "reports", "frames"):
             if isinstance(vars(args).get(many), list):
                 named += vars(args)[many]
         named += [path for pair in vars(args).get("pool") or [] for path in pair]
@@ -882,6 +1330,9 @@ class Parser(argparse.ArgumentParser):
         # argparse's words hold colons: "argument --calls: invalid int value: 'x'"
         message = re.sub(r"^argument (\S+): ", r"\1, ", message)
         message = message.replace("the following arguments are required: ", "missing ")
+        choice = re.fullmatch(r"one of the arguments (.+) is required", message)
+        if choice:  # one flag of a group, as walk's piece is a --span or a --decision
+            message = f"missing one of {', '.join(choice[1].split())}"
         # the colons argparse adds go, a value's own stay inside its quotes
         parts = QUOTED.split(message)
         parts[::2] = [part.replace(": ", " ") for part in parts[::2]]

@@ -19,6 +19,9 @@ one run at a time, until the fixed rules read every input's category the same
 in nearly every draw of the latest run's calls, and the same as the run before
 it; then it disengages. Runs already kept count as runs made, so a frame
 already firm is asked nothing.
+
+Each step is also a command: `gadfly walk`, `gadfly successor`, `gadfly firm`
+and `gadfly gate`.
 """
 
 from __future__ import annotations

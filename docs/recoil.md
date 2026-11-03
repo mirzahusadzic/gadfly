@@ -7,10 +7,12 @@ the frames it can answer. Only those are asked again; every other frame
 passes it on at no cost, and keeps its verdict.
 
 > [!NOTE]
-> `midwife.recoil` is a Python API, with no command yet.
-> [Five dolls, one kid](examples/dolls.md) runs it with a real reader, and
-> [Recoil through frames](breadth/recoil.md) keeps its design: why it was
-> needed, its open calls, what comes later, and the case its tests hold.
+> Each step is both a command, `gadfly walk`, `successor`, `firm` and `gate`
+> ([Command line](command-line.md#recoil-through-frames)), and a function of
+> `midwife.recoil` of the same name. [Five dolls, one kid](examples/dolls.md)
+> runs it with a real reader, and [Recoil through frames](breadth/recoil.md)
+> keeps its design: why it was needed, its open calls, what comes later, and
+> the case its tests hold.
 
 ---
 
@@ -141,11 +143,38 @@ declares how the two questions compare.
 
 ---
 
+### From the command line
+
+The steps on the dolls: the paper's walk up from Mirza, Kiran's successor
+with the paper in its hole, asked until firm through the router, and the
+gate it sets. `walk` and `gate` call no model, and `firm` keeps each run in
+the folder it is given:
+
+```bash
+uv run gadfly walk examples/dolls/*.json \
+  --from examples/dolls/5-mirza.json --span says
+uv run gadfly successor examples/dolls/2-kiran.json \
+  --hole paper --from examples/dolls/5-mirza.json \
+  --span says --out kiran.json
+mkdir kiran-runs
+uv run gadfly firm kiran.json --runs kiran-runs \
+  --battery midwife.batteries.unified:Unified \
+  --calls 45 --output-tokens 8000
+uv run gadfly gate examples/dolls/2-kiran.json \
+  kiran.json --runs kiran-runs
+```
+
+Each takes `--json` and prints what its function below returns, so a script
+or another model reads the same as Python does. When the gate climbs,
+`walk --from kiran.json --decision boy` carries Kiran's decision on.
+
+---
+
 ### In Python
 
-The steps as `examples/dolls.py` takes them on the dolls: a piece from the
-frame it was found in, its walk, each fit's successor asked until firm, and
-the gate that successor sets:
+The same steps as `examples/dolls.py` takes them: a piece from the frame it
+was found in, its walk, each fit's successor asked until firm, and the gate
+that successor sets:
 
 ```python
 from midwife.frame import parse
@@ -157,7 +186,7 @@ piece = found(smallest, "says")
 climbed = walk(piece, smallest, dolls)
 for frame, holes in climbed.fits:
     after = parse(successor(frame, holes[0], piece))
-    asked = until_firm(after, battery, Budget(calls=105))
+    asked = until_firm(after, battery, Budget(calls=45))
     recoil = gate(frame, after, asked)
 ```
 

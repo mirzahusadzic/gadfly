@@ -31,8 +31,6 @@ spent every call again.
 2. **What a decision climbs as:** the frame's name and the label it reads,
    such as `middle doll reads boy`. Whether a carried decision climbs by
    itself, or waits for its author, is the caller's.
-3. **A command:** a `gadfly` command for the walk, with its errors tabled as
-   every command's are.
 
 ---
 

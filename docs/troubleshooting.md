@@ -20,7 +20,7 @@ alike.
 | 0 | none | done |
 | 1 | `OpeningWarning` | every call came back with no answer, so nothing was read |
 | 2 | `UsageError` | the command or the call asks for what cannot be done, and nothing was spent |
-| 3 | `StoppedWarning` | the run stopped before its plan's end, so its records are partial; `--kept` finishes them |
+| 3 | `StoppedWarning` | a run stopped before its plan's end, so its records are partial and `--kept` finishes them; or `firm` stopped before its verdict was firm |
 | 4 | `FrameError` | the frame is refused |
 | 5 | `RecordsError` | records or a report are not this frame's run |
 | 6 | `BatteryError` | the battery cannot be made, set up or reached |
@@ -47,6 +47,21 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: standard input is read once` | `name - for one file at most`. |
 | `UsageError: --json and --out - both print to standard output` | `choose a file for --out`. |
 | `UsageError: the token budget (0) is spent` | `--token-budget must cover one call's --output-tokens`. Nothing was spent and no file made. |
+| `UsageError: frame 'Mirza' has no span 'nope'` | Name with `--span` one of the spans of the frame `--from` names, by its id. |
+| `UsageError: frame 'Mirza' offers no kind for its decision to climb as` | `name one under offers`. A decision climbs as a piece of the kind its frame offers; without `offers` it climbs as none. |
+| `UsageError: frame 'Kiran' has no label 'maybe'` | Name with `--decision` one of the frame's labels. |
+| `UsageError: missing one of --span, --decision` | `gadfly walk --help shows its arguments`. The piece is one of the spans of the frame `--from` names, or its decision read as a label: name one with `--span` or `--decision`, not both. |
+| `UsageError: frame 'Kiran' has no hole 'nope'` | Name with `--hole` one of the frame's `holes`; `gadfly walk` names the holes a piece fits. |
+| `UsageError: hole 'paper' is of kind 'kiran-paper', and the piece is of kind 'paint'` | A piece fills only a hole of its own kind. Choose the piece the walk found fitting, or another hole. |
+| `UsageError: --set 'standing' is given 'three', which is not JSON` | `give the value as JSON, quoted for the shell`. A text is JSON in double quotes, so the shell needs them kept, as in `'"text"'`. |
+| `UsageError: a run needs 24 calls; --calls allows 10` | `gadfly plan shows the calls a run needs`. `firm` asks whole runs only, and with no run kept it had nothing to read, so nothing was spent and no file made. |
+| `UsageError: --firm is a share above 0, up to 1` or `UsageError: firm is a share above 0, up to 1` | Give the share of draws that must read each input alike, such as 0.95; the second is `until_firm`'s, in Python. |
+| `UsageError: --most is a whole number of runs, at least 1` or `UsageError: most is a whole number of runs, at least 1` | Give the most runs to read, kept ones included; the second is `until_firm`'s, in Python. |
+| `UsageError: folder 'runs' keeps 6 runs, more than --most reads` | `raise --most, or move the earliest runs out`. Only the latest run decides, and every run kept is read. |
+| `UsageError: kept holds more runs than most lets until_firm read` | `give it the latest runs only, or raise most`. The same, in Python. |
+| `UsageError: frame 'Kiran' asks each trial once, so a run has no calls to draw again` | `give it a quorum of 2 or more`. Whether a verdict is firm is read from its calls drawn again, so a frame asked until firm is asked lightly, but more than once a trial. |
+| `UsageError: a successor that asks the same question is read from its own runs` | `name the folder that keeps them with --runs; gadfly firm makes them`. Only a reframing is read against no category, with no runs. |
+| `UsageError: folder 'runs' keeps no run of the successor` | `gadfly firm asks it, and keeps each run there`. A run is a file named by its place, `1.jsonl` and on. |
 
 ---
 
@@ -67,6 +82,7 @@ common ones.
 | `FrameError: required influence is tested by ablation, and none is declared` | `set ablation to true`. |
 | `FrameError: frame 'Kiran' rests on its holes alone, so no trial has an anchor to cut` | `fill a hole first, in the frame midwife.recoil.successor drafts`. A frame whose anchors are all holes is walked by [recoil](recoil.md), never planned or run. |
 | `FrameError: the body holds no span` | `a frame's evidence is one span or more`. Holes stand in for anchors, never for the evidence. |
+| `FrameError: the body has no span 'nope'` | `the successor of frame 'Kiran' is checked as any frame is`. `gadfly successor` checks its draft before it prints or writes it, and a `--set` value made it what the parser refuses: correct that value, or leave it out and finish the draft by hand. |
 | `FrameError: holes name span 'paper', which the body has` | `a hole is what the body lacks`. Give the hole an id no span has. |
 
 ---
@@ -86,8 +102,10 @@ read from them.
 | `RecordsError: a record's served is not a str` | The same for what the battery said it served. |
 | `RecordsError: file 'records.jsonl' is not UTF-8 text` | The file was written by another tool or edited in another encoding. Save it as UTF-8. |
 | `RecordsError: two records for input 'pr', trial 'baseline', run 2` | The same call is kept twice, usually from two files joined into one. Keep one of them. |
-| `RecordsError: a kept record of trial 'baseline' was made from another prompt` | A record passed as `--kept` was made with a prompt this frame does not plan for that call. Resume only from the records this frame's own run made. |
+| `RecordsError: a kept record of trial 'baseline' was made from another prompt` | A record passed as `--kept`, or kept in a `--runs` folder, was made with a prompt this frame does not plan for that call. Resume only from the records this frame's own run made. |
 | `RecordsError: file 'kept.jsonl' holds a lone surrogate at line 3` | `no file can hold it; correct or drop that record, then run again`. That record holds text, often from another tool, that cannot be written back, and nothing was spent. |
+| `RecordsError: file 'runs/3.jsonl' holds 1 of a run's 24 calls` | `a run cut short is never read as firm; move it out of the folder`. A battery, a budget or Ctrl-C cut that run short; `firm` reads whole runs only. |
+| `RecordsError: a kept run is not whole, so its verdict cannot be read as firm` or `RecordsError: a kept run holds no records` | `give whole runs only, and leave out one that stopped short`. The same, from `until_firm` in Python, which takes each run's records as a list. |
 | ``RecordsError: a portfolio reads `gadfly report --json` documents, and this is not one`` | Each file `portfolio` reads is the output of `gadfly report --json`. |
 
 ---
@@ -130,31 +148,39 @@ was spent. These are Python's own errors, said in plain words.
 | --- | --- |
 | `FileNotFoundError: file 'frame.json' does not exist` | Check the path, or the file that the environment variable `EGEMMA_API_KEY_FILE` names. |
 | `FileNotFoundError: folder 'runs' does not exist` | `make it, or choose another --out`. |
+| `FileNotFoundError: folder 'kiran-runs' does not exist` | `make it, or choose another --runs`. `firm` keeps a frame's runs in a folder you make, so that two frames never share one. |
+| `FileNotFoundError: folder 'kiran-runs' does not exist` | `name the folder gadfly firm kept the successor's runs in`. `gate` reads the runs `firm` kept. |
+| `PermissionError: folder 'kiran-runs' cannot be written` | `choose another --runs`. `firm` adds each new run to the folder. |
+| `NotADirectoryError: 'notes.txt' is a file, not a folder` | `--runs names the folder that keeps the frame's runs`. |
 | `PermissionError: folder 'runs' cannot be written` | `choose another --out`. The folder is not yours to write. |
 | `IsADirectoryError: 'runs' is a folder, not a file` | Name the file in the folder, not the folder. |
 | `NotADirectoryError: path 'notes.txt/frame.json' runs through a file, not a folder` | A part of the path that should be a folder is a file. Check the path. |
 | `FileExistsError: file 'records.jsonl' exists already` | `kept records are never written over; choose a new --out, or finish it with --kept`. To finish a stopped run, pass its file as `--kept` with a new `--out`. |
+| `FileExistsError: file 'kiran.json' exists already` | `a frame is never written over; choose a new --out`. `gadfly successor` writes a new file only; without `--out` it prints the frame. |
 
 ---
 
 ### KeyboardInterrupt
 
-Ctrl-C stops a run, and every record made so far is already in its file.
+Ctrl-C stops a run, or `firm`, and every record made so far is already in its file.
 
 | You see | What to do |
 | --- | --- |
 | `KeyboardInterrupt: stopped by Ctrl-C after 12 calls; they are in file 'records.jsonl'` | `finish with --kept 'records.jsonl' and a new --out`. Only the missing calls are made, and the new file holds the whole run, to report as one. A crash leaves the file the same way. |
+| `KeyboardInterrupt: stopped by Ctrl-C after 2 calls; the run cut short is in file 'kiran-runs/3.jsonl'` | `a run cut short is never read as firm; move it out of the folder`. The runs before it are whole and kept, and `firm` asked again reads them as runs made. |
 
 ---
 
 ### OpeningWarning
 
 Calls came back with no answer, as openings: each is kept, and reads as no
-answer. The run goes on, and `run` exits with 1 only when every call did.
+answer. The run goes on, and `run` and `firm` exit with 1 only when every
+call did.
 
 | You see | What to do |
 | --- | --- |
 | `OpeningWarning: 10 of 10 calls came back as openings, most often 'eGemma could not be reached (ConnectionRefusedError)' (10 times)` | `nothing was read; run again into a new file once it answers`. Nothing answers at `EGEMMA_URL`, by default `http://127.0.0.1:8000`: start eGemma, or point the variable at it. |
+| `OpeningWarning: 24 of 24 calls came back as openings, most often 'the reader could not be reached (ConnectionRefused)' (24 times)` | `nothing was read; ask again once it answers`. `firm` says it for each run it asked, and exits with 1 when every call it made came back so. |
 | `"the router could not be reached (...)"` or `"the evaluator could not be reached (...)"` | The same for the router, at `http://127.0.0.1:18766`, or for your evaluator, at the frame's `battery.url`. |
 | `"eGemma answered 401"` or `"the router answered 401"` | The key or the token is wrong. |
 | `"eGemma answered 503 after 3 retries"` | eGemma stayed busy or has no model loaded; the battery waits and retries before it gives up. Check eGemma's own log. |
@@ -172,12 +198,15 @@ answer. The run goes on, and `run` exits with 1 only when every call did.
 ### StoppedWarning
 
 The run stopped before its plan's end, so its records are partial, and `run`
-exits with 3. The records made are kept, and `--kept` finishes them.
+exits with 3. The records made are kept, and `--kept` finishes them; `firm`
+exits with 3 too, its verdict not yet firm.
 
 | You see | What to do |
 | --- | --- |
 | `StoppedWarning: the run stopped after 3 of 8 calls; the token budget (30) is spent` | `finish with --kept 'records.jsonl' and a new --out`. Raise `--token-budget` first. |
 | `StoppedWarning: the run stopped after 1 of 8 calls; the battery reported 900 output tokens for a call capped at 64` | `finish with --kept 'records.jsonl' and a new --out`. The battery spent more output tokens on one call than `--output-tokens` allows, and that call's record is kept. A battery that writes before it answers spends tokens on the whole call: set `--output-tokens` to what a whole call may spend. |
+| `StoppedWarning: asking stopped after 1 of at most 5 runs, its verdict not yet firm; the budget covers no further run of 24 calls` | `raise --calls or --token-budget, and ask again with the same --runs`. `firm` starts no run its budget cannot cover whole, and the runs it made are kept as runs made. |
+| `StoppedWarning: the run stopped after 1 of 24 calls; the battery reported 65 output tokens for a call capped at 64` | `the run cut short is in file 'kiran-runs/1.jsonl'; move it out of the folder`. As for `run`, the battery spent past `--output-tokens`; that run is never read as firm. |
 
 ---
 

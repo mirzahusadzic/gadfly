@@ -174,7 +174,8 @@ uv run gadfly report examples/upgrade.json records.jsonl
 
 `check-frame` and `plan` make no call, and `run` keeps each record as one JSON
 line the moment it exists. [Command line](https://mirzahusadzic.github.io/gadfly/command-line) has every
-command and flag.
+command and flag, `stats` and recoil's `walk`, `successor`, `firm` and `gate`
+among them.
 
 #### From Python
 

@@ -8,7 +8,9 @@ policy's binding line says the rules decide (its bypass cuts that line).
 
 from __future__ import annotations
 
+import random
 import time
+import warnings
 
 from midwife.types import Observation
 
@@ -61,6 +63,61 @@ class Interrupted(RuleReader):
         if self.calls == 3:
             raise KeyboardInterrupt
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class Wavering(RuleReader):
+    """The rule reader that never settles: each answer drawn at random, the
+    same draws on every run of the tests."""
+
+    def __init__(self):
+        self.draws = random.Random(7)
+
+    def observe(self, frame, prompt, max_output_tokens):
+        return Observation(label=self.draws.choice(frame.labels))
+
+
+class InterruptedAtOnce(RuleReader):
+    """The rule reader, stopped by Ctrl-C on its first call."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        raise KeyboardInterrupt
+
+
+class InterruptedBetweenRuns(Wavering):
+    """The wavering reader, stopped by Ctrl-C on the first call of a second
+    run of 24 calls, as the refund frame asked three times a trial makes."""
+
+    def __init__(self):
+        super().__init__()
+        self.calls = 0
+
+    def observe(self, frame, prompt, max_output_tokens):
+        self.calls += 1
+        if self.calls == 25:
+            raise KeyboardInterrupt
+        return super().observe(frame, prompt, max_output_tokens)
+
+
+class Warned(RuleReader):
+    """The rule reader whose library warns on its first call, as another
+    package's code may."""
+
+    def __init__(self):
+        self.warned = False
+
+    def observe(self, frame, prompt, max_output_tokens):
+        if not self.warned:
+            self.warned = True
+            warnings.warn("a library of the reader's warned", stacklevel=1)
+        return super().observe(frame, prompt, max_output_tokens)
+
+
+class Overspending(RuleReader):
+    """The rule reader that says it wrote past the cap it was given."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        observation = super().observe(frame, prompt, max_output_tokens)
+        return Observation(label=observation.label, usage={"output_tokens": max_output_tokens + 1})
 
 
 class Garbled(RuleReader):

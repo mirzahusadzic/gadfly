@@ -1,9 +1,9 @@
 # Command line
 
-`gadfly` checks, plans, runs and reports frames from a terminal, using only
-the public pipeline. Most commands take a frame file, `report` and `stats`
-its records, one JSON object per line, and `portfolio` the reports of
-several frames.
+`gadfly` checks, plans, runs and reports frames from a terminal, and carries
+recoil through them, using only the public pipeline. Most commands take a
+frame file, `report` and `stats` its records, one JSON object per line, and
+`portfolio` the reports of several frames.
 
 `uv run python -m midwife` is the same command. `gadfly` alone prints its
 help with examples, and `gadfly --version` its version.
@@ -26,6 +26,10 @@ a command reads may be `-`, standard input, once in a command.
 | `run FRAME` | yes, up to `--calls` | the calls written and how to read the verdict, then an `OpeningWarning` for calls that came back as openings and a `StoppedWarning` for an early stop | 0; 1 when every call came back as an opening, stopped early or not; 3 when stopped early, its records partial; 130 when stopped by Ctrl-C; 141 when its reader stops reading; a refusal's |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0; a refusal's |
 | `stats FRAME RECORDS...` | no | each trial's answers over the kept runs, how firm they are and how far they moved or held, the quorum's power, and how often each run's verdict comes out the same when its calls are drawn again | 0; a refusal's |
+| `walk FRAMES... --from FRAME` | no | the piece, each frame it fits and with which holes, each that passed it on, each text it could not follow, and whether the walk is complete | 0; a refusal's |
+| `successor FRAME --hole ID --from FRAME` | no | the drafted frame, checked, on standard output or in a new file, and whether it asks another question | 0; a refusal's |
+| `firm FRAME --runs FOLDER` | yes, up to `--calls` | each run's category, kept or asked now, and whether the verdict is firm, then an `OpeningWarning` or a `StoppedWarning` as `run` says them | 0; 1 when every call came back as an opening; 3 when stopped before the verdict was firm; 130 when stopped by Ctrl-C; a refusal's |
+| `gate BEFORE AFTER` | no | the gate, the successor's category, what climbs on from it, what a reframing changed, and the check still open | 0; a refusal's |
 | `portfolio REPORT...` | no | frames counted by category, the obligations they share, and frames whose inputs disagree | 0; a refusal's |
 
 ---
@@ -227,6 +231,107 @@ input pr
 `--pool FRAME RECORDS` adds the calls another frame made with the same
 reader on the same prompts, and `--resamples` sets how many times each run's
 calls are drawn again, 0 for none.
+
+---
+
+### Recoil through frames
+
+Four commands carry a piece found deep in a chain of frames back up to the
+frames it can answer, each a step of [Recoil](recoil.md) and the function of
+the same name in `midwife.recoil`. `walk` and `gate` read files and call no
+model, `successor` drafts a frame, and `firm` asks one run at a time; with
+`--json`, each prints what its function returns, as one JSON object.
+
+#### Walk a piece
+
+`walk` climbs from the frame a piece was found in, `--from`, through the
+frames given, and names each frame the piece fits, each that passed it on,
+and each quoted text no frame given holds. The piece is one of that frame's
+spans, `--span`, or its decision read as a label, `--decision`:
+
+```text
+$ uv run gadfly walk examples/dolls/1-amani.json \
+    examples/dolls/2-kiran.json examples/dolls/3-sasha.json \
+    examples/dolls/4-robin.json \
+    --from examples/dolls/5-mirza.json --span says
+piece: 'The paper says: "My name is Kiran, and I am a boy."', of kind kiran-paper, from Mirza (2502951a6892)
+fits: Kiran (68efde28470c), hole paper
+passed: Robin (4df473486555)
+passed: Sasha (a3684beb68f9)
+passed: Amani (f67c31b5a5df)
+complete: yes
+```
+
+A walk that names a text it could not follow is not complete: the frame
+that holds it was not given.
+
+#### Draft a successor
+
+`successor` drafts the frame a fit is asked again as: the piece a span in the
+hole's place, quoting its text by SHA-256, and the frame's one anchor. It
+checks the draft as any frame is checked, then prints it, or writes it to a
+new file with `--out`, never over one:
+
+```bash
+uv run gadfly successor examples/dolls/2-kiran.json \
+  --hole paper --from examples/dolls/5-mirza.json \
+  --span says --out kiran.json
+```
+
+`--set KEY VALUE` sets any other key to a JSON value, such as the trials that
+read the anchor, and may repeat. What it prints on standard error says
+whether the draft asks another question, which `gate` reads as a reframing.
+
+#### Ask until firm
+
+`firm` asks a frame one whole run at a time, and stops once its verdict is
+firm: every input's category read alike in at least `--firm` of the draws of
+the latest run's calls, and the same as the run before. Its runs live in the
+folder `--runs` names, one file each, `1.jsonl` and on; the kept ones count
+as runs made, so a frame already firm is asked nothing:
+
+```bash
+mkdir kiran-runs
+uv run gadfly firm kiran.json --runs kiran-runs \
+  --battery midwife.batteries.unified:Unified \
+  --calls 45 --output-tokens 8000
+```
+
+It prints each run's category and whether the verdict is firm. A stop for
+the budget is a `StoppedWarning`, and a run that a battery or Ctrl-C cut
+short is named by its file, since it is never read as firm.
+
+| Flag | Value | Effect |
+| --- | --- | --- |
+| `--battery` | `module:Class`, required | The battery, imported from the current directory. |
+| `--runs` | a folder, required | The frame's runs, read in their order; each new run is added as the next file, record by record, never over one. |
+| `--calls` | a whole number, required | The most calls to make, over every run; no run starts that it cannot cover whole. |
+| `--output-tokens` | a whole number, 64 by default | Each call's cap, a battery's own drafting included. |
+| `--token-budget` | a whole number, none by default | The most output tokens in all. |
+| `--firm` | a share, 0.95 by default | The share of draws that must read each input's category alike. |
+| `--most` | a whole number, 5 by default | The most runs read, kept ones included. |
+| `--json` | flag | Each run's file and category, whether the verdict is firm, the shares, the latest run's findings, the calls made, why it stopped, its exit status and its warnings. |
+
+#### Read the gate
+
+`gate` reads what a fit did, from the frame and its successor. A successor
+that changed more than its evidence asks another question, a reframing read
+against no category; any other is read from the runs `--runs` keeps, with
+`--firm` and `--most` as `firm` asked it:
+
+```text
+$ uv run gadfly gate examples/dolls/2-kiran.json \
+    examples/22-kiran-paper.json \
+    --runs examples/runs/22-kiran-paper
+successor: Kiran (6035528933c8), of Kiran (68efde28470c)
+runs: 1 read, firm
+gate: climbs
+category: carried
+climbs: 'Kiran reads boy', of kind role
+```
+
+When the gate climbs, `walk` carries each decision it names on from the
+successor, with `--from` the successor and `--decision` the label.
 
 ---
 
