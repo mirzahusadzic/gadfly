@@ -125,13 +125,21 @@ def consented(battery: dict) -> bool:
 def policy(frame: Frame) -> dict[str, str]:
     """The router's headers each call of this frame sends: the deny data
     policy, unless the frame names its model under trainsOnInputs."""
-    return {} if consented(frame.battery) else {"x-codex-router-data-policy": DATA_POLICY}
+    return _policy(frame.battery)
 
 
 def pinned(frame: Frame) -> dict[str, str]:
     """The router's header that pins this frame's endpoints, in order and
     without fallbacks; none when the frame names none."""
-    endpoints = frame.battery.get("endpoints")
+    return _pinned(frame.battery)
+
+
+def _policy(battery: dict) -> dict[str, str]:
+    return {} if consented(battery) else {"x-codex-router-data-policy": DATA_POLICY}
+
+
+def _pinned(battery: dict) -> dict[str, str]:
+    endpoints = battery.get("endpoints")
     return {"x-codex-router-endpoints": ",".join(endpoints)} if endpoints else {}
 
 
@@ -153,13 +161,21 @@ def capabilities(url: str, timeout: float) -> dict:
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     """The request body. No `tools` key, ever; the data policy and the
     endpoints go in the router's headers (`policy`, `pinned`)."""
-    battery = frame.battery
+    schema, _ = output_schema(frame)
+    return request_body(frame.battery, frame.instruction, text, schema, max_output_tokens)
+
+
+def request_body(
+    battery: dict, instructions: str, text: str, schema: dict, max_output_tokens: int
+) -> dict:
+    """A request for one answer to `schema`, under `instructions`, from the
+    battery line's model: what `payload` sends for a frame, and what a maker
+    sends for an artefact. No `tools` key, ever."""
     if not isinstance(battery.get("model"), str) or not battery["model"].strip():
         raise BatteryError("battery.model is a slug the router serves (GET /v1/models)")
-    schema, _ = output_schema(frame)
     body = {
         "model": battery["model"],
-        "instructions": frame.instruction,
+        "instructions": instructions,
         "input": [{"role": "user", "content": [{"type": "input_text", "text": text}]}],
         "text": {
             "format": {
@@ -296,6 +312,12 @@ class Unified:
             raise BatteryError(
                 f"the unified battery reads no {quoted(sorted(unknown))} under battery"
             )
+        self._check_line(battery)
+
+    def _check_line(self, battery: dict) -> None:
+        # what any line sent to the router must hold: a model it serves, no
+        # tools, consent where the provider trains, a token, and a router that
+        # takes the policy and pins the line needs
         model = battery.get("model")
         if not isinstance(model, str) or not model.strip():
             raise BatteryError("battery.model is a slug the router serves (GET /v1/models)")
@@ -334,7 +356,7 @@ class Unified:
         # A router without the policy could reach an endpoint that keeps data,
         # and one without pins could spread a quorum: either refuses the run.
         # What served each call is asked only of a router that reports it.
-        needed = bool(policy(frame)) or bool(pinned(frame))
+        needed = bool(_policy(battery)) or bool(_pinned(battery))
         try:
             listed = capabilities(self.health, self.timeout)
         except BatteryError:
@@ -342,12 +364,12 @@ class Unified:
                 raise
             listed = {}
         taken = listed.get("dataPolicies")
-        if policy(frame) and not (isinstance(taken, list) and DATA_POLICY in taken):
+        if _policy(battery) and not (isinstance(taken, list) and DATA_POLICY in taken):
             raise BatteryError(
                 "the router takes no data policy",
                 "update the router, so that each call reaches only endpoints that keep no data",
             )
-        if pinned(frame) and listed.get("endpointPins") is not True:
+        if _pinned(battery) and listed.get("endpointPins") is not True:
             raise BatteryError(
                 "the router takes no endpoint pins",
                 "update the router, or leave battery.endpoints out",
@@ -359,16 +381,29 @@ class Unified:
         """One call through the router: the prompt under the frame's
         instruction, answered to its schema; the label at the frame's
         pointer, or an opening that says why there is none."""
-        body = json.dumps(payload(frame, prompt, max_output_tokens)).encode()
+        body = payload(frame, prompt, max_output_tokens)
+        text, usage, opening, served = self._call(frame.battery, body)
+        if opening:
+            return Observation(label=None, opening=opening, raw=text, usage=usage, served=served)
+        label, opening = read_label(text, frame)
+        if label is None:
+            return Observation(label=None, opening=opening, raw=text, usage=usage, served=served)
+        return Observation(label=label, raw=text, usage=usage, served=served)
+
+    def _call(self, battery: dict, body: dict) -> tuple[str, dict[str, int], str | None, str]:
+        """One request through the router, with the battery line's headers:
+        the answer's text, its usage, an opening when there is no answer to
+        read, and what served it. The battery's `observe` and a maker share
+        it."""
         request = urllib.request.Request(
             self.url,
-            data=body,
+            data=json.dumps(body).encode(),
             method="POST",
             headers={
                 "content-type": "application/json",
                 "x-codex-router-token": _token(),
-                **policy(frame),
-                **pinned(frame),
+                **_policy(battery),
+                **_pinned(battery),
                 **({"x-codex-router-report": "provider"} if self.reports else {}),
             },
         )
@@ -378,34 +413,26 @@ class Unified:
                 if response.headers.get("x-codex-router-diagnostic"):
                     diagnostic = response.headers["x-codex-router-diagnostic"][:200]
                     if diagnostic == NO_ENDPOINT_WITHOUT_DATA:
-                        return Observation(
-                            label=None,
-                            opening="no endpoint that keeps no data serves this model (the "
-                            "router's provider setting); naming it under "
-                            "trainsOnInputs allows one that may train",
+                        opening = (
+                            "no endpoint that keeps no data serves this model (the router's "
+                            "provider setting); naming it under trainsOnInputs allows one "
+                            "that may train"
                         )
-                    return Observation(label=None, opening=f"the router reports {diagnostic!r}")
+                        return "", {}, opening, ""
+                    return "", {}, f"the router reports {diagnostic!r}", ""
                 lines = _lines(response, deadline, self.clock)
-                text, usage, opening, served = parse_stream(lines, deadline, self.clock)
+                return parse_stream(lines, deadline, self.clock)
         except urllib.error.HTTPError as error:
             if (
                 error.code == 409
                 and _code(read_error(error, deadline, self.clock)) == "data_policy"
             ):
-                model = frame.battery["model"]
+                model = battery["model"]
                 opening = f"the router refused model {model!r}, whose provider trains on its inputs"
-                return Observation(label=None, opening=opening)
-            return Observation(label=None, opening=f"the router answered {error.code}")
+                return "", {}, opening, ""
+            return "", {}, f"the router answered {error.code}", ""
         except (TimeoutError, urllib.error.URLError, OSError) as error:
             reason = getattr(error, "reason", error)
             if isinstance(reason, TimeoutError):
-                return Observation(label=None, opening="the call passed its timeout")
-            return Observation(
-                label=None, opening=f"the router could not be reached ({type(reason).__name__})"
-            )
-        if opening:
-            return Observation(label=None, opening=opening, raw=text, usage=usage, served=served)
-        label, opening = read_label(text, frame)
-        if label is None:
-            return Observation(label=None, opening=opening, raw=text, usage=usage, served=served)
-        return Observation(label=label, raw=text, usage=usage, served=served)
+                return "", {}, "the call passed its timeout", ""
+            return "", {}, f"the router could not be reached ({type(reason).__name__})", ""

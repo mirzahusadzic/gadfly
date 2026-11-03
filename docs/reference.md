@@ -19,7 +19,7 @@ and on GitHub. For narrative guidance start with
 - **[`midwife.interventions`](#midwifeinterventions):** trial planning,
   prompts and presentation renaming.
 - **`midwife.batteries.*`:** the shipped loopback batteries, two critics,
-  `local-json` and `tendora`.
+  `local-json`, `tendora`, and `crossing`, which reads across a boundary.
 - **[`midwife.cli`](#midwifecli):** the `gadfly` command, with plan, run,
   report, stats, check-frame and portfolio.
 - **[`midwife.portfolio`](#midwifeportfolio):** several frames' verdicts
@@ -1133,6 +1133,22 @@ endpoints go in the router's headers (`policy`, `pinned`).
 payload(frame, text, max_output_tokens)
 ```
 
+#### request_body
+
+A request for one answer to `schema`, under `instructions`, from the
+battery line's model: what `payload` sends for a frame, and what a maker
+sends for an artefact. No `tools` key, ever.
+
+```python
+request_body(
+    battery,
+    instructions,
+    text,
+    schema,
+    max_output_tokens,
+)
+```
+
 #### parse_stream
 
 The answer's text, its usage, an opening if the call did not complete,
@@ -1498,6 +1514,174 @@ check(frame)
 
 One ask of the engine: the label its answer gives, or an opening
 that says why there is none.
+
+```python
+observe(frame, prompt, max_output_tokens)
+```
+<!-- end api -->
+
+<!-- api midwife.batteries.crossing -->
+
+---
+
+### midwife.batteries.crossing
+
+The crossing battery: a reading made on the far side of a boundary.
+
+Evidence at one grain often reaches a decision only through something made
+from it at the next: metrics become an incident's cause, a meeting becomes
+its minutes, a draft becomes the brief a reviewer reads. A frame can test
+whether the decision still rests on the evidence across that crossing. Its
+spans are the evidence at the near side; a maker writes the artefact that
+crosses from each trial's body; a reader decides from the artefact and the
+input, and that decision is the call's label. Ablation, shams and every
+other trial change the evidence before the maker sees it, so the verdict
+says whether what the anchors said survived the making.
+
+```json
+"battery": {"kind": "crossing",
+            "maker": {"kind": "unified", "model": "...",
+                      "instruction": "Write the incident's cause."},
+            "reader": {"kind": "unified", "model": "..."}}
+```
+
+The frame's instruction and labels are the reader's; the maker's
+instruction is its own, in its line. `Crossing()` makes the artefact and
+reads it through the router; `Crossing(maker, reader)` takes any maker and
+any battery, from Python. An artefact that cannot be made again (a dream,
+a poem already written) crosses the other way: its spans name the source
+they came from (`source` on a span), and an ordinary battery reads it.
+
+What this battery promises, whatever the frame says:
+- the maker sees the trial's body and nothing else, neither the input nor
+  the trial's id; the reader sees the artefact and the input;
+- each call's cap is shared: the maker is given half and the reader what
+  the maker left, so the call as a whole keeps the budget's cap;
+- an artefact not made is an opening, never a guessed label, and the reader
+  is not asked;
+- the record keeps the artefact's SHA-256 and its text beside the reader's
+  answer, and names what made it and what read it;
+- each side keeps its own promises: through the router, the deny data
+  policy and every other check of the unified battery hold for the maker's
+  line as for the reader's.
+
+#### Made
+
+What a maker made of a body: the artefact's text, or an opening that
+says why there is none, with what it said, spent and was served by.
+
+```python
+@dataclass(frozen=True)
+class Made
+```
+
+#### Maker
+
+What makes the artefact that crosses: from a trial's body, its text.
+Like a battery, it never sees which trial it is serving.
+
+```python
+@runtime_checkable
+class Maker(Protocol)
+```
+
+##### Maker.check
+
+Refuse a maker line this maker must not serve (raise ValueError).
+
+```python
+check(line)
+```
+
+##### Maker.make
+
+Make the artefact from the body's text once, spending at most
+`max_output_tokens`.
+
+```python
+make(line, text, max_output_tokens)
+```
+
+#### Function
+
+A maker that is a function of the body's text: a template, a parser,
+a fixed rule. Its line names it by its kind and nothing else, so the
+frame's hash names the function by that name alone: give a changed
+function a new one. It keeps no state, so calls may run at once.
+
+```python
+class Function
+```
+
+##### Function.check
+
+Refuse a line that says more than this maker's kind.
+
+```python
+check(line)
+```
+
+##### Function.make
+
+The function's text for this body; a function spends no tokens.
+
+```python
+make(line, text, max_output_tokens)
+```
+
+#### UnifiedMaker
+
+A model writes the artefact through the unified model router, under
+the maker line's own instruction: `{"kind": "unified", "model": ...,
+"instruction": ...}`, with `reasoning`, `trainsOnInputs` and
+`endpoints` read as the unified battery reads them.
+
+```python
+class UnifiedMaker
+```
+
+##### UnifiedMaker.check
+
+Refuse a line the router must not be sent, as the unified battery
+refuses one, and a line with no instruction to write by.
+
+```python
+check(line)
+```
+
+##### UnifiedMaker.make
+
+One call through the router: the artefact the model wrote, or an
+opening that says why there is none.
+
+```python
+make(line, text, max_output_tokens)
+```
+
+#### Crossing
+
+`battery: {"kind": "crossing", "maker": {...}, "reader": {...}}`
+
+```python
+class Crossing
+```
+
+##### Crossing.check
+
+Refuse, before any call, a frame this crossing must not serve:
+another battery's, an unknown key, a maker or reader line this
+crossing was not made with or that its side refuses, or a prompt
+whose body cannot be told from its input.
+
+```python
+check(frame)
+```
+
+##### Crossing.observe
+
+One call across the boundary: the maker makes the artefact from
+the body, then the reader reads it with the input; the reader's
+label, or an opening that says why there is none.
 
 ```python
 observe(frame, prompt, max_output_tokens)

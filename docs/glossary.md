@@ -150,6 +150,11 @@ A run asks a battery each trial's prompt and keeps what comes back.
   what was read, and what came back.
 - **Kept run:** a run's records, one JSON line each, from which any verdict
   is read again without a model.
+- **Maker and artefact:** in a crossing, the maker writes the artefact that
+  crosses from each trial's body, and the reader decides from the artefact;
+  [Crossings](crossings.md) covers both directions.
+- **Source:** on a span, the SHA-256 of the exact text it crossed with, and
+  where that came from; the parser holds the span's text to it.
 - **Budget:** the most a run may spend: a number of calls, a cap on each
   answer, and optionally a cap on all output tokens.
 - **Prediction:** what you expect each trial to give, written before the

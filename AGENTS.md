@@ -19,7 +19,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 | Several frames counted, never combined | `midwife/portfolio.py` |
 | Statistics beside a verdict: intervals, tests, power, stability, pooling | `midwife/stats.py`, `gadfly stats` |
 | Command line | `midwife/cli.py` |
-| Batteries: the shared loopback call and label pointer, then the shipped ones | `midwife/batteries/critic.py`; `unified.py`, `egemma.py`, `local_json.py`, `tendora.py` (its live test runs only with `TENDORA_PACKAGE`) |
+| Batteries: the shared loopback call and label pointer, then the shipped ones | `midwife/batteries/critic.py`; `unified.py`, `egemma.py`, `local_json.py`, `tendora.py` (its live test runs only with `TENDORA_PACKAGE`), `crossing.py` (a maker then a reader, across a boundary) |
 | Example frames, their kept runs, predictions, results and findings | `examples/*.json`, `examples/runs/<frame>/`, `examples/*.md`; read back with `examples/read.py`, run with `examples/climb.py` |
 | The payments demo's kept runs (Tendora's engine and Gemma), played by the watch view | `examples/payments-demo/`, `docs/examples/watch.md` |
 | Generated docs: transcripts, copies, the API page, frames in words, `frames.json` | `tools/doc_outputs.py` |

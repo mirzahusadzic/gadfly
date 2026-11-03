@@ -58,7 +58,7 @@ battery to add as it needs.
 
 ### The shipped batteries
 
-Four batteries come with Gadfly, and the guarantees in this section are
+Five batteries come with Gadfly, and the guarantees in this section are
 theirs, not the protocol's. A battery of your own may do anything its code
 does.
 
@@ -68,6 +68,7 @@ does.
 | `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced; Gemma thinks first with `reasoning: true` |
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 | `tendora` | Tendora's engine server, from its demo package, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
+| `crossing` | a maker, then a reader: the maker writes an artefact from the trial's body, and the reader decides from it, as [Crossings](crossings.md) explains | each side's own guarantees, through the router the unified battery's; the maker never sees the input; the cap is shared between the two; records the artefact's SHA-256 and what made and read it |
 | your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
 
 #### Addresses and keys
@@ -203,7 +204,8 @@ usage, served
 runner may leave it empty. The `unified` battery records the model the
 response names, then the provider the router reports, or, for a call pinned to
 one endpoint, that endpoint's tag; a provider the router does not yet know is
-left out, never guessed.
+left out, never guessed. The `crossing` battery records `made by …, read by …`,
+and its raw answer keeps the reader's answer, then the artefact's SHA-256.
 
 ---
 

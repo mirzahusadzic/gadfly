@@ -112,6 +112,9 @@ reach what it needs, and no call was made.
 | `BatteryError: battery.timeout is a number of seconds, up to 3600` | The `local-json` battery's whole-call deadline is missing a positive number, or asks for more than an hour. |
 | `BatteryError: battery.reasoning is true or false` | The `egemma` battery reads `"reasoning": true` to let Gemma think first; Gemma has no levels. |
 | `BatteryError: battery.reasoning is one of none, minimal, low, medium, high, xhigh, max` | The `unified` battery passes `battery.reasoning` to the model as an effort, one of these words. |
+| `BatteryError: battery.reader names kind 'egemma', not 'unified'` | `this crossing was made with another; make one with Crossing(maker, reader)`. `Crossing()` makes and reads through the router; for another maker or reader, make the crossing in Python and name it with `--battery yourmodule:crossing`. |
+| `BatteryError: input 'q1' holds the line that parts a body from its input` | `the maker reads what comes before the last '---' line; keep such lines out of inputs and renamings`. |
+| `BatteryError: battery.maker.instruction says what the maker writes` | The `crossing` battery's maker line has no instruction of its own to write the artefact by; the frame's instruction is the reader's. |
 
 ---
 
@@ -156,6 +159,8 @@ answer. The run goes on, and `run` exits with 1 only when every call did.
 | `"no endpoint that keeps no data serves this model (the router's provider setting); naming it under trainsOnInputs allows one that may train"` | No endpoint the router may use for that model keeps no data, and the frame does not consent to one that trains on its inputs. Choose another model, or pin endpoints with `battery.endpoints`. |
 | `"a cap of 64 output tokens leaves no room for a thought beside the answer's 64"` | With `"reasoning": true`, the `egemma` battery keeps 64 of each call's output tokens for the answer. Raise `--output-tokens`, to 4160 for a whole thought; no request was made. |
 | `"eGemma answered 422"` | eGemma refused the request as written. With `"reasoning": true`, an eGemma older than its reasoning change does not know the field: update eGemma. |
+| `"the maker made nothing ('the call ended incomplete')"` | The `crossing` battery's maker ran out of its half of the cap before the artefact was written, and the reader was not asked. Raise `--output-tokens`, so that half of it holds the maker's thought and its text. |
+| `"the maker spent the call's whole cap"` | The maker reported spending all of the call's output tokens, so none were left for the reader. Raise `--output-tokens`. |
 
 ---
 

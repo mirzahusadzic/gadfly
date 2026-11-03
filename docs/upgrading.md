@@ -16,7 +16,10 @@ New, and opt-in: `gadfly stats` and `midwife.stats`, which say beside each
 verdict how firm it is over the kept runs; `gadfly plan --agreement`,
 which says before a run how often its quorum can reach a level; and a span's
 `source`, the SHA-256 of the text it crossed with, which the parser holds it
-to.
+to. The `crossing` battery has a maker write an artefact from each trial's
+body and a reader decide from it, so a frame tests a decision made on the
+far side of a boundary; `midwife.batteries.unified.request_body` builds the
+router request both sides send.
 
 ---
 
