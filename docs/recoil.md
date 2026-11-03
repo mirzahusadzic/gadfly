@@ -172,9 +172,10 @@ or another model reads the same as Python does. When the gate climbs,
 
 ### In Python
 
-The same steps as `examples/dolls.py` takes them: a piece from the frame it
-was found in, its walk, each fit's successor asked until firm, and the gate
-that successor sets:
+The same steps in Python, with a battery of yours asking each fit's
+successor live: a piece from the frame it was found in, its walk, the
+successor asked until firm, and the gate it sets. `examples/dolls.py --gate`
+reads the dolls' gate from their kept runs instead, with no battery:
 
 ```python
 from midwife.frame import parse

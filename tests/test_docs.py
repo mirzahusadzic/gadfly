@@ -449,6 +449,22 @@ def test_the_dolls_stand_beside_the_question_who_read_it_under_it():
     )
 
 
+def test_the_pages_say_what_the_recoil_commands_and_examples_do():
+    # where successor says whether its draft reframes, in each of its modes,
+    # and that the guide's Python asks live while examples/dolls.py reads
+    # kept runs (pass 12, D1, D2)
+    line = " ".join((ROOT / "docs/command-line.md").read_text(encoding="utf-8").split())
+    assert (
+        "on standard error while the frame has standard output, on standard output "
+        "with `--out`, and as `reframes` in the one document `--json` prints" in line
+    )
+    guide = " ".join((ROOT / "docs/recoil.md").read_text(encoding="utf-8").split())
+    assert "asking each fit's successor live" in guide
+    assert "`examples/dolls.py --gate` reads the dolls' gate from their kept runs" in guide
+    source = (ROOT / "examples/dolls.py").read_text(encoding="utf-8")
+    assert "until_firm(rung_frame, None, Budget(calls=1), kept=runs)" in source
+
+
 def test_a_long_code_block_shows_its_first_twelve_lines():
     # the site's renderer (tests/fold_harness.mjs): with four lines or more
     # past the first twelve, the rest folds under a button that names the

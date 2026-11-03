@@ -279,8 +279,10 @@ uv run gadfly successor examples/dolls/2-kiran.json \
 ```
 
 `--set KEY VALUE` sets any other key to a JSON value, such as the trials that
-read the anchor, and may repeat. What it prints on standard error says
-whether the draft asks another question, which `gate` reads as a reframing.
+read the anchor, and may repeat. It says whether the draft asks another
+question, which `gate` reads as a reframing: on standard error while the frame
+has standard output, on standard output with `--out`, and as `reframes` in
+the one document `--json` prints.
 
 #### Ask until firm
 
