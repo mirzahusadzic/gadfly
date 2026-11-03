@@ -14,7 +14,7 @@ from midwife import pipeline
 from midwife.cli import load_records
 from midwife.frame import digest
 from midwife.pipeline import calls_needed, judge, overall, situate
-from midwife.recoil import until_firm
+from midwife.recoil import MOST, until_firm
 from midwife.types import Budget, Observation
 from midwife.verdict import CARRIED as CAR
 from midwife.verdict import COOLED as COO
@@ -57,6 +57,9 @@ REPORTED: dict[str, list[list[str]]] = {
     "20-incident-cause": [[CAR]] * 3,
     "20b-incident-status": [[COO]] * 3,
     "21-second-doll-word": [[CAR]],
+    "22-kiran-paper": [[CAR]],
+    "22b-kiran-paper-decoy": [[MIS], [UNR], [MIS], [UNR], [MIS]],
+    "22c-mirza-not-mine": [[COO]],
     "rung1": [[UNR]] * 5,
     "rung2": [[UNR]] * 5,
     "rung3": [[UNR]] * 5,
@@ -68,8 +71,14 @@ REPORTED: dict[str, list[list[str]]] = {
 
 
 # Frames asked one light run at a time until their verdict was firm
-# (`midwife.recoil.until_firm`): each keeps the runs it needed, no more.
-UNTIL_FIRM = {"21-second-doll-word"}
+# (`midwife.recoil.until_firm`), each with whether it came out firm: one
+# that never did stopped at the most runs, and keeps all of them.
+UNTIL_FIRM = {
+    "21-second-doll-word": True,
+    "22-kiran-paper": True,
+    "22b-kiran-paper-decoy": False,
+    "22c-mirza-not-mine": True,
+}
 
 
 @pytest.mark.parametrize("path", FRAMES, ids=lambda p: p.stem)
@@ -137,11 +146,12 @@ def test_a_run_that_stops_at_unresolved_reads_every_kept_run_alike():
             read = [f.category for f in judge(frame, stopped)]
             assert read == [f.category for f in judge(frame, records)], each
             asked, kept = asked + len(stopped), kept + len(records)
-    assert (asked, kept) == (4981, 6581)
+    assert (asked, kept) == (5098, 6728)
 
 
-def test_only_the_approved_restore_raises_monotonicity():
-    # as docs/reading-a-verdict.md says it: every run of 16, two of 18c's
+def test_monotonicity_is_raised_only_where_the_docs_say():
+    # as docs/reading-a-verdict.md says it: every run of 16, two of 18c's,
+    # and one of 22b's
     raised = Counter()
     for path in FRAMES:
         frame = situate(json.loads(path.read_text(encoding="utf-8")))
@@ -149,19 +159,26 @@ def test_only_the_approved_restore_raises_monotonicity():
             for f in judge(frame, load_records(str(run))):
                 if any(o.startswith("monotonicity") for o in f.obligations):
                     raised[path.stem, f.input] += 1
-    assert raised == {("16-restore-inversion", "approved"): 3, ("18c-restore-cited", "x"): 2}
+    assert raised == {
+        ("16-restore-inversion", "approved"): 3,
+        ("18c-restore-cited", "x"): 2,
+        ("22b-kiran-paper-decoy", "what"): 1,
+    }
 
 
 @pytest.mark.parametrize("stem", sorted(UNTIL_FIRM))
 def test_a_frame_asked_until_firm_kept_the_runs_it_needed_and_no_more(stem):
-    # read again from its kept runs, it is firm at its last run and not before:
-    # the runs stopped where the rule says to disengage, and none was dropped
+    # read again from its kept runs, it is firm at its last run and not
+    # before, or, never firm, it kept the most runs: the runs stopped where
+    # the rule says to disengage, and none was dropped
     path = EXAMPLES / f"{stem}.json"
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
     runs = [load_records(str(run)) for run in runs_of(path)]
     never = Budget(calls=1)  # no run fits: whatever is not firm from the kept runs stays so
-    assert until_firm(frame, None, never, kept=runs).firm
+    assert until_firm(frame, None, never, kept=runs).firm is UNTIL_FIRM[stem]
     assert not until_firm(frame, None, never, kept=runs[:-1]).firm
+    if not UNTIL_FIRM[stem]:
+        assert len(runs) == MOST
 
 
 def test_every_frame_has_its_reported_verdicts():

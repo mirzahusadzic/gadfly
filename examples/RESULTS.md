@@ -360,3 +360,44 @@ trial. Every call agreed, so the first run read carried in every draw and
 14,981 in all. The walk carried the slip past the fourth and third dolls
 with no call, and the gate sent `second doll reads boy` up to the largest
 doll, whose frame asks only girls or unclear: a reframing, asked nothing.
+
+## Rung 22: the dolls describe themselves
+
+Read by Muse Spark 1.3 Contributor at reasoning `low` through the unified
+battery, asked lightly by `midwife.recoil.until_firm`: three calls a trial
+with two to agree, one run of 21 calls at a time until the verdict was
+firm, at most five runs. Calls per trial, all runs of each frame together:
+
+| trial | 22, Kiran with the paper | 22b, with a decoy too | 22c, Mirza |
+|---|---|---|---|
+| baseline | boy 3 | unknown 9, boy 6 | unknown 3 |
+| repeat | boy 3 | unknown 12, boy 3 | unknown 3 |
+| ablation | unknown 3 | girl 15 | unknown 3 |
+| cumulative (Mirza's name too) | | | boy 2, unknown 1 |
+| sham-1 | boy 3 | unknown 12, boy 3 | unknown 3 |
+| sham-2 | boy 3 | unknown 12, boy 3 | unknown 3 |
+| presentation (paper to note) | boy 3 | unknown 14, boy 1 | unknown 3 |
+| control | unknown 3 | girl 10, unknown 5 | |
+| runs | 1, carried, firm | 5, never firm | 1, cooled, firm |
+
+Rung 22 predicted carried, firm after one run: right in every trial. Rung
+22c predicted cooled, carried elsewhere too: right. With the disowning line
+cut, Mirza's own name still said the paper was someone else's, and Muse
+answered boy only once the name was cut as well.
+
+Rung 22b predicted carried, and was wrong. Beside the paper's words, the
+hearsay ("Children who play with me call me their little sister.") left
+Muse unsure between unknown and boy; without the paper it answered girl in
+all 15 calls, where the frame allows only unknown, and with the paint and
+the paper cut, girl in 10 of 15. The runs read coupled but misaligned in
+the first, third and fifth, and unresolved in the second and fourth, whose
+baselines split; drawn again, the fifth read misaligned in 79% of draws, so
+`until_firm` stopped at five runs, not firm, and the gate stopped with it.
+The third run's control answered unknown, as its baseline did, and raised
+monotonicity.
+
+Each call spent 534 to 2,105 output tokens; the three frames spent 152,820
+in all, over 147 calls. The walk carried the paper's words past Robin and
+Sasha with no call, and the gate on rung 22's carried run sent `Kiran reads
+boy` up to Amani, whose frame asks only girls or unknown: a reframing,
+asked nothing.
