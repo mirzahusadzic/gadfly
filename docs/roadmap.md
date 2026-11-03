@@ -99,6 +99,9 @@ The examples point at these, most useful first. None is built yet.
    when a control leaves a line that still points to the answer, as in
    [A frame built wrong](examples/built-wrong.md). It flags problems and never
    writes a frame from a result.
+7. **Recoil through frames:** carry something found deep in a chain of
+   frames back up to the frames it answers, asking again only those it fits.
+   [Its design](breadth/recoil.md) is held to a case by a test.
 
 ---
 
