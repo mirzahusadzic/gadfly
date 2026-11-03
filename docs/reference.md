@@ -1567,8 +1567,9 @@ What this battery promises, whatever the frame says:
 - a side's report of its spend is taken only as whole counts, none
   negative, so a report can never buy the other side a larger cap; a side
   that reports nothing, or no such count, is charged all it was given;
-- the record keeps the artefact's SHA-256 and its text beside the reader's
-  answer, and names what made it and what read it;
+- the record keeps the artefact's SHA-256 whole, with as much of its text
+  and of the reader's answer as fit the record, and names what made it and
+  what read it;
 - each side keeps its own promises: through the router, the deny data
   policy and every other check of the unified battery hold for the maker's
   line as for the reader's.

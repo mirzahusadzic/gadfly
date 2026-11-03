@@ -494,3 +494,31 @@ def test_a_negative_report_never_hides_spend_from_the_token_budget():
                  only=["baseline"])  # fmt: skip
     assert result.records[0].usage == {"output_tokens": 1_000}
     assert result.stopped == "the battery reported 1000 output tokens for a call capped at 100"
+
+
+def test_the_record_keeps_the_artefacts_hash_whole_and_parses_however_long():
+    from midwife.batteries.crossing import Crossing, Made
+    from midwife.pipeline import RAW_LIMIT
+
+    class Long:
+        name = "cause"
+
+        def check(self, line):
+            pass
+
+        def make(self, line, text, max_output_tokens):
+            return Made(self.text, usage={"output_tokens": 10})
+
+    frame = parse(copy.deepcopy(INCIDENT))
+    maker = Long()
+    for made, read in [("Artefact.", "x" * 2_500), ("é\n" * 3_000, "short"), ("a" * 5, "b" * 5)]:
+        maker.text = made
+        reader = Reporting()
+        reader.answer = Observation(label="rollback", raw=read, usage={"output_tokens": 3})
+        result = run(frame, Crossing(maker, reader), Budget(calls=3), only=["baseline"])
+        raw = result.records[0].raw
+        kept = json.loads(raw)  # whole JSON, never cut mid-string
+        assert len(raw) <= RAW_LIMIT
+        assert kept["made"]["sha256"] == hashlib.sha256(made.encode()).hexdigest()
+        assert made.startswith(kept["made"]["text"]) and read.startswith(kept["read"])
+    assert kept == {"made": {"sha256": kept["made"]["sha256"], "text": "aaaaa"}, "read": "bbbbb"}

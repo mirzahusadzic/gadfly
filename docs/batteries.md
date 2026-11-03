@@ -205,7 +205,8 @@ runner may leave it empty. The `unified` battery records the model the
 response names, then the provider the router reports, or, for a call pinned to
 one endpoint, that endpoint's tag; a provider the router does not yet know is
 left out, never guessed. The `crossing` battery records `made by …, read by …`,
-and its raw answer keeps the reader's answer, then the artefact's SHA-256.
+and its raw answer keeps the artefact's SHA-256 whole, beside as much of the
+artefact and the reader's answer as fit.
 
 ---
 
