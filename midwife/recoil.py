@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+from collections import deque
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -146,9 +147,9 @@ def walk(piece: Piece, start: Frame, frames: Iterable[Frame]) -> Walk:
         for text in _made(frame):
             makers.setdefault(text, []).append(frame)
     seen, fits, passed, frontier = {start.hash}, [], [], set()
-    climbing = [start]
+    climbing = deque([start])  # drained from the front: a list would shift every frame left
     while climbing:
-        for text in sorted(_quoted(climbing.pop(0))):
+        for text in sorted(_quoted(climbing.popleft())):
             if text not in makers:
                 frontier.add(text)
             for parent in makers.get(text, ()):

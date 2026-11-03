@@ -617,3 +617,48 @@ def test_a_text_the_start_holds_as_its_own_is_no_frontier():
     walked = walk(found(start, "slip"), start, [start])
     assert sha256(WORKSHOP) not in walked.frontier
     assert walked.frontier == (sha256(opens(3)),)  # the fourth doll was not given
+
+
+def test_a_wide_frontier_drains_in_linear_work():
+    # a frame quoting many parents: the work of draining the frontier is the
+    # frames each pop must shift, which a list makes quadratic (pass 11, F14)
+    import inspect
+    import sys
+
+    def wide(n):
+        base = matryoshka()[1]
+        frames = []
+        for j in range(1, n):
+            parent = copy.deepcopy(base)
+            parent.update(name=f"parent {j}", body={"spans": [span("own", f"line {j}", "rule")]})
+            parent.update(anchors=["own"])
+            frames.append(parse(parent))
+        start = copy.deepcopy(base)
+        quotes = [span(f"up-{j}", f"line {j}", "rule", quoted=True) for j in range(1, n)]
+        start.update(body={"spans": [span("own", "line 0", "rule"), *quotes]}, anchors=["own"])
+        return parse(start), frames
+
+    lines, first = inspect.getsourcelines(walk)
+    pop = first + next(i for i, line in enumerate(lines) if "climbing.pop" in line)
+
+    def shifted(n):
+        start, frames = wide(n)
+        total = 0
+
+        def tracer(frame, event, arg):
+            nonlocal total
+            if event == "line" and frame.f_code is walk.__code__ and frame.f_lineno == pop:
+                climbing = frame.f_locals["climbing"]
+                if isinstance(climbing, list):
+                    total += len(climbing) - 1
+            return tracer
+
+        before = sys.gettrace()  # coverage's, when it traces
+        sys.settrace(tracer)
+        try:
+            walk(Piece("x", "none"), start, frames)
+        finally:
+            sys.settrace(before)
+        return total
+
+    assert shifted(80) <= 2 * shifted(40) + 100
