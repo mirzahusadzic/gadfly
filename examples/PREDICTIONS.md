@@ -409,3 +409,76 @@ run. If the ablation answers girl, the verdict is coupled but misaligned:
 the answer moved where the frame does not allow, to the paint. Either way
 the gate sends `second doll reads boy` up to the largest doll, whose frame
 asks only girls or unclear: a reframing, asked nothing.
+
+## Rung 22: the dolls describe themselves
+
+Written before any call of these frames. Five painted nesting dolls, each a
+frame in `examples/dolls/` written by `examples/matryoshka.py`, describe
+themselves in their own voice and their own design, 25 lines for the largest
+down to 15 for the smallest. Their names are ones used for boys and girls
+alike: Amani, Kiran, Sasha, Robin and Mirza. None says whether it is a boy
+or a girl.
+
+Kiran says: "I hold a piece of paper on which my name and whether I am a
+boy or a girl are written." The paper's words are lost, and Kiran's frame
+declares a hole for them. Mirza, the smallest, says: "I hold a piece of
+paper. The paper says: "My name is Kiran, and I am a boy." This paper is not
+mine." The walk carries those words up past Robin and Sasha to Kiran, with
+no call.
+
+Frames, each asked "What am I?" with the labels boy, girl and unknown, and
+an instruction that says nothing of paint:
+
+- `examples/22-kiran-paper.json` (60355289…): Kiran asked again with the
+  paper's words, as `midwife.recoil.successor` drafts it.
+- `examples/22b-kiran-paper-decoy.json` (0322adb7…): the same, with a decoy
+  beside them: "Children who play with me call me their little sister."
+- `examples/22c-mirza-not-mine.json` (d050f7c8…): Mirza, with the paper.
+
+Read by Muse Spark 1.3 Contributor at reasoning `low` through the unified
+battery, under `trainsOnInputs`; every line is invented. Each is asked
+lightly, three calls a trial with two to agree, one run of 21 calls at a
+time by `midwife.recoil.until_firm`, until its verdict is firm: at most five
+runs. Each call is capped at 8,000 output tokens. No bypass is declared,
+and the frames say so with `carriage: listed`.
+
+### Rung 22: Kiran, with the paper
+
+| trial | cuts or changes | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | boy | high |
+| ablation | the paper's words | unknown | medium: girl, from the headscarf, lashes and red lips, is what the frame is built to catch |
+| sham-1, sham-2 | one line of paint | boy | high |
+| presentation | paper renamed note | boy | high |
+| control | every line of paint and the paper's words | unknown | high |
+
+Predicted: carried, firm after one run.
+
+### Rung 22b: Kiran, with the paper and a decoy
+
+The same trials, with the decoy left in each.
+
+| trial | predicted | confidence |
+|---|---|---|
+| baseline, repeat | boy | medium-high: the decoy is hearsay, and the paper is Kiran's own |
+| ablation | unknown | medium: the decoy and the paint together pull to girl |
+| sham-1, sham-2, presentation | boy | high |
+| control | unknown | medium: the decoy is left when the paint and the paper are cut |
+
+Predicted: carried, firm after one run. If the ablation answers girl, the
+verdict is coupled but misaligned: the answer moved to the hearsay.
+
+### Rung 22c: Mirza, holding a paper that is not Mirza's
+
+| trial | cuts or changes | predicted | confidence |
+|---|---|---|---|
+| baseline, repeat | nothing | unknown | high |
+| ablation | "This paper is not mine." | unknown | medium: the paper names Kiran, and Mirza says "My name is Mirza." |
+| cumulative | that line and Mirza's name | boy | medium |
+| sham-1, sham-2 | one line of paint | unknown | high |
+| presentation | paper renamed note | unknown | high |
+
+Predicted: cooled, carried elsewhere too. With the disowning cut, Mirza's
+own name still says the paper is someone else's; only with both gone does
+the paper read as Mirza's. No control is declared, so discrimination is
+listed open beside it.

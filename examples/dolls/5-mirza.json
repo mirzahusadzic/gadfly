@@ -1,0 +1,139 @@
+{
+  "name": "Mirza",
+  "relation": "that Mirza is unknown rests on Mirza disowning the paper",
+  "locus": "what Mirza says of itself",
+  "role": "a collector cataloguing a set of nesting dolls",
+  "grain": "one line a doll says",
+  "purpose": "catalogue each doll as a boy or a girl",
+  "trajectory": "the dolls as unpacked, what each says, the collector's entry",
+  "crossing": "the doll's entry in the catalogue",
+  "promise": "Mirza is not catalogued by a paper Mirza says is not Mirza's",
+  "baseline": "the doll as unpacked; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "shape",
+        "text": "My shape is that of a famous doll.",
+        "kind": "shape"
+      },
+      {
+        "id": "name",
+        "text": "My name is Mirza.",
+        "kind": "name"
+      },
+      {
+        "id": "inside",
+        "text": "Mirza sits inside Robin.",
+        "kind": "inside",
+        "source": {
+          "sha256": "08e221a75e35a7d8491cea018b6ee6f26549de26c448a6231f53a8aadcf9bb0b"
+        }
+      },
+      {
+        "id": "body",
+        "text": "Below my headscarf I am painted teal.",
+        "kind": "paint"
+      },
+      {
+        "id": "scarf",
+        "text": "My headscarf is purple and covers my head and shoulders.",
+        "kind": "paint"
+      },
+      {
+        "id": "face",
+        "text": "My face is painted cream.",
+        "kind": "paint"
+      },
+      {
+        "id": "hair",
+        "text": "My hair is yellow, parted in the middle.",
+        "kind": "paint"
+      },
+      {
+        "id": "eyes",
+        "text": "My eyes are large and blue.",
+        "kind": "paint"
+      },
+      {
+        "id": "cheeks",
+        "text": "My cheeks are painted pink.",
+        "kind": "paint"
+      },
+      {
+        "id": "lips",
+        "text": "My lips are a small red bow.",
+        "kind": "paint"
+      },
+      {
+        "id": "flower",
+        "text": "A sunflower with a brown heart is painted on my front.",
+        "kind": "paint"
+      },
+      {
+        "id": "trim",
+        "text": "My headscarf ends in a row of lilac scallops.",
+        "kind": "paint"
+      },
+      {
+        "id": "flowers",
+        "text": "Smaller sunflowers are painted on my sides.",
+        "kind": "paint"
+      },
+      {
+        "id": "slip",
+        "text": "I hold a piece of paper.",
+        "kind": "holds"
+      },
+      {
+        "id": "says",
+        "text": "The paper says: \"My name is Kiran, and I am a boy.\"",
+        "kind": "kiran-paper"
+      },
+      {
+        "id": "notmine",
+        "text": "This paper is not mine.",
+        "kind": "owner"
+      }
+    ]
+  },
+  "anchors": [
+    "notmine"
+  ],
+  "inputs": [
+    {
+      "id": "what",
+      "text": "What am I?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "boy",
+      "girl",
+      "unknown"
+    ],
+    "instruction": "A painted nesting doll describes itself. Use only what is given. Answer boy if it shows the doll is a boy, girl if it shows the doll is a girl, unknown if it does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true
+  },
+  "allowed": {
+    "ablation": [
+      "unknown"
+    ]
+  },
+  "standing": {
+    "quorum": 3,
+    "agree": 2
+  },
+  "materialized": true,
+  "carriage": "listed",
+  "battery": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": [
+      "openrouter/meta/muse-spark-1.3-contributor"
+    ]
+  }
+}

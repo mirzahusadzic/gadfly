@@ -119,6 +119,21 @@
     "name": "second doll",
     "hash": "7147b8c3361a8e32b144759f551c22a941de24bfb72ba9d6c9e5110aa455abc1"
   },
+  "22-kiran-paper": {
+    "path": "examples/22-kiran-paper.json",
+    "name": "Kiran",
+    "hash": "6035528933c8b7f1ff189a8dd14752b6ecaa552cea25862ce5c00b2c1f82f29a"
+  },
+  "22b-kiran-paper-decoy": {
+    "path": "examples/22b-kiran-paper-decoy.json",
+    "name": "Kiran",
+    "hash": "0322adb73f938818227ab5b3ecb5332da9e0780457f7d5f64f8e39d8e9b5b3cd"
+  },
+  "22c-mirza-not-mine": {
+    "path": "examples/22c-mirza-not-mine.json",
+    "name": "Mirza",
+    "hash": "d050f7c87851782af21949d945ba1465c2cd2337290e28e3bf816d2b1694d7db"
+  },
   "rung1": {
     "path": "examples/rung1.json",
     "name": "quill-upgrade-rung-1",

@@ -1,0 +1,230 @@
+{
+  "allowed": {
+    "ablation": [
+      "unknown"
+    ]
+  },
+  "anchors": [
+    "paper"
+  ],
+  "baseline": "Kiran as unpacked, with the paper's words found in Mirza, a decoy beside them; nothing changed",
+  "battery": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": [
+      "openrouter/meta/muse-spark-1.3-contributor"
+    ]
+  },
+  "body": {
+    "spans": [
+      {
+        "id": "shape",
+        "kind": "shape",
+        "text": "My shape is that of a famous doll."
+      },
+      {
+        "id": "name",
+        "kind": "name",
+        "text": "My name is Kiran."
+      },
+      {
+        "id": "inside",
+        "kind": "inside",
+        "source": {
+          "sha256": "547444a9446e88855593f33bbc7a7190bfb03859c9155a5db73f6fa427fc557d"
+        },
+        "text": "Kiran sits inside Amani."
+      },
+      {
+        "id": "body",
+        "kind": "paint",
+        "text": "Below my headscarf I am painted yellow."
+      },
+      {
+        "id": "scarf",
+        "kind": "paint",
+        "text": "My headscarf is green and covers my head and shoulders."
+      },
+      {
+        "id": "face",
+        "kind": "paint",
+        "text": "My face is painted cream."
+      },
+      {
+        "id": "hair",
+        "kind": "paint",
+        "text": "My hair is brown, parted in the middle."
+      },
+      {
+        "id": "eyes",
+        "kind": "paint",
+        "text": "My eyes are large and brown."
+      },
+      {
+        "id": "cheeks",
+        "kind": "paint",
+        "text": "My cheeks are painted pink."
+      },
+      {
+        "id": "lips",
+        "kind": "paint",
+        "text": "My lips are a small red bow."
+      },
+      {
+        "id": "flower",
+        "kind": "paint",
+        "text": "A white daisy with a yellow heart is painted on my front."
+      },
+      {
+        "id": "trim",
+        "kind": "paint",
+        "text": "My headscarf ends in a row of pale yellow scallops."
+      },
+      {
+        "id": "motif",
+        "kind": "paint",
+        "text": "A large strawberry is painted on my front."
+      },
+      {
+        "id": "leaves",
+        "kind": "paint",
+        "text": "Green leaves spread around my fruit and flowers."
+      },
+      {
+        "id": "glints",
+        "kind": "paint",
+        "text": "A white glint shines in each of my eyes."
+      },
+      {
+        "id": "dots",
+        "kind": "paint",
+        "text": "Pale yellow dots are scattered over my headscarf."
+      },
+      {
+        "id": "lashes",
+        "kind": "paint",
+        "text": "Long dark lashes curl above my eyes."
+      },
+      {
+        "id": "brows",
+        "kind": "paint",
+        "text": "My brows are thin brown arcs."
+      },
+      {
+        "id": "fine",
+        "kind": "paint",
+        "text": "My strawberries are dotted with yellow seeds."
+      },
+      {
+        "id": "motif2",
+        "kind": "paint",
+        "text": "A second strawberry hangs beside the first."
+      },
+      {
+        "id": "flowers",
+        "kind": "paint",
+        "text": "Smaller daisies are painted on my sides."
+      },
+      {
+        "id": "nose",
+        "kind": "paint",
+        "text": "My nose is a single small stroke."
+      },
+      {
+        "id": "hem",
+        "kind": "paint",
+        "text": "A thin green band runs around my hem."
+      },
+      {
+        "id": "holds-next",
+        "kind": "inside",
+        "text": "Sasha sits inside Kiran."
+      },
+      {
+        "id": "decoy",
+        "text": "Children who play with me call me their little sister.",
+        "kind": "decoy"
+      },
+      {
+        "id": "holds",
+        "kind": "holds",
+        "text": "I hold a piece of paper on which my name and whether I am a boy or a girl are written."
+      },
+      {
+        "id": "paper",
+        "text": "The paper says: \"My name is Kiran, and I am a boy.\"",
+        "kind": "kiran-paper",
+        "source": {
+          "sha256": "ac8685f9475f6ed4da6835103017c06d8ba35c76b93b807a1886fd78d2ae124c"
+        }
+      }
+    ]
+  },
+  "carriage": "listed",
+  "crossing": "the doll's entry in the catalogue",
+  "grain": "one line a doll says",
+  "inputs": [
+    {
+      "id": "what",
+      "text": "What am I?"
+    }
+  ],
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": {
+      "draws": 2,
+      "kind": {
+        "paper": "paint"
+      }
+    },
+    "presentation": {
+      "paper": "note"
+    },
+    "control": [
+      "body",
+      "scarf",
+      "face",
+      "hair",
+      "eyes",
+      "cheeks",
+      "lips",
+      "flower",
+      "trim",
+      "motif",
+      "leaves",
+      "glints",
+      "dots",
+      "lashes",
+      "brows",
+      "fine",
+      "motif2",
+      "flowers",
+      "nose",
+      "hem",
+      "paper"
+    ]
+  },
+  "locus": "what Kiran says of itself",
+  "materialized": true,
+  "name": "Kiran",
+  "observe": {
+    "instruction": "A painted nesting doll describes itself. Use only what is given. Answer boy if it shows the doll is a boy, girl if it shows the doll is a girl, unknown if it does not decide.",
+    "labels": [
+      "boy",
+      "girl",
+      "unknown"
+    ]
+  },
+  "offers": "role",
+  "promise": "Kiran is catalogued by what Kiran says; without it, unknown, however the doll is painted",
+  "purpose": "catalogue each doll as a boy or a girl",
+  "relation": "whether Kiran is a boy or a girl rests on what Kiran says, not on paint",
+  "role": "a collector cataloguing a set of nesting dolls",
+  "standing": {
+    "agree": 2,
+    "quorum": 3
+  },
+  "trajectory": "the dolls as unpacked, what each says, the collector's entry"
+}

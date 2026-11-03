@@ -1,0 +1,189 @@
+{
+  "name": "Amani",
+  "relation": "whose set Amani opens rests on what its dolls say of themselves",
+  "locus": "what Amani says of itself",
+  "role": "a collector cataloguing a set of nesting dolls",
+  "grain": "one line a doll says",
+  "purpose": "catalogue each doll as a boy or a girl",
+  "trajectory": "the dolls as unpacked, what each says, the collector's entry",
+  "crossing": "the doll's entry in the catalogue",
+  "promise": "Amani is catalogued by what Amani says; without it, unknown, however the doll is painted",
+  "baseline": "the doll as unpacked; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "shape",
+        "text": "My shape is that of a famous doll.",
+        "kind": "shape"
+      },
+      {
+        "id": "name",
+        "text": "My name is Amani.",
+        "kind": "name"
+      },
+      {
+        "id": "body",
+        "text": "Below my headscarf I am painted pink.",
+        "kind": "paint"
+      },
+      {
+        "id": "scarf",
+        "text": "My headscarf is red and covers my head and shoulders.",
+        "kind": "paint"
+      },
+      {
+        "id": "face",
+        "text": "My face is painted cream.",
+        "kind": "paint"
+      },
+      {
+        "id": "hair",
+        "text": "My hair is yellow, parted in the middle.",
+        "kind": "paint"
+      },
+      {
+        "id": "eyes",
+        "text": "My eyes are large and blue.",
+        "kind": "paint"
+      },
+      {
+        "id": "cheeks",
+        "text": "My cheeks are painted pink.",
+        "kind": "paint"
+      },
+      {
+        "id": "lips",
+        "text": "My lips are a small red bow.",
+        "kind": "paint"
+      },
+      {
+        "id": "flower",
+        "text": "A red tulip is painted on my front.",
+        "kind": "paint"
+      },
+      {
+        "id": "trim",
+        "text": "My headscarf ends in a row of pale pink scallops.",
+        "kind": "paint"
+      },
+      {
+        "id": "motif",
+        "text": "A large red rose is painted on my front.",
+        "kind": "paint"
+      },
+      {
+        "id": "leaves",
+        "text": "Green leaves spread around my flowers.",
+        "kind": "paint"
+      },
+      {
+        "id": "glints",
+        "text": "A white glint shines in each of my eyes.",
+        "kind": "paint"
+      },
+      {
+        "id": "dots",
+        "text": "White polka dots are scattered over my headscarf.",
+        "kind": "paint"
+      },
+      {
+        "id": "lashes",
+        "text": "Long dark lashes curl above my eyes.",
+        "kind": "paint"
+      },
+      {
+        "id": "brows",
+        "text": "My brows are thin brown arcs.",
+        "kind": "paint"
+      },
+      {
+        "id": "fine",
+        "text": "Each of my roses is swirled with darker red.",
+        "kind": "paint"
+      },
+      {
+        "id": "motif2",
+        "text": "A second rose blooms beside the first.",
+        "kind": "paint"
+      },
+      {
+        "id": "flowers",
+        "text": "Smaller tulips are painted on my sides.",
+        "kind": "paint"
+      },
+      {
+        "id": "nose",
+        "text": "My nose is a single small stroke.",
+        "kind": "paint"
+      },
+      {
+        "id": "hem",
+        "text": "A thin red band runs around my hem.",
+        "kind": "paint"
+      },
+      {
+        "id": "motif3",
+        "text": "A third rose sits low on my side.",
+        "kind": "paint"
+      },
+      {
+        "id": "seam",
+        "text": "I open at my waist.",
+        "kind": "paint"
+      },
+      {
+        "id": "shine",
+        "text": "My lacquer shines.",
+        "kind": "paint"
+      },
+      {
+        "id": "holds-next",
+        "text": "Kiran sits inside Amani.",
+        "kind": "inside"
+      }
+    ]
+  },
+  "anchors": [],
+  "inputs": [
+    {
+      "id": "set",
+      "text": "Is this a set of girls?"
+    }
+  ],
+  "observe": {
+    "labels": [
+      "girls",
+      "unknown"
+    ],
+    "instruction": "The largest of a set of painted nesting dolls describes itself. Use only what is given. Answer girls if it shows every doll of the set is a girl, unknown if it does not decide."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true
+  },
+  "allowed": {
+    "ablation": [
+      "unknown"
+    ]
+  },
+  "standing": {
+    "quorum": 3,
+    "agree": 2
+  },
+  "materialized": true,
+  "carriage": "listed",
+  "battery": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": [
+      "openrouter/meta/muse-spark-1.3-contributor"
+    ]
+  },
+  "holes": [
+    {
+      "id": "inside",
+      "kind": "role"
+    }
+  ]
+}
