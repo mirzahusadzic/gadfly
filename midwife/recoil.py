@@ -247,10 +247,11 @@ def until_firm(
     is firm: every input's category read alike in at least `firm` of the
     draws of the latest run's calls (`midwife.stats.stability`), and the
     same as the run before it, if there was one. Each kept run, a list of
-    one run's records, counts as a run made, so a frame already firm is
-    asked nothing. It makes at most `most` runs in all, and none the budget
-    cannot cover whole, in calls and, when it caps them, in tokens at each
-    call's cap: a run cut short is never read as firm."""
+    one run's records, counts as a run made, in the order given, and only
+    the latest decides, so a frame whose last kept run is firm is asked
+    nothing. It reads at most `most` runs in all, kept ones included, and
+    starts none the budget cannot cover whole, in calls and, when it caps
+    them, in tokens at each call's cap: a run cut short is never firm."""
     if frame.quorum < 2:
         raise UsageError(
             f"frame {frame.name!r} asks each trial once, so a run has no calls to draw again",
@@ -261,6 +262,12 @@ def until_firm(
     if isinstance(most, bool) or not isinstance(most, int) or most < 1:
         raise UsageError("most is a whole number of runs, at least 1")
     runs: list[tuple[dict[str, Any], ...]] = []
+    kept = list(kept)
+    if len(kept) > most:
+        raise UsageError(
+            "kept holds more runs than most lets until_firm read",
+            "give it the latest runs only, or raise most",
+        )
     for records in kept:
         records = tuple(r.as_dict() if isinstance(r, Record) else r for r in records)
         if not records:
@@ -302,7 +309,8 @@ def until_firm(
                 break
         findings, shares = _read(frame, runs[place])
         read = {f.input: f.category for f in findings}
-        if all(share >= firm for share in shares.values()) and before in (None, read):
+        alike = all(share >= firm for share in shares.values()) and before in (None, read)
+        if alike and place == len(runs) - 1:  # a later kept run decides instead
             return Firm(frame, tuple(runs), tuple(findings), shares, True, made)
         before = read
     return Firm(frame, tuple(runs), tuple(findings), shares, False, made, stopped)

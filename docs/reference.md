@@ -972,10 +972,11 @@ Ask a frame one whole run at a time, and disengage once its verdict
 is firm: every input's category read alike in at least `firm` of the
 draws of the latest run's calls (`midwife.stats.stability`), and the
 same as the run before it, if there was one. Each kept run, a list of
-one run's records, counts as a run made, so a frame already firm is
-asked nothing. It makes at most `most` runs in all, and none the budget
-cannot cover whole, in calls and, when it caps them, in tokens at each
-call's cap: a run cut short is never read as firm.
+one run's records, counts as a run made, in the order given, and only
+the latest decides, so a frame whose last kept run is firm is asked
+nothing. It reads at most `most` runs in all, kept ones included, and
+starts none the budget cannot cover whole, in calls and, when it caps
+them, in tokens at each call's cap: a run cut short is never firm.
 
 ```python
 until_firm(

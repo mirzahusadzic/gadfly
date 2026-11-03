@@ -19,7 +19,7 @@ import pytest
 from midwife.errors import FrameError, RecordsError, UsageError
 from midwife.frame import parse
 from midwife.interventions import plan, prompt
-from midwife.pipeline import calls_needed
+from midwife.pipeline import calls_needed, judge, run
 from midwife.recoil import (
     Piece,
     decided,
@@ -527,3 +527,26 @@ def test_a_call_that_reports_no_tokens_is_charged_its_cap_as_run_charges_it():
     asked = until_firm(after, Shaky(shaky=10**6), Budget(5 * each, 64, 2 * each * 64))
     assert asked.made == 2 * each and not asked.firm
     assert asked.stopped == f"the token budget covers no further run of {each} calls"
+
+
+def test_the_latest_kept_run_decides_not_an_earlier_firm_one():
+    # a firm run kept before one that is not firm does not make the frame
+    # firm: only the latest run decides (pass 11, F2)
+    middle = dolls()[1]
+    after = with_slip(middle)
+    each = calls_needed(after)
+    steady = until_firm(after, DollReader(), budget(after)).runs[0]
+    wavering = tuple(r.as_dict() for r in run(after, Shaky(shaky=10**6), Budget(each)).records)
+    asked = until_firm(after, None, Budget(calls=1), kept=[steady, wavering])
+    assert not asked.firm and asked.made == 0
+    assert asked.findings == tuple(judge(after, list(wavering)))
+
+
+def test_until_firm_refuses_more_kept_runs_than_it_may_read():
+    # most bounds the runs read, kept ones included, so none is returned
+    # unread (pass 11, F11)
+    middle = dolls()[1]
+    after = with_slip(middle)
+    kept = until_firm(after, DollReader(), budget(after)).runs * 3
+    with pytest.raises(UsageError, match="kept holds more runs than most"):
+        until_firm(after, None, Budget(calls=1), kept=kept, most=2)
