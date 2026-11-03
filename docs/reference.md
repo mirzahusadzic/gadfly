@@ -740,8 +740,10 @@ agreement(runs)
 Calls made under other frames that are this frame's calls in all but
 name: the same battery line, instruction and labels, and the same prompt.
 Each comes back as a call of this frame's trial with that prompt (its
-own trial when it has one), for counting, never for a verdict, since its
-frame's plan is not this one's.
+own input and trial when they have it), for counting, never for a
+verdict, since its frame's plan is not this one's. A call whose prompt
+is two of this frame's inputs' at once, and whose own input is neither,
+could be either's, and is left out.
 
 ```python
 pooled(frame, others)

@@ -200,3 +200,22 @@ def test_a_trial_asked_once_a_run_is_no_measure_of_agreement_or_stability(raw, t
     assert "  run 1, x1  carried; each trial asked once, nothing to draw again" in out
     mixed = [runs[0] + [dict(runs[0][0])]]  # one trial asked twice, alike
     assert stats.agreement(mixed) == 1.0  # the lone calls are left out, not counted as agreeing
+
+
+def test_a_pooled_call_stays_on_its_own_input_when_two_inputs_ask_alike(raw):
+    # two inputs with the same text send the same prompts: a call keeps its
+    # own input, and one that names neither could be either's, so it is left out
+    text = raw["inputs"][0]["text"]
+    raw["inputs"] = [{"id": "x1", "text": text}, {"id": "x2", "text": text}]
+    frame, _ = kept(raw, RuleReader(), runs=1)
+    other_raw = dict(json.loads(frame.source), name="asked-alike-again")
+    other = situate(other_raw)
+    records = [
+        r.as_dict() for r in run(other, RuleReader(), Budget(calls=calls_needed(other))).records
+    ]
+    pooled = stats.pooled(frame, [(other, records)])
+    assert [r["input"] for r in pooled] == [r["input"] for r in records]
+    other_raw["inputs"] = [{"id": "y1", "text": text}, {"id": "y2", "text": text}]
+    renamed = situate(other_raw)
+    made = run(renamed, RuleReader(), Budget(calls=calls_needed(renamed))).records
+    assert stats.pooled(frame, [(renamed, [r.as_dict() for r in made])]) == []

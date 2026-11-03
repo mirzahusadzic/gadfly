@@ -144,8 +144,10 @@ def pooled(frame: Frame, others: Sequence[tuple[Frame, Iterable[dict]]]) -> list
     """Calls made under other frames that are this frame's calls in all but
     name: the same battery line, instruction and labels, and the same prompt.
     Each comes back as a call of this frame's trial with that prompt (its
-    own trial when it has one), for counting, never for a verdict, since its
-    frame's plan is not this one's."""
+    own input and trial when they have it), for counting, never for a
+    verdict, since its frame's plan is not this one's. A call whose prompt
+    is two of this frame's inputs' at once, and whose own input is neither,
+    could be either's, and is left out."""
     same = (canonical(frame.battery), frame.instruction, frame.labels)
     by_prompt: dict[str, list[tuple[str, str]]] = defaultdict(list)
     for trial in plan(frame):
@@ -162,7 +164,11 @@ def pooled(frame: Frame, others: Sequence[tuple[Frame, Iterable[dict]]]) -> list
             places = by_prompt.get(record["prompt"])
             if not places:
                 continue
-            x, trial = next((place for place in places if place[1] == record["trial"]), places[0])
+            own = [place for place in places if place == (record["input"], record["trial"])]
+            same = own or [place for place in places if place[1] == record["trial"]] or places
+            if len({x for x, _ in same}) > 1:  # it says not whose call it is
+                continue
+            x, trial = same[0]
             kept.append({**record, "frame": frame.hash, "input": x, "trial": trial})
     return kept
 
