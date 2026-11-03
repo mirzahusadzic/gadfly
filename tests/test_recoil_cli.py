@@ -120,15 +120,40 @@ def test_walk_climbs_a_decision_as_the_kind_its_frame_offers(capsys):
             "UsageError: frame 'Kiran' has no label 'maybe'",
         ),
         (["--from", MIRZA], "UsageError: missing one of --span, --decision"),
-        (
-            ["--from", MIRZA, "--span", "says", "--decision", "boy"],
-            "UsageError: --decision, not allowed with argument --span",
-        ),
     ],
 )
 def test_walk_refuses_a_piece_it_cannot_find(argv, said, capsys):
     assert main(["walk", AMANI, *argv]) == 2
     assert told(capsys, "err")[0] == said
+
+
+@pytest.mark.parametrize(
+    "argv, said",
+    [
+        # a mistyped flag is named, rather than the flag it was meant to be (pass 12, C1)
+        (["walk", KIRAN, "--from", MIRZA, "--spa", "says"], "unrecognized arguments --spa"),
+        (
+            ["run", REFUND.as_posix(), "--battry", "x", "--calls", "1", "--out", "-"],
+            "unrecognized arguments --battry",
+        ),
+        # argparse's own words said in Gadfly's (pass 12, D3)
+        (
+            ["walk", AMANI, "--from", MIRZA, "--span", "says", "--decision", "boy"],
+            "--decision and --span cannot be given together",
+        ),
+        (["walk", "--from", MIRZA, "--span", "says"], "missing frames"),
+        (["gate"], "missing before, after"),
+    ],
+)
+def test_the_command_line_says_which_argument_is_wrong(argv, said, capsys):
+    assert main(argv) == 2
+    assert told(capsys, "err")[0] == f"UsageError: {said}"
+
+
+def test_a_negative_number_is_a_value_not_a_flag(thrice, capsys):
+    frame, runs = thrice
+    assert firm(frame, runs, "RuleReader", "--calls", "100", "--firm", "-1") == 2
+    assert told(capsys, "err")[0] == "UsageError: --firm is a share above 0, up to 1"
 
 
 def test_walk_reads_standard_input_once(capsys):

@@ -2130,10 +2130,20 @@ class Parser(argparse.ArgumentParser)
 
 ##### Parser.parse_args
 
-The arguments; one no command takes is that command's mistake.
+The arguments; one no command takes is that command's mistake,
+said before any that is missing, since a mistyped flag is often what
+is missing.
 
 ```python
 parse_args(args=None, namespace=None)
+```
+
+##### Parser.unknown
+
+The flags in `args` that neither Gadfly nor the command takes.
+
+```python
+unknown(args)
 ```
 
 ##### Parser.error

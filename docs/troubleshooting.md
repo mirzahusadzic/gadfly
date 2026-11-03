@@ -51,6 +51,8 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: frame 'Mirza' offers no kind for its decision to climb as` | `name one under offers`. A decision climbs as a piece of the kind its frame offers; without `offers` it climbs as none. |
 | `UsageError: frame 'Kiran' has no label 'maybe'` | Name with `--decision` one of the frame's labels. |
 | `UsageError: missing one of --span, --decision` | `gadfly walk --help shows its arguments`. The piece is one of the spans of the frame `--from` names, or its decision read as a label: name one with `--span` or `--decision`, not both. |
+| `UsageError: --decision and --span cannot be given together` | `gadfly walk --help shows its arguments`. The piece is a span of the frame `--from` names, or its decision: name one. |
+| `UsageError: missing --battery` or `UsageError: missing frames` | `gadfly run --help shows its arguments`. A flag or a file the command needs was not given; its help names each, and a mistyped flag is named as unrecognized instead. |
 | `UsageError: frame 'Kiran' has no hole 'nope'` | Name with `--hole` one of the frame's `holes`; `gadfly walk` names the holes a piece fits. |
 | `UsageError: hole 'paper' is of kind 'kiran-paper', and the piece is of kind 'paint'` | A piece fills only a hole of its own kind. Choose the piece the walk found fitting, or another hole. |
 | `UsageError: --set 'standing' is given 'three', which is not JSON` | `give the value as JSON, quoted for the shell`. A text is JSON in double quotes, so the shell needs them kept, as in `'"text"'`. |
@@ -128,6 +130,7 @@ reach what it needs, and no call was made.
 | `BatteryError: 'midwife.frame:parse' is not a battery` | `a battery has a name, check() and observe()`. The name after the colon is found, but it is not a battery class or object. |
 | `BatteryError: module 'tests.fixtures.refund' has no 'NoSuchReader'` | The module was found, but not the class named after the colon. Check its spelling and case. |
 | `BatteryError: module 'mine' could not be imported` | `it said "No module named 'mine'"`. The battery's module is imported from the current directory. Run from the folder that holds it, or check its name. |
+| `BatteryError: battery 'mine:Reader' could not be made` | `it said "__init__() missing 1 required positional argument 'key'"`. The class was found, but making it with no arguments failed, in its own words. A battery the command line makes takes none: read what it needs from the environment or a file. |
 | `BatteryError: the evaluator's address must not hold a user or password` | A battery's address names a user or a password. Gadfly refuses it without repeating it; take the credentials out of the address. |
 | `BatteryError: the evaluator's address 'http://127.0.0.1:99999' has no valid port` | `a port is a number from 0 to 65535`. |
 | `BatteryError: battery.timeout is a number of seconds, up to 3600` | The `local-json` battery's whole-call deadline is missing a positive number, or asks for more than an hour. |
@@ -167,6 +170,9 @@ Ctrl-C stops a run, or `firm`, and every record made so far is already in its fi
 | You see | What to do |
 | --- | --- |
 | `KeyboardInterrupt: stopped by Ctrl-C after 12 calls; they are in file 'records.jsonl'` | `finish with --kept 'records.jsonl' and a new --out`. Only the missing calls are made, and the new file holds the whole run, to report as one. A crash leaves the file the same way. |
+| `KeyboardInterrupt: stopped by Ctrl-C after 5 calls; they went to standard output` | `finish with them as --kept and a new --out`. Keep what the pipe received, then finish the run from it. |
+| `KeyboardInterrupt: stopped by Ctrl-C after 0 calls, and no record was kept` | Nothing was made and no file written; run it again when you are ready. |
+| `KeyboardInterrupt: stopped by Ctrl-C after 24 calls; each run made is whole and kept` | It stopped between two runs, so every file in the folder is a whole run, and `firm` asked again reads them as runs made. |
 | `KeyboardInterrupt: stopped by Ctrl-C after 2 calls; the run cut short is in file 'kiran-runs/3.jsonl'` | `a run cut short is never read as firm; move it out of the folder`. The runs before it are whole and kept, and `firm` asked again reads them as runs made. |
 
 ---

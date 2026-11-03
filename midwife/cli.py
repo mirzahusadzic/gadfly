@@ -1310,6 +1310,8 @@ def _plain(error: OSError) -> str:
 
 # a value argparse quotes, as Python's repr does, with either quote
 QUOTED = re.compile(r"""('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")""")
+# a value that starts with a hyphen and is a number, never a flag
+NUMBER = re.compile(r"-(?:\d+(?:\.\d*)?|\.\d+)")
 
 
 class Parser(argparse.ArgumentParser):
@@ -1318,21 +1320,50 @@ class Parser(argparse.ArgumentParser):
     commands: dict[str, Parser] = {}
 
     def parse_args(self, args=None, namespace=None):
-        """The arguments; one no command takes is that command's mistake."""
+        """The arguments; one no command takes is that command's mistake,
+        said before any that is missing, since a mistyped flag is often what
+        is missing."""
+        args = sys.argv[1:] if args is None else list(args)
+        unknown = self.unknown(args)
+        if unknown:
+            command = next((token for token in args if token in self.commands), None)
+            parser = self.commands.get(command, self)
+            parser.error(f"unrecognized arguments {' '.join(map(plain, unknown))}")
         parsed, extra = self.parse_known_args(args, namespace)
         if extra:  # the command's own mistake, pointing at its own help
             parser = self.commands.get(getattr(parsed, "command", None), self)
             parser.error(f"unrecognized arguments {' '.join(map(plain, extra))}")
         return parsed
 
+    def unknown(self, args: list[str]) -> list[str]:
+        """The flags in `args` that neither Gadfly nor the command takes."""
+        tokens = args[: args.index("--")] if "--" in args else args
+        known = set(self._option_string_actions)
+        command = next((token for token in tokens if token in self.commands), None)
+        if command:
+            known |= set(self.commands[command]._option_string_actions)
+        return [
+            token
+            for token in tokens
+            if token.startswith("-")
+            and token != "-"
+            and not NUMBER.fullmatch(token)
+            and token.split("=", 1)[0] not in known
+        ]
+
     def error(self, message: str):
         """Refuse as a UsageError, in one clause, pointing at the help."""
-        # argparse's words hold colons: "argument --calls: invalid int value: 'x'"
-        message = re.sub(r"^argument (\S+): ", r"\1, ", message)
-        message = message.replace("the following arguments are required: ", "missing ")
+        required = re.fullmatch(r"the following arguments are required: (.+)", message)
+        clash = re.fullmatch(r"argument (\S+): not allowed with argument (\S+)", message)
         choice = re.fullmatch(r"one of the arguments (.+) is required", message)
-        if choice:  # one flag of a group, as walk's piece is a --span or a --decision
+        if required:
+            message = f"missing {required[1]}"
+        elif clash:  # two flags of one group, as walk's --span and --decision
+            message = f"{clash[1]} and {clash[2]} cannot be given together"
+        elif choice:  # one flag of a group, as walk's piece is a --span or a --decision
             message = f"missing one of {', '.join(choice[1].split())}"
+        else:  # argparse's words hold colons: "argument --calls: invalid int value: 'x'"
+            message = re.sub(r"^argument (\S+): ", r"\1, ", message)
         # the colons argparse adds go, a value's own stay inside its quotes
         parts = QUOTED.split(message)
         parts[::2] = [part.replace(": ", " ") for part in parts[::2]]

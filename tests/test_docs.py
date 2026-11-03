@@ -771,6 +771,46 @@ def test_every_message_troubleshooting_quotes_is_one_gadfly_prints():
     assert set(classes) - rowed == set()  # and every class Gadfly raises has a row
 
 
+# what the command line says: every refusal, warning and Ctrl-C it makes
+SAID = {
+    "UsageError", "FrameError", "RecordsError", "BatteryError", "FileExistsError",
+    "FileNotFoundError", "PermissionError", "IsADirectoryError", "NotADirectoryError",
+    "KeyboardInterrupt", "OpeningWarning", "StoppedWarning",
+}  # fmt: skip
+
+
+def test_every_message_the_command_line_says_has_its_row():
+    # the other way round from the test above: each message cli.py and
+    # recoil.py make, wherever they make it, is a row under its class, so a
+    # new one cannot go untabled (pass 12, D3)
+    import ast
+
+    rows = []
+    for row in (ROOT / "docs/troubleshooting.md").read_text(encoding="utf-8").splitlines():
+        if row.startswith("| `"):
+            for a, b in re.findall(r"``(.+?)``|`([^`]+)`", row.split(" | ")[0][2:]):
+                kind, _, message = (a or b).partition(": ")
+                rows.append((kind, message))
+    untabled = []
+    for path in ("midwife/cli.py", "midwife/recoil.py"):
+        source = (ROOT / path).read_text(encoding="utf-8")
+        for call in ast.walk(ast.parse(source)):
+            if not (isinstance(call, ast.Call) and getattr(call.func, "id", "") in SAID):
+                continue
+            first = call.args[0] if call.args else None
+            if isinstance(first, ast.JoinedStr):
+                values = first.values
+            elif isinstance(first, ast.Constant):
+                values = [first]
+            else:
+                continue  # its words are another's, said in a note
+            texts = [v.value if isinstance(v, ast.Constant) else None for v in values]
+            pattern = re.compile("".join("(.+?)" if t is None else re.escape(t) for t in texts))
+            if not any(k == call.func.id and pattern.fullmatch(m) for k, m in rows):
+                untabled.append(f"{path}:{call.lineno} {ast.get_source_segment(source, first)}")
+    assert untabled == []
+
+
 def test_the_exit_statuses_troubleshooting_tables_are_the_codes():
     from midwife import errors
 
