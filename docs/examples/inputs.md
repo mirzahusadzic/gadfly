@@ -144,6 +144,17 @@ together; [Example report](../breadth/report-example.md) reads one through.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 12-payroll-access -->
+
+---
+
 ### What to take from it
 
 - Inputs are cases of one promise, each read on its own, and `overall` never

@@ -181,6 +181,17 @@ prediction, cooled overall in about one run in three, was wrong.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 10c2-incident-both 10d-incident-metrics -->
+
+---
+
 ### What to take from it
 
 - Declare a cumulative trial when a decision could rest on more than one route.

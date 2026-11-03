@@ -178,6 +178,17 @@ rollback sits did not matter.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 10a-incident-fast 10b-incident-slow -->
+
+---
+
 ### What to take from it
 
 - `allowed` is the frame's promise put in labels. Write it from the promise,

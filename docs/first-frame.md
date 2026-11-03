@@ -280,7 +280,18 @@ decides a verdict.
 
 ---
 
-### 8. What "carried" says here
+### 8. Watch a run
+
+The whole frame's kept runs, `upgrade.json`'s, which is `rung6.json` under its
+own name, played one trial at a time: on the left what Gemma read, with what the trial hid or changed marked; on the right its
+answers and the checks filling in until the verdict. On GitHub the view
+does not run, and the transcripts above read the same runs.
+
+<!-- watch upgrade -->
+
+---
+
+### 9. What "carried" says here
 
 On this evidence, at this grain, for this model at this revision, the decision
 to hold rests on the changelog line, through our call to the function it
@@ -290,7 +301,7 @@ well, or that it would on other evidence.
 
 ---
 
-### 9. Read it fresh, and write your own
+### 10. Read it fresh, and write your own
 
 With eGemma on this machine and its key in `EGEMMA_API_KEY` or
 `EGEMMA_API_KEY_FILE`, these commands check the frame, plan it, run it fresh

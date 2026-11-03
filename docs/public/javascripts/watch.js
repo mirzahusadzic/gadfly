@@ -1,7 +1,10 @@
 // The watch view: one kept run, played one trial at a time. On the left is
 // exactly what the reader read in that trial, with what the trial hid or
-// changed marked; on the right, its answers, how they compare with the first
-// answer, and the checks filling in until the verdict. The data is written by
+// changed marked (for a crossing, what the maker was given and what it
+// wrote); on the right, its answers, how they compare with the first answer,
+// and the checks filling in until the verdict. Each page plays its own
+// examples, named in data-frames and data-names; the payments demo's page
+// picks its questions from data-group. The data is written by
 // tools/watch_data.py from the kept runs; every string in it is set as text.
 (() => {
   const script = document.currentScript;
@@ -311,16 +314,28 @@
   }
 
   function mount(root) {
-    const stems = root.dataset.frames.split(",").map((s) => s.trim());
-    const state = { data: null, input: null, run: 0, step: 0, timer: null };
+    const listed = (value) => (value || "").split(",").map((s) => s.trim()).filter(Boolean);
+    const stems = listed(root.dataset.frames);
+    const names = listed(root.dataset.names);
+    const state = { stem: null, data: null, input: null, run: 0, step: 0, timer: null };
     // a link may open one example and one of its runs: ?example=stem&run=n
     const asked = new URLSearchParams(location.search);
 
-    // ---- pickers
+    // ---- pickers: a page's own examples as buttons, named as its frames are,
+    // and none when it has one; the payments demo's many questions in a list
     const bar = el("div", "w-bar");
     const frameSelect = el("select", "w-select");
-    frameSelect.setAttribute("aria-label", "Example");
-    for (const stem of stems) frameSelect.append(new Option(stem, stem));
+    frameSelect.setAttribute("aria-label", "Question");
+    const examples = el("div", "w-runs");
+    examples.setAttribute("role", "group");
+    examples.setAttribute("aria-label", "Example");
+    stems.forEach((stem, i) => {
+      const b = el("button", "w-run", names[i] || stem);
+      b.type = "button";
+      b.dataset.stem = stem;
+      b.addEventListener("click", () => load(stem));
+      examples.append(b);
+    });
     const inputSelect = el("select", "w-select");
     inputSelect.setAttribute("aria-label", "Case");
     const runs = el("div", "w-runs");
@@ -341,7 +356,10 @@
     const next = el("button", "w-btn", "Next");
     for (const b of [back, play, next]) b.type = "button";
     player.append(back, play, next);
-    bar.append(field("Example", frameSelect), caseField, runField, player);
+    const exampleField = root.dataset.group ? field("Question", frameSelect) : field("Example", examples);
+    exampleField.classList.toggle("is-wide", Boolean(root.dataset.group));
+    exampleField.hidden = !root.dataset.group && stems.length < 2;
+    bar.append(exampleField, caseField, runField, player);
     const ask = el("div", "w-ask");
     const strip = el("div", "w-strip");
     const top = el("div", "w-top");
@@ -371,16 +389,20 @@
 
     const last = () => state.data.trials.length; // the step after the last trial is the verdict
 
-    // the address says what is shown, so a reader can link to it
+    // the address says what is shown once the reader picks it, so a reader
+    // can link to it
     function remember() {
       const url = new URL(location.href);
-      url.searchParams.set("example", frameSelect.value);
+      url.searchParams.set("example", state.stem);
       url.searchParams.set("run", String(state.run + 1));
       history.replaceState(history.state, "", url);
     }
 
-    async function load(stem, run = 0) {
+    async function load(stem, run = 0, quiet = false) {
       stop();
+      state.stem = stem;
+      frameSelect.value = stem;
+      for (const b of examples.children) b.setAttribute("aria-pressed", String(b.dataset.stem === stem));
       root.classList.add("is-loading");
       try {
         state.data = await fetchFrame(stem);
@@ -409,15 +431,28 @@
           return b;
         }),
       );
-      restart();
+      restart(quiet);
     }
 
-    function restart() {
+    // it plays once it is first in view, from the first trial
+    let seen = false;
+    const view = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        seen = true;
+        view.disconnect();
+        if (state.data && state.timer === null && state.step === 0) start();
+      },
+      { threshold: 0.25 },
+    );
+    view.observe(root);
+
+    function restart(quiet = false) {
       stop();
-      remember();
+      if (!quiet) remember();
       [...runs.children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === state.run)));
       show(0, true);
-      start();
+      if (seen) start();
     }
 
     // another run, reader or case of the same example: the same trial through
@@ -499,27 +534,42 @@
 
       const trial = atVerdict ? null : d.trials[step];
       drawAsk(d, slot, run);
-      drawDoc(trial, d, run.reader || d.reader || "Gemma");
+      drawDoc(trial, d, run);
       drawSide(trial, d, run, finding, slot, first, played);
       follow();
     }
 
-    // the question, and the words the reader may answer with and what each means
+    // the question, and the words the reader may answer with and what each
+    // means; for a crossing, what the maker is told to write first
     function drawAsk(d, slot, run) {
       const question = d.inputs.find((x) => x.id === state.input).text;
       // the role and the key together are the whole instruction, word for word
       const role = d.instruction.slice(0, Math.max(0, d.instruction.indexOf("Answer "))).trim();
+      const by = d.madeBy
+        ? d.madeBy === d.readBy
+          ? `Made and read by ${d.readBy}.`
+          : `Made by ${d.madeBy}, read by ${d.readBy}.`
+        : d.readBy && `Read by ${d.readBy}.`;
       ask.replaceChildren(
         el("p", "w-caption", "The question"),
         el("p", "w-question", rich(question)),
         ...(role ? [el("p", "w-role", role)] : []),
         key(d, slot, run),
-        ...(d.readBy ? [el("p", "w-key", `Read by ${d.readBy}.`)] : []),
+        ...(d.maker
+          ? [
+              el("p", "w-caption w-maker", `What ${d.maker} is told to write first, from the lines alone and never the question`),
+              el("p", "w-role", d.makerInstruction),
+            ]
+          : []),
+        ...(by ? [el("p", "w-key", by)] : []),
       );
     }
 
-    // the left panel: the reader's prompt, with this trial's changes marked
-    function drawDoc(trial, d, reader) {
+    // the left panel: the reader's prompt, with this trial's changes marked;
+    // for a crossing, the maker's, then what it wrote in the trial's first call
+    function drawDoc(trial, d, run) {
+      const reader = run.reader || d.reader || "Gemma";
+      const given = d.maker || reader;
       const shown = trial ?? d.trials[0];
       const prompt = d.prompts[`${state.input}/${shown.id}`];
       const [body, question] = prompt.split("\n\n---\n\n");
@@ -546,11 +596,18 @@
         lines.append(li);
       });
 
-      doc.replaceChildren(
-        el("p", "w-caption", trial ? `What ${reader} read in this trial` : `What ${reader} read, with everything there`),
-        lines,
-        el("p", "w-asked", plain(question, marks)),
-      );
+      const verb = d.maker ? "was given" : "read";
+      const parts = [el("p", "w-caption", trial ? `What ${given} ${verb} in this trial` : `What ${given} ${verb}, with everything there`), lines];
+      if (d.maker) {
+        const calls = run.calls.filter((c) => c.input === state.input && c.trial === shown.id).sort((a, b) => a.n - b.n);
+        const first = calls[0];
+        const made = el("p", "w-made", first?.made == null ? `${d.maker} wrote nothing in this call.` : plain(first.made, marks));
+        if (first?.cut) made.append(" …");
+        const times = calls.length === 1 ? "in its one call" : `in the first of ${calls.length} calls`;
+        parts.push(el("p", "w-caption w-made-caption", `What ${d.maker} wrote from it ${times}, which ${reader} read`), made);
+      }
+      parts.push(el("p", "w-asked", plain(question, marks)));
+      doc.replaceChildren(...parts);
     }
 
     // a long list fills the left panel and scrolls itself, never the page, to
@@ -654,19 +711,17 @@
 
     const group = root.dataset.group
       ? fetchFrame(root.dataset.group).then((index) => {
-          const options = el("optgroup");
-          options.label = index.group;
-          for (const x of index.examples) options.append(new Option(x.title, x.stem));
-          frameSelect.append(options);
+          for (const x of index.examples) frameSelect.append(new Option(x.title, x.stem));
         })
       : Promise.resolve();
     group
       .catch(() => {}) // the page's own examples still play
       .then(() => {
         const wanted = asked.get("example");
-        const known = [...frameSelect.options].some((o) => o.value === wanted);
-        frameSelect.value = known ? wanted : stems[0];
-        load(frameSelect.value, known ? Number(asked.get("run") || 1) - 1 : 0);
+        const known = [...stems, ...[...frameSelect.options].map((o) => o.value)];
+        const first = stems[0] ?? frameSelect.options[0]?.value;
+        if (known.includes(wanted)) load(wanted, Number(asked.get("run") || 1) - 1, true);
+        else if (first) load(first, 0, true);
       });
   }
 

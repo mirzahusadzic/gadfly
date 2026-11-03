@@ -100,6 +100,17 @@ cut, Gemma will not review a diff on its own.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 17-clock-asked -->
+
+---
+
 ### What to take from it
 
 - An input inversion asks whether the answer follows what is asked, where

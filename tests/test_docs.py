@@ -236,6 +236,48 @@ def test_the_watch_view_refuses_what_it_cannot_play(monkeypatch):
         watch_data.encoded(stem)
 
 
+TEACHING = sorted(
+    p for p in (ROOT / "docs/examples").glob("*.md") if "### What to take from it" in p.read_text()
+)
+WATCH = re.compile(r"^<!-- watch ([\w -]+) -->$", re.M)
+
+
+@pytest.mark.parametrize("page", TEACHING, ids=lambda p: p.stem)
+def test_each_step_plays_its_own_runs_before_what_to_take_from_it(page):
+    # the view plays every frame a transcript on the page reads back, and only
+    # frames the page names, so no step shows another step's examples
+    text = page.read_text(encoding="utf-8")
+    sections = [s.split("\n", 1)[0] for s in re.split(r"^### ", text, flags=re.M)[1:]]
+    assert sections[sections.index("What to take from it") - 1] == "Watch a run"
+    [played] = [m.split() for m in WATCH.findall(text)]
+    read = re.findall(r"examples/read\.py(?: \\\n)?\s+examples/([\w-]+)\.json", text)
+    assert set(read) <= set(played)
+    assert all(f"{stem}.json" in text for stem in played)
+
+
+def test_the_watch_data_is_what_the_pages_play():
+    pages = [*TEACHING, ROOT / "docs/first-frame.md"]
+    # a frame two steps read (10c2) is played on both, from one file
+    played = {s for p in pages for m in WATCH.findall(p.read_text()) for s in m.split()}
+    assert played == set(watch_data.FRAMES)
+    assert len(watch_data.FRAMES) == len(played)
+    kept = {p.stem for p in watch_data.OUT.glob("*.json")}
+    assert kept == set(watch_data.FILES)
+
+
+def test_the_watch_view_shows_what_a_crossings_maker_wrote():
+    # the reader read the artefact, not the trial's body, so the view keeps
+    # each call's artefact, and says when its record kept only the start
+    data = watch_data.watched("20-incident-cause")
+    calls = [c for r in data["runs"] for c in r["calls"]]
+    assert all(isinstance(c["made"], str) and c["made"] and "cut" not in c for c in calls)
+    assert data["maker"] == "Muse" and data["madeBy"] == data["readBy"]
+    assert data["makerInstruction"].startswith("You write the cause section")
+    cut = json.dumps({"made": {"sha256": "0" * 64, "text": "The deploy"}, "read": "{}"})
+    assert watch_data._made(cut) == {"raw": "{}", "made": "The deploy", "cut": True}
+    assert watch_data._made("the call ended incomplete")["made"] is None
+
+
 def test_a_frame_in_words_says_how_often_each_trial_is_asked():
     # the refund fixture asks each trial once, and the words say so
     page = (ROOT / "docs/write-a-frame.md").read_text(encoding="utf-8")

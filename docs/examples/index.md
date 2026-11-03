@@ -61,8 +61,13 @@ Each step shows four things, each printed from the files in `examples/` by
    `--input`), its levels, its evidence and its open checks, in the words
    `gadfly report` uses.
 
-Then what to take from it, and an experiment to try next. The scale is small
-on purpose: one model a frame, three to five runs a frame, each trial
+A crossing's step also prints what its maker wrote, from each trial's
+first call (`--made N`).
+
+Then **Watch a run** plays the step's kept runs one trial at a time, and
+every prompt it shows is checked against the digest its records carry. What
+to take from it, and an experiment to try next, close the step. The scale is
+small on purpose: one model a frame, three to five runs a frame, each trial
 asked five times with four to agree, so each step says how narrow its result
 is.
 

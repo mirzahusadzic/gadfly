@@ -156,6 +156,17 @@ unresolved with only that check open.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 14-orders-latency 15-invoice-export -->
+
+---
+
 ### What to take from it
 
 - To ask whether the route matters, make the routes the inputs and keep the

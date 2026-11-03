@@ -12,7 +12,9 @@ carry, so the page shows what the reader was asked, not a reconstruction.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -26,17 +28,32 @@ from midwife.verdict import overall
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs/public/assets/watch"
+# Each teaching page plays the frames it reads back, in its "Watch a run"
+# section; a test holds this list to those sections.
 FRAMES = [
     "upgrade",
+    "07-sql-rule",
+    "08-clock-rule",
+    "09-sync-sms",
+    "10a-incident-fast",
+    "10b-incident-slow",
+    "10c2-incident-both",
+    "10d-incident-metrics",
+    "10c-incident-both",
+    "11-eu-clause",
+    "12-payroll-access",
+    "13-drop-table-section",
+    "13b-drop-table-reads",
+    "14-orders-latency",
+    "15-invoice-export",
     "16-restore-inversion",
     "17-clock-asked",
     "18c-restore-cited",
-    "07-sql-rule",
-    "09-sync-sms",
-    "10c2-incident-both",
-    "11-eu-clause",
-    "12-payroll-access",
-    "19-router-waist",
+    "18-notify-chain",
+    "18b-access-logs",
+    "18b2-access-logs-both",
+    "20-incident-cause",
+    "20b-incident-status",
 ]
 # The reader each example names: Gemma through eGemma, unless its battery asks
 # for another model by name.
@@ -56,6 +73,8 @@ def watched(stem: str) -> dict:
     trials = plan(frame)
     prompts = {(x["id"], t.id): prompt(frame, t, x) for x in frame.inputs for t in trials}
     digests = {key: digest(text) for key, text in prompts.items()}  # each prompt's, once
+    # a crossing's reader reads what its maker wrote from the trial's body
+    crossing = frame.battery["kind"] == "crossing"
     runs, served = [], set()
     for kept in runs_of(path):
         records = load_records(str(kept))
@@ -72,7 +91,7 @@ def watched(stem: str) -> dict:
                         "trial": r["trial"],
                         "n": r["run"],
                         "answer": r["observation"],
-                        "raw": r["raw"],
+                        **(_made(r["raw"]) if crossing else {"raw": r["raw"]}),
                     }
                     for r in records
                 ],
@@ -80,21 +99,45 @@ def watched(stem: str) -> dict:
                 "overall": overall(findings).category,
             }
         )
-    reader = NAMED.get(frame.battery.get("model", ""), "Gemma")
-    if len(served) > 1 or not served <= MODELS.keys():
+    line = frame.battery["reader"] if crossing else frame.battery
+    reader = NAMED.get(line.get("model", ""), "Gemma")
+    models = {model for sides in served for model in sides}
+    if len(served) > 1 or not models <= MODELS.keys():
         raise SystemExit(f"{stem}: its runs name {sorted(served)}, not one model the view knows")
     data = {**watched_frame(frame, trials, prompts, f"examples/{stem}.json"), "reader": reader}
-    for model in served:  # none without runs
-        data["readBy"] = f"{MODELS[model]} ({model})"
+    for sides in served:  # none without runs
+        data["readBy"] = f"{MODELS[sides[-1]]} ({sides[-1]})"
+        if crossing:
+            maker = frame.battery["maker"]
+            data["maker"] = NAMED.get(maker.get("model", ""), maker["kind"])
+            data["madeBy"] = f"{MODELS[sides[0]]} ({sides[0]})"
+            data["makerInstruction"] = maker["instruction"]
     return {**data, "runs": runs}
 
 
-def _model(stem: str, served: object) -> str:
+def _model(stem: str, served: object) -> tuple[str, ...]:
     # the model a record says served it: "model", "model@revision", or the
-    # unified battery's "model via endpoint"
+    # unified battery's "model via endpoint"; a crossing's "made by M, read
+    # by R" names the maker's, then the reader's
     if not isinstance(served, str) or not served:
         raise SystemExit(f"{stem}: a record does not say what served it")
-    return served.partition(" via ")[0].partition("@")[0]
+    crossed = re.fullmatch(r"made by (.*), read by (.*)", served)
+    sides = crossed.groups() if crossed else (served,)
+    return tuple(side.partition(" via ")[0].partition("@")[0] for side in sides)
+
+
+def _made(raw: str) -> dict:
+    # what a crossing's maker wrote, from the record's raw answer, and the
+    # reader's answer apart; "made" is null when the maker made nothing, and
+    # "cut" says the record kept only the start of the artefact
+    try:
+        kept = json.loads(raw)
+        made = kept["made"]
+        text, sha = made["text"], made["sha256"]
+    except (ValueError, TypeError, KeyError):
+        return {"raw": raw, "made": None}
+    whole = hashlib.sha256(text.encode("utf-8")).hexdigest() == sha
+    return {"raw": kept.get("read", ""), "made": text, **({} if whole else {"cut": True})}
 
 
 def watched_frame(frame, trials, prompts, file: str) -> dict:

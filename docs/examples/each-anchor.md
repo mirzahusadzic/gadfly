@@ -186,6 +186,19 @@ shams, and cutting Priya's route moves it more than cutting Alex's.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 18c-restore-cited 18-notify-chain 18b-access-logs 18b2-access-logs-both -->
+
+---
+
+---
+
 ### What to take from it
 
 - Each anchor alone says how several lines carry an answer, and only after

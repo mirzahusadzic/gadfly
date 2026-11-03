@@ -23,6 +23,32 @@ export function frameLinks(md) {
   });
 }
 
+/** A page's own runs, played: `<!-- watch 07-sql-rule 08-clock-rule -->`
+ * is a comment on GitHub, and on the site the watch view
+ * (public/javascripts/watch.js) with those examples alone, each named as its
+ * frame is; `<!-- watch group payments-demo -->` plays a group's questions,
+ * picked from its index. */
+export function watchMarkers(md) {
+  const index = JSON.parse(readFileSync(new URL('frames.json', import.meta.url), 'utf8'));
+  md.core.ruler.push('watch-markers', (state) => {
+    for (const token of state.tokens) {
+      if (token.type !== 'html_block') continue;
+      const group = token.content.trim().match(/^<!-- watch group ([\w-]+) -->$/);
+      if (group) {
+        token.content = `<div class="gadfly-watch" data-group="${group[1]}"></div>\n`;
+        continue;
+      }
+      const marker = token.content.trim().match(/^<!-- watch ([\w -]+) -->$/);
+      if (!marker) continue;
+      const stems = marker[1].trim().split(/\s+/);
+      const unknown = stems.filter((stem) => !index[stem]);
+      if (unknown.length) throw new Error(`${state.env.relativePath} plays no frame named ${unknown.join(', ')}`);
+      const names = stems.map((stem) => index[stem].name);
+      token.content = `<div class="gadfly-watch" data-frames="${stems.join(',')}" data-names="${names.join(',')}"></div>\n`;
+    }
+  });
+}
+
 /** GitHub's anchor for a heading: lower case, punctuation dropped, spaces as
  * hyphens, so a link to a heading works in both places. */
 export const githubSlug = (heading) =>

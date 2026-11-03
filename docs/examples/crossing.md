@@ -231,6 +231,18 @@ three runs are carried in every draw.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Muse
+was given, with what the trial hid or changed marked, and what it wrote
+from it; on the right the answers read from what it wrote, and the checks
+filling in until the verdict. On GitHub the view does not run, and the
+transcripts above read the same runs.
+
+<!-- watch 20-incident-cause 20b-incident-status -->
+
+---
+
 ### What to take from it
 
 - **The maker is inside the reading:** the same evidence and the same

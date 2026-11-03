@@ -167,6 +167,17 @@ every rule still in view is satisfied.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 07-sql-rule 08-clock-rule -->
+
+---
+
 ### What to take from it
 
 - A rule that carries nothing is not a useless rule. A reviewer like this one

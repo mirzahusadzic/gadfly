@@ -139,6 +139,17 @@ luck of the draw; three runs show which trial is fragile.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 09-sync-sms -->
+
+---
+
 ### What to take from it
 
 - A level belongs to a trial at a standing, not to the reader. Choose quorum and

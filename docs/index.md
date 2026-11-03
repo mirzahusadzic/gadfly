@@ -21,8 +21,9 @@ Start where your question is; every path ends in the same few pages.
 - **I have a rule to test:** a changelog line, a contributing rule, a
   requirement, a contract clause or an access grant. Start with
   [Your first frame](first-frame.md).
-- **I want to see it work:** [Watch a run](examples/watch.md) plays a kept
-  run, one trial at a time.
+- **I want to see it work:** [Watch a run](first-frame.md#8-watch-a-run)
+  plays the first step's kept runs one trial at a time, and every step of
+  the examples has its own.
 - **I want the method first:** [When meaning is load-bearing](load-bearing.md)
   is the essay Gadfly applies, and [Framework](framework.md) translates its
   $L$ and $\Gamma$ into frame keys, interventions and records.

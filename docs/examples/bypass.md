@@ -124,6 +124,17 @@ verdict at unresolved. The bypass prediction was right.
 
 ---
 
+### Watch a run
+
+The kept runs above, played one trial at a time: on the left what Gemma
+read, with what the trial hid or changed marked; on the right its answers
+and the checks filling in until the verdict. On GitHub the view does not
+run, and the transcripts above read the same runs.
+
+<!-- watch 11-eu-clause -->
+
+---
+
 ### What to take from it
 
 - Ablation asks whether the anchor matters. Bypass asks whether it matters for

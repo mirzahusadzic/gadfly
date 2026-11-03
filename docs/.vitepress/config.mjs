@@ -6,7 +6,7 @@ import { copyFileSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createCssVariablesTheme } from 'shiki';
 import { defineConfig } from 'vitepress';
-import { frameLinks, githubMath, githubSlug, hangingLines, mermaidFences } from './markdown.mjs';
+import { frameLinks, githubMath, githubSlug, hangingLines, mermaidFences, watchMarkers } from './markdown.mjs';
 import { writeNotices } from './notices.mjs';
 import { HEAD } from './theme/theme.js';
 
@@ -38,7 +38,6 @@ const sidebar = [
     text: 'Examples',
     items: [
       { text: 'The ladder', link: '/examples/' },
-      { text: 'Watch a run', link: '/examples/watch' },
       { text: 'Cooled', link: '/examples/cooled' },
       { text: 'Quorum', link: '/examples/quorum' },
       { text: 'Misaligned', link: '/examples/misaligned' },
@@ -53,6 +52,7 @@ const sidebar = [
       { text: 'Each anchor alone', link: '/examples/each-anchor' },
       { text: 'Crossing', link: '/examples/crossing' },
       { text: 'Run your own', link: '/examples/your-own' },
+      { text: 'Payments demo', link: '/examples/payments-demo' },
     ],
   },
   {
@@ -135,9 +135,10 @@ export default defineConfig({
       md.use(githubMath);
       md.use(mermaidFences);
       md.use(frameLinks);
+      md.use(watchMarkers);
     },
   },
-  // A page without headings (Watch a run) has no outline, so its column
+  // A page without headings has no outline, so its column
   // takes the outline's room.
   // Each published frame's file, for its source page's download link, and
   // the licences of what the site ships (notices.mjs).

@@ -18,7 +18,7 @@ You also leave out a sock, which has nothing to do with rain, to make sure leavi
 
 Gadfly plays that game with computers, and it plays it very carefully. A computer is even better at it than your friends: it forgets everything between questions, so Gadfly can ask the same one every time.
 
-[Watch a run](examples/watch.md) shows the game played for real, one step at a time.
+[Your first frame](first-frame.md#8-watch-a-run) shows the game played for real, one step at a time.
 
 ---
 
