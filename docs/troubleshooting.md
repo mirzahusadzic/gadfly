@@ -96,6 +96,8 @@ reach what it needs, and no call was made.
 | --- | --- |
 | `BatteryError: no eGemma key` | `name a file that holds it in the environment variable EGEMMA_API_KEY_FILE, or set EGEMMA_API_KEY`. |
 | `BatteryError: file '/Users/you/.egemma/key' is empty` | `the environment variable EGEMMA_API_KEY_FILE names it; write eGemma's key into it`. |
+| `BatteryError: the router takes no data policy` | `update the router, so that each call reaches only endpoints that keep no data`. The `unified` battery sends each call under the router's deny data policy, and the router's `GET /health` does not list it. |
+| `BatteryError: the router at 'http://127.0.0.1:18766/health' could not be asked what it takes` | `start the router, or install it`. The `unified` battery asks the router, before any call, whether it takes the deny data policy. |
 | `BatteryError: no router token` | `set the environment variable CODEX_ROUTER_TOKEN, or install the router`. The `unified` battery found no token in the variable or in the router's own settings file. |
 | `BatteryError: this frame asks for battery 'egemma', not 'unified'` | A frame names its battery in `battery.kind`, and another battery is another frame. Pass the one it names. |
 | `BatteryError: 'midwife.frame:parse' is not a battery` | `a battery has a name, check() and observe()`. The name after the colon is found, but it is not a battery class or object. |
@@ -146,6 +148,7 @@ answer. The run goes on, and `run` exits with 1 only when every call did.
 | `"the router could not be reached (...)"` or `"the evaluator could not be reached (...)"` | The same for the router, at `http://127.0.0.1:18766`, or for your evaluator, at the frame's `battery.url`. |
 | `"eGemma answered 401"` or `"the router answered 401"` | The key or the token is wrong. |
 | `"eGemma answered 503 after 3 retries"` | eGemma stayed busy or has no model loaded; the battery waits and retries before it gives up. Check eGemma's own log. |
+| `"the router refused model 'ultra-spark/deepseek-v4.1-flash-1017', whose provider trains on its inputs"` | The router's own list says this model's provider trains on its inputs, and the call went under the deny data policy. Choose another model, or name this one under `trainsOnInputs` to send it there. |
 | `"no endpoint that keeps no data serves this model (the router's provider setting); naming it under trainsOnInputs allows one that may train"` | No endpoint the router may use for that model keeps no data, and the frame does not consent to one that trains on its inputs. Choose another model, or pin endpoints with `battery.endpoints`. |
 | `"a cap of 64 output tokens leaves no room for a thought beside the answer's 64"` | With `"reasoning": true`, the `egemma` battery keeps 64 of each call's output tokens for the answer. Raise `--output-tokens`, to 4160 for a whole thought; no request was made. |
 | `"eGemma answered 422"` | eGemma refused the request as written. With `"reasoning": true`, an eGemma older than its reasoning change does not know the field: update eGemma. |

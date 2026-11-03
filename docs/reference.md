@@ -898,9 +898,11 @@ What this battery promises, whatever the frame says:
 - it sends no tools: the router's web search runs on another provider, and a
   body would leave the model's own provider with it;
 - it refuses a model whose provider trains on its inputs unless the frame
-  names that model under `battery.trainsOnInputs`, and asks every other
-  request to reach only endpoints that keep no data (`data_collection: deny`;
-  which endpoints serve a model is the router's provider setting);
+  names that model under `battery.trainsOnInputs`, and sends every other call
+  under the router's deny data policy (`X-Codex-Router-Data-Policy: deny`),
+  so the router refuses a model whose provider trains and reaches only
+  endpoints that keep no data; before the first call it checks that the
+  router lists the policy at `GET /health`, and refuses to run if not;
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
 - each call has a deadline (`timeout` seconds for the whole answer), the
@@ -920,9 +922,28 @@ exactly, in the list under trainsOnInputs (a string is no list).
 consented(battery)
 ```
 
+#### policy
+
+The router's headers each call of this frame sends: the deny data
+policy, unless the frame names its model under trainsOnInputs.
+
+```python
+policy(frame)
+```
+
+#### capabilities
+
+What the router lists under `capabilities` at its health address,
+which takes no token; empty when it lists nothing.
+
+```python
+capabilities(url, timeout)
+```
+
 #### payload
 
-The request body. No `tools` key, ever.
+The request body. No `tools` key, ever; the data policy goes in a
+header (`policy`).
 
 ```python
 payload(frame, text, max_output_tokens)

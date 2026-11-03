@@ -24,9 +24,11 @@ What this battery promises, whatever the frame says:
 - it sends no tools: the router's web search runs on another provider, and a
   body would leave the model's own provider with it;
 - it refuses a model whose provider trains on its inputs unless the frame
-  names that model under `battery.trainsOnInputs`, and asks every other
-  request to reach only endpoints that keep no data (`data_collection: deny`;
-  which endpoints serve a model is the router's provider setting);
+  names that model under `battery.trainsOnInputs`, and sends every other call
+  under the router's deny data policy (`X-Codex-Router-Data-Policy: deny`),
+  so the router refuses a model whose provider trains and reaches only
+  endpoints that keep no data; before the first call it checks that the
+  router lists the policy at `GET /health`, and refuses to run if not;
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
 - each call has a deadline (`timeout` seconds for the whole answer), the
@@ -48,6 +50,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import urlparse
 
 from ..errors import BatteryError, quoted
 from ..frame import Frame
@@ -58,6 +61,7 @@ from .critic import (
     loopback,
     opened,
     output_schema,
+    read_error,
     read_label,
     wait_at_most,
 )
@@ -70,6 +74,10 @@ TRAINS_ON_INPUTS = ("ultra-spark/", "openrouter/meta/")
 # data: which endpoints serve a model is the router's provider setting.
 NO_ENDPOINT_WITHOUT_DATA = "openrouter-data-policy"
 EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
+# The router's data policy for a call whose frame gives no consent to train:
+# the router refuses a model whose provider trains (HTTP 409, data_policy) and
+# reaches only endpoints that keep no data.
+DATA_POLICY = "deny"
 # Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
 # which the router reaches only with the caller's Codex sign-in.
 ROUTED_PREFIXES = ("anthropic/", "openrouter/", "deepseek/", "ultra-spark/")
@@ -92,6 +100,16 @@ def _token() -> str:
     return token
 
 
+def _code(body: bytes) -> str | None:
+    # the code of the router's refusal, {"error": {"code": ...}}, if it holds one
+    try:
+        reply = json.loads(body)
+    except ValueError:
+        return None
+    error = reply.get("error") if isinstance(reply, dict) else None
+    return error.get("code") if isinstance(error, dict) else None
+
+
 def consented(battery: dict) -> bool:
     """Whether the frame lets this model go where inputs train: its slug,
     exactly, in the list under trainsOnInputs (a string is no list)."""
@@ -99,8 +117,30 @@ def consented(battery: dict) -> bool:
     return isinstance(named, list) and battery["model"] in named
 
 
+def policy(frame: Frame) -> dict[str, str]:
+    """The router's headers each call of this frame sends: the deny data
+    policy, unless the frame names its model under trainsOnInputs."""
+    return {} if consented(frame.battery) else {"x-codex-router-data-policy": DATA_POLICY}
+
+
+def capabilities(url: str, timeout: float) -> dict:
+    """What the router lists under `capabilities` at its health address,
+    which takes no token; empty when it lists nothing."""
+    try:
+        with opened(urllib.request.Request(url, method="GET"), timeout) as response:
+            reply = json.loads(response.read(MAX_RESPONSE_BYTES))
+    except (urllib.error.URLError, OSError, ValueError):
+        raise BatteryError(
+            f"the router at {url!r} could not be asked what it takes",
+            "start the router, or install it",
+        ) from None
+    found = reply.get("capabilities") if isinstance(reply, dict) else None
+    return found if isinstance(found, dict) else {}
+
+
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
-    """The request body. No `tools` key, ever."""
+    """The request body. No `tools` key, ever; the data policy goes in a
+    header (`policy`)."""
     battery = frame.battery
     if not isinstance(battery.get("model"), str) or not battery["model"].strip():
         raise BatteryError("battery.model is a slug the router serves (GET /v1/models)")
@@ -123,16 +163,11 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     }
     if battery.get("reasoning"):
         body["reasoning"] = {"effort": battery["reasoning"]}
-    provider = {}
     if battery.get("endpoints"):
         # One endpoint reads every run, or the call fails: the router's own
-        # endpoint preference applies only to a request that names none.
-        provider.update(order=list(battery["endpoints"]), allow_fallbacks=False)
-    if not consented(battery):
-        # The router then reaches only endpoints that keep no data to train on.
-        provider["data_collection"] = "deny"
-    if provider:
-        body["provider"] = provider
+        # endpoint preference applies only to a request that names none, and
+        # under the deny policy the router keeps these endpoints to no data.
+        body["provider"] = {"order": list(battery["endpoints"]), "allow_fallbacks": False}
     return body
 
 
@@ -232,6 +267,7 @@ class Unified:
         clock: Callable[[], float] = time.monotonic,
     ):
         self.url, self.timeout, self.clock = loopback(url, "the router"), timeout, clock
+        self.health = urlparse(self.url)._replace(path="/health", query="", fragment="").geturl()
 
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this battery must not serve: another
@@ -276,6 +312,13 @@ class Unified:
                 "name it under battery.trainsOnInputs to send the body there",
             )
         _token()  # no token, no run: refuse before the first call, not at each
+        if policy(frame):  # a router without the policy could reach an endpoint that keeps data
+            taken = capabilities(self.health, self.timeout).get("dataPolicies")
+            if not (isinstance(taken, list) and DATA_POLICY in taken):
+                raise BatteryError(
+                    "the router takes no data policy",
+                    "update the router, so that each call reaches only endpoints that keep no data",
+                )
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
         """One call through the router: the prompt under the frame's
@@ -286,7 +329,11 @@ class Unified:
             self.url,
             data=body,
             method="POST",
-            headers={"content-type": "application/json", "x-codex-router-token": _token()},
+            headers={
+                "content-type": "application/json",
+                "x-codex-router-token": _token(),
+                **policy(frame),
+            },
         )
         deadline = self.clock() + self.timeout
         try:
@@ -305,6 +352,13 @@ class Unified:
                 text, usage, opening, model = parse_stream(lines, deadline, self.clock)
                 endpoint = response.headers.get("x-provider-name", "")[:200]
         except urllib.error.HTTPError as error:
+            if (
+                error.code == 409
+                and _code(read_error(error, deadline, self.clock)) == "data_policy"
+            ):
+                model = frame.battery["model"]
+                opening = f"the router refused model {model!r}, whose provider trains on its inputs"
+                return Observation(label=None, opening=opening)
             return Observation(label=None, opening=f"the router answered {error.code}")
         except (TimeoutError, urllib.error.URLError, OSError) as error:
             reason = getattr(error, "reason", error)

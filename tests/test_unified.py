@@ -12,12 +12,14 @@ import pytest
 
 from midwife.batteries import unified
 from midwife.batteries.critic import pointed, read_label
-from midwife.batteries.unified import Unified, parse_stream, payload
+from midwife.batteries.unified import Unified, parse_stream, payload, policy
 from midwife.errors import BatteryError
 from midwife.pipeline import situate
 from tests.fakes import Fake
 
 TOKEN = "ab" * 32
+LISTS = unified.capabilities  # the router's health, asked as the battery asks it
+DENY = {"x-codex-router-data-policy": "deny"}
 
 
 def sse(*events):
@@ -40,12 +42,18 @@ def token(monkeypatch, tmp_path):
     monkeypatch.setattr(unified, "ENV_FILE", tmp_path / "absent.env")
 
 
+@pytest.fixture(autouse=True)
+def listed(monkeypatch):
+    # a router that takes the deny data policy, unless a test asks its own
+    monkeypatch.setattr(unified, "capabilities", lambda url, timeout: {"dataPolicies": ["deny"]})
+
+
 @pytest.fixture
 def router():
     servers = []
 
-    def start(reply):
-        servers.append(Fake(reply))
+    def start(reply, routes=None):
+        servers.append(Fake(reply, routes))
         return servers[-1]
 
     yield start
@@ -184,9 +192,9 @@ def test_deepseek_is_sent_with_deny_unless_the_frame_consents(raw, token):
     ):
         raw["battery"].update(model=model, trainsOnInputs=[])
         Unified().check(situate(raw))
-        assert payload(situate(raw), "t", 8)["provider"] == {"data_collection": "deny"}
+        assert policy(situate(raw)) == DENY and "provider" not in payload(situate(raw), "t", 8)
         raw["battery"]["trainsOnInputs"] = [model]
-        assert "provider" not in payload(situate(raw), "t", 8)
+        assert policy(situate(raw)) == {}
 
 
 def test_a_call_records_the_model_and_endpoint_that_served(raw, token, router):
@@ -206,8 +214,8 @@ def test_named_endpoints_are_pinned_without_fallbacks(raw, token):
     assert payload(situate(raw), "t", 8)["provider"] == {
         "order": ["deepinfra/fp8"],
         "allow_fallbacks": False,
-        "data_collection": "deny",
-    }
+    }  # the router keeps them to no data under the deny policy
+    assert policy(situate(raw)) == DENY
     raw["battery"]["endpoints"] = "deepinfra/fp8"
     with pytest.raises(ValueError, match="endpoints lists"):
         Unified().check(situate(raw))
@@ -219,7 +227,7 @@ def test_consent_to_training_is_a_list_of_slugs_never_a_substring(raw, token):
     raw["battery"].update(model="ultra-spark/deepseek", trainsOnInputs=named)
     with pytest.raises(ValueError, match="trainsOnInputs lists"):
         Unified().check(situate(raw))
-    assert payload(situate(raw), "t", 8)["provider"]["data_collection"] == "deny"
+    assert policy(situate(raw)) == DENY
 
 
 def test_no_endpoint_without_data_is_an_opening_that_says_why(raw, token, router):
@@ -285,9 +293,67 @@ def test_every_request_asks_for_endpoints_that_do_not_collect_data(raw):
         "openrouter/vendor/model",
     ):
         raw["battery"]["model"] = model
-        assert payload(situate(raw), "t", 8)["provider"] == {"data_collection": "deny"}
+        assert policy(situate(raw)) == DENY and "provider" not in payload(situate(raw), "t", 8)
     raw["battery"].update(model="ultra-spark/x", trainsOnInputs=["ultra-spark/x"])
-    assert "provider" not in payload(situate(raw), "t", 8)
+    assert policy(situate(raw)) == {}
+
+
+def test_a_call_goes_under_the_deny_data_policy_unless_the_frame_consents(raw, token, router):
+    fake = router((200, {}, answer("decline")))
+    assert Unified(fake.url).observe(situate(raw), "p", 16).label == "decline"
+    raw["battery"].update(model="ultra-spark/x", trainsOnInputs=["ultra-spark/x"])
+    assert Unified(fake.url).observe(situate(raw), "p", 16).label == "decline"
+    (denied, body), (consented, _) = fake.requests
+    assert denied["x-codex-router-data-policy"] == "deny" and "provider" not in body
+    assert "x-codex-router-data-policy" not in consented
+
+
+@pytest.mark.parametrize(
+    "health, refused",
+    [
+        ({"capabilities": {"dataPolicies": ["deny"]}}, None),
+        ({"capabilities": {"dataPolicies": []}}, "the router takes no data policy"),
+        ({"capabilities": {}}, "the router takes no data policy"),
+        ({"status": "ok"}, "the router takes no data policy"),
+    ],
+)
+def test_a_router_that_takes_no_data_policy_is_refused_before_any_call(
+    raw, token, router, monkeypatch, health, refused
+):
+    monkeypatch.setattr(unified, "capabilities", LISTS)
+    fake = router((200, {}, answer("decline")), {"/health": (200, {}, json.dumps(health).encode())})
+    if refused is None:
+        Unified(fake.url).check(situate(raw))
+    else:
+        with pytest.raises(BatteryError, match=refused):
+            Unified(fake.url).check(situate(raw))
+    assert fake.requests == []  # no call before the check passes
+
+
+def test_a_router_that_cannot_be_asked_is_refused_unless_the_frame_consents(
+    raw, token, monkeypatch
+):
+    monkeypatch.setattr(unified, "capabilities", LISTS)
+    with socket.socket() as held:  # a port nothing answers on
+        held.bind(("127.0.0.1", 0))
+        url = f"http://127.0.0.1:{held.getsockname()[1]}/v1/responses"
+    with pytest.raises(BatteryError, match="could not be asked what it takes"):
+        Unified(url).check(situate(raw))
+    raw["battery"].update(model="ultra-spark/x", trainsOnInputs=["ultra-spark/x"])
+    Unified(url).check(situate(raw))  # no policy sent, so none asked of the router
+
+
+def test_a_model_the_router_refuses_under_the_policy_is_an_opening(raw, token, router):
+    refused = {"error": {"code": "data_policy", "message": "trains on inputs"}}
+    fake = router((409, {}, json.dumps(refused).encode()))
+    observation = Unified(fake.url).observe(situate(raw), "p", 16)
+    model = raw["battery"]["model"]
+    assert (
+        observation.opening
+        == f"the router refused model {model!r}, whose provider trains on its inputs"
+    )
+    fake = router((409, {}, b"{}"))
+    assert Unified(fake.url).observe(situate(raw), "p", 16).opening == "the router answered 409"
 
 
 class Trickle:

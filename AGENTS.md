@@ -34,7 +34,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 - **Findings.** Unresolved names the open check; evidence and obligations stay apart, and an obligation is not a passed check.
 - **Trial blindness.** A battery gets the frame and the prompt, never the trial's id.
 - **Runs.** `run` never starts a call the budget cannot cover and hands each record on as it exists. The command line never writes over a records file, and a refusal spends nothing and makes no file.
-- **Batteries.** Loopback only: no proxy, no redirects, no tools. Credentials never reach a request body, a record or a log. The unified battery sends `data_collection: deny` unless the frame names the exact slug under `trainsOnInputs`, and refuses OpenAI slugs. A failed or timed-out call is an opening, never a label and never dropped.
+- **Batteries.** Loopback only: no proxy, no redirects, no tools. Credentials never reach a request body, a record or a log. The unified battery sends each call under the router's deny data policy, and refuses a router that does not list it, unless the frame names the exact slug under `trainsOnInputs`, and refuses OpenAI slugs. A failed or timed-out call is an opening, never a label and never dropped.
 - **Kept runs.** `examples/*.json`, `examples/runs/` and the predictions never change after their runs: a new idea is a new frame with fresh runs.
 
 #### Command line, errors and warnings
