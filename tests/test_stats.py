@@ -219,3 +219,22 @@ def test_a_pooled_call_stays_on_its_own_input_when_two_inputs_ask_alike(raw):
     renamed = situate(other_raw)
     made = run(renamed, RuleReader(), Budget(calls=calls_needed(renamed))).records
     assert stats.pooled(frame, [(renamed, [r.as_dict() for r in made])]) == []
+
+
+def test_a_label_named_opening_is_counted_apart_from_the_openings(raw, tmp_path, capsys):
+    raw["observe"]["labels"] = ["opening", "decline", "unclear"]
+    raw["allowed"]["ablation"] = ["opening", "unclear"]
+
+    class Answering(RuleReader):
+        def observe(self, frame, prompt, max_output_tokens):
+            return Observation(label="opening")
+
+    frame, (labelled,) = kept(raw, Answering(), runs=1)
+    _, (unreachable,) = kept(raw, Unreachable(), runs=1)
+    row = next(
+        r for r in stats.compare(frame, [labelled, unreachable])["x1"] if r.trial == "sham-1"
+    )
+    assert (row.answers, row.openings, row.calls) == ({"opening": 3}, 3, 6)
+    path, records = write(tmp_path, frame, [labelled, unreachable])
+    assert main(["stats", path, *records, "--resamples", "0"]) == 0
+    assert "  sham-1          6 calls  opening 3, 3 openings  top 50%" in capsys.readouterr().out

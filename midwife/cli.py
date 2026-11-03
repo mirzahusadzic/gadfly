@@ -344,7 +344,10 @@ def command_stats(args) -> int:
     for x, rows in compared.items():
         print(f"input {plain(x)}")
         for row in rows:
-            answers = ", ".join(f"{plain(label)} {n}" for label, n in row.answers.items())
+            given = [f"{plain(label)} {n}" for label, n in row.answers.items()]
+            if row.openings:  # apart from the labels: a label may be named "opening"
+                given.append(f"{row.openings} opening{'s' * (row.openings != 1)}")
+            answers = ", ".join(given)
             line = (
                 f"  {row.trial:13} {row.calls:3} calls  {answers}  top {_percent(row.share)} "
                 f"({_percent(row.low)}-{_percent(row.high)})"

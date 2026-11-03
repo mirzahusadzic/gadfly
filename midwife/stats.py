@@ -180,7 +180,8 @@ class TrialStats:
 
     trial: str
     calls: int
-    answers: dict[str, int]  # each label, and "opening", by count
+    answers: dict[str, int]  # each label given, by count
+    openings: int  # calls that gave no label, apart: a label may itself be named "opening"
     top: str | None  # the most common label
     share: float  # of calls that gave it
     low: float  # its 95% interval
@@ -221,7 +222,6 @@ def compare(
             answers = calls.get((x["id"], trial))
             if not answers:
                 continue
-            counted = Counter(a if a is not None else "opening" for a in answers)
             labels = Counter(a for a in answers if a is not None)
             top, top_n = labels.most_common(1)[0] if labels else (None, 0)
             low, high = wilson(top_n, len(answers))
@@ -234,17 +234,18 @@ def compare(
                     differ = wilson(len(answers) - same, len(answers))[1]
             rows.append(
                 TrialStats(
-                    trial,
-                    len(answers),
-                    dict(counted.most_common()),
-                    top,
-                    top_n / len(answers),
-                    low,
-                    high,
-                    base,
-                    moved,
-                    None,
-                    differ,
+                    trial=trial,
+                    calls=len(answers),
+                    answers=dict(labels.most_common()),
+                    openings=len(answers) - labels.total(),
+                    top=top,
+                    share=top_n / len(answers),
+                    low=low,
+                    high=high,
+                    baseline=base,
+                    moved=moved,
+                    adjusted=None,
+                    differ=differ,
                 )
             )
         adjusted = holm(tests)
