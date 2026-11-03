@@ -873,11 +873,10 @@ label_at(answer, frame)
 The unified battery: an LLM critic through the unified model router.
 
 The [unified model router](https://github.com/mirzahusadzic/unified-model-router)
-serves the Responses API on loopback and maps a model slug to its provider:
-`anthropic/...` runs on Anthropic's API; `openrouter/...`, `deepseek/...`
-and `ultra-spark/...` run on OpenRouter (DeepSeek's models through it), each
-with the router's own key. `ultra-spark/` is training-tier: it is sent only
-when the frame names its exact slug under `trainsOnInputs`.
+serves the Responses API on loopback and maps a model slug to the provider
+that serves it, with the router's own key: this battery sees only the router.
+A slug whose provider trains on its inputs, by the router's own list, is sent
+only when the frame names it exactly under `trainsOnInputs`.
 
 One battery covers them all; calling a provider's own endpoint is a
 different battery (a native one). An unprefixed slug is OpenAI's, which the
@@ -901,15 +900,14 @@ What this battery promises, whatever the frame says:
 - it refuses a model whose provider trains on its inputs unless the frame
   names that model under `battery.trainsOnInputs`, and asks every other
   request to reach only endpoints that keep no data (`data_collection: deny`;
-  which endpoints serve a model is the OpenRouter account's provider setting,
-  and DeepSeek's own endpoint may train on prompts);
+  which endpoints serve a model is the router's provider setting);
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
 - each call has a deadline (`timeout` seconds for the whole answer), the
   budget's cap on output tokens, and a cap on what it reads back;
 - each record names what served it: the model the response names and the
-  endpoint the router reports; `endpoints` pins OpenRouter endpoints, in
-  order and without fallbacks, so one endpoint reads a quorum;
+  endpoint the router reports; `endpoints` pins the endpoints the router may
+  use, in order and without fallbacks, so one endpoint reads a quorum;
 - the router's token comes from the environment or the router's own env file
   and is never logged, returned or recorded.
 

@@ -177,8 +177,7 @@ def test_an_openai_slug_is_refused_before_any_call(raw, token):
 
 
 def test_deepseek_is_sent_with_deny_unless_the_frame_consents(raw, token):
-    # Whether an endpoint keeps no data is the OpenRouter account's setting
-    # (DeepSeek's own endpoint may train; another provider may not).
+    # whether an endpoint keeps no data is the router's provider setting
     for model in (
         "deepseek/deepseek-v4.1-flash-1017",
         "openrouter/deepseek/deepseek-v4.1-flash-1017",
@@ -201,7 +200,7 @@ def test_a_call_records_the_model_and_endpoint_that_served(raw, token, router):
 
 
 def test_named_endpoints_are_pinned_without_fallbacks(raw, token):
-    # a quorum read by one endpoint, not spread over whichever OpenRouter picks
+    # a quorum read by one endpoint, not spread over whichever the router picks
     raw["battery"].update(model="deepseek/deepseek-v4.1-flash-1017", endpoints=["deepinfra/fp8"])
     Unified().check(situate(raw))
     assert payload(situate(raw), "t", 8)["provider"] == {
@@ -277,9 +276,8 @@ def test_the_stream_stops_at_its_size_cap(monkeypatch):
 
 
 def test_every_request_asks_for_endpoints_that_do_not_collect_data(raw):
-    # Through OpenRouter, DeepSeek's own endpoint may train on prompts; Claude
-    # falls back to OpenRouter when Anthropic refuses. Only a model the frame
-    # names as training on its inputs is sent without the request.
+    # any route the router takes may reach an endpoint that keeps data; only a
+    # model the frame names as training on its inputs is sent without the request
     for model in (
         "anthropic/claude-sonnet-5-5",
         "openrouter/anthropic/claude-sonnet-5.5",

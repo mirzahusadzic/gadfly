@@ -94,11 +94,10 @@ Gadfly its key; the address has a default.
   `EGEMMA_URL`, by default `http://127.0.0.1:8000`, with the key from the
   file named by `EGEMMA_API_KEY_FILE`, else `EGEMMA_API_KEY`. A frame names it
   as `"battery": {"kind": "egemma"}`, as the examples Gemma reads do.
-- **The unified model router, for Claude, DeepSeek and OpenRouter's
-  models:** install and start the [router](https://github.com/mirzahusadzic/unified-model-router) as its README says.
+- **The unified model router, for Claude, DeepSeek and the other models it
+  serves:** install and start the [router](https://github.com/mirzahusadzic/unified-model-router) as its README says.
   Gadfly calls it at `http://127.0.0.1:18766`, with its token from
-  `CODEX_ROUTER_TOKEN`, else the router's settings file,
-  `~/.codex/unified-router/openrouter.env`. A frame names its model, as
+  `CODEX_ROUTER_TOKEN`, else the router's own settings file. A frame names its model, as
   `"battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5"}`,
   and the router's `GET /v1/models` lists the ones it serves.
 - **`local-json`, for an evaluator of your own:** a service on this machine at

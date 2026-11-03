@@ -71,7 +71,7 @@ flowchart TB
         LE["<b>Your evaluator</b><br/>loopback, JSON,<br/>no credentials"]
         TS["<b>Tendora /ask</b><br/>loopback, read-only,<br/>saves nothing"]
     end
-    PV["<b>Providers</b><br/>Anthropic; OpenRouter,<br/>DeepSeek's models through it"]
+    PV["<b>Providers</b><br/>reached by the router,<br/>with its own keys"]
     subgraph K["Key"]
         K1["yours"]
         K2["Gadfly"]

@@ -1,11 +1,10 @@
 """The unified battery: an LLM critic through the unified model router.
 
 The [unified model router](https://github.com/mirzahusadzic/unified-model-router)
-serves the Responses API on loopback and maps a model slug to its provider:
-`anthropic/...` runs on Anthropic's API; `openrouter/...`, `deepseek/...`
-and `ultra-spark/...` run on OpenRouter (DeepSeek's models through it), each
-with the router's own key. `ultra-spark/` is training-tier: it is sent only
-when the frame names its exact slug under `trainsOnInputs`.
+serves the Responses API on loopback and maps a model slug to the provider
+that serves it, with the router's own key: this battery sees only the router.
+A slug whose provider trains on its inputs, by the router's own list, is sent
+only when the frame names it exactly under `trainsOnInputs`.
 
 One battery covers them all; calling a provider's own endpoint is a
 different battery (a native one). An unprefixed slug is OpenAI's, which the
@@ -27,15 +26,14 @@ What this battery promises, whatever the frame says:
 - it refuses a model whose provider trains on its inputs unless the frame
   names that model under `battery.trainsOnInputs`, and asks every other
   request to reach only endpoints that keep no data (`data_collection: deny`;
-  which endpoints serve a model is the OpenRouter account's provider setting,
-  and DeepSeek's own endpoint may train on prompts);
+  which endpoints serve a model is the router's provider setting);
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
 - each call has a deadline (`timeout` seconds for the whole answer), the
   budget's cap on output tokens, and a cap on what it reads back;
 - each record names what served it: the model the response names and the
-  endpoint the router reports; `endpoints` pins OpenRouter endpoints, in
-  order and without fallbacks, so one endpoint reads a quorum;
+  endpoint the router reports; `endpoints` pins the endpoints the router may
+  use, in order and without fallbacks, so one endpoint reads a quorum;
 - the router's token comes from the environment or the router's own env file
   and is never logged, returned or recorded.
 """
@@ -68,9 +66,8 @@ DEFAULT_URL = "http://127.0.0.1:18766/v1/responses"
 ENV_FILE = Path.home() / ".codex" / "unified-router" / "openrouter.env"
 # Slugs whose provider trains on what it receives (the router's own warning).
 TRAINS_ON_INPUTS = ("ultra-spark/", "openrouter/meta/")
-# The router's diagnostic when OpenRouter has no endpoint for the model that
-# keeps no data: which endpoints serve a model is the OpenRouter account's
-# provider setting (DeepSeek's own endpoint may train on prompts).
+# The router's diagnostic when no endpoint it may use for the model keeps no
+# data: which endpoints serve a model is the router's provider setting.
 NO_ENDPOINT_WITHOUT_DATA = "openrouter-data-policy"
 EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 # Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
@@ -132,7 +129,7 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
         # endpoint preference applies only to a request that names none.
         provider.update(order=list(battery["endpoints"]), allow_fallbacks=False)
     if not consented(battery):
-        # OpenRouter then reaches only endpoints that keep no data to train on.
+        # The router then reaches only endpoints that keep no data to train on.
         provider["data_collection"] = "deny"
     if provider:
         body["provider"] = provider
@@ -266,7 +263,7 @@ class Unified:
             and endpoints
             and all(isinstance(e, str) and e for e in endpoints)
         ):
-            raise BatteryError("battery.endpoints lists OpenRouter endpoint tags, in order")
+            raise BatteryError("battery.endpoints lists the router's endpoint tags, in order")
         if battery.get("reasoning") not in (None, *EFFORTS):
             raise BatteryError(f"battery.reasoning is one of {', '.join(EFFORTS)}")
         check_output(battery)
@@ -300,7 +297,7 @@ class Unified:
                         return Observation(
                             label=None,
                             opening="no endpoint that keeps no data serves this model (the "
-                            "OpenRouter account's provider setting); naming it under "
+                            "router's provider setting); naming it under "
                             "trainsOnInputs allows one that may train",
                         )
                     return Observation(label=None, opening=f"the router reports {diagnostic!r}")
