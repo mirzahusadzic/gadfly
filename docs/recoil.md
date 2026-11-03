@@ -112,6 +112,8 @@ runs, and never past the budget.
 A run of one call a trial has nothing to draw again, so a successor needs a
 quorum of two or more; three with two to agree is light enough. Runs already
 kept count as runs made, so a successor already firm is asked nothing.
+`calls_until_firm`, or `gadfly plan --most`, counts the most calls it can make
+before the first.
 
 `examples/climb.py FRAME.json --firm module:Class` asks a frame so through the
 battery named, and keeps each run as a records file of its own.

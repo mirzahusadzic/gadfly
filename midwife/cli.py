@@ -273,12 +273,20 @@ def command_plan(args) -> int:
     power = None if args.agreement is None else stats.power(frame, args.agreement)
     if power is not None:
         body["power"] = power.as_dict()
+    climb = _climb(args, frame)
+    if climb is not None:
+        body["climb"] = climb
     if args.json:
         print(json.dumps(body, indent=2))
     else:
         print(f"{plain(body['frame'])} ({body['hash']}): {body['calls']} calls")
         if power is not None:
             print(f"power: {_powered(power)}")
+        if climb is not None:
+            more = climb["most"] - climb["kept"]
+            runs = f"{more} more run{'s' * (more != 1)} of {body['calls']} calls"
+            kept = f"{climb['kept']} kept of {climb['most']} at most"
+            print(f"until firm: at most {climb['calls']} calls, {runs}, {kept}")
         for trial in trials:
             print(f"  {trial.id:12} body {trial.body_hash[:12]}  {_change(frame, trial)}")
         if body["unreachable"] is None:
@@ -751,8 +759,28 @@ def _bounds(args) -> None:
     # how firm is firm, and how many runs are read, as until_firm takes them
     if not 0 < args.firm <= 1:  # NaN included: it is no share
         raise UsageError("--firm is a share above 0, up to 1")
-    if args.most < 1:
+    _most(args.most)
+
+
+def _most(most: int) -> None:
+    if most < 1:
         raise UsageError("--most is a whole number of runs, at least 1")
+
+
+def _climb(args, frame) -> dict[str, int] | None:
+    # the most calls asking a frame until firm can make, counted as firm
+    # would ask it: --most runs at most, those --runs keeps counted as made
+    if args.most is None and args.runs is None:
+        return None
+    most = recoil.MOST if args.most is None else args.most
+    _most(most)
+    kept = []
+    if args.runs is not None:
+        missing = "name the folder gadfly firm keeps the frame's runs in"
+        folder = _runs_folder(args.runs, missing, write=False)
+        kept = [records for _, _, records in _kept_runs(folder, frame, most)]
+    calls = recoil.calls_until_firm(frame, kept=kept, most=most)
+    return {"most": most, "kept": len(kept), "calls": calls}
 
 
 def _runs_folder(path: str, missing: str, write: bool) -> Path:
@@ -1084,6 +1112,15 @@ def parser() -> argparse.ArgumentParser:
         "--agreement",
         type=float,
         help="how often the reader gives its usual answer, from 0 to 1: shows the quorum's power",
+    )
+    show.add_argument(
+        "--most",
+        type=int,
+        help=f"count the calls asking until firm makes over at most this many runs "
+        f"(default {recoil.MOST} with --runs)",
+    )
+    show.add_argument(
+        "--runs", metavar="FOLDER", help="the frame's runs gadfly firm keeps, counted as made"
     )
     show.add_argument("--json", action="store_true", help="print JSON instead of text")
     show.set_defaults(func=command_plan)

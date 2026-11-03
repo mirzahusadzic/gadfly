@@ -1001,6 +1001,18 @@ until_firm(
 )
 ```
 
+#### calls_until_firm
+
+The most calls `until_firm` can make on a frame, counted before its
+first: a whole run's for each run `most` allows beyond the runs `kept`
+holds. It is refused as `until_firm` refuses the frame or its kept
+runs, and is a ceiling: asking stops sooner once a run is firm, and
+makes no call when the latest kept run is.
+
+```python
+calls_until_firm(frame, *, kept=(), most=MOST)
+```
+
 #### Recoil
 
 What a fit did: the gate (climbs, absorbed, stops, or reframing), the

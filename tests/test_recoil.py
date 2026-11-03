@@ -22,7 +22,9 @@ from midwife.frame import parse
 from midwife.interventions import plan, prompt
 from midwife.pipeline import calls_needed, judge, run
 from midwife.recoil import (
+    MOST,
     Piece,
+    calls_until_firm,
     decided,
     found,
     gate,
@@ -464,6 +466,30 @@ def test_a_reader_that_never_settles_stops_at_the_most_runs_and_the_gate_stops()
     recoil = gate(middle, after, asked)
     assert recoil.gate == "stops"
     assert recoil.open == "its verdict was not firm after 3 runs"
+
+
+def test_the_calls_until_firm_are_counted_before_the_first():
+    # a climb's ceiling, known before any call: a whole run's calls for each
+    # run most allows beyond the kept ones, and never fewer than it makes
+    middle = dolls()[1]
+    after = with_slip(middle)
+    each = calls_needed(after)
+    assert calls_until_firm(after) == MOST * each
+    assert calls_until_firm(after, most=3) == 3 * each
+    asked = until_firm(after, Shaky(shaky=10**6), budget(after, 3), most=3)
+    assert asked.made == calls_until_firm(after, most=3)  # it never settled: every run made
+    first = until_firm(after, DollReader(), budget(after))
+    assert calls_until_firm(after, kept=first.runs, most=3) == 2 * each
+    # refused as until_firm refuses
+    with pytest.raises(UsageError, match="most is a whole number of runs, at least 1"):
+        calls_until_firm(after, most=0)
+    with pytest.raises(UsageError, match="kept holds more runs than most lets"):
+        calls_until_firm(after, kept=[*first.runs, *first.runs], most=1)
+    with pytest.raises(RecordsError, match="a kept run is not whole"):
+        calls_until_firm(after, kept=[first.runs[0][1:]])
+    once = parse({**after.raw, "standing": {"quorum": 1, "agree": 1}})
+    with pytest.raises(UsageError, match="asks each trial once"):
+        calls_until_firm(once)
 
 
 def test_kept_runs_count_as_runs_made_so_a_firm_frame_is_asked_nothing():

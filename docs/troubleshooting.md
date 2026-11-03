@@ -160,6 +160,7 @@ was spent. These are Python's own errors, said in plain words.
 | `FileNotFoundError: folder 'runs' does not exist` | `make it, or choose another --out`. |
 | `FileNotFoundError: folder 'kiran-runs' does not exist` | `make it, or choose another --runs`. `firm` keeps a frame's runs in a folder you make, so that two frames never share one. |
 | `FileNotFoundError: folder 'kiran-runs' does not exist` | `name the folder gadfly firm kept the successor's runs in`. `gate` reads the runs `firm` kept. |
+| `FileNotFoundError: folder 'kiran-runs' does not exist` | `name the folder gadfly firm keeps the frame's runs in`. `plan --runs` counts the runs `firm` kept there as made. |
 | `PermissionError: folder 'kiran-runs' cannot be written` | `choose another --runs`. `firm` adds each new run to the folder. |
 | `NotADirectoryError: 'notes.txt' is a file, not a folder` | `--runs names the folder that keeps the frame's runs`. |
 | `PermissionError: folder 'runs' cannot be written` | `choose another --out`. The folder is not yours to write. |

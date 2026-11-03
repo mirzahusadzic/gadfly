@@ -313,34 +313,11 @@ def until_firm(
     them, in tokens at each call's cap: a run cut short is never firm, and
     a stop for the budget is a `StoppedWarning`, as a run's is. With no
     battery, it reads the kept runs alone and asks nothing."""
-    if frame.quorum < 2:
-        raise UsageError(
-            f"frame {frame.name!r} asks each trial once, so a run has no calls to draw again",
-            "give it a quorum of 2 or more",
-        )
+    _asked_again(frame)
     if isinstance(firm, bool) or not isinstance(firm, int | float) or not 0 < firm <= 1:
         raise UsageError("firm is a share above 0, up to 1")
-    if isinstance(most, bool) or not isinstance(most, int) or most < 1:
-        raise UsageError("most is a whole number of runs, at least 1")
-    runs: list[tuple[dict[str, Any], ...]] = []
-    kept = list(kept)
-    if len(kept) > most:
-        raise UsageError(
-            "kept holds more runs than most lets until_firm read",
-            "give it the latest runs only, or raise most",
-        )
-    for records in kept:
-        records = tuple(r.as_dict() if isinstance(r, Record) else r for r in records)
-        if not records:
-            raise RecordsError("a kept run holds no records", "give each run's records as a list")
-        _own(frame, records)
-        runs.append(records)
+    runs = _kept(frame, kept, most)
     each, made, spent = calls_needed(frame), 0, 0
-    if any(len(records) != each for records in runs):
-        raise RecordsError(
-            "a kept run is not whole, so its verdict cannot be read as firm",
-            "give whole runs only, and leave out one that stopped short",
-        )
     findings: list[Finding] = []
     shares: dict[str, float] = {}
     before: dict[str, str] | None = None
@@ -385,6 +362,57 @@ def until_firm(
             return Firm(frame, tuple(runs), tuple(findings), shares, True, made)
         before = read
     return Firm(frame, tuple(runs), tuple(findings), shares, False, made, stopped)
+
+
+def calls_until_firm(
+    frame: Frame,
+    *,
+    kept: Sequence[Iterable[Record | dict[str, Any]]] = (),
+    most: int = MOST,
+) -> int:
+    """The most calls `until_firm` can make on a frame, counted before its
+    first: a whole run's for each run `most` allows beyond the runs `kept`
+    holds. It is refused as `until_firm` refuses the frame or its kept
+    runs, and is a ceiling: asking stops sooner once a run is firm, and
+    makes no call when the latest kept run is."""
+    _asked_again(frame)
+    return calls_needed(frame) * (most - len(_kept(frame, kept, most)))
+
+
+def _asked_again(frame: Frame) -> None:
+    # a run whose trials are each asked once has no calls to draw again
+    if frame.quorum < 2:
+        raise UsageError(
+            f"frame {frame.name!r} asks each trial once, so a run has no calls to draw again",
+            "give it a quorum of 2 or more",
+        )
+
+
+def _kept(
+    frame: Frame, kept: Sequence[Iterable[Record | dict[str, Any]]], most: int
+) -> list[tuple[dict[str, Any], ...]]:
+    # the kept runs, each this frame's own and whole, no more than most reads
+    if isinstance(most, bool) or not isinstance(most, int) or most < 1:
+        raise UsageError("most is a whole number of runs, at least 1")
+    kept = list(kept)
+    if len(kept) > most:
+        raise UsageError(
+            "kept holds more runs than most lets until_firm read",
+            "give it the latest runs only, or raise most",
+        )
+    runs = []
+    for records in kept:
+        records = tuple(r.as_dict() if isinstance(r, Record) else r for r in records)
+        if not records:
+            raise RecordsError("a kept run holds no records", "give each run's records as a list")
+        _own(frame, records)
+        runs.append(records)
+    if any(len(records) != calls_needed(frame) for records in runs):
+        raise RecordsError(
+            "a kept run is not whole, so its verdict cannot be read as firm",
+            "give whole runs only, and leave out one that stopped short",
+        )
+    return runs
 
 
 @dataclass(frozen=True)

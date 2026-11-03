@@ -11,7 +11,7 @@ import pytest
 
 from midwife.cli import load_frame, load_records, main
 from midwife.pipeline import situate
-from midwife.recoil import Piece, found, gate, sha256, successor, until_firm, walk
+from midwife.recoil import Piece, calls_until_firm, found, gate, sha256, successor, until_firm, walk
 from midwife.types import Budget
 
 ROOT = Path(__file__).parent.parent
@@ -342,6 +342,58 @@ def test_successor_says_when_it_asks_another_question(capsys):
 def test_successor_refuses_what_it_cannot_draft(more, status, said, capsys):
     assert main(["successor", KIRAN, "--from", MIRZA, *more]) == status
     assert told(capsys, "err") == said
+
+
+# ---- plan, for a climb
+
+
+def test_plan_counts_the_calls_until_firm_before_the_first(capsys):
+    frame = load_frame(ASKED)
+    each = calls_until_firm(frame, most=1)
+    assert main(["plan", ASKED, "--runs", RUNS]) == 0
+    lines = told(capsys)
+    assert lines[1] == (
+        f"until firm: at most {4 * each} calls, 4 more runs of {each} calls, 1 kept of 5 at most"
+    )
+    assert main(["plan", ASKED, "--most", "2", "--runs", RUNS, "--json"]) == 0
+    kept = [load_records(str(Path(RUNS) / "1.jsonl"))]
+    climb = json.loads(capsys.readouterr().out)["climb"]
+    assert climb == {"most": 2, "kept": 1, "calls": calls_until_firm(frame, kept=kept, most=2)}
+    assert climb["calls"] == each
+    assert main(["plan", ASKED, "--most", "1", "--runs", RUNS]) == 0
+    assert (
+        told(capsys)[1]
+        == "until firm: at most 0 calls, 0 more runs of 21 calls, 1 kept of 1 at most"
+    )
+    assert main(["plan", ASKED]) == 0
+    assert not any(line.startswith("until firm") for line in told(capsys))
+
+
+@pytest.mark.parametrize(
+    "more, said",
+    [
+        (["--most", "0"], ["UsageError: --most is a whole number of runs, at least 1"]),
+        (
+            ["--runs", "nowhere"],
+            [
+                "FileNotFoundError: folder 'nowhere' does not exist",
+                "name the folder gadfly firm keeps the frame's runs in",
+            ],
+        ),
+    ],
+)
+def test_plan_refuses_a_climb_it_cannot_count(more, said, capsys):
+    assert main(["plan", ASKED, *more]) == (7 if "FileNotFoundError" in said[0] else 2)
+    assert told(capsys, "err") == said
+
+
+def test_plan_refuses_a_climb_of_a_frame_asked_once_a_trial(capsys):
+    assert main(["plan", REFUND.as_posix(), "--most", "3"]) == 2
+    assert told(capsys, "err") == [
+        "UsageError: frame 'refund-receipt' asks each trial once, "
+        "so a run has no calls to draw again",
+        "give it a quorum of 2 or more",
+    ]
 
 
 # ---- firm

@@ -22,7 +22,7 @@ a command reads may be `-`, standard input, once in a command.
 | Command | Calls a model | Prints | Exit status |
 | --- | --- | --- | --- |
 | `check-frame FRAME` | no | `ok`, the frame's hash and its calls, or each problem as a `FrameError` and where it is | 0 when accepted, 4 when not; a refusal's |
-| `plan FRAME` | no | each trial, its kind and its body's hash, and the call count; with `--agreement`, how often the quorum reaches a level | 0; a refusal's |
+| `plan FRAME` | no | each trial, its kind and its body's hash, and the call count; with `--agreement`, how often the quorum reaches a level; with `--most` or `--runs`, the most calls asking until firm can make | 0; a refusal's |
 | `run FRAME` | yes, up to `--calls` | the calls written and how to read the verdict, then an `OpeningWarning` for calls that came back as openings and a `StoppedWarning` for an early stop | 0; 1 when every call came back as an opening, stopped early or not; 3 when stopped early, its records partial; 130 when stopped by Ctrl-C; 141 when its reader stops reading; a refusal's |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0; a refusal's |
 | `stats FRAME RECORDS...` | no | each trial's answers over the kept runs, how firm they are and how far they moved or held, the quorum's power, and how often each run's verdict comes out the same when its calls are drawn again | 0; a refusal's |
@@ -310,6 +310,14 @@ uv run gadfly firm kiran.json --runs kiran-runs \
 It prints each run's category and whether the verdict is firm. A stop for
 the budget is a `StoppedWarning`, and a run that a battery or Ctrl-C cut
 short is named by its file, since it is never read as firm.
+
+`plan` counts a climb before its first call. With `--most N`, and `--runs`
+for the runs already kept, it adds the most calls `firm` can make: a whole
+run's for each run beyond the kept ones, and fewer once a run is firm.
+
+```bash
+uv run gadfly plan kiran.json --most 5 --runs kiran-runs
+```
 
 | Flag | Value | Effect |
 | --- | --- | --- |
