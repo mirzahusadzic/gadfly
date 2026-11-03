@@ -6,11 +6,11 @@ category. The site follows `main`, so a release not yet out says so.
 
 ---
 
-### To 0.8.0, not yet released
+### To 0.8.0
 
-On `main`, for the next release: the `unified` battery speaks to the router
-only through the router's own headers, its data policy, its endpoint pins and
-its report of what served a call, and needs a router that takes them.
+0.8.0's `unified` battery speaks to the router only through the router's own
+headers, its data policy, its endpoint pins and its report of what served a
+call, and needs a router that takes them.
 
 | In 0.7 | In 0.8.0 | What to do |
 | --- | --- | --- |
