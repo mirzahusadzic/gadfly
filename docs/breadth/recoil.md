@@ -37,7 +37,7 @@ Both are optional keys of a frame, hashed with the rest, and a frame without
 them keeps its hash. `offers` is the kind the frame's decision climbs as:
 
 ```json
-"holes": [{"id": "head", "kind": "head"}],
+"holes": [{"id": "says", "kind": "statement"}],
 "offers": "role"
 ```
 
@@ -137,30 +137,38 @@ declares how the two questions compare.
   walk offers a piece first where it is most likely to fit.
 - **Artefacts as parents:** a crossing's records keep each artefact's SHA-256,
   so a frame that quotes an artefact could climb to the crossing that made it.
+- **Offering down:** a piece only climbs, so one found above its hole is never
+  offered to it.
+- **Shuffled sentences:** sentences shuffled within a frame, or across frames
+  and grains, each shuffle a frame of its own. The walk follows each text by
+  its hash, so it holds while every sentence moves whole.
 
 ---
 
 ### Tests
 
-The case is a set of nesting dolls, after the boy and the girl that meaning
-representations have always started with. Each doll is a frame that quotes the
-doll it came out of: the set, the middle doll, whose head is missing, and the
-smallest, which holds a painted head with a beard.
+The case is a set of five nesting dolls, after the boy and the girl that
+meaning representations have always started with. Each doll is a frame that
+quotes the doll it came out of, and all are painted alike, the largest as
+girlish as paint gets; but paint says nothing of who a doll is, only a doll's
+own word does. The second doll's word is lost, and turns up in the smallest.
 
-1. The head climbs from the smallest doll, fits the middle doll's hole, and
-   climbs on to the set, which passes it on: the set's hole wants a role, not
-   a head.
-2. The smallest doll quotes both the set and the middle doll, which quotes the
-   set again, and the set is visited once. Without the set's frame, both
-   quotes of it are the frontier, and the walk is not complete.
-3. The middle doll asked again with its head is firm after one light run, and
-   carried: a boy with the head, unclear without it. Its ablation's prompt is
-   the doll as it was unpacked, byte for byte.
-4. Its decision, `middle doll reads boy`, climbs to the set and fits. The set
-   was asked girls or unclear, so a boy inside needs a label it lacks: a
-   reframing, and the set as it was asked stands.
-5. Where the middle doll is asked about its chipped base instead, its head
+1. The slip climbs from the smallest doll past the fourth and third, which
+   pass it on, fits the second doll's hole, and climbs on to the largest,
+   which passes it on too: its hole wants a role, not a statement.
+2. The smallest doll quotes the largest's mark, so the largest is reached by
+   many routes and visited once. Without the largest's frame, both quotes of
+   it are the frontier, and the walk is not complete.
+3. The second doll asked again with its word is firm after one light run, and
+   carried: a boy by his word, unclear without it, whatever the paint. Its
+   ablation's prompt is the doll as it was unpacked, byte for byte.
+4. A reader that guesses from the paint when the word is cut answers girl,
+   where the frame allows only unclear: coupled but misaligned, caught.
+5. The second doll's decision, `second doll reads boy`, climbs to the largest
+   and fits. The set was taken for girls by its paint, so a boy inside, by his
+   own word, needs a label it lacks: a reframing, and the set as asked stands.
+6. Where the second doll is asked about its chipped base instead, its word
    still fits, but the successor reads cooled, and nothing climbs.
-6. A reader that wavers on its first run is asked twice more, and disengages
+7. A reader that wavers on its first run is asked twice more, and disengages
    once two firm runs read alike; one that never settles stops at the most
    runs, and the gate stops with it. Kept runs are not asked again.
