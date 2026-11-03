@@ -58,10 +58,23 @@
 .w-play { border-color: var(--w-accent); background: var(--w-accent); color: var(--vp-c-bg) !important; font-weight: 600; min-width: 6.25rem; }
 
 /* the question and the answer key */
-.w-ask { margin: 1.25rem 0 1rem; }
-.gadfly-watch .w-question { margin: 0; font-size: var(--w-text); }
+.w-ask { margin: 1rem 0; padding: 0.9375rem 1.0625rem; border-radius: 0.625rem; background: var(--w-panel); }
+/* a case and its question keep the line break between them */
+.gadfly-watch .w-question { margin: 0; font-size: var(--w-text); white-space: pre-line; }
 .gadfly-watch .w-role { margin: 0.5rem 0 0; color: var(--w-muted); }
 .gadfly-watch .w-key { margin: 0.25rem 0 0; color: var(--w-muted); }
+/* the answer key: each answer beside its condition */
+.gadfly-watch .w-key-list {
+  display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.125rem 0.75rem;
+  margin: 0.25rem 0 0; color: var(--w-muted);
+}
+.gadfly-watch .w-key-list :is(dt, dd) { margin: 0; }
+.gadfly-watch .w-key-list .w-key-note { grid-column: 1 / -1; }
+/* who read it, and the model's id beside it, set quietly */
+.gadfly-watch .w-by { margin: 0.5rem 0 0; color: var(--w-muted); }
+.gadfly-watch .w-by .w-model {
+  padding: 0; background: none; color: var(--w-muted); font-size: 0.875rem; font-weight: 400;
+}
 .gadfly-watch .w-maker { margin: 0.875rem 0 0; }
 .gadfly-watch .w-maker + .w-role { margin-top: 0; }
 .w-word { font-weight: 600; color: var(--w-ink); white-space: nowrap; }

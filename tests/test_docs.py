@@ -220,7 +220,7 @@ def test_the_watch_view_names_the_model_whatever_form_served_takes(monkeypatch, 
     records = [{**r, "served": served} for r in load_records(str(runs[0]))]
     monkeypatch.setattr(watch_data, "runs_of", lambda path: [runs[0]])
     monkeypatch.setattr(watch_data, "load_records", lambda path: records)
-    assert watch_data.watched(stem)["readBy"].endswith(f"({model})")
+    assert watch_data.watched(stem)["model"] == model
 
 
 def test_the_watch_view_refuses_what_it_cannot_play(monkeypatch):
@@ -272,6 +272,7 @@ def test_the_watch_view_shows_what_a_crossings_maker_wrote():
     calls = [c for r in data["runs"] for c in r["calls"]]
     assert all(isinstance(c["made"], str) and c["made"] and "cut" not in c for c in calls)
     assert data["maker"] == "Muse" and data["madeBy"] == data["readBy"]
+    assert data["makerModel"] == data["model"] == "meta/muse-spark-1.3-contributor"
     assert data["makerInstruction"].startswith("You write the cause section")
     cut = json.dumps({"made": {"sha256": "0" * 64, "text": "The deploy"}, "read": "{}"})
     assert watch_data._made(cut) == {"raw": "{}", "made": "The deploy", "cut": True}
@@ -325,6 +326,38 @@ def test_the_watch_view_keeps_the_line_under_test_in_view(tests, changed, shown,
     run = f"{settle}\nprocess.stdout.write(String(settle({json.dumps(rows)}, {shown})));"
     done = subprocess.run(["node", "-e", run], capture_output=True, text=True, check=True)
     assert int(done.stdout) == 60 * start
+
+
+def test_the_watch_view_lists_every_answer_an_instruction_names():
+    # each frame's answer key is a row an answer, never a sentence to dig
+    # through: every answer the instruction names, quoted or bare, gets a row,
+    # and only what names none is a line of its own
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    answers = re.search(r"  function answers\(.*?\n  \}\n", watch, re.S).group(0)
+    shown = {}
+    for path in watch_data.OUT.glob("*.json"):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        runs = data.get("runs", [])  # the demo's index lists questions, and plays none
+        for told in {data.get("instruction"), *(r.get("instruction") for r in runs)}:
+            if told and "Answer " in told:
+                shown[told] = data["labels"]
+    run = (
+        "const escape = (s) => s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n"
+        f"{answers}\nconst shown = {json.dumps(shown)};\n"
+        "const listed = ([told, labels]) =>"
+        " [told, answers(told.slice(told.indexOf('Answer ') + 7), labels.map(escape).join('|'))];\n"
+        "process.stdout.write(JSON.stringify(Object.entries(shown).map(listed)));"
+    )
+    done = subprocess.run(["node", "-e", run], capture_output=True, text=True, check=True)
+    for told, listed in json.loads(done.stdout):
+        assert listed, told
+        rows = [i["label"] for i in listed["items"] if "label" in i]
+        named = re.findall(r"'([^']+)'", told)
+        assert set(named) <= set(rows), told
+        assert all(" if " not in i.get("condition", "")[3:] for i in listed["items"]), told
+        notes = [i["text"] for i in listed["items"] if "text" in i]
+        lines = ["the one person they make the answer", "Give the one answer the statements make"]
+        assert notes in ([], *([n] for n in lines)), told
 
 
 def test_every_kind_of_trial_is_told_in_words():

@@ -60,8 +60,8 @@ FRAMES = [
 NAMED = {"openrouter/meta/muse-spark-1.3-contributor": "Muse"}
 # The model each example's records say served it, as the view says who read it
 MODELS = {
-    "google/gemma-4-26B-A4B-it-qat-q4_0-gguf": "Gemma 4 26B-A4B, instruction-tuned, on this "
-    "machine through eGemma",
+    "google/gemma-4-26B-A4B-it-qat-q4_0-gguf": "Gemma 4 26B-A4B, instruction-tuned, through "
+    "eGemma on one machine",
     "meta/muse-spark-1.3-contributor": "Muse Spark 1.3 Contributor, Meta's model, through "
     "unified-model-router",
 }
@@ -106,11 +106,12 @@ def watched(stem: str) -> dict:
         raise SystemExit(f"{stem}: its runs name {sorted(served)}, not one model the view knows")
     data = {**watched_frame(frame, trials, prompts, f"examples/{stem}.json"), "reader": reader}
     for sides in served:  # none without runs
-        data["readBy"] = f"{MODELS[sides[-1]]} ({sides[-1]})"
+        # who read it in words, and the model's own id apart, as the records name it
+        data["readBy"], data["model"] = MODELS[sides[-1]], sides[-1]
         if crossing:
             maker = frame.battery["maker"]
             data["maker"] = NAMED.get(maker.get("model", ""), maker["kind"])
-            data["madeBy"] = f"{MODELS[sides[0]]} ({sides[0]})"
+            data["madeBy"], data["makerModel"] = MODELS[sides[0]], sides[0]
             data["makerInstruction"] = maker["instruction"]
     return {**data, "runs": runs}
 

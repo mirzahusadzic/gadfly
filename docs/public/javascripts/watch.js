@@ -128,8 +128,22 @@
       return p;
     }
     const sentence = instruction.slice(at + "Answer ".length);
+    const names = d.labels.map(escape).join("|");
+    const listed = answers(sentence, names);
+    if (listed) {
+      const list = el("dl", "w-key-list");
+      for (const item of listed.items) {
+        // an answer no call gave has no slot of its own, and reads as neutral
+        const seen = item.label in slot ? slot : { ...slot, [item.label]: "u" };
+        if (item.label) list.append(el("dt", null, word(item.label, seen)), el("dd", null, item.condition));
+        else list.append(el("dd", "w-key-note", cap(item.text)));
+      }
+      const out = document.createDocumentFragment();
+      out.append(el("p", "w-key", `${reader} must answer${listed.lead ? ` ${listed.lead}` : ""}`), list);
+      return out;
+    }
     // a label before " if ", or quoted before " if " or " for "
-    const pattern = new RegExp(`\\b(${d.labels.map(escape).join("|")})(?= if |' (?:if|for) )`, "g");
+    const pattern = new RegExp(`\\b(${names})(?= if |' (?:if|for) )`, "g");
     p.append(`${reader} must answer `);
     let last = 0;
     for (const match of sentence.matchAll(pattern)) {
@@ -140,6 +154,27 @@
     return p;
   }
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  // The answers an instruction lists after "Answer ", one a row, so a reader
+  // need not dig them out of a sentence: "a if ..., b if ...", or a lead
+  // ("the question ...:" or "... else.") and then answers, each a label,
+  // bare or quoted, with what it is for, and any line that names none
+  // ("the one person they make the answer"). Null when fewer than two
+  // answers are named, and the sentence is shown as it is.
+  function answers(sentence, names) {
+    const body = sentence.replace(/\.$/, "");
+    const cut = body.search(/: |\. /);
+    const lead = cut < 0 ? "" : body.slice(0, cut);
+    const rest = cut < 0 ? body : body.slice(cut + 2);
+    // a quoted answer starts a row even when no call gave it
+    const label = `(?:'[^']+'|(?:${names}))`;
+    const parts = rest.split(new RegExp(`(?:, or |, |; )(?=${label}(?:$| |,|;))`));
+    const items = parts.map((part) => {
+      const m = part.match(new RegExp(`^(?:'([^']+)'|(${names}))(?: ((?:if|for) .+))?$`));
+      return m ? { label: m[1] ?? m[2], condition: m[3] ?? "" } : { text: part };
+    });
+    return items.filter((item) => item.label).length < 2 ? null : { lead, items };
+  }
 
   async function fetchFrame(stem) {
     if (!cache.has(stem)) {
@@ -545,13 +580,18 @@
       const question = d.inputs.find((x) => x.id === state.input).text;
       // the role and the key together are the whole instruction, word for word
       const role = d.instruction.slice(0, Math.max(0, d.instruction.indexOf("Answer "))).trim();
-      const by = d.madeBy
-        ? d.madeBy === d.readBy
-          ? `Made and read by ${d.readBy}.`
-          : `Made by ${d.madeBy}, read by ${d.readBy}.`
-        : d.readBy && `Read by ${d.readBy}.`;
+      // who read it, then the model's id as its records name it, on one line
+      const by = el("p", "w-by");
+      by.append(
+        d.madeBy ? (d.madeBy === d.readBy ? `Made and read by ${d.readBy}` : `Made by ${d.madeBy}, read by ${d.readBy}`) : `Read by ${d.readBy}`,
+      );
+      const models = [...new Set([d.makerModel, d.model].filter(Boolean))];
+      if (models.length) {
+        by.append(" (");
+        models.forEach((model, i) => by.append(i ? ", " : "", el("code", "w-model", model)));
+        by.append(")");
+      }
       ask.replaceChildren(
-        el("p", "w-caption", "The question"),
         el("p", "w-question", rich(question)),
         ...(role ? [el("p", "w-role", role)] : []),
         key(d, slot, run),
@@ -561,7 +601,7 @@
               el("p", "w-role", d.makerInstruction),
             ]
           : []),
-        ...(by ? [el("p", "w-key", by)] : []),
+        ...(d.readBy ? [by] : []),
       );
     }
 
