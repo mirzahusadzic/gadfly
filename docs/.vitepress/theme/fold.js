@@ -10,8 +10,13 @@ export function toggle(button) {
   if (!open && button.getBoundingClientRect().top < 0) button.scrollIntoView({ block: 'nearest' });
 }
 
-/** Every fold button on every page, now and after a page changes. */
+const bound = new WeakSet();
+
+/** Every fold button on every page, now and after a page changes; bound
+ * once to a page, however often it is asked, so a click toggles once. */
 export function foldButtons(page) {
+  if (bound.has(page)) return;
+  bound.add(page);
   page.addEventListener('click', (event) => {
     const button = event.target.closest?.('button.fold');
     if (button) toggle(button);

@@ -475,6 +475,8 @@ def test_a_long_code_block_shows_its_first_twelve_lines():
     assert seen["mermaid"] is False
     assert seen["opened"] == ["true", "Show the first 12 lines", False]
     assert seen["closed"] == ["false", "Show all 45 lines", True]  # its button kept in sight
+    assert seen["blanks"] == "Show all 16 lines"  # the lines drawn, not the blanks after (F1)
+    assert seen["bound"] == 1  # bound once to a page, so a click toggles once (F2)
 
 
 def test_the_watch_view_shows_what_a_crossings_maker_wrote():

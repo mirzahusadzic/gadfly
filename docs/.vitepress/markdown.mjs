@@ -152,7 +152,9 @@ export function foldedFences(md) {
   md.renderer.rules.fence = (tokens, index, options, env, self) => {
     const html = fence(tokens, index, options, env, self);
     if (!html.includes('<span class="fold-rest">')) return html;
-    const lines = tokens[index].content.replace(/\n$/, '').split('\n').length;
+    // the lines the highlighter drew, as the reader sees and copies them:
+    // blank lines it drops at the end are not counted
+    const lines = html.match(/<span class="line[" ]/g).length;
     const button =
       `<button type="button" class="fold" aria-expanded="false" data-other="Show the first ${FOLD} lines">` +
       `Show all ${lines} lines</button>`;

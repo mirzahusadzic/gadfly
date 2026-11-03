@@ -3,7 +3,7 @@
 // as VitePress wraps it: tests/test_docs.py runs it and reads the JSON it
 // prints. The site's own build, in CI's docs job, folds every page the same.
 import { foldedFences, foldedLines } from '../docs/.vitepress/markdown.mjs';
-import { toggle } from '../docs/.vitepress/theme/fold.js';
+import { foldButtons, toggle } from '../docs/.vitepress/theme/fold.js';
 
 const block = (n) => Array.from({ length: n }, (_, i) => `line ${i + 1} <of> "${n}"`);
 
@@ -23,17 +23,18 @@ const html = (node) =>
     ? escape(node.value)
     : `<${node.tagName}${node.properties.class ? ` class="${node.properties.class}"` : ''}>${node.children.map(html).join('')}</${node.tagName}>`;
 
-// the fence as VitePress renders it, the site's fold rule over it
-function render(lines, rendered) {
+// the fence as VitePress renders it, the site's fold rule over it; written
+// is the fence's text, which may end in blank lines the highlighter drops
+function render(lines, rendered, written = lines) {
   const md = { renderer: { rules: { fence: () => rendered } } };
   foldedFences(md);
-  return md.renderer.rules.fence([{ content: `${lines.join('\n')}\n`, info: 'text' }], 0, {}, {}, null);
+  return md.renderer.rules.fence([{ content: `${written.join('\n')}\n`, info: 'text' }], 0, {}, {}, null);
 }
-function fenced(lines) {
+function fenced(lines, written = lines) {
   const node = code(lines);
   foldedLines().code(node);
   const shown = '<button title="Copy Code" class="copy"></button><span class="lang">text</span>';
-  return render(lines, `<div class="language-text">${shown}<pre class="shiki">${html(node)}</pre>\n</div>`);
+  return render(lines, `<div class="language-text">${shown}<pre class="shiki">${html(node)}</pre>\n</div>`, written);
 }
 
 // a block as a reader's copy takes it: every line, tags gone, in order
@@ -59,6 +60,9 @@ const folded = (n) => {
 
 const out = {
   ...Object.fromEntries([12, 13, 15, 16, 45].map((n) => [n, folded(n)])),
+  // a block written with two blank lines after its sixteen counts the
+  // sixteen the reader sees (pass 12, F1)
+  blanks: fenced(block(16), [...block(16), '', '']).match(/>(Show all \d+ lines)</)[1],
   // a chart is drawn, never folded, however long its text
   mermaid: render(block(45), '<MermaidDiagram source="a" />\n').includes('fold'),
 };
@@ -90,4 +94,14 @@ out.opened = [button.attributes['aria-expanded'], button.textContent, button.scr
 button.top = -400; // the reader has read on below the block
 toggle(button);
 out.closed = [button.attributes['aria-expanded'], button.textContent, button.scrolled];
+// bound twice, as a page may ask again, a click still toggles once (pass 12, F2)
+const page = {
+  listeners: [],
+  addEventListener(type, call) {
+    this.listeners.push(call);
+  },
+};
+foldButtons(page);
+foldButtons(page);
+out.bound = page.listeners.length;
 console.log(JSON.stringify(out));
