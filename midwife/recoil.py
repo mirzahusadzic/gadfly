@@ -151,9 +151,11 @@ def walk(piece: Piece, start: Frame, frames: Iterable[Frame]) -> Walk:
         for text in _made(frame):
             makers.setdefault(text, []).append(frame)
     seen, fits, passed, frontier = {start.hash}, [], [], set()
+    followed: set[str] = set()  # a text once followed has every maker of it seen
     climbing = deque([start])  # drained from the front: a list would shift every frame left
     while climbing:
-        for text in sorted(_quoted(climbing.popleft())):
+        for text in sorted(_quoted(climbing.popleft()) - followed):
+            followed.add(text)
             if text not in makers:
                 frontier.add(text)
             for parent in makers.get(text, ()):

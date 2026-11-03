@@ -37,6 +37,7 @@ from midwife.types import Budget, Observation
 
 RULE = "\n\n---\n\n"
 BINDING = "Only a doll's own word says who it is."
+SHARED = "The line every frame of a star holds as its own."
 WORKSHOP = "The set was painted in one workshop."
 SLIP = 'On a slip, in its own hand, the second doll wrote "I am a boy."'
 ORDINALS = ("largest", "second", "third", "fourth", "smallest")
@@ -259,6 +260,49 @@ def test_a_shared_parent_is_visited_once_and_a_missing_one_is_the_frontier():
     walked = walk(slip, smallest, [second, third, fourth, smallest])
     assert walked.frontier == tuple(sorted({sha256(WORKSHOP), sha256(opens(0))}))
     assert not walked.complete
+
+
+class Counted:
+    """A frame, its hash's readings counted: the walk reads it once a visit."""
+
+    def __init__(self, frame, reads):
+        self._frame, self._reads = frame, reads
+
+    def __getattr__(self, name):
+        if name == "hash":
+            self._reads.append(1)
+        return getattr(self._frame, name)
+
+
+def test_a_text_many_frames_share_is_followed_once():
+    # n frames each hold one text and quote it: the walk follows the text
+    # once, so its work grows with the frames, not their square (pass 12, P2)
+    def star(name, own):
+        raw = copy.deepcopy(dolls()[4].raw)
+        quoted = {"id": "q", "text": SHARED, "kind": "note", "source": {"sha256": sha256(SHARED)}}
+        raw["name"] = name
+        raw["body"] = {"spans": [{"id": "own", "text": own, "kind": "note"}, quoted]}
+        raw["anchors"] = ["own"]
+        raw.pop("holes", None)
+        raw["interventions"] = {"ablation": True}
+        raw["allowed"] = {"ablation": ["unclear"]}
+        return raw
+
+    def reads(n):
+        counted = []
+        start = Counted(parse(star("start", "the start's own line")), counted)
+        frames = [
+            Counted(
+                parse({**star(f"star-{i}", SHARED), "holes": [{"id": "h", "kind": "note"}]}),
+                counted,
+            )
+            for i in range(n)
+        ]
+        walked = walk(Piece(SHARED, "note"), start, frames)
+        assert len(walked.fits) == n and not walked.passed and walked.complete
+        return len(counted)
+
+    assert reads(40) <= 2.2 * reads(20)
 
 
 def test_the_second_doll_with_its_word_is_a_boy_asked_once_and_carried():
