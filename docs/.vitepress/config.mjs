@@ -51,6 +51,7 @@ const sidebar = [
       { text: 'Asked', link: '/examples/asked' },
       { text: 'Each anchor alone', link: '/examples/each-anchor' },
       { text: 'Crossing', link: '/examples/crossing' },
+      { text: 'Five dolls, one kid', link: '/examples/dolls' },
       { text: 'Run your own', link: '/examples/your-own' },
       { text: 'Payments demo', link: '/examples/payments-demo' },
     ],
@@ -102,6 +103,7 @@ const sidebar = [
 // address the page asks for, makes every change a new address.
 const watchFiles = [
   'public/javascripts/watch.js',
+  'public/javascripts/dolls.js',
   ...readdirSync(new URL('../public/assets/watch/', import.meta.url)).sort().map((f) => `public/assets/watch/${f}`),
 ];
 const watchVersion = createHash('sha256')

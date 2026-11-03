@@ -4,8 +4,10 @@
 // wrote); on the right, its answers, how they compare with the first answer,
 // and the checks filling in until the verdict. Each page plays its own
 // examples, named in data-frames and data-names; the payments demo's page
-// picks its questions from data-group. The data is written by
-// tools/watch_data.py from the kept runs; every string in it is set as text.
+// picks its questions from data-group. Over rung 22's frames, data-dolls
+// stands the doll stage on top (dolls.js): the dolls pick the frame, and play
+// the climb between them. The data is written by tools/watch_data.py from the
+// kept runs; every string in it is set as text.
 (() => {
   const script = document.currentScript;
   const base = new URL("../assets/watch/", script.src);
@@ -174,6 +176,23 @@
       return m ? { label: m[1] ?? m[2], condition: m[3] ?? "" } : { text: part };
     });
     return items.filter((item) => item.label).length < 2 ? null : { lead, items };
+  }
+
+  // a script of the view's own, beside it and at its version, loaded once
+  const scripts = new Map();
+  function fetchScript(name) {
+    if (!scripts.has(name))
+      scripts.set(
+        name,
+        new Promise((done, fail) => {
+          const tag = document.createElement("script");
+          tag.src = new URL(`${name}${version}`, script.src).href;
+          tag.onload = done;
+          tag.onerror = () => fail(new Error(name));
+          document.head.append(tag);
+        }),
+      );
+    return scripts.get(name);
   }
 
   async function fetchFrame(stem) {
@@ -405,7 +424,24 @@
     const doc = el("section", "w-doc");
     const side = el("section", "w-side");
     stage.append(doc, side);
-    root.replaceChildren(bar, ask, top, stage);
+    // the doll stage: the dolls are the picker, and play the frames in order
+    const dollBox = root.dataset.dolls ? el("div", "w-dolls") : null;
+    if (dollBox) exampleField.hidden = true;
+    root.replaceChildren(...(dollBox ? [dollBox] : []), bar, ask, top, stage);
+    let hooks = {};
+    const story = { on: false, order: [] }; // on once the stage stands
+    // the stage draws beside the view and never stops it: should it fail,
+    // it is taken away, and the frames play on without it
+    const staged = (call) => {
+      try {
+        call();
+      } catch (error) {
+        hooks = {};
+        story.on = false;
+        dollBox?.remove();
+        console.error(error);
+      }
+    };
 
     frameSelect.addEventListener("change", () => load(frameSelect.value));
     inputSelect.addEventListener("change", () => {
@@ -413,14 +449,16 @@
       compare();
     });
     back.addEventListener("click", () => {
+      story.on = false;
       stop();
       show(Math.max(0, state.step - 1), true);
     });
     next.addEventListener("click", () => {
+      story.on = false;
       stop();
       show(Math.min(last(), state.step + 1), true);
     });
-    play.addEventListener("click", () => (state.timer ? stop() : start()));
+    play.addEventListener("click", () => (state.timer ? ((story.on = false), stop()) : start()));
 
     const last = () => state.data.trials.length; // the step after the last trial is the verdict
 
@@ -455,6 +493,7 @@
       const readers = d.runs.every((r) => r.reader);
       runField.querySelector(".w-field-name").textContent = readers ? "Reader" : "Run";
       runs.setAttribute("aria-label", readers ? "Reader" : "Run");
+      staged(() => hooks.frame?.(stem, d));
       runs.replaceChildren(
         ...d.runs.map((r, i) => {
           const b = el("button", "w-run", readers ? r.reader : String(i + 1));
@@ -505,10 +544,26 @@
       if (state.step >= last()) show(0, true);
       play.textContent = "Pause";
       state.timer = setTimeout(function tick() {
-        if (state.step >= last()) return stop();
+        if (state.step >= last()) {
+          stop();
+          return onward();
+        }
         show(state.step + 1, true);
         state.timer = setTimeout(tick, reduced ? STEP_MS / 2 : STEP_MS);
       }, reduced ? STEP_MS / 2 : STEP_MS);
+    }
+
+    // on the doll stage, once a frame has played to its verdict, the next in
+    // the order: the climb of the paper's words, the next frame, or the gate
+    async function onward() {
+      if (!story.on) return;
+      for (let i = story.order.indexOf(state.stem) + 1; i < story.order.length; i++) {
+        const next = story.order[i];
+        if (next === "climb") await hooks.climb?.();
+        else if (next === "gate") return hooks.gate?.();
+        else return story.on ? load(next, 0, true) : undefined;
+        if (!story.on) return;
+      }
     }
 
     function stop() {
@@ -544,6 +599,7 @@
             : el("span", "w-step-answer is-pending", "…");
           b.append(answer);
           b.addEventListener("click", () => {
+            story.on = false;
             stop();
             show(i, true);
           });
@@ -571,6 +627,7 @@
       drawAsk(d, slot, run);
       drawDoc(trial, d, run);
       drawSide(trial, d, run, finding, slot, first, played);
+      staged(() => hooks.trial?.(trial, d));
       follow();
     }
 
@@ -754,6 +811,26 @@
           for (const x of index.examples) frameSelect.append(new Option(x.title, x.stem));
         })
       : Promise.resolve();
+    if (dollBox) {
+      Promise.all([fetchScript("dolls.js"), fetchFrame(root.dataset.dolls)])
+        .then(([, data]) =>
+          staged(() => {
+            hooks = window.gadflyDolls.stage(dollBox, {
+              select(stem) {
+                story.on = false; // a doll picked by hand ends the sequence
+                load(stem);
+              },
+            }, data);
+            story.order = data.order;
+            story.on = true;
+            if (state.data) {
+              hooks.frame(state.stem, state.data);
+              show(state.step, false);
+            }
+          }),
+        )
+        .catch(() => dollBox.remove()); // the frames still play without the dolls
+    }
     group
       .catch(() => {}) // the page's own examples still play
       .then(() => {

@@ -131,7 +131,7 @@ uv run gadfly report examples/rung1.json check.jsonl
 
 Every example is a real experiment: a frame, the predictions written before
 its first call, and the records of each run, read by Gemma 4 26B through
-eGemma, or for rungs 19 and 20 by Muse Spark 1.3 Contributor through the
+eGemma, or for rungs 19 to 22 by Muse Spark 1.3 Contributor through the
 router, which in rung 20 also writes what it reads.
 Reading one back calls no model:
 
@@ -230,6 +230,8 @@ too.
   runs, beside it and never changing it.
 - **[Crossings](https://mirzahusadzic.github.io/gadfly/crossings):** a decision made from something
   written from the evidence, with the maker inside the reading.
+- **[Five dolls, one kid](https://mirzahusadzic.github.io/gadfly/examples/dolls):** recoil, where a
+  piece found deep in a chain of frames climbs back to the hole it fits, asked until firm.
 - **[Batteries](https://mirzahusadzic.github.io/gadfly/batteries):** the shipped scorers, their privacy
   guarantees, and writing your own.
 - **[Architecture and limits](https://mirzahusadzic.github.io/gadfly/architecture):** what Gadfly keeps, and

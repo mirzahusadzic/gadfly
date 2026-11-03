@@ -45,6 +45,7 @@ Your first frame is the first step.
 | [Asked](asked.md) | 17 | the input inversion, a change to what is asked the answer must follow | code review, one rule, the diff in the question |
 | [Each anchor alone](each-anchor.md) | 18, 18b, 18b2, 18c | each anchor cut alone, evidence after a moved ablation; a default no cut moves | access and incidents, two statements each |
 | [Crossing](crossing.md) | 20, 20b | a crossing, with the maker inside the reading; carried through one artefact, cooled through another | an incident, written up two ways |
+| [Five dolls, one kid](dolls.md) | 21, 22, 22b, 22c, the five dolls | holes and the walk; the gate; a reframing; a decoy; a frame asked lightly until firm | nesting dolls, one line a doll says of itself |
 | [Run your own](your-own.md) | yours | predictions first; plan, run, report; which trial answers which question | yours |
 
 ---

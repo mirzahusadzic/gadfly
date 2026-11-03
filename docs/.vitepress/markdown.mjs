@@ -38,13 +38,15 @@ export function watchMarkers(md) {
         token.content = `<div class="gadfly-watch" data-group="${group[1]}"></div>\n`;
         continue;
       }
-      const marker = token.content.trim().match(/^<!-- watch ([\w -]+) -->$/);
+      const marker = token.content.trim().match(/^<!-- watch (dolls )?([\w -]+) -->$/);
       if (!marker) continue;
-      const stems = marker[1].trim().split(/\s+/);
+      const stems = marker[2].trim().split(/\s+/);
       const unknown = stems.filter((stem) => !index[stem]);
       if (unknown.length) throw new Error(`${state.env.relativePath} plays no frame named ${unknown.join(', ')}`);
       const names = stems.map((stem) => index[stem].name);
-      token.content = `<div class="gadfly-watch" data-frames="${stems.join(',')}" data-names="${names.join(',')}"></div>\n`;
+      // `watch dolls` stands the doll stage over the frames, which it plays in order
+      const dolls = marker[1] ? ' data-dolls="dolls"' : '';
+      token.content = `<div class="gadfly-watch"${dolls} data-frames="${stems.join(',')}" data-names="${names.join(',')}"></div>\n`;
     }
   });
 }

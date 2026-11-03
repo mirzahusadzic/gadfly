@@ -239,7 +239,7 @@ def test_the_watch_view_refuses_what_it_cannot_play(monkeypatch):
 TEACHING = sorted(
     p for p in (ROOT / "docs/examples").glob("*.md") if "### What to take from it" in p.read_text()
 )
-WATCH = re.compile(r"^<!-- watch ([\w -]+) -->$", re.M)
+WATCH = re.compile(r"^<!-- watch (?:dolls )?([\w -]+) -->$", re.M)
 
 
 @pytest.mark.parametrize("page", TEACHING, ids=lambda p: p.stem)
@@ -263,6 +263,28 @@ def test_the_watch_data_is_what_the_pages_play():
     assert len(watch_data.FRAMES) == len(played)
     kept = {p.stem for p in watch_data.OUT.glob("*.json")}
     assert kept == set(watch_data.FILES)
+
+
+def test_every_brushstroke_on_a_doll_is_a_line_it_says():
+    # the doll stage paints a region for each line a doll says, and nothing
+    # else: a line with no paint, or paint with no line, would show what the
+    # reader never read
+    dolls = json.loads((watch_data.OUT / "dolls.json").read_text(encoding="utf-8"))
+    script = (ROOT / "docs/public/javascripts/dolls.js").read_text(encoding="utf-8")
+    # the stage's own add(part, ...), not classList's
+    painted = set(re.findall(r'(?<![.\w])add\("([\w-]+)"', script))
+    said = {line["id"] for d in dolls["dolls"] for line in d["lines"] + d["extra"]}
+    unpainted = {"inside", "holds-next", "name"}  # the links between dolls, and the label
+    assert said - unpainted <= painted
+    assert painted <= said
+    # all five stand on the stage, each a frame of examples/dolls/, and the
+    # paper's words climb and fit as midwife.recoil walks them
+    assert [d["name"] for d in dolls["dolls"]] == ["Amani", "Kiran", "Sasha", "Robin", "Mirza"]
+    assert dolls["piece"]["passes"] == ["Robin", "Sasha"] and dolls["piece"]["fits"] == "Kiran"
+    assert dolls["gate"]["climbs"] == "Kiran reads boy" and dolls["gate"]["changed"] == ["observe"]
+    page = (ROOT / "docs/examples/dolls.md").read_text(encoding="utf-8")
+    [marker] = re.findall(r"^<!-- watch dolls ([\w -]+) -->$", page, re.M)
+    assert [s for s in dolls["order"] if s not in ("climb", "gate")] == marker.split()
 
 
 def test_the_watch_view_shows_what_a_crossings_maker_wrote():

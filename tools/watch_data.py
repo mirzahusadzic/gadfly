@@ -54,7 +54,14 @@ FRAMES = [
     "18b2-access-logs-both",
     "20-incident-cause",
     "20b-incident-status",
+    "22c-mirza-not-mine",
+    "22-kiran-paper",
+    "22b-kiran-paper-decoy",
 ]
+# The doll stage stands over rung 22's frames: the order it plays them, with
+# the climb of the paper's words and the gate between.
+DOLLS = "dolls"
+DOLL_ORDER = ["22c-mirza-not-mine", "climb", "22-kiran-paper", "22b-kiran-paper-decoy", "gate"]
 # The reader each example names: Gemma through eGemma, unless its battery asks
 # for another model by name.
 NAMED = {"openrouter/meta/muse-spark-1.3-contributor": "Muse"}
@@ -298,8 +305,106 @@ def titled() -> dict:
     return {"group": "Payments demo, Tendora and Gemma", "examples": listed}
 
 
+def dolls() -> dict:
+    """The doll stage's data, read from the frames and kept runs with no
+    model: each doll's own lines and the design they name, the frames that
+    ask it, where the paper's words climb and fit (`midwife.recoil.walk`), and
+    the gate Kiran's kept runs set, with what it does to the largest doll."""
+    from examples.matryoshka import THEMES
+    from midwife.frame import load, parse
+    from midwife.recoil import found, gate, successor, until_firm, walk
+    from midwife.types import Budget
+
+    unpacked = [load(p) for p in sorted((ROOT / "examples/dolls").glob("*.json"))]
+    asked = [stem for stem in DOLL_ORDER if stem not in ("climb", "gate")]
+    frames = {stem: load(ROOT / "examples" / f"{stem}.json") for stem in asked}
+    largest, smallest = unpacked[0], unpacked[-1]
+    [paper] = [span for span in smallest.spans if span.kind.endswith("-paper")]
+    walked = walk(found(smallest, paper.id), smallest, unpacked)
+    [(fits, holes)] = walked.fits
+    place = {frame.hash: n for n, frame in enumerate(unpacked)}
+    # the dolls between where the words were found and where they fit, from the bottom up
+    climbed = sorted(walked.passed, key=lambda frame: -place[frame.hash])
+    passes = [f.name for f in climbed if place[f.hash] > place[fits.hash]]
+
+    # the gate Kiran's plain frame sets, read from its kept runs as until_firm reads them
+    plain = frames[asked[1]]
+    runs = [load_records(str(kept)) for kept in runs_of(ROOT / "examples" / f"{asked[1]}.json")]
+    recoil = gate(fits, plain, until_firm(plain, None, Budget(calls=1), kept=runs))
+    [decision] = recoil.climbs
+    [(above, room)] = walk(decision, plain, [largest, plain]).fits
+    labels = ["girls", "boys", "mixed", "unknown"]
+    again = parse(
+        successor(above, room[0], decision, observe={**above.raw["observe"], "labels": labels})
+    )
+    reframed = gate(above, again)
+
+    entries = []
+    for n, doll in enumerate(unpacked):
+        own = [{"id": s.id, "text": s.text, "kind": s.kind} for s in doll.spans]
+        mine = [stem for stem in asked if frames[stem].name == doll.name]
+        seen = {s["id"] for s in own}
+        extra = []
+        for stem in mine:
+            for span in frames[stem].spans:
+                if span.id not in seen:
+                    seen.add(span.id)
+                    extra.append({"id": span.id, "text": span.text, "kind": span.kind})
+        design = {
+            k: THEMES[n][k]
+            for k in ("body", "scarf", "trim", "dots", "hair", "eyes", "hem", "motif", "flower")
+        }
+        entries.append(
+            {"name": doll.name, "design": design, "lines": own, "extra": extra, "frames": mine}
+        )
+    decoy = next(span.text for span in frames[asked[2]].spans if span.kind == "decoy")
+    return {
+        "dolls": entries,
+        "frames": {
+            asked[0]: {
+                "doll": smallest.name,
+                "variant": None,
+                "caption": f"{smallest.name} holds a paper whose words say {fits.name} is a boy, "
+                f"and says the paper is not {smallest.name}'s. What is {smallest.name}?",
+            },
+            asked[1]: {
+                "doll": fits.name,
+                "variant": "With the paper",
+                "caption": f"{fits.name} asked again, with the paper's words in the hole they "
+                f"fit. What is {fits.name}?",
+            },
+            asked[2]: {
+                "doll": fits.name,
+                "variant": "With a decoy too",
+                "caption": f'{fits.name} again, with the paper\'s words, and beside them "{decoy}"',
+            },
+        },
+        "piece": {
+            "from": smallest.name,
+            "text": paper.text,
+            "fits": fits.name,
+            "hole": holes[0],
+            "passes": passes,
+        },
+        "gate": {
+            "frame": asked[1],
+            "category": recoil.category,
+            "climbs": decision.text,
+            "fits": above.name,
+            "changed": list(reframed.changed),
+            "caption": f"{fits.name}'s run is {recoil.category}, so "
+            f'"{decision.text}" climbs to {above.name}, whose hole waits for who is inside. '
+            f"Asked again, {above.name} would need labels it lacks, so it asks another "
+            f"question, and {above.name} as it was asked stands.",
+        },
+        "order": DOLL_ORDER,
+    }
+
+
 def encoded(stem: str) -> str:
     """The file's text, as it is kept."""
+    if stem == DOLLS:
+        return json.dumps(dolls(), ensure_ascii=False, separators=(",", ":")) + "\n"
     if stem in FEATURED:
         data = demo_watched(stem)
     elif stem == INDEX:
@@ -312,7 +417,7 @@ def encoded(stem: str) -> str:
 
 
 # every file the watch view reads
-FILES = [*FRAMES, *FEATURED, INDEX]
+FILES = [*FRAMES, *FEATURED, INDEX, DOLLS]
 
 
 def main(write: bool) -> int:

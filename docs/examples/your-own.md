@@ -6,7 +6,7 @@
 > - **Teaches:** the method every example followed, and which trial answers
 >   which question.
 > - **Frame:** yours.
-> - **After:** [Crossing](crossing.md).
+> - **After:** [Five dolls, one kid](dolls.md).
 
 ---
 

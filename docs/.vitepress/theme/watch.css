@@ -216,3 +216,38 @@
   .w-side { order: -1; }
   .w-player { width: 100%; justify-content: flex-end; }
 }
+
+/* The doll stage (docs/public/javascripts/dolls.js): five dolls over the view,
+   always all five. The doll the view plays is ringed in the view's own accent,
+   which also edges the view, and named in bold and underlined, so it is shown
+   by more than colour; the others stand a little back. A line a trial cuts
+   lifts its paint to the bare wood beneath. */
+.gadfly-watch[data-dolls] { border: 2px solid var(--w-accent); }
+.w-dolls { margin: -0.25rem 0 1rem; }
+.w-dolls .d-row { display: flex; align-items: flex-end; justify-content: center; }
+.w-dolls .d-doll {
+  all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; margin: 0 calc(var(--d-ratio) * min(1.1rem, 2vw)); opacity: 0.62;
+  transition: opacity 0.3s;
+}
+.w-dolls .d-doll:focus-visible { outline: 2px solid var(--w-accent); outline-offset: 4px; border-radius: 6px; }
+.w-dolls .d-doll svg { display: block; height: calc(var(--d-ratio) * min(15rem, 30vw)); width: auto; overflow: visible; }
+.w-dolls .d-doll[aria-pressed="true"], .w-dolls .d-doll.is-passing { opacity: 1; }
+.w-dolls .d-halo { stroke: transparent; transition: stroke 0.3s; }
+.w-dolls .d-doll[aria-pressed="true"] .d-halo { stroke: var(--w-accent); }
+.w-dolls .d-doll.is-passing .d-halo, .w-dolls .d-doll.is-reframed .d-halo { stroke: var(--w-muted); stroke-dasharray: 10 8; }
+.w-dolls .d-doll.is-reframed { opacity: 1; }
+.w-dolls .d-name { margin-top: 0.375rem; font-size: var(--w-ui); }
+.w-dolls .d-doll[aria-pressed="true"] .d-name { font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; }
+.w-dolls .d-doll[aria-pressed="true"]::after {
+  content: ""; margin-top: 0.25rem; border: 0.4rem solid transparent; border-top-color: var(--w-accent);
+}
+.w-dolls .d-name.is-cut { text-decoration: line-through; color: var(--w-muted); }
+.w-dolls .d-region { transition: opacity 0.6s; }
+.w-dolls .d-region.is-cut { opacity: 0; }
+.w-dolls .d-region.is-gone { opacity: 0.25; }
+.gadfly-watch.no-motion .w-dolls .d-region { transition: none; }
+.w-dolls .d-caption { margin: 0.75rem auto 0; max-width: 40rem; text-align: center; color: var(--w-muted); min-height: 3em; }
+.w-dolls .d-variants { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
+.w-dolls .d-variants:empty { display: none; }
+@media (prefers-reduced-motion: reduce) { .w-dolls .d-region, .w-dolls .d-doll, .w-dolls .d-halo { transition: none; } }
