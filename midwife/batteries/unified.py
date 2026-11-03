@@ -336,10 +336,12 @@ class Unified:
             and all(isinstance(e, str) and e for e in endpoints)
         ):
             raise BatteryError("battery.endpoints lists the router's endpoint tags, in order")
-        if len(endpoints) > MAX_ENDPOINTS or any("," in e or e != e.strip() for e in endpoints):
+        if len(endpoints) > MAX_ENDPOINTS or any(
+            "," in e or any(c.isspace() or not c.isprintable() for c in e) for e in endpoints
+        ):
             raise BatteryError(
                 f"battery.endpoints lists 1 to {MAX_ENDPOINTS} endpoint tags",
-                "each a tag the router knows, with no comma or space around it",
+                "each a tag the router knows, with no comma, space or control character in it",
             )
         if battery.get("reasoning") not in (None, *EFFORTS):
             raise BatteryError(f"battery.reasoning is one of {', '.join(EFFORTS)}")

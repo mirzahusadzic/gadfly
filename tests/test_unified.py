@@ -248,7 +248,9 @@ def test_named_endpoints_are_pinned_without_fallbacks(raw, token):
     assert pinned(situate(raw)) == {"x-codex-router-endpoints": "deepinfra/fp8,fireworks"}
     assert "provider" not in payload(situate(raw), "t", 8)  # the router's header, not its field
     assert policy(situate(raw)) == DENY  # the router keeps pinned endpoints to no data too
-    for endpoints in ("deepinfra/fp8", [f"e{i}" for i in range(17)], ["a,b"], [" fireworks"]):
+    wrong = ("deepinfra/fp8", [f"e{i}" for i in range(17)], ["a,b"], [" fireworks"],
+             ["two words"], ["tab\there"], ["bell\x07"])  # fmt: skip
+    for endpoints in wrong:
         raw["battery"]["endpoints"] = endpoints
         with pytest.raises(ValueError, match="endpoints lists"):
             Unified().check(situate(raw))
