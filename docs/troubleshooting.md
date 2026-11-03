@@ -160,6 +160,8 @@ answer. The run goes on, and `run` exits with 1 only when every call did.
 | `"a cap of 64 output tokens leaves no room for a thought beside the answer's 64"` | With `"reasoning": true`, the `egemma` battery keeps 64 of each call's output tokens for the answer. Raise `--output-tokens`, to 4160 for a whole thought; no request was made. |
 | `"eGemma answered 422"` | eGemma refused the request as written. With `"reasoning": true`, an eGemma older than its reasoning change does not know the field: update eGemma. |
 | `"the maker made nothing ('the call ended incomplete')"` | The `crossing` battery's maker ran out of its half of the cap before the artefact was written, and the reader was not asked. Raise `--output-tokens`, so that half of it holds the maker's thought and its text. |
+| `"the reader gave no label ('the call passed its timeout')"` | The `crossing` battery's reader gave no answer to read; its own reason is quoted, as any battery's opening would read. The artefact it was given is kept in the record's raw answer. |
+| `"the maker's report of what it spent is not a count of tokens"` | A maker of your own reported its spend as something other than whole, non-negative counts, so the reader was not asked and the call is charged the maker's whole share. |
 | `"the maker spent the call's whole cap"` | The maker reported spending all of the call's output tokens, so none were left for the reader. Raise `--output-tokens`. |
 
 ---

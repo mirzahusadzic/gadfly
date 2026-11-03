@@ -1562,7 +1562,11 @@ What this battery promises, whatever the frame says:
 - each call's cap is shared: the maker is given half and the reader what
   the maker left, so the call as a whole keeps the budget's cap;
 - an artefact not made is an opening, never a guessed label, and the reader
-  is not asked;
+  is not asked; every opening names the side that gave no answer, and the
+  reader's answer is held to the protocol as `run` holds any battery's;
+- a side's report of its spend is taken only as whole counts, none
+  negative, so a report can never buy the other side a larger cap; a side
+  that reports nothing, or no such count, is charged all it was given;
 - the record keeps the artefact's SHA-256 and its text beside the reader's
   answer, and names what made it and what read it;
 - each side keeps its own promises: through the router, the deny data
@@ -1685,7 +1689,7 @@ check(frame)
 
 One call across the boundary: the maker makes the artefact from
 the body, then the reader reads it with the input; the reader's
-label, or an opening that says why there is none.
+label, or an opening that says which side gave none, and why.
 
 ```python
 observe(frame, prompt, max_output_tokens)

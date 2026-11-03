@@ -403,6 +403,13 @@ def _observe(battery: Battery, frame: Frame, text: str, cap: int) -> Observation
         observation = battery.observe(frame, text, cap)
     except Exception as error:  # noqa: BLE001 — the failure is the observation
         return Observation(label=None, opening=f"the battery failed ({type(error).__name__})")
+    return _checked(frame, observation)
+
+
+def _checked(frame: Frame, observation: object) -> Observation:
+    """What a battery returned, held to the protocol: an observation of the
+    right types, text a file can hold, and a label of this frame; anything
+    else is an opening that names what was wrong."""
     if not isinstance(observation, Observation):
         return Observation(label=None, opening="the battery returned no observation")
     kinds = {"label": (str, type(None)), "opening": (str, type(None)), "raw": str,

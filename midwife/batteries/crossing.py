@@ -28,7 +28,11 @@ What this battery promises, whatever the frame says:
 - each call's cap is shared: the maker is given half and the reader what
   the maker left, so the call as a whole keeps the budget's cap;
 - an artefact not made is an opening, never a guessed label, and the reader
-  is not asked;
+  is not asked; every opening names the side that gave no answer, and the
+  reader's answer is held to the protocol as `run` holds any battery's;
+- a side's report of its spend is taken only as whole counts, none
+  negative, so a report can never buy the other side a larger cap; a side
+  that reports nothing, or no such count, is charged all it was given;
 - the record keeps the artefact's SHA-256 and its text beside the reader's
   answer, and names what made it and what read it;
 - each side keeps its own promises: through the router, the deny data
@@ -48,6 +52,7 @@ from typing import Protocol, runtime_checkable
 from ..errors import BatteryError, quoted
 from ..frame import Frame, parse
 from ..interventions import plan, prompt
+from ..pipeline import _checked
 from ..types import Battery, Observation
 from .unified import DEFAULT_URL, Unified, request_body
 
@@ -115,7 +120,11 @@ class Function:
 
     def make(self, line: dict, text: str, max_output_tokens: int) -> Made:
         """The function's text for this body; a function spends no tokens."""
-        made = self._make(text)
+        try:
+            made = self._make(text)
+        except Exception as error:  # noqa: BLE001 — the failure is what was made
+            opening = f"the function failed ({type(error).__name__})"
+            return Made(None, opening=opening, usage={"output_tokens": 0})
         if not isinstance(made, str):
             return Made(None, opening="the function returned no text", usage={"output_tokens": 0})
         return Made(made, usage={"output_tokens": 0})
@@ -166,20 +175,19 @@ class UnifiedMaker:
         return Made(written, raw=answer, usage=usage, served=served)
 
 
-def _counts(usage: object) -> dict[str, int]:
-    # the whole-number counts of a usage report, and nothing else
-    if not isinstance(usage, dict):
-        return {}
-    return {
-        key: value
+def _report(usage: object, allowance: int) -> tuple[dict[str, int], int, bool]:
+    # a side's usage as counts, what it spent of its allowance, and whether
+    # the report is sound: whole counts, none negative. A side that reports
+    # nothing spent all it was allowed; one whose report is not sound may
+    # have spent anything, and is charged all it was allowed. A report past
+    # the allowance is kept as it is, for the run to stop on.
+    if not isinstance(usage, dict) or not all(
+        isinstance(key, str) and isinstance(value, int) and not isinstance(value, bool)
+        and value >= 0
         for key, value in usage.items()
-        if isinstance(key, str) and isinstance(value, int) and not isinstance(value, bool)
-    }
-
-
-def _spent(usage: dict[str, int], cap: int) -> int:
-    # what a side spent of its cap: what it reports, or all of it when it reports nothing
-    return usage.get("output_tokens", cap)
+    ):  # fmt: skip
+        return {}, allowance, False
+    return dict(usage), usage.get("output_tokens", allowance), True
 
 
 def _usage(made: dict[str, int], read: dict[str, int], spent: int) -> dict[str, int]:
@@ -270,22 +278,28 @@ class Crossing:
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
         """One call across the boundary: the maker makes the artefact from
         the body, then the reader reads it with the input; the reader's
-        label, or an opening that says why there is none."""
+        label, or an opening that says which side gave none, and why."""
         reading = self._reading(frame)
         line = frame.battery
         body, _, question = prompt.rpartition(SEPARATOR)
         share = max(1, max_output_tokens // 2)
+        maker = f"made by {self.maker.name}"
+        whole = {"output_tokens": share}  # what a maker that says nothing is charged
         try:
             made = self.maker.make(line["maker"], body, share)
         except Exception as error:  # noqa: BLE001 — the failure is the observation
-            return Observation(label=None, opening=f"the maker failed ({type(error).__name__})")
+            opening = f"the maker failed ({type(error).__name__})"
+            return Observation(label=None, opening=opening, usage=whole, served=maker)
         if not isinstance(made, Made):
-            return Observation(label=None, opening="the maker returned nothing it made")
-        made_usage = _counts(made.usage)
-        spent = _spent(made_usage, share)
+            opening = "the maker returned nothing it made"
+            return Observation(label=None, opening=opening, usage=whole, served=maker)
         maker = f"made by {_named(made.served, self.maker.name)}"
+        made_usage, spent, sound = _report(made.usage, share)
+        raw = made.raw if isinstance(made.raw, str) else ""
+        if not sound:
+            opening = "the maker's report of what it spent is not a count of tokens"
+            return Observation(label=None, opening=opening, raw=raw, usage=whole, served=maker)
         if made.opening is not None:
-            raw = made.raw if isinstance(made.raw, str) else ""
             return Observation(
                 label=None,
                 opening=f"the maker made nothing ({made.opening!r})",
@@ -300,7 +314,15 @@ class Crossing:
                 usage=_usage(made_usage, {}, spent),
                 served=maker,
             )
-        sha = hashlib.sha256(made.text.encode("utf-8")).hexdigest()
+        try:
+            sha = hashlib.sha256(made.text.encode("utf-8")).hexdigest()
+        except UnicodeEncodeError:  # a lone surrogate: no text a file or a hash can hold
+            return Observation(
+                label=None,
+                opening="the maker made text that is not valid Unicode",
+                usage=_usage(made_usage, {}, spent),
+                served=maker,
+            )
         left = max_output_tokens - spent
         if left < 1:
             return Observation(
@@ -320,19 +342,16 @@ class Crossing:
                 usage=_usage(made_usage, {}, spent + left),
                 served=maker,
             )
-        if not isinstance(seen, Observation):
-            return Observation(
-                label=None,
-                opening="the reader returned no observation",
-                raw=_raw("", made.text, sha),
-                usage=_usage(made_usage, {}, spent + left),
-                served=maker,
-            )
-        read_usage = _counts(seen.usage)
-        return Observation(
-            label=seen.label,
-            opening=seen.opening,
-            raw=_raw(seen.raw if isinstance(seen.raw, str) else "", made.text, sha),
-            usage=_usage(made_usage, read_usage, spent + _spent(read_usage, left)),
-            served=f"{maker}, read by {_named(seen.served, self.reader.name)}",
-        )
+        seen = _checked(reading, seen)  # as run holds any battery's answer
+        read_usage, read, sound = _report(seen.usage, left)
+        served = f"{maker}, read by {_named(seen.served, self.reader.name)}"
+        kept = _raw(seen.raw, made.text, sha)
+        if not sound:
+            opening = "the reader's report of what it spent is not a count of tokens"
+            usage = _usage(made_usage, {}, spent + left)
+            return Observation(label=None, opening=opening, raw=kept, usage=usage, served=served)
+        usage = _usage(made_usage, read_usage, spent + read)
+        if seen.opening is not None:
+            opening = f"the reader gave no label ({seen.opening!r})"
+            return Observation(label=None, opening=opening, raw=kept, usage=usage, served=served)
+        return Observation(label=seen.label, raw=kept, usage=usage, served=served)

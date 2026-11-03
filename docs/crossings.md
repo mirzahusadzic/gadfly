@@ -74,7 +74,10 @@ gadfly run incident.json \
 - **What a record keeps:** `served` reads `made by …, read by …`, and the raw
   answer holds the reader's answer, then the artefact's SHA-256 and text.
 - **When a side fails:** an artefact not made is an opening that says so
-  (`the maker made nothing (…)`), and the reader is not asked.
+  (`the maker made nothing (…)`), and the reader is not asked; a reading
+  not made says so too (`the reader gave no label (…)`). A side that
+  reports nothing, or a spend that is not a count, is charged all it was
+  given.
 
 ---
 
