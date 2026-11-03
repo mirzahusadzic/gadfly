@@ -325,33 +325,42 @@
     });
   }
 
-  // Where the statements list starts, from its lines' tops and bottoms and
-  // the height it shows, so the line under test is always in view: at the
-  // first of every line under test and the changed line nearest them, when
-  // they all fit; else at the first line under test, when every one fits;
-  // else at a line under test the trial changed; else at the higher of a
-  // line under test and the changed line nearest it, when the two fit
-  // together; else at that line under test.
+  // Which lines of the statements list to show, as their top and bottom,
+  // from its lines' tops and bottoms and the height it shows, so the line
+  // under test is always in view: every line under test and the changed
+  // line nearest them, when they all fit; else every line under test, when
+  // they fit; else a line under test the trial changed; else a line under
+  // test and the changed line nearest it, when the two fit together; else
+  // that line under test.
   function settle(rows, height) {
     const tests = rows.filter((r) => r.test);
     const changed = rows.filter((r) => r.changed);
     const top = (group) => Math.min(...group.map((r) => r.top));
-    const tall = (group) => Math.max(...group.map((r) => r.bottom)) - top(group);
+    const bottom = (group) => Math.max(...group.map((r) => r.bottom));
+    const tall = (group) => bottom(group) - top(group);
+    const span = (group) => [top(group), bottom(group)];
     const every = changed.map((line) => [...tests, line]).sort((a, b) => tall(a) - tall(b))[0] ?? tests;
-    if (tests.length && tall(every) <= height) return top(every);
-    if (tests.length && tall(tests) <= height) return top(tests);
+    if (tests.length && tall(every) <= height) return span(every);
+    if (tests.length && tall(tests) <= height) return span(tests);
     const touched = tests.find((r) => r.changed);
-    if (touched) return touched.top;
-    if (!tests.length) return changed.length ? changed[0].top : 0;
-    let best = { test: tests[0], top: tests[0].top, span: Infinity };
+    if (touched) return span([touched]);
+    if (!tests.length) return changed.length ? span([changed[0]]) : [0, 0];
+    let best = { test: tests[0], group: [tests[0]], tall: Infinity };
     for (const test of tests) {
       for (const line of changed) {
-        const top = Math.min(test.top, line.top);
-        const span = Math.max(test.bottom, line.bottom) - top;
-        if (span < best.span) best = { test, top, span };
+        if (tall([test, line]) < best.tall) best = { test, group: [test, line], tall: tall([test, line]) };
       }
     }
-    return best.span <= height ? best.top : best.test.top;
+    return best.tall <= height ? span(best.group) : span([best.test]);
+  }
+
+  // Where the statements list scrolls to: the lines settle picks, centred in
+  // the part of the list the window shows (from `skip` below its top, for
+  // `height`), and never past either end, so a last line keeps the lines
+  // before it in view.
+  function centred([top, bottom], height, skip, most) {
+    const at = (top + bottom) / 2 - skip - height / 2;
+    return Math.round(Math.min(Math.max(at, 0), most));
   }
 
   function why(category, list, reader) {
@@ -730,7 +739,6 @@
     function follow() {
       const lines = doc.querySelector(".w-lines");
       if (!lines) return;
-      lines.style.paddingBottom = "";
       if (lines.scrollHeight <= lines.clientHeight) return;
       const rows = [...lines.children].map((li) => ({
         top: li.offsetTop,
@@ -743,10 +751,7 @@
       const from = Math.max(box.top, 0, ...bars);
       const shown = Math.min(box.top + lines.clientHeight, window.innerHeight) - from;
       const [skip, height] = shown > 0 ? [from - box.top, shown] : [0, lines.clientHeight];
-      const top = Math.max(0, settle(rows, height) - skip);
-      const short = lines.clientHeight - (lines.scrollHeight - top);
-      if (short > 0) lines.style.paddingBottom = `${short}px`;
-      lines.scrollTop = top;
+      lines.scrollTop = centred(settle(rows, height), height, skip, lines.scrollHeight - lines.clientHeight);
     }
     // the panel follows the right column's height and the window's width
     new ResizeObserver(follow).observe(doc);

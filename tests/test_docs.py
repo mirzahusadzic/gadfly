@@ -369,9 +369,29 @@ def test_the_watch_view_keeps_the_line_under_test_in_view(tests, changed, shown,
         {"top": 60 * i, "bottom": 60 * i + 56, "test": i in tests, "changed": i in changed}
         for i in range(30)
     ]
-    run = f"{settle}\nprocess.stdout.write(String(settle({json.dumps(rows)}, {shown})));"
+    run = f"{settle}\nprocess.stdout.write(String(settle({json.dumps(rows)}, {shown})[0]));"
     done = subprocess.run(["node", "-e", run], capture_output=True, text=True, check=True)
     assert int(done.stdout) == 60 * start
+
+
+@pytest.mark.parametrize(
+    ("line", "skip", "scrolled"),
+    [
+        (29, 0, 1320),  # the last line: the list ends at it, the lines before it shown
+        (10, 0, 388),  # a middle line, centred in a view of eight
+        (0, 0, 0),  # the first line: the list starts at it
+        (10, 100, 288),  # under the site's bar, centred in what is left
+    ],
+)
+def test_the_watch_view_centres_the_lines_it_shows(line, skip, scrolled):
+    # 30 lines of 60px in a 480px view: the line under test once went to the
+    # top, with padding after it, so a last line stood alone in an empty panel
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    centred = re.search(r"  function centred\(.*?\n  \}\n", watch, re.S).group(0)
+    shown = [60 * line, 60 * line + 56]
+    run = f"{centred}\nprocess.stdout.write(String(centred({shown}, 480, {skip}, 1800 - 480)));"
+    done = subprocess.run(["node", "-e", run], capture_output=True, text=True, check=True)
+    assert int(done.stdout) == scrolled
 
 
 def test_the_watch_view_lists_every_answer_an_instruction_names():
