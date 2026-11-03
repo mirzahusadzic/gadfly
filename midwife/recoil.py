@@ -219,6 +219,13 @@ class Firm:
         return overall_of(list(self.findings)).category if self.findings else None
 
 
+def _charged(usage: dict[str, Any], cap: int) -> int:
+    # what a call spent, as run charges it: what the battery reports, or the
+    # cap when it reports no whole count
+    used = usage.get("output_tokens")
+    return cap if not isinstance(used, int) or isinstance(used, bool) else used
+
+
 def _read(frame: Frame, records: Sequence[dict[str, Any]]) -> tuple[list[Finding], dict]:
     findings = judge_records(frame, list(records))
     [drawn] = stability(frame, [records])
@@ -287,7 +294,9 @@ def until_firm(
             )
             runs.append(tuple(record.as_dict() for record in result.records))
             made += len(result.records)
-            spent += sum(record.usage.get("output_tokens", 0) for record in result.records)
+            spent += sum(
+                _charged(record.usage, budget.output_tokens_per_call) for record in result.records
+            )
             if result.stopped:
                 stopped = result.stopped
                 break

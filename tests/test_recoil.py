@@ -515,3 +515,15 @@ def test_holes_stand_in_for_anchors_until_a_piece_fills_one():
     assert not Draft202012Validator(schema()).is_valid(waiting)
     with pytest.raises(FrameError, match="rests on at least one anchor"):
         parse(waiting)
+
+
+def test_a_call_that_reports_no_tokens_is_charged_its_cap_as_run_charges_it():
+    # a battery need not report what it wrote: run charges such a call its
+    # cap, and so does until_firm, so no run starts past the token budget
+    # (pass 11, F1)
+    middle = dolls()[1]
+    after = with_slip(middle)
+    each = calls_needed(after)
+    asked = until_firm(after, Shaky(shaky=10**6), Budget(5 * each, 64, 2 * each * 64))
+    assert asked.made == 2 * each and not asked.firm
+    assert asked.stopped == f"the token budget covers no further run of {each} calls"
