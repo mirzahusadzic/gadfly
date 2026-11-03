@@ -268,3 +268,13 @@ def test_redrawn_shares_add_up_to_the_whole():
         "carried 70%, unresolved 30%, cooled under 1%"
     )
     assert _parts({"cooled": 1.0}) == "cooled 100%"
+
+
+def test_stats_reads_standard_input_once(raw, monkeypatch, capsys):
+    import io
+
+    for argv in (["stats", "-", "-"], ["stats", "f.json", "r.jsonl", "-", "--pool", "o", "-"],
+                 ["stats", "-", "r.jsonl", "--pool", "-", "o.jsonl"]):  # fmt: skip
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(raw)))
+        assert main([*argv, "--resamples", "0"]) == 2
+        assert "UsageError: standard input is read once" in capsys.readouterr().err

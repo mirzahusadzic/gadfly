@@ -790,7 +790,11 @@ def main(argv: list[str] | None = None) -> int:
             command_line.print_help()
             return 0
         named = [vars(args).get(key) for key in ("frame", "records", "kept")]
-        if [*named, *vars(args).get("reports", [])].count("-") > 1:
+        for many in ("records", "reports"):  # stats takes several records, portfolio reports
+            if isinstance(vars(args).get(many), list):
+                named += vars(args)[many]
+        named += [path for pair in vars(args).get("pool") or [] for path in pair]
+        if named.count("-") > 1:
             raise UsageError("standard input is read once", "name - for one file at most")
         try:
             return args.func(args)
