@@ -9,6 +9,15 @@ does not exist; `--refresh-package midwife` makes it look again.
 
 ---
 
+### To 0.9.1, not yet released
+
+On `main`, for the next release. No verdict changes, and nothing a caller of
+0.9.0 meets changes. New, and opt-in: the `tendora` battery's `readings` flag
+sends a reading beside each statement, for an engine that takes them, and
+holds the reply to naming each one it was sent.
+
+---
+
 ### To 0.9.0
 
 No verdict changes, and these five things a caller of 0.8.0 meets do:

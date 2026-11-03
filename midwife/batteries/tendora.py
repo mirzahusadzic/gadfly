@@ -28,17 +28,27 @@ The label, from the engine's answer:
   objects with words and a true or false condition, or no `served`) are
   openings, never labels.
 
+With `"readings": "tab"`, each statement line carries a reading of it after
+its first TAB: the text before the TAB is sent in `statements`, the reading
+in `readings` at the same place, and a line with no TAB sends null. A line
+with nothing before its TAB or nothing after it is an opening, and the
+engine is not asked. The reply must list in `served.readings` exactly the
+statements sent a reading, those it refused among them, or it is an
+opening: an engine that ignored the readings answered another question.
+
 Before any call, `check` refuses what the battery could not ask: no `open`
 among the labels, an input not in the form above, a statement with a line
 break in any trial (the engine is sent one a line), a rename that turns an
-input out of the form, and two inputs turned into one question.
+input out of the form, two inputs turned into one question, and, with
+readings, a statement with nothing before or after its TAB in any trial.
 
 What this battery promises, whatever the frame says:
 - it talks only to the address named, on this machine (loopback), over
   plain http, through no proxy and no redirect, and sends no credentials;
-- it sends the question, the case, the scope, the statements, the offline
-  flag and, for a turned input, the saved check it came from (`basis`), and
-  nothing else; the trial's id is never among them;
+- it sends the question, the case, the scope, the statements, with
+  `readings` each one's reading, the offline flag and, for a turned input,
+  the saved check it came from (`basis`), and nothing else; the trial's id
+  is never among them;
 - each call has a deadline (`timeout` seconds for the whole reply, its
   head included, 60 by default) and a cap on what it reads back: a reply
   past the cap is an opening, and nothing of it is kept;
@@ -65,7 +75,8 @@ from ..pipeline import RAW_LIMIT
 from ..types import Observation
 from .critic import MAX_RESPONSE_BYTES, Late, loopback, opened, read_error, read_reply
 
-BATTERY_KEYS = {"kind", "url", "timeout", "scope", "offline"}
+BATTERY_KEYS = {"kind", "url", "timeout", "scope", "offline", "readings"}
+READINGS = "tab"  # battery.readings: a statement line's reading follows its first TAB
 DEFAULT_TIMEOUT = 60.0
 MAX_TIMEOUT = 3600  # a whole call, in seconds
 RULE = "\n\n---\n\n"  # between the body and the input, as interventions.prompt writes it
@@ -95,16 +106,35 @@ def asked(text: str) -> tuple[str, str | None] | None:
     return question, case
 
 
+def bare(text: str) -> str | None:
+    """The side of a statement line's first TAB with nothing on it, `before`
+    or `after`, or None when the line holds no TAB or words on both sides."""
+    before, tab, after = text.partition("\t")
+    if tab:
+        for side, part in (("before", before), ("after", after)):
+            if not part.strip():
+                return side
+    return None
+
+
 def request_body(frame: Frame, prompt: str) -> dict | None:
     """What the engine is sent for one prompt, or None when the prompt is not
     in Gadfly's form: the question, the case and the scope, the statements in
-    their order, and the offline flag."""
+    their order, with `readings` each one's reading, and the offline flag.
+    With readings, a line with nothing on one side of its TAB is not in the
+    form either."""
     body, rule, given = prompt.rpartition(RULE)
     where = asked(given) if rule else None
     if where is None:
         return None
     question, case = where
     sent: dict = {"question": question, "statements": body.split("\n") if body else []}
+    if frame.battery.get("readings") == READINGS:
+        if any(bare(line) for line in sent["statements"]):
+            return None
+        split = [line.partition("\t") for line in sent["statements"]]
+        sent["statements"] = [text for text, _, _ in split]
+        sent["readings"] = [reading if tab else None for _, tab, reading in split]
     if case is not None:
         sent["case"] = case
     basis = _basis(frame, given)
@@ -239,6 +269,37 @@ def served_by(reply: dict) -> str:
     return " ".join(part for part in parts if part)[:200]
 
 
+def unsent(frame: Frame, prompt: str) -> str:
+    """Why `request_body` gives a prompt nothing to send: with readings, the
+    first statement line with nothing on one side of its TAB, by its place;
+    otherwise a prompt not in Gadfly's form."""
+    if frame.battery.get("readings") == READINGS:
+        body = prompt.rpartition(RULE)[0]
+        for line, text in enumerate(body.split("\n") if body else [], 1):
+            side = bare(text)
+            if side:
+                return (
+                    f"line {line} of the statements has nothing {side} its TAB, "
+                    "so the engine was not asked"
+                )
+    return "the prompt is not in Gadfly's form"
+
+
+def unacknowledged(served: dict, readings: list) -> str | None:
+    """Why a reply does not show the engine took the readings it was sent, or
+    None: `served.readings` lists exactly the statements sent one, by their
+    place in `statements`, those it refused among them."""
+    listed = served.get("readings")
+    if listed is None:
+        return "the engine's reply does not say which readings it took"
+    given = [n for n, reading in enumerate(readings) if reading is not None]
+    if not (
+        isinstance(listed, list) and all(type(n) is int for n in listed) and sorted(listed) == given
+    ):
+        return "the engine's reply names other readings than were sent"
+    return None
+
+
 class Tendora:
     """`battery: {"kind": "tendora", "url": "http://127.0.0.1:8791"}`"""
 
@@ -250,9 +311,10 @@ class Tendora:
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this battery must not serve:
         another battery's, an unknown key, an address off this machine, a
-        timeout that is not a positive number of seconds, a scope or offline
-        flag of the wrong type, no `open` among the labels, a statement with a
-        line break in any trial, an input not in
+        timeout that is not a positive number of seconds, a scope, offline
+        or readings flag of the wrong type, no `open` among the labels, a
+        statement with a line break in any trial, or with readings one with
+        nothing before or after its TAB, an input not in
         the form `Case: …` then `Question: …`, an input inversion or
         presentation that turns an input out of that form, or two inputs
         turned into one question."""
@@ -278,6 +340,10 @@ class Tendora:
             raise BatteryError("battery.scope names the check's scope")
         if "offline" in battery and not isinstance(battery["offline"], bool):
             raise BatteryError("battery.offline is true or false")
+        if "readings" in battery and battery["readings"] != READINGS:
+            raise BatteryError(
+                f"battery.readings is {READINGS!r}, a reading after each statement's first TAB"
+            )
         if OPEN not in frame.labels:
             raise BatteryError("the tendora battery needs open among the labels")
         for x in frame.inputs:
@@ -288,13 +354,20 @@ class Tendora:
                 )
         from ..interventions import plan
 
+        readings = battery.get("readings") == READINGS
         for trial in plan(frame):  # the engine is sent one statement a line
             for span in trial.spans:
+                where = "" if trial.id == "baseline" else f" in trial {trial.id!r}"
                 if "\n" in span.text or "\r" in span.text:
-                    where = "" if trial.id == "baseline" else f" in trial {trial.id!r}"
                     raise BatteryError(
                         f"span {span.id!r} holds a line break{where}, but the engine is sent "
                         "one statement a line"
+                    )
+                side = bare(span.text) if readings else None
+                if side:
+                    raise BatteryError(
+                        f"span {span.id!r} has nothing {side} its TAB{where}, but each "
+                        "statement's reading follows its text"
                     )
         ids = {x["text"]: x["id"] for x in frame.inputs}
         for into, sources in turned(frame).items():
@@ -314,7 +387,7 @@ class Tendora:
         that says why there is none."""
         sent = request_body(frame, prompt)
         if sent is None:
-            return Observation(label=None, opening="the prompt is not in Gadfly's form")
+            return Observation(label=None, opening=unsent(frame, prompt))
         battery = frame.battery
         url = loopback(battery["url"].rstrip("/") + "/ask", "the engine")
         timeout = float(battery.get("timeout", DEFAULT_TIMEOUT))
@@ -366,6 +439,10 @@ class Tendora:
             and all(isinstance(served.get(k), str) and served[k] for k in SERVED)
         ):  # a label is kept only with the engine that gave it
             return Observation(label=None, opening="the engine's reply names no version", **seen)
+        if "readings" in sent:  # an answer from the bare statements answers another question
+            opening = unacknowledged(served, sent["readings"])
+            if opening:
+                return Observation(label=None, opening=opening, **seen)
         label, opening = label_of(reply, frame.labels)
         if label is None:
             return Observation(label=None, opening=opening, **seen)

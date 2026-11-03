@@ -1615,17 +1615,27 @@ The label, from the engine's answer:
   objects with words and a true or false condition, or no `served`) are
   openings, never labels.
 
+With `"readings": "tab"`, each statement line carries a reading of it after
+its first TAB: the text before the TAB is sent in `statements`, the reading
+in `readings` at the same place, and a line with no TAB sends null. A line
+with nothing before its TAB or nothing after it is an opening, and the
+engine is not asked. The reply must list in `served.readings` exactly the
+statements sent a reading, those it refused among them, or it is an
+opening: an engine that ignored the readings answered another question.
+
 Before any call, `check` refuses what the battery could not ask: no `open`
 among the labels, an input not in the form above, a statement with a line
 break in any trial (the engine is sent one a line), a rename that turns an
-input out of the form, and two inputs turned into one question.
+input out of the form, two inputs turned into one question, and, with
+readings, a statement with nothing before or after its TAB in any trial.
 
 What this battery promises, whatever the frame says:
 - it talks only to the address named, on this machine (loopback), over
   plain http, through no proxy and no redirect, and sends no credentials;
-- it sends the question, the case, the scope, the statements, the offline
-  flag and, for a turned input, the saved check it came from (`basis`), and
-  nothing else; the trial's id is never among them;
+- it sends the question, the case, the scope, the statements, with
+  `readings` each one's reading, the offline flag and, for a turned input,
+  the saved check it came from (`basis`), and nothing else; the trial's id
+  is never among them;
 - each call has a deadline (`timeout` seconds for the whole reply, its
   head included, 60 by default) and a cap on what it reads back: a reply
   past the cap is an opening, and nothing of it is kept;
@@ -1646,11 +1656,22 @@ in it, and no carriage return.
 asked(text)
 ```
 
+#### bare
+
+The side of a statement line's first TAB with nothing on it, `before`
+or `after`, or None when the line holds no TAB or words on both sides.
+
+```python
+bare(text)
+```
+
 #### request_body
 
 What the engine is sent for one prompt, or None when the prompt is not
 in Gadfly's form: the question, the case and the scope, the statements in
-their order, and the offline flag.
+their order, with `readings` each one's reading, and the offline flag.
+With readings, a line with nothing on one side of its TAB is not in the
+form either.
 
 ```python
 request_body(frame, prompt)
@@ -1705,6 +1726,26 @@ the first 16 characters of its revision, and its packs.
 served_by(reply)
 ```
 
+#### unsent
+
+Why `request_body` gives a prompt nothing to send: with readings, the
+first statement line with nothing on one side of its TAB, by its place;
+otherwise a prompt not in Gadfly's form.
+
+```python
+unsent(frame, prompt)
+```
+
+#### unacknowledged
+
+Why a reply does not show the engine took the readings it was sent, or
+None: `served.readings` lists exactly the statements sent one, by their
+place in `statements`, those it refused among them.
+
+```python
+unacknowledged(served, readings)
+```
+
 #### Tendora
 
 `battery: {"kind": "tendora", "url": "http://127.0.0.1:8791"}`
@@ -1717,9 +1758,10 @@ class Tendora
 
 Refuse, before any call, a frame this battery must not serve:
 another battery's, an unknown key, an address off this machine, a
-timeout that is not a positive number of seconds, a scope or offline
-flag of the wrong type, no `open` among the labels, a statement with a
-line break in any trial, an input not in
+timeout that is not a positive number of seconds, a scope, offline
+or readings flag of the wrong type, no `open` among the labels, a
+statement with a line break in any trial, or with readings one with
+nothing before or after its TAB, an input not in
 the form `Case: …` then `Question: …`, an input inversion or
 presentation that turns an input out of that form, or two inputs
 turned into one question.

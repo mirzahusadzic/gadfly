@@ -155,6 +155,15 @@ since the engine is sent one statement a line. The battery refuses either
 before any call, as it does a rename that turns an input out of its form
 or two inputs into one question.
 
+With `"readings": "tab"` in the battery's line, each statement line carries
+a reading of it after its first TAB: the text before the TAB is sent as the
+statement, the reading in `readings` at the same place, and a line with no
+TAB sends `null`. A line with nothing on one side of its TAB is refused
+before any call when it is a span, and is an opening, never sent, when a
+crossing's maker wrote it. The reply must list in `served.readings` exactly
+the statements sent a reading, or the call is an opening, since an engine
+that ignored them answered from the bare statements.
+
 #### A maker before the reader
 
 The `crossing` battery runs a [crossing](crossings.md) out through a maker

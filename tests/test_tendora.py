@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from midwife.batteries.tendora import Tendora, asked, label_of, request_body
+from midwife.batteries.tendora import RULE, Tendora, asked, label_of, request_body
 from midwife.interventions import plan, prompt
 from midwife.pipeline import calls_needed, judge, run, situate
 from midwife.types import Budget
@@ -425,3 +425,152 @@ def test_the_answer_line_stays_whole_json_under_the_records_cap(raw, server):
         assert first["status"] == "supported" and kept == answers[: len(kept)]
         assert len(kept) + first.get("more", 0) == len(answers)
     assert first == {"status": "supported", "answers": [{"text": "Sam", "conditional": False}]}
+
+
+def reading(text):
+    # a reading of one statement, in whatever form the engine takes: Gadfly
+    # carries it and never reads it
+    return f"(s / statement :words {len(text.split())})"
+
+
+def reads(body):
+    # the chain engine, naming the statements it was sent a reading for
+    status, headers, sent = engine(body)
+    answer = json.loads(sent)
+    answer["served"]["readings"] = [n for n, r in enumerate(body["readings"]) if r is not None]
+    return status, headers, json.dumps(answer).encode()
+
+
+def test_without_readings_a_statement_is_sent_whole_tab_and_all(raw, server):
+    # the flag is opt-in: without it the request is as it always was
+    raw["body"]["spans"][0]["text"] += "\t(d / declare-01)"
+    fake = server(reply("supported", "Sam"))
+    frame = at(raw, fake.base)
+    Tendora().check(frame)
+    Tendora().observe(frame, prompt(frame, plan(frame)[0], frame.inputs[0]), 64)
+    [(_, sent)] = fake.requests
+    assert "readings" not in sent
+    assert sent["statements"][0] == raw["body"]["spans"][0]["text"]
+
+
+def test_with_readings_each_statement_line_splits_at_its_first_tab(raw, server):
+    spans = raw["body"]["spans"]
+    words = [span["text"] for span in spans[:3]]
+    spans[0]["text"] += "\t(d / declare-01\t:ARG0 m)"  # a second TAB is the reading's
+    spans[1]["text"] += "\t(a / approve-01)"
+    fake = server(reply("supported", "Sam", served={**SERVED, "readings": [0, 1]}))
+    frame = at(raw, fake.base, readings="tab")
+    Tendora().check(frame)
+    seen = Tendora().observe(frame, prompt(frame, plan(frame)[0], frame.inputs[0]), 64)
+    [(_, sent)] = fake.requests
+    assert sent["statements"][:3] == words
+    assert sent["readings"][:3] == ["(d / declare-01\t:ARG0 m)", "(a / approve-01)", None]
+    assert len(sent["readings"]) == len(sent["statements"])
+    assert set(sent["readings"][2:]) == {None}
+    assert seen.label == "Sam"
+
+
+@pytest.mark.parametrize(
+    "tabbed, listed, opening",
+    [
+        (2, [0, 1], None),
+        (2, [1, 0], None),
+        (0, [], None),
+        (2, None, "the engine's reply does not say which readings it took"),
+        (0, None, "the engine's reply does not say which readings it took"),
+        (2, [0], "the engine's reply names other readings than were sent"),
+        (2, [0, 1, 2], "the engine's reply names other readings than were sent"),
+        (2, [0, 1, 1], "the engine's reply names other readings than were sent"),
+        (2, [0, "1"], "the engine's reply names other readings than were sent"),
+        (2, [0, True], "the engine's reply names other readings than were sent"),
+        (2, "0,1", "the engine's reply names other readings than were sent"),
+    ],
+)
+def test_a_reply_must_name_exactly_the_readings_it_was_sent(raw, server, tabbed, listed, opening):
+    # an engine that ignored the readings, as one from before them does,
+    # answered from the bare statements: another question, never a label
+    for span in raw["body"]["spans"][:tabbed]:
+        span["text"] += "\t(r / reading)"
+    served = {**SERVED, **({} if listed is None else {"readings": listed})}
+    fake = server(reply("supported", "Sam", served=served))
+    frame = at(raw, fake.base, readings="tab")
+    seen = Tendora().observe(frame, prompt(frame, plan(frame)[0], frame.inputs[0]), 64)
+    assert (seen.label, seen.opening) == (("Sam", None) if opening is None else (None, opening))
+
+
+@pytest.mark.parametrize(
+    "line, side",
+    [("\t(r / reading)", "before"), ("  \t(r / reading)", "before"), ("Alex pages.\t ", "after")],
+)
+def test_a_statement_line_with_nothing_on_one_side_of_its_tab_is_never_sent(
+    raw, server, line, side
+):
+    # in a crossing the lines exist only once the maker has written them, so
+    # the call refuses them itself: an opening that names the line, and no ask
+    fake = server(reply("supported", "Sam"))
+    frame = at(raw, fake.base, readings="tab")
+    given = f"Maya declares.\n{line}{RULE}{frame.inputs[0]['text']}"
+    assert request_body(frame, given) is None
+    seen = Tendora().observe(frame, given, 64)
+    assert seen.label is None
+    assert seen.opening == (
+        f"line 2 of the statements has nothing {side} its TAB, so the engine was not asked"
+    )
+    assert fake.requests == []
+
+
+@pytest.mark.parametrize(
+    "change, message",
+    [
+        (lambda raw: raw["battery"].update(readings="json"), "battery.readings is 'tab'"),
+        (lambda raw: raw["battery"].update(readings=True), "battery.readings is 'tab'"),
+        (
+            lambda raw: raw["body"]["spans"][0].update(text="\t(d / declare-01)"),
+            "span 'maya-declares' has nothing before its TAB, but",
+        ),
+        (
+            lambda raw: raw["body"]["spans"][0].update(text="Maya declares.\t"),
+            "span 'maya-declares' has nothing after its TAB, but",
+        ),
+        (
+            lambda raw: (
+                raw["body"]["spans"][0].update(text="Maya declares.\tMaya"),
+                raw["interventions"].update(presentation={"Maya": " "}),
+            ),
+            "span 'maya-declares' has nothing after its TAB in trial 'presentation'",
+        ),
+    ],
+)
+def test_check_refuses_readings_the_battery_could_not_send(raw, change, message):
+    raw["battery"] = {"kind": "tendora", "url": "http://127.0.0.1:1", "readings": "tab"}
+    change(raw)
+    with pytest.raises(ValueError, match=message):
+        Tendora().check(situate(raw))
+
+
+def test_a_reading_maker_crosses_to_the_engine_with_each_statements_reading(raw, server):
+    # what the flag is for: a maker writes each statement, a TAB and its
+    # reading, and the engine is asked with them; the verdict is the chain's
+    from midwife.batteries.crossing import Crossing, Function
+
+    fake = server(reads)
+    raw["battery"] = {
+        "kind": "crossing",
+        "maker": {"kind": "reading"},
+        "reader": {"kind": "tendora", "url": fake.base, "readings": "tab"},
+    }
+    frame = situate(raw)
+
+    def made(body):
+        return "\n".join(f"{line}\t{reading(line)}" for line in body.split("\n"))
+
+    crossing = Crossing(Function("reading", made), Tendora())
+    result = run(frame, crossing, Budget(calls=calls_needed(frame)))
+    levels = {record.trial: record.observation for record in result.records}
+    assert levels["baseline"] == "Sam" and levels["ablation"] == "open"
+    assert levels["bypass"] == "open" and levels["control"] == "open"
+    for _, sent in fake.requests:
+        assert "\t" not in "".join(sent["statements"])
+        assert sent["readings"] == [reading(text) for text in sent["statements"]]
+    [finding] = judge(frame, result.records)
+    assert finding.category == "carried"
