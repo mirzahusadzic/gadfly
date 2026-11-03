@@ -662,3 +662,17 @@ def test_a_wide_frontier_drains_in_linear_work():
         return total
 
     assert shifted(80) <= 2 * shifted(40) + 100
+
+
+def test_a_body_with_no_span_is_refused_beside_holes_too():
+    # holes stand in for anchors, not for the evidence: an empty body is
+    # refused by the parser as by the schema (pass 11, F6)
+    from jsonschema import Draft202012Validator
+
+    from midwife.frame import schema
+
+    empty = matryoshka()[1]
+    empty.update(body={"spans": []}, anchors=[])
+    assert not Draft202012Validator(schema()).is_valid(empty)
+    with pytest.raises(FrameError, match="the body holds no span"):
+        parse(empty)

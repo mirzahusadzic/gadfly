@@ -272,6 +272,8 @@ def parse(raw: dict[str, Any]) -> Frame:
         )
     if len(set(anchors)) != len(anchors):
         raise FrameError("anchors name a span twice")
+    if not spans:  # with no anchor to name one, holes alone would leave it empty
+        raise FrameError("the body holds no span", "a frame's evidence is one span or more")
 
     inputs = tuple(need("inputs", list))
     if not inputs or not all(
