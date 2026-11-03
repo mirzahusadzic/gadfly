@@ -53,7 +53,12 @@ KEYS = {
     "outsideScope",
     "carriage",
     "scopeCheck",
+    "holes",
+    "offers",
 }
+# A hole is an anchor the body is missing, by id and kind: what a piece found
+# further down a chain of frames must be to fill it (`midwife.recoil`).
+HOLE_KEYS = {"id", "kind"}
 # The receiving owner's independent check of an outsideScope exclusion.
 SCOPE_CHECK = {"owner", "statement", "source", "encounter"}
 # How a category treats the checks its trials left open: under all-checks
@@ -119,6 +124,14 @@ class Frame:
     def outside_scope(self) -> str | None:
         return self.raw.get("outsideScope")
 
+    @property
+    def holes(self) -> tuple[dict[str, str], ...]:
+        return tuple(self.raw.get("holes", ()))
+
+    @property
+    def offers(self) -> str | None:
+        return self.raw.get("offers")
+
 
 def _read_once(frame: Frame) -> dict[str, Any]:
     """The frame's text decoded once and kept with it, for Gadfly's own reading
@@ -134,7 +147,7 @@ def _read_once(frame: Frame) -> dict[str, Any]:
 # The keys a frame may leave out; null is not leaving one out, since it hashes
 # differently, so the parser refuses it as the schema does.
 OPTIONAL = {
-    "": ("materialized", "carriage", "outsideScope", "scopeCheck"),
+    "": ("materialized", "carriage", "outsideScope", "scopeCheck", "holes", "offers"),
     "observe": ("order",),
     "standing": ("stable",),
     "allowed": ("bypass", "inversion", "inputInversion"),
@@ -247,6 +260,7 @@ def parse(raw: dict[str, Any]) -> Frame:
         raise FrameError("two spans share an id")
     for span_id in ids:
         _one_name(span_id, "span id")
+    _check_holes(raw, known)
 
     anchors = tuple(need("anchors", list))
     if not anchors:
@@ -413,6 +427,41 @@ def _one_name(value: str, what: str) -> None:
             f"{what} {value!r} is not one plain name",
             "a name holds no line break and no colon followed by a space",
         )
+
+
+def _check_holes(raw: dict[str, Any], known: set[str]) -> None:
+    """A frame's holes, each an id and a kind, plain names, none a span the
+    body already has; and the kind its decision climbs as, under `offers`."""
+    holes = raw.get("holes")
+    if holes is not None:
+        if not (
+            isinstance(holes, list)
+            and holes
+            and all(
+                isinstance(hole, dict)
+                and set(hole) == HOLE_KEYS
+                and all(isinstance(value, str) and value for value in hole.values())
+                for hole in holes
+            )
+        ):
+            raise FrameError("holes lists what the body is missing, each an id and a kind")
+        for hole in holes:
+            _one_name(hole["id"], "hole id")
+            _one_name(hole["kind"], "hole kind")
+        ids = [hole["id"] for hole in holes]
+        if len(set(ids)) != len(ids):
+            raise FrameError("two holes share an id")
+        taken = sorted(set(ids) & known)
+        if taken:
+            raise FrameError(
+                f"holes name span {quoted(taken)}, which the body has",
+                "a hole is what the body lacks",
+            )
+    offers = raw.get("offers")
+    if offers is not None:
+        if not (isinstance(offers, str) and offers):
+            raise FrameError("offers names the kind the frame's decision climbs as")
+        _one_name(offers, "offers")
 
 
 def _span(value: Any) -> Span:

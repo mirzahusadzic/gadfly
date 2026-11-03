@@ -18,6 +18,8 @@ and on GitHub. For narrative guidance start with
   and how likely a quorum is to reach a level.
 - **[`midwife.interventions`](#midwifeinterventions):** trial planning,
   prompts and presentation renaming.
+- **[`midwife.recoil`](#midwiferecoil):** something found deep in a chain of
+  frames, carried back up to the holes it fills, and asked until firm.
 - **`midwife.batteries.*`:** the shipped loopback batteries, two critics,
   `local-json`, `tendora`, and `crossing`, which reads across a boundary.
 - **[`midwife.cli`](#midwifecli):** the `gadfly` command, with plan, run,
@@ -196,6 +198,8 @@ Frame has these properties:
 - **`allowed`:** `dict[str, Any]`
 - **`battery`:** `dict[str, Any]`
 - **`outside_scope`:** `str | None`
+- **`holes`:** `tuple[dict[str, str], ...]`
+- **`offers`:** `str | None`
 
 #### canonical
 
@@ -816,6 +820,197 @@ Refuse a report with no calls to count.
 
 ```python
 require_runs(runs)
+```
+<!-- end api -->
+
+<!-- api midwife.recoil -->
+
+---
+
+### midwife.recoil
+
+Recoil: something found deep in a chain of frames, carried back up.
+
+A frame knows where its text came from, by each span's `source`, and nothing
+above that. A piece is a text found in a kept run, with a kind. It climbs from
+the frame it was found in to each frame whose own text that frame quotes, and
+on up, and fits any of those frames' holes of its kind; a frame with no such
+hole passes it on, at no cost. The walk reads frames and makes no call.
+
+A fit is asked again as a successor: the frame with the piece as a span and
+its anchor. `successor` drafts it for the frame's author and writes nothing.
+The successor's category is the gate: carried or coupled but misaligned, the
+frame's own decision climbs on, as a piece of the kind the frame `offers`;
+cooled or outside scope, the recoil is absorbed; unresolved, it stops with
+the open check named. A successor that changes anything but its evidence asks
+another question, and is a reframing opening, read against no category.
+
+A successor is asked lightly, and again only while it must be (`until_firm`):
+one run at a time, until the fixed rules read every input's category the same
+in nearly every draw of the latest run's calls, and the same as the run before
+it; then it disengages. Runs already kept count as runs made, so a frame
+already firm is asked nothing.
+
+#### sha256
+
+The SHA-256 of a text, as a span's `source` names it.
+
+```python
+sha256(text)
+```
+
+#### Piece
+
+A text found in a kept run, and the kind of hole it fills.
+
+```python
+@dataclass(frozen=True)
+class Piece
+```
+
+Piece has these properties:
+
+- **`sha256`:** `str`
+
+#### found
+
+A span of a frame as a piece of its kind.
+
+```python
+found(frame, span)
+```
+
+#### decided
+
+A frame's decision as the piece it climbs as: its name and the label
+it reads, of the kind the frame offers.
+
+```python
+decided(frame, label)
+```
+
+#### Walk
+
+Where a piece fits above the frame it was found in: each frame it
+fits, with the holes it fits there; each frame it passed; and the
+frontier, each quoted text no frame given holds as its own.
+
+```python
+@dataclass(frozen=True)
+class Walk
+```
+
+Walk has these properties:
+
+- **`complete`:** `bool`. Every frame above was given: a walk with a frontier is never complete.
+
+##### Walk.lines
+
+The walk as its record, one line each: every frame it fits, then
+every frame that passed it on, each in the order the walk reached it,
+then every text it could not follow.
+
+```python
+lines()
+```
+
+#### walk
+
+Climb from the frame a piece was found in to each frame whose own text
+it quotes, and on up, visiting each frame once by its hash. A frame with
+holes of the piece's kind is a fit, and the piece climbs on past it,
+since it may fit at more than one height; any other frame passes it on.
+No call is made: the walk reads frames, and is given no battery.
+
+```python
+walk(piece, start, frames)
+```
+
+#### successor
+
+A draft of the successor a fit is asked as, for the frame's author to
+finish and keep: the piece a span with the hole's id, quoting the text it
+was found as by its SHA-256, and the frame's one anchor; the hole closed.
+`changes` sets any other key, such as the trials that read the anchor.
+Nothing is written, and the draft is not checked: parse it.
+
+```python
+successor(frame, hole, piece, **changes)
+```
+
+#### reframes
+
+The keys a successor changed beyond its evidence, in sorted order:
+none when it only filled a declared hole, and asked it with its own
+trials and standing.
+
+```python
+reframes(before, after)
+```
+
+#### Firm
+
+What asking a frame until its verdict was firm made: every run, kept
+ones first, and the last cut short when it stopped short; the findings
+of the latest whole run; how often the draws of its calls read each
+input's category; whether that was firm; the calls made now; and why it
+stopped short, if it did.
+
+```python
+@dataclass(frozen=True)
+class Firm
+```
+
+Firm has these properties:
+
+- **`category`:** `str | None`. The frame's one category over its inputs, in the latest run.
+
+#### until_firm
+
+Ask a frame one whole run at a time, and disengage once its verdict
+is firm: every input's category read alike in at least `firm` of the
+draws of the latest run's calls (`midwife.stats.stability`), and the
+same as the run before it, if there was one. Each kept run, a list of
+one run's records, counts as a run made, so a frame already firm is
+asked nothing. It makes at most `most` runs in all, and none the budget
+cannot cover whole, in calls and, when it caps them, in tokens at each
+call's cap: a run cut short is never read as firm.
+
+```python
+until_firm(
+    frame,
+    battery,
+    budget,
+    *,
+    kept=(),
+    firm=FIRM,
+    most=MOST,
+    on_record=lambda record: None,
+)
+```
+
+#### Recoil
+
+What a fit did: the gate (climbs, absorbed, stops, or reframing), the
+successor's category, what climbs on from it, what it changed when it
+reframes, and the open check when it stops.
+
+```python
+@dataclass(frozen=True)
+class Recoil
+```
+
+#### gate
+
+The gate a fit sets. A successor that changed more than its evidence
+is a reframing, read against no category and asked nothing. Any other is
+read from its own runs (`until_firm`): one whose verdict never came out
+firm stops, with why named; a firm one sets the gate by its category,
+and when it climbs, its decision climbs on as one piece for each label
+its inputs' baselines read, if the frame offers a kind.
+
+```python
+gate(before, after, asked=None)
 ```
 <!-- end api -->
 

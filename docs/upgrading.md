@@ -30,6 +30,11 @@ body and a reader decide from it, so a frame tests a decision made on the
 far side of a boundary; `midwife.batteries.unified.request_body` builds the
 router request both sides send.
 
+A frame may also declare `holes`, what its body is missing, and `offers`, the
+kind its decision climbs as; a frame without them keeps its hash.
+`midwife.recoil` carries a piece found further down a chain of frames up to
+the holes it fills, and asks each fit again until its verdict is firm.
+
 ---
 
 ### To 0.8.0

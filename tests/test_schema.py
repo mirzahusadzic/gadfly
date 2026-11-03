@@ -70,6 +70,10 @@ def test_every_shipped_frame_meets_the_schema_and_the_parser(name):
         lambda r: r["body"]["spans"][1].update(source={"sha256": "0" * 64, "from": ""}),
         lambda r: r["body"]["spans"][1].update(source={"sha256": "0" * 64, "when": "now"}),
         lambda r: r["body"]["spans"][1].update(source="0" * 64),
+        lambda r: r.update(holes=[]),
+        lambda r: r.update(holes=[{"id": "head"}]),
+        lambda r: r.update(holes=[{"id": "head", "kind": "head", "shape": "round"}]),
+        lambda r: r.update(offers=""),
     ],
 )
 def test_the_schema_refuses_what_the_parser_refuses(change):

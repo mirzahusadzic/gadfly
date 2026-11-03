@@ -22,6 +22,7 @@ each answering one need and keeping its contracts.
 | Statistics beside a verdict | `gadfly stats`, `gadfly plan --agreement`, `midwife.stats` | every verdict as the rules read it; the same draws for the same records |
 | Crossing battery | `"battery": {"kind": "crossing", "maker": ..., "reader": ...}` | each side's own guarantees; the maker never sees the input; one cap for the call |
 | A span's source | `"source": {"sha256": ..., "from": ...}` on a span | the span's text, held to the hash byte for byte |
+| Recoil through frames | `"holes"` and `"offers"`, `midwife.recoil` | every frame's verdict; a successor is a new frame, and one that asks another question is read against none |
 
 ---
 
@@ -74,6 +75,9 @@ details.
   written from the evidence, and a trial could not reach the writing.
 - **A span's source:** a frame could quote text it said came from across a
   boundary without anything holding it to that text.
+- **[Recoil](breadth/recoil.md):** something found deep in a chain of frames
+  could answer what an earlier frame lacked, and nothing carried it back but
+  asking every frame again.
 
 ---
 
@@ -99,9 +103,6 @@ The examples point at these, most useful first. None is built yet.
    when a control leaves a line that still points to the answer, as in
    [A frame built wrong](examples/built-wrong.md). It flags problems and never
    writes a frame from a result.
-7. **Recoil through frames:** carry something found deep in a chain of
-   frames back up to the frames it answers, asking again only those it fits.
-   [Its design](breadth/recoil.md) is held to a case by a test.
 
 ---
 

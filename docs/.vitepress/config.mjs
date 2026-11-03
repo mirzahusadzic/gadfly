@@ -82,7 +82,7 @@ const sidebar = [
           { text: 'Placement intervention', link: '/breadth/placement-intervention' },
           { text: 'Local JSON battery', link: '/breadth/local-json-battery' },
           { text: 'Example report', link: '/breadth/report-example' },
-          { text: 'Recoil, a design', link: '/breadth/recoil' },
+          { text: 'Recoil through frames', link: '/breadth/recoil' },
         ],
       },
     ],
