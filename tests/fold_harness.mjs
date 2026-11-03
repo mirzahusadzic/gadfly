@@ -1,47 +1,66 @@
-// A long code block's fold (docs/.vitepress/markdown.mjs, theme/fold.js),
-// rendered by the site's own Markdown settings without a browser:
-// tests/test_docs.py runs it and reads the JSON it prints.
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createMarkdownRenderer } from 'vitepress';
-import config from '../docs/.vitepress/config.mjs';
+// A long code block's fold (docs/.vitepress/markdown.mjs, theme/fold.js), run
+// with Node alone on a block as Shiki hands it to the site's transformer and
+// as VitePress wraps it: tests/test_docs.py runs it and reads the JSON it
+// prints. The site's own build, in CI's docs job, folds every page the same.
+import { foldedFences, foldedLines } from '../docs/.vitepress/markdown.mjs';
 import { toggle } from '../docs/.vitepress/theme/fold.js';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const md = await createMarkdownRenderer(resolve(ROOT, 'docs'), config.markdown, config.base, {
-  warn() {},
-  info() {},
-  error: console.error,
-});
+const block = (n) => Array.from({ length: n }, (_, i) => `line ${i + 1} <of> "${n}"`);
 
-const block = (n) => ['```text', ...Array.from({ length: n }, (_, i) => `line ${i + 1} <of> "${n}"`), '```'].join('\n');
-const render = (source) => md.render(source, { relativePath: 'examples/dolls.md' });
+// Shiki's code element: one span a line, each holding the line's tokens, with
+// a line break between two lines
+const text = (value) => ({ type: 'text', value });
+const span = (cls, children) => ({ type: 'element', tagName: 'span', properties: cls ? { class: cls } : {}, children });
+const code = (lines) => ({
+  type: 'element',
+  tagName: 'code',
+  properties: {},
+  children: lines.flatMap((line, i) => [...(i ? [text('\n')] : []), span('line', [span(null, [text(line)])])]),
+});
+const escape = (value) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+const html = (node) =>
+  node.type === 'text'
+    ? escape(node.value)
+    : `<${node.tagName}${node.properties.class ? ` class="${node.properties.class}"` : ''}>${node.children.map(html).join('')}</${node.tagName}>`;
+
+// the fence as VitePress renders it, the site's fold rule over it
+function render(lines, rendered) {
+  const md = { renderer: { rules: { fence: () => rendered } } };
+  foldedFences(md);
+  return md.renderer.rules.fence([{ content: `${lines.join('\n')}\n`, info: 'text' }], 0, {}, {}, null);
+}
+function fenced(lines) {
+  const node = code(lines);
+  foldedLines().code(node);
+  const shown = '<button title="Copy Code" class="copy"></button><span class="lang">text</span>';
+  return render(lines, `<div class="language-text">${shown}<pre class="shiki">${html(node)}</pre>\n</div>`);
+}
+
 // a block as a reader's copy takes it: every line, tags gone, in order
-const copied = (html) =>
-  html
+const copied = (page) =>
+  page
     .match(/<pre[^>]*>([\s\S]*)<\/pre>/)[1]
     .replace(/<[^>]+>/g, '')
-    .replace(/&#x([\da-f]+);/gi, (_, hex) => String.fromCodePoint(Number.parseInt(hex, 16)))
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
-    .replaceAll('&quot;', '"')
     .replaceAll('&amp;', '&');
 const folded = (n) => {
-  const html = render(block(n));
-  const rest = html.match(/<span class="fold-rest">([\s\S]*?)<\/span><\/code>/);
-  const button = html.match(/<button type="button" class="fold"([^>]*)>([^<]*)<\/button><\/div>$/);
+  const page = fenced(block(n));
+  const rest = page.match(/<span class="fold-rest">([\s\S]*?)<\/span><\/code>/);
+  const button = page.match(/<button type="button" class="fold"([^>]*)>([^<]*)<\/button><\/div>$/);
   return {
-    shown: (html.split('<span class="fold-rest">')[0].match(/class="line"/g) ?? []).length,
+    shown: (page.split('<span class="fold-rest">')[0].match(/class="line"/g) ?? []).length,
     hidden: rest ? (rest[1].match(/class="line"/g) ?? []).length : 0,
     restOpensOnBreak: rest ? rest[1].startsWith('\n') : null,
     button: button ? { label: button[2], other: button[1].match(/data-other="([^"]*)"/)[1] } : null,
-    whole: copied(html) === block(n).split('\n').slice(1, -1).join('\n'),
+    whole: copied(page) === block(n).join('\n'),
   };
 };
 
 const out = {
   ...Object.fromEntries([12, 13, 15, 16, 45].map((n) => [n, folded(n)])),
-  mermaid: render(['```mermaid', ...Array.from({ length: 14 }, () => 'a --> b'), '```'].join('\n')).includes('fold'),
+  // a chart is drawn, never folded, however long its text
+  mermaid: render(block(45), '<MermaidDiagram source="a" />\n').includes('fold'),
 };
 
 // the button: pressed, the rest shows and its label offers the first twelve;

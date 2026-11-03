@@ -66,3 +66,6 @@ jobs:
       - run: npm ci
       - name: Build the site
         run: npm run docs:build  # fails on a dead link, or a shipped package without a licence
+      - name: Check that the built site folds a long code block
+        # the fold's test harness runs with Node alone; this is the site's own renderer
+        run: grep -q '<button type="button" class="fold"' docs/.vitepress/dist/examples/dolls.html
