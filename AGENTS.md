@@ -18,7 +18,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 | Verdict rules, levels, evidence, obligations | `midwife/verdict.py` |
 | Several frames counted, never combined | `midwife/portfolio.py` |
 | Statistics beside a verdict: intervals, tests, power, stability, pooling | `midwife/stats.py`, `gadfly stats` |
-| Recoil: a piece climbs a chain of frames to the holes it fills, each fit asked until firm | `midwife/recoil.py`, held by `tests/test_recoil.py` |
+| Recoil: a piece climbs a chain of frames to the holes it fills, each fit asked until firm | `midwife/recoil.py`, held by `tests/test_recoil.py`; its commands `walk`, `successor`, `firm` and `gate` in `midwife/cli.py`, held by `tests/test_recoil_cli.py` |
 | Command line | `midwife/cli.py` |
 | Batteries: the shared loopback call and label pointer, then the shipped ones | `midwife/batteries/critic.py`; `unified.py`, `egemma.py`, `local_json.py`, `tendora.py` (its live test runs only with `TENDORA_PACKAGE`), `crossing.py` (a maker then a reader, across a boundary) |
 | Example frames, their kept runs, predictions, results and findings | `examples/*.json`, `examples/runs/<frame>/`, `examples/*.md`; read back with `examples/read.py`, run with `examples/climb.py` |
@@ -38,6 +38,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 - **Runs.** `run` never starts a call the budget cannot cover and hands each record on as it exists. The command line never writes over a records file, and a refusal spends nothing and makes no file.
 - **Batteries.** Loopback only: no proxy, no redirects, no tools. Credentials never reach a request body, a record or a log. The unified battery sends each call under the router's deny data policy, and refuses a router that does not list it, unless the frame names the exact slug under `trainsOnInputs`, and refuses OpenAI slugs. A failed or timed-out call is an opening, never a label and never dropped.
 - **Kept runs.** `examples/*.json`, `examples/runs/` and the predictions never change after their runs: a new idea is a new frame with fresh runs.
+- **Parity.** What a release adds reaches its callers both ways wherever both apply, since people, scripts and agents use the command line as much as Python: a public function has its command, the command's `--json` prints what the function returns, and the docs show both. Each new message has its row in `docs/troubleshooting.md`, written in the same commit.
 
 #### Command line, errors and warnings
 
@@ -45,7 +46,7 @@ The command line follows [clig.dev](https://clig.dev/), and its errors are Pytho
 
 - Results go to standard output or the file named, messages to standard error. Any file may be `-`, read once and refused at a terminal; every command takes `--json`; flags are matched in full only.
 - A refusal is a class for what to fix, its exit status an attribute: `UsageError` 2, `FrameError` 4, `RecordsError` 5, `BatteryError` 6, Python's own file errors 7, `KeyboardInterrupt` 130. It prints as a traceback's last line, `Type: message`, then each note; with `--json`, `{"error": {"type", "exit", "message", "notes", "help"}}` on standard error. Anything else raised, a battery's `SystemExit` too, is a bug: its traceback, and 70. A second Ctrl-C with calls still out exits at once; a closed reader ends `gadfly` quietly (SIGPIPE, 141).
-- What a run did not do as asked, though it went on, is a warning raised with `warnings.warn`, printed the same way, or with `--json` listed under `warnings` in `run`'s one result: `OpeningWarning` 1 (only when every call opened), `StoppedWarning` 3. Nothing passes in silence, and an empty result means only "none".
+- What a run did not do as asked, though it went on, is a warning raised with `warnings.warn`, printed the same way, or with `--json` listed under `warnings` in the one result of `run` or `firm`: `OpeningWarning` 1 (only when every call opened), `StoppedWarning` 3. Nothing passes in silence, and an empty result means only "none".
 - A message names the kind of thing and quotes its value, as Python's own do, then says what went wrong and where (`file 'kept.jsonl' holds a lone surrogate at line 3`); a note says why and what to do, and someone else's words go in a note, quoted ("it said '...'"). Outside a quoted value, no line Gadfly prints holds a second colon: a frame's name, span ids, input ids and labels must be one plain name (`midwife.errors.is_plain`), and other free text prints quoted when it would break a line (`plain`). `tests/test_errors.py` reads the source to hold all of this.
 
 ---
