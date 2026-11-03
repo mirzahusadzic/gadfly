@@ -181,3 +181,22 @@ def test_plan_shows_the_quorums_power_only_when_asked(raw, tmp_path, capsys):
     assert main(["plan", str(path), "--agreement", "2"]) == 2
     assert main(["plan", str(path), "--agreement", "0.9", "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["power"]["agreement"] == 0.9
+
+
+def test_a_trial_asked_once_a_run_is_no_measure_of_agreement_or_stability(raw, tmp_path, capsys):
+    # one call a trial has nothing to agree with and nothing to draw again:
+    # it must not read as a perfectly steady reader or a perfectly firm verdict
+    raw["standing"] = {"quorum": 1, "agree": 1}
+    frame, runs = kept(raw, RuleReader(), runs=2)
+    assert stats.agreement(runs) is None
+    assert stats.stability(frame, runs, 20) == [{}, {}]
+    path, records = write(tmp_path, frame, runs)
+    assert main(["stats", path, *records, "--resamples", "20"]) == 0
+    out = capsys.readouterr().out.splitlines()
+    assert (
+        out[2] == "agreement: no trial was asked twice in a run, so there is no repeat to measure"
+    )
+    assert not any(line.startswith("power: ") for line in out)
+    assert "  run 1, x1  carried; each trial asked once, nothing to draw again" in out
+    mixed = [runs[0] + [dict(runs[0][0])]]  # one trial asked twice, alike
+    assert stats.agreement(mixed) == 1.0  # the lone calls are left out, not counted as agreeing

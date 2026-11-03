@@ -339,6 +339,8 @@ def command_stats(args) -> int:
             "in their own run"
         )
         print(f"power: {_powered(power)}")
+    elif calls:
+        print("agreement: no trial was asked twice in a run, so there is no repeat to measure")
     for x, rows in compared.items():
         print(f"input {plain(x)}")
         for row in rows:
@@ -360,10 +362,11 @@ def command_stats(args) -> int:
     for place, (found, drawn) in enumerate(zip(verdicts, redrawn, strict=True), 1):
         for x, category in found.items():
             again = ", ".join(f"{c} {_percent(s)}" for c, s in drawn.get(x, {}).items())
-            print(
-                f"  run {place}, {plain(x)}  {category}"
-                + (f"; drawn again {again}" if again else "")
-            )
+            if again:
+                again = f"; drawn again {again}"
+            elif shares:  # its trials were each asked once: a draw is the run itself
+                again = "; each trial asked once, nothing to draw again"
+            print(f"  run {place}, {plain(x)}  {category}{again}")
     return 0
 
 

@@ -68,7 +68,9 @@ input pr
 
 - **Agreement:** the share of calls that gave their trial's most common
   answer in their own run, how steadily the reader answers when nothing
-  changes between its calls. An opening never agrees.
+  changes between its calls. An opening never agrees, and a call its trial
+  asked once in the run is left out, so a quorum of one has no agreement to
+  measure.
 - **Power:** at that agreement, how often a trial reaches a level of `agree`
   of `quorum`, and how often every trial an input needs does. A trial with no
   level leaves its input unresolved, so this is the most a run can resolve,
@@ -86,7 +88,8 @@ input pr
 - **Drawn again:** each run's verdict, read by the same fixed rules after
   every trial's calls are drawn again, with replacement, as many as it had.
   The draws are seeded by the frame's hash, so the same records always give
-  the same shares, and `--resamples` sets how many there are.
+  the same shares, and `--resamples` sets how many there are. A run whose
+  trials were each asked once has nothing to draw again, and says so.
 
 ---
 

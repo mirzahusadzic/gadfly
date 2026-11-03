@@ -123,13 +123,17 @@ def _runs(frame: Frame, runs: Sequence[Iterable[dict]]) -> list[list[dict]]:
 def agreement(runs: Sequence[Iterable[dict]]) -> float | None:
     """The share of calls that gave their trial's most common answer in their
     own run: how steadily the reader answers when nothing changes between
-    its calls. An opening never agrees. None when there are no calls."""
+    its calls. An opening never agrees, and a call its trial asked alone in
+    its run has nothing to agree with, so it is not counted. None when no
+    trial was asked twice in a run: there is no repeat to measure."""
     agreed = calls = 0
     for records in runs:
         groups: dict[tuple[str, str], list[str | None]] = defaultdict(list)
         for record in records:
             groups[record["input"], record["trial"]].append(record["observation"])
         for answers in groups.values():
+            if len(answers) < 2:
+                continue
             labels = Counter(a for a in answers if a is not None)
             agreed += labels.most_common(1)[0][1] if labels else 0
             calls += len(answers)
@@ -252,7 +256,9 @@ def stability(
     the fixed rules read every draw, so no model judges anything. A verdict
     that comes out the same in 97% of draws is firm; one at 55% rests on a
     call or two. The draws are seeded by the frame's hash and the run's
-    place, so the same records always give the same shares."""
+    place, so the same records always give the same shares. An input whose
+    trials were each asked once in a run has nothing to draw again, and gets
+    no shares for that run."""
     if isinstance(resamples, bool) or not isinstance(resamples, int) or resamples < 1:
         raise UsageError("resamples is a whole number of draws, at least 1")
     shares = []
@@ -270,10 +276,12 @@ def stability(
             ]
             for finding in _judge(frame, drawn):
                 tally[finding.input][finding.category] += 1
+        repeated = {x for (x, _), group in groups.items() if len(group) > 1}
         shares.append(
             {
                 x: {category: count / resamples for category, count in counts.most_common()}
                 for x, counts in tally.items()
+                if x in repeated
             }
         )
     return shares

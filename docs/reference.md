@@ -727,7 +727,9 @@ power(frame, agreement)
 
 The share of calls that gave their trial's most common answer in their
 own run: how steadily the reader answers when nothing changes between
-its calls. An opening never agrees. None when there are no calls.
+its calls. An opening never agrees, and a call its trial asked alone in
+its run has nothing to agree with, so it is not counted. None when no
+trial was asked twice in a run: there is no repeat to measure.
 
 ```python
 agreement(runs)
@@ -784,7 +786,9 @@ every trial's calls are drawn again, with replacement, as many as it had:
 the fixed rules read every draw, so no model judges anything. A verdict
 that comes out the same in 97% of draws is firm; one at 55% rests on a
 call or two. The draws are seeded by the frame's hash and the run's
-place, so the same records always give the same shares.
+place, so the same records always give the same shares. An input whose
+trials were each asked once in a run has nothing to draw again, and gets
+no shares for that run.
 
 ```python
 stability(frame, runs, resamples=RESAMPLES)

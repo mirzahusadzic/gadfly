@@ -89,6 +89,13 @@ reading:
   maker dropped what they said, or the reader never used it.
 - **Unresolved:** often openings from one side, and each opening names which.
 
+A reader that refuses what it was given should return an opening, not a
+label: the opening names the side and the reason, while a refusal answered
+as a label sits in the baseline and leaves nothing for the trials to move.
+The reader sees the artefact and the input alone, so a reader that checks
+the making against the evidence needs the maker to carry that evidence in
+what it writes.
+
 To tell a lossy maker from a reader that ignores the evidence, read the
 baseline's artefact on its own, in a frame of its own: its span is the
 artefact, its `source` is the SHA-256 the crossing's record kept, and its
