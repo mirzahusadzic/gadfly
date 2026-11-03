@@ -141,6 +141,17 @@ hooks.cancel();
 cut.markKept = marked();
 seen.cancel = cut;
 
+// a line hovered shows in the caption only while the pointer is on it
+// (pass 12, W5)
+hooks.frame(kirans, frames[kirans]);
+const narration = caption.textContent;
+const region = regions(doll('Kiran')).find((g) => g.dataset.part === 'body');
+const on = { target: { closest: (selector) => (selector === '.d-region' ? region : doll('Kiran')) } };
+row.listeners.pointerover[0](on);
+const hovered = caption.textContent;
+row.listeners.pointerout[0](on);
+seen.hover = { hovered: hovered.startsWith('Kiran says'), restored: caption.textContent === narration };
+
 // the climb: the selection travels up with the paper's words, doll by doll,
 // never jumping, and rests on Kiran until Kiran's frame is shown
 hooks.frame(mirzas, frames[mirzas]);

@@ -341,6 +341,11 @@ def test_a_readers_step_stops_a_climb_or_gate_under_way():
     }
 
 
+def test_a_hovered_line_shows_only_while_the_pointer_is_on_it():
+    # the stage's caption goes back to its narration (pass 12, W5)
+    assert _harness("stage_harness")["hover"] == {"hovered": True, "restored": True}
+
+
 def test_a_readers_own_step_ends_the_doll_sequence():
     # the verdict chip, as every reader's step, ends the sequence and tells
     # the stage to stop; Play stops a climb under way and plays the frame

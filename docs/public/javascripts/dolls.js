@@ -264,6 +264,13 @@
     const caption = document.createElement("p");
     caption.className = "d-caption";
     caption.setAttribute("aria-live", "polite");
+    // what the stage says of the frame, the climb or the gate; a hovered
+    // line shows in its place only while the pointer is on it
+    let narration = "";
+    const say = (text) => {
+      narration = text;
+      caption.textContent = text;
+    };
     // the frames of a doll asked more than once, always shown, the one
     // played pressed, so nothing comes and goes as the sequence moves on
     const variants = document.createElement("div");
@@ -345,7 +352,7 @@
         unmark();
         current = { doll: name, stem: null };
         step = { present: new Set(doll.lines.map((l) => l.id)), climbed: step?.climbed };
-        caption.textContent = `${name} is walked, never asked: no run to play. ${name} says ${doll.lines.length} lines, and none says whether ${name} is a boy or a girl.`;
+        say(`${name} is walked, never asked: no run to play. ${name} says ${doll.lines.length} lines, and none says whether ${name} is a boy or a girl.`);
         settle();
         return;
       }
@@ -360,7 +367,7 @@
       current = { doll: asking.doll, stem };
       const climbed = stem !== data.order[0];
       step = { present: new Set(d.spans.map((s) => s.id)), climbed };
-      caption.textContent = asking.caption;
+      say(asking.caption);
       settle();
     }
     // a trial played: its cut lifts its paint
@@ -379,9 +386,9 @@
       for (const name of [...data.piece.passes, data.piece.fits]) {
         if (turn !== mine) return; // a reader took over: the stage is theirs
         pass(drawn.find((e) => e.doll.name === name));
-        caption.textContent = name === data.piece.fits
+        say(name === data.piece.fits
           ? `The paper's words fit ${name}'s hole: ${name} said it holds such a paper.`
-          : `${name} passes the paper's words on: ${name}'s hole is for ${name}'s own word.`;
+          : `${name} passes the paper's words on: ${name}'s hole is for ${name}'s own word.`);
         await wait(reduced ? 300 : 1400);
       }
     }
@@ -393,7 +400,7 @@
       const g = data.gate;
       const entry = drawn.find((e) => e.doll.name === g.fits);
       pass(entry);
-      caption.textContent = g.caption;
+      say(g.caption);
       await wait(reduced ? 300 : 1400);
       if (turn !== mine) return; // a reader took over: the stage is theirs
       row.classList.remove("is-travelling");
@@ -407,7 +414,7 @@
       turn++;
       row.classList.remove("is-travelling");
       for (const entry of drawn) entry.fig.classList.remove("is-passing");
-      if (current?.stem) caption.textContent = data.frames[current.stem].caption;
+      if (current?.stem) say(data.frames[current.stem].caption);
     }
 
     // the hover names what a region says
@@ -418,6 +425,9 @@
       const entry = drawn.find((x) => x.fig === fig);
       const line = [...entry.doll.lines, ...entry.doll.extra].find((l) => l.id === g.dataset.part);
       if (line) caption.textContent = `${entry.doll.name} says \u201c${line.text}\u201d`;
+    });
+    row.addEventListener("pointerout", (e) => {
+      if (e.target.closest(".d-region")) caption.textContent = narration;
     });
 
     return { frame, trial, climb, gate, cancel };
