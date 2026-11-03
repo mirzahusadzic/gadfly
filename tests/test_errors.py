@@ -57,6 +57,13 @@ def test_each_class_carries_its_exit_status_and_is_a_value_error():
     assert frame.FrameError is errors.FrameError  # where callers have always found it
 
 
+def test_coverage_sees_midwife_from_its_first_line(midwife_imported_before):
+    # pytest's own settings import nothing of midwife, so coverage, started
+    # before tests/conftest.py, measures each module from its first line; the
+    # warning filter that names a Gadfly class is set from the conftest
+    assert midwife_imported_before is False
+
+
 def test_a_refusal_says_what_went_wrong_and_its_notes_what_to_do():
     error = RecordsError("a record belongs to another frame", "read them with their own frame")
     assert str(error) == "a record belongs to another frame"
