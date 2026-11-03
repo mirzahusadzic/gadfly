@@ -31,9 +31,12 @@ These fragments are from `examples/upgrade.json`, the frame
   recipient.
 - **Baseline:** everything pinned for the comparison, so only the
   intervention changes.
-- **Crossing and promise:** the boundary the decision crosses, and the
-  consequence required there, including what the reader must do without the
-  anchor.
+- **Crossing and promise:** the boundary crossing, where the decision
+  reaches its recipient, and the consequence required there, including what
+  the reader must do without the anchor. Every frame names its crossing, such
+  as "the decision posted on the pull request"; when something is written
+  from the evidence on the way across, a maker writes it before the reader
+  decides, as [Crossings](crossings.md) shows.
 - **Input:** one case of the test domain, the question the reader is asked.
 - **Labels:** the answers a reader may give, each defined in the instruction.
 - **Allowed:** what the ablation may produce, and, for a bypass, the
@@ -173,9 +176,9 @@ A run asks a battery each trial's prompt and keeps what comes back.
   what was read, and what came back.
 - **Kept run:** a run's records, one JSON line each, from which any verdict
   is read again without a model.
-- **Maker and artefact:** in a crossing, the maker writes the artefact that
-  crosses from each trial's body, and the reader decides from the artefact;
-  [Crossings](crossings.md) covers both directions.
+- **Maker and artefact:** with the `crossing` battery, the maker writes the
+  artefact that crosses from each trial's body, and the reader decides from
+  the artefact.
 - **Source:** on a span, the SHA-256 of the exact text it crossed with, and
   where that came from; the parser holds the span's text to it.
 - **Budget:** the most a run may spend: a number of calls, a cap on each

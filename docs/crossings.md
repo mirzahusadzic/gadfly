@@ -1,11 +1,12 @@
 # Crossings
 
-A decision often rests on its evidence only through something made from it:
-metric lines become an incident's cause, a meeting becomes its minutes, a
-year of findings becomes a strategy. A crossing frame tests whether what the
-anchors said survives that making, with the maker inside the reading. The
-verdict then says whether the decision is carried across the boundary, or
-cooled at it.
+Every frame names its crossing, the boundary where the decision reaches its
+recipient. A decision often crosses it only through something made from its
+evidence: metric lines become an incident's cause, a meeting becomes its
+minutes, a year of findings becomes a strategy. A crossing frame tests
+whether what the anchors said survives that making, with the maker inside
+the reading, and its verdict says whether the decision is carried across the
+boundary or cooled at it.
 
 ---
 
