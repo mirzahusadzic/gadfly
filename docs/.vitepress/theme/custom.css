@@ -499,8 +499,8 @@
   }
 }
 
-/* A code block over twelve lines shows the first twelve, and a button under
- * them the rest (markdown.mjs, fold.js). Its label says what it will do, and
+/* A code block with four lines or more past its first twelve shows those
+ * twelve, and a button under them the rest (markdown.mjs, fold.js). Its label says what it will do, and
  * its chevron points that way; the cut above it is dashed while folded. It is
  * set in the code's own inks, which every study keeps at 5:1 on its code,
  * dark terminal or light. */

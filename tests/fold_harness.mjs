@@ -40,9 +40,7 @@ const folded = (n) => {
 };
 
 const out = {
-  twelve: folded(12),
-  thirteen: folded(13),
-  fortyFive: folded(45),
+  ...Object.fromEntries([12, 13, 15, 16, 45].map((n) => [n, folded(n)])),
   mermaid: render(['```mermaid', ...Array.from({ length: 14 }, () => 'a --> b'), '```'].join('\n')).includes('fold'),
 };
 

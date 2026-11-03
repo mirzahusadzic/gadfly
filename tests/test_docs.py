@@ -358,19 +358,21 @@ def test_the_dolls_stand_beside_the_question_who_read_it_under_it():
 
 
 def test_a_long_code_block_shows_its_first_twelve_lines():
-    # the site's renderer (tests/fold_harness.mjs): over twelve lines, the
-    # rest folds under a button that names the count; the copy keeps every
-    # line; twelve or fewer, and a chart, are left whole
+    # the site's renderer (tests/fold_harness.mjs): with four lines or more
+    # past the first twelve, the rest folds under a button that names the
+    # count; the copy keeps every line. A block with fewer, whose button would
+    # take the height the fold saves, and a chart, are left whole
     seen = _harness("fold_harness")
-    assert seen["twelve"] == {
-        "shown": 12,
-        "hidden": 0,
-        "restOpensOnBreak": None,
-        "button": None,
-        "whole": True,
-    }
-    for n in (13, 45):
-        block = seen["thirteen" if n == 13 else "fortyFive"]
+    for n in (12, 13, 15):
+        assert seen[str(n)] == {
+            "shown": n,
+            "hidden": 0,
+            "restOpensOnBreak": None,
+            "button": None,
+            "whole": True,
+        }
+    for n in (16, 45):
+        block = seen[str(n)]
         assert block == {
             "shown": 12,
             "hidden": n - 12,

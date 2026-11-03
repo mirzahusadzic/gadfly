@@ -126,9 +126,12 @@ export const hangingLines = () => ({
   },
 });
 
-/** A code block longer than FOLD lines shows its first FOLD, and a button under
- * them shows the rest (theme/fold.js); GitHub shows it whole. */
+/** A code block that would hide HIDE lines or more past its first FOLD shows
+ * those FOLD, and a button under them shows the rest (theme/fold.js). A
+ * shorter one is shown whole, since its button would take the height the fold
+ * saves; GitHub shows every block whole. */
 export const FOLD = 12;
+export const HIDE = 4;
 
 /** The lines after the first FOLD, together with the line break before each,
  * in a span of their own, so that hiding it leaves no empty line. */
@@ -136,7 +139,7 @@ export const foldedLines = () => ({
   name: 'gadfly:folded-lines',
   code(node) {
     const lines = node.children.filter((child) => child.type === 'element');
-    if (lines.length <= FOLD) return;
+    if (lines.length - FOLD < HIDE) return;
     const rest = node.children.splice(node.children.indexOf(lines[FOLD - 1]) + 1);
     node.children.push({ type: 'element', tagName: 'span', properties: { class: 'fold-rest' }, children: rest });
   },
