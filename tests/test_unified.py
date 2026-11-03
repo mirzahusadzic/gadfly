@@ -496,3 +496,29 @@ def test_the_routers_health_is_read_whole_within_its_timeout(monkeypatch):
     with pytest.raises(BatteryError, match="could not be asked what it takes"):
         unified.capabilities("http://127.0.0.1:18766/health", 0.1)
     assert time.monotonic() - started < 0.25
+
+
+@pytest.mark.parametrize(
+    "endpoints, reported, served",
+    [
+        (["fireworks"], {"provider": "unknown"}, "deepseek/deepseek-v4.1-flash via fireworks"),
+        (["fireworks"], {}, "deepseek/deepseek-v4.1-flash via fireworks"),
+        (["fireworks"], {"provider": "Fireworks"}, "deepseek/deepseek-v4.1-flash via Fireworks"),
+        (["fireworks", "deepinfra"], {"provider": "unknown"}, "deepseek/deepseek-v4.1-flash"),
+    ],
+)
+def test_one_pinned_endpoint_names_what_served_when_the_router_does_not(
+    raw, token, router, endpoints, reported, served
+):
+    # one pin leaves no other endpoint to serve the call; two leave a guess
+    raw["battery"]["endpoints"] = endpoints
+    body = sse(
+        {"type": "response.output_text.delta", "delta": json.dumps({"label": "decline"})},
+        {
+            "type": "response.completed",
+            "response": {"model": "deepseek/deepseek-v4.1-flash", **reported},
+        },
+    )
+    battery = Unified(router((200, {}, body)).url)
+    battery.check(situate(raw))
+    assert battery.observe(situate(raw), "p", 16).served == served

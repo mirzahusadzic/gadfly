@@ -426,7 +426,11 @@ class Unified:
                         return "", {}, opening, ""
                     return "", {}, f"the router reports {diagnostic!r}", ""
                 lines = _lines(response, deadline, self.clock)
-                return parse_stream(lines, deadline, self.clock)
+                text, usage, opening, served = parse_stream(lines, deadline, self.clock)
+                endpoints = battery.get("endpoints") or []
+                if served and " via " not in served and len(endpoints) == 1:
+                    served = f"{served} via {endpoints[0]}"  # one pin: no other could serve
+                return text, usage, opening, served
         except urllib.error.HTTPError as error:
             if (
                 error.code == 409
