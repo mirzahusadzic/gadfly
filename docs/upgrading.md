@@ -38,6 +38,9 @@ whose anchors are all holes is walked, never planned: `plan` and
 the holes it fills, and asks each fit again until its verdict is firm, as
 [Recoil](recoil.md) shows.
 
+`until_firm` says a stop for its budget as a `StoppedWarning`, as `run`
+does, and given no battery it reads the kept runs alone.
+
 ---
 
 ### To 0.8.0

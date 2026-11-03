@@ -25,12 +25,13 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import warnings
 from collections import deque
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from .errors import RecordsError, UsageError
+from .errors import RecordsError, StoppedWarning, UsageError
 from .frame import Frame, digest
 from .interventions import plan, prompt
 from .pipeline import calls_needed, run
@@ -255,7 +256,7 @@ def _read(
 
 def until_firm(
     frame: Frame,
-    battery: Battery,
+    battery: Battery | None,
     budget: Budget,
     *,
     kept: Sequence[Iterable[Record | dict[str, Any]]] = (),
@@ -271,7 +272,9 @@ def until_firm(
     the latest decides, so a frame whose last kept run is firm is asked
     nothing. It reads at most `most` runs in all, kept ones included, and
     starts none the budget cannot cover whole, in calls and, when it caps
-    them, in tokens at each call's cap: a run cut short is never firm."""
+    them, in tokens at each call's cap: a run cut short is never firm, and
+    a stop for the budget is a `StoppedWarning`, as a run's is. With no
+    battery, it reads the kept runs alone and asks nothing."""
     if frame.quorum < 2:
         raise UsageError(
             f"frame {frame.name!r} asks each trial once, so a run has no calls to draw again",
@@ -306,12 +309,22 @@ def until_firm(
     stopped = None
     for place in range(most):
         if place >= len(runs):
-            if budget.calls - made < each:
-                stopped = f"the budget covers no further run of {each} calls"
+            if battery is None:  # the kept runs alone are read
                 break
             tokens = None if budget.tokens is None else budget.tokens - spent
-            if tokens is not None and tokens < each * budget.output_tokens_per_call:
+            if budget.calls - made < each:
+                stopped = f"the budget covers no further run of {each} calls"
+            elif tokens is not None and tokens < each * budget.output_tokens_per_call:
                 stopped = f"the token budget covers no further run of {each} calls"
+            if stopped:  # nothing passes in silence: said as a run's own stop is
+                many = len(runs)
+                warnings.warn(
+                    StoppedWarning(
+                        f"asking stopped after {many} of at most {most} runs, "
+                        f"its verdict not yet firm; {stopped}"
+                    ),
+                    stacklevel=2,
+                )
                 break
             result = run(
                 frame,
@@ -362,7 +375,9 @@ def gate(before: Frame, after: Frame, asked: Firm | None = None) -> Recoil:
     if asked is None or asked.frame.hash != after.hash:
         raise UsageError("a successor that asks the same question is read from its own runs")
     if not asked.firm:
-        why = asked.stopped or f"its verdict was not firm after {len(asked.runs)} runs"
+        many = len(asked.runs)
+        runs = f"{many} run{'s' * (many != 1)}"
+        why = asked.stopped or f"its verdict was not firm after {runs}"
         return Recoil("stops", asked.category, open=why)
     category = asked.category  # a firm run read a finding for every input
     gated = GATE[category] if category else "stops"

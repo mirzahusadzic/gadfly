@@ -13,10 +13,11 @@ word is missing, and is caught for it.
 
 import copy
 import random
+import warnings
 
 import pytest
 
-from midwife.errors import FrameError, RecordsError, UsageError
+from midwife.errors import FrameError, RecordsError, StoppedWarning, UsageError
 from midwife.frame import parse
 from midwife.interventions import plan, prompt
 from midwife.pipeline import calls_needed, judge, run
@@ -366,10 +367,27 @@ def test_until_firm_never_starts_a_run_the_budget_cannot_cover():
     middle = dolls()[1]
     after = with_slip(middle)
     reader = DollReader()
-    asked = until_firm(after, reader, Budget(calls=calls_needed(after) - 1))
+    # nothing passes in silence: the stop is a StoppedWarning, as a run's is
+    with pytest.warns(StoppedWarning, match="^asking stopped after 0 of at most 5 runs, its"):
+        asked = until_firm(after, reader, Budget(calls=calls_needed(after) - 1))
     assert not asked.firm and asked.made == 0 and reader.calls == 0
     assert asked.stopped == f"the budget covers no further run of {calls_needed(after)} calls"
     assert gate(middle, after, asked).open == asked.stopped
+
+
+def test_with_no_battery_until_firm_reads_the_kept_runs_alone():
+    # gadfly gate reads a successor's runs so: nothing is asked, and a
+    # verdict the kept runs leave unsettled is not firm, with no stop to warn of
+    middle = dolls()[1]
+    after = with_slip(middle)
+    shaky = until_firm(after, Shaky(shaky=calls_needed(after)), budget(after, 1), most=1)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", StoppedWarning)
+        read = until_firm(after, None, Budget(calls=1), kept=shaky.runs)
+    assert not read.firm and read.stopped is None and read.made == 0
+    assert gate(middle, after, read).open == "its verdict was not firm after 1 run"
+    firm = until_firm(after, DollReader(), budget(after))
+    assert until_firm(after, None, Budget(calls=1), kept=firm.runs).firm
 
 
 def test_until_firm_refuses_what_it_cannot_read():
@@ -447,7 +465,8 @@ def test_until_firm_starts_no_run_the_tokens_cannot_cover_whole():
     each = calls_needed(after)
     # one run at each call's cap, and nearly a second: the reader says it
     # wrote ten tokens a call, but a run is covered only at the cap
-    asked = until_firm(after, Spending(shaky=10**6), Budget(5 * each, 64, 64 * each + 63))
+    with pytest.warns(StoppedWarning, match="; the token budget covers no further run of"):
+        asked = until_firm(after, Spending(shaky=10**6), Budget(5 * each, 64, 64 * each + 63))
     assert not asked.firm and len(asked.runs) == 1 and asked.made == each
     assert asked.stopped == f"the token budget covers no further run of {each} calls"
 
