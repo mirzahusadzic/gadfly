@@ -325,9 +325,10 @@ against no category, and Amani's own reading stands.
 
 ### Watch a run
 
-The five dolls stand over the runs. Mirza's plays first, then the paper's
-words climb to Kiran, whose two frames play in turn, and the gate sends
-Kiran's decision on to Amani; each trial lifts the paint of the lines it cuts.
+The five dolls stand beside the question, and picking one shows its runs.
+Played, Mirza's runs come first, then the paper's words climb to Kiran, whose
+two frames play in turn, and the gate sends Kiran's decision on to Amani; each
+trial lifts the paint of the lines it cuts.
 
 <!-- watch dolls 22c-mirza-not-mine 22-kiran-paper 22b-kiran-paper-decoy -->
 

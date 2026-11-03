@@ -4,10 +4,10 @@
 // wrote); on the right, its answers, how they compare with the first answer,
 // and the checks filling in until the verdict. Each page plays its own
 // examples, named in data-frames and data-names; the payments demo's page
-// picks its questions from data-group. Over rung 22's frames, data-dolls
-// stands the doll stage on top (dolls.js): the dolls pick the frame, and play
-// the climb between them. The data is written by tools/watch_data.py from the
-// kept runs; every string in it is set as text.
+// picks its questions from data-group. For rung 22's frames, data-dolls
+// stands the doll stage beside the question (dolls.js): the dolls pick the
+// frame, and play the climb between them. The data is written by
+// tools/watch_data.py from the kept runs; every string in it is set as text.
 (() => {
   const script = document.currentScript;
   const base = new URL("../assets/watch/", script.src);
@@ -433,10 +433,12 @@
     const doc = el("section", "w-doc");
     const side = el("section", "w-side");
     stage.append(doc, side);
-    // the doll stage: the dolls are the picker, and play the frames in order
-    const dollBox = root.dataset.dolls ? el("div", "w-dolls") : null;
+    // the doll stage: the dolls are the picker, and play the frames in order;
+    // it stands in the question's card, beside the question they are asked
+    let dollBox = root.dataset.dolls ? el("div", "w-dolls") : null;
     if (dollBox) exampleField.hidden = true;
-    root.replaceChildren(...(dollBox ? [dollBox] : []), bar, ask, top, stage);
+    const askText = el("div", "w-ask-text");
+    root.replaceChildren(bar, ask, top, stage);
     let hooks = {};
     const story = { on: false, order: [] }; // on once the stage stands
     // the stage draws beside the view and never stops it: should it fail,
@@ -445,7 +447,9 @@
       hooks = {};
       story.on = false;
       dollBox?.remove();
-      console.error(error);
+      dollBox = null;
+      ask.classList.remove("has-dolls");
+      if (error) console.error(error);
     };
     const staged = (call) => {
       try {
@@ -492,7 +496,10 @@
       history.replaceState(history.state, "", url);
     }
 
-    async function load(stem, run = 0, quiet = false) {
+    // a pick never starts the view, only Play does: what was playing plays on
+    // from the first trial, what was paused stays paused; the first frame,
+    // playing null, plays if the view is in sight by the time it arrives
+    async function load(stem, run = 0, quiet = false, playing = state.timer !== null) {
       stop();
       state.stem = stem;
       frameSelect.value = stem;
@@ -526,7 +533,7 @@
           return b;
         }),
       );
-      restart(quiet);
+      restart(quiet, playing);
     }
 
     // it plays once it is first in view, from the first trial
@@ -542,12 +549,12 @@
     );
     view.observe(root);
 
-    function restart(quiet = false) {
+    function restart(quiet, playing) {
       stop();
       if (!quiet) remember();
       [...runs.children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === state.run)));
       show(0, true);
-      if (seen) start();
+      if (playing ?? seen) start();
     }
 
     // another run, reader or case of the same example: the same trial through
@@ -583,7 +590,7 @@
           const next = story.order[i];
           if (next === "climb") await hooks.climb?.();
           else if (next === "gate") return await hooks.gate?.();
-          else return story.on ? await load(next, 0, true) : undefined;
+          else return story.on ? await load(next, 0, true, true) : undefined;
           if (!story.on) return;
         }
       } catch (error) {
@@ -662,18 +669,18 @@
       const question = d.inputs.find((x) => x.id === state.input).text;
       // the role and the key together are the whole instruction, word for word
       const role = d.instruction.slice(0, Math.max(0, d.instruction.indexOf("Answer "))).trim();
-      // who read it, then the model's id as its records name it, on one line
+      // who read it, each "through" on a line of its own, then the model's id
+      // as its records name it
       const by = el("p", "w-by");
-      by.append(
-        d.madeBy ? (d.madeBy === d.readBy ? `Made and read by ${d.readBy}` : `Made by ${d.madeBy}, read by ${d.readBy}`) : `Read by ${d.readBy}`,
-      );
+      const who = d.madeBy ? (d.madeBy === d.readBy ? `Made and read by ${d.readBy}` : `Made by ${d.madeBy}, read by ${d.readBy}`) : `Read by ${d.readBy}`;
+      who.split(/(?<=,) (?=through )/).forEach((part, i) => by.append(...(i ? [el("br")] : []), part));
       const models = [...new Set([d.makerModel, d.model].filter(Boolean))];
       if (models.length) {
         by.append(" (");
         models.forEach((model, i) => by.append(i ? ", " : "", el("code", "w-model", model)));
         by.append(")");
       }
-      ask.replaceChildren(
+      askText.replaceChildren(
         el("p", "w-question", rich(question)),
         ...(role ? [el("p", "w-role", role)] : []),
         key(d, slot, run),
@@ -685,6 +692,8 @@
           : []),
         ...(d.readBy ? [by] : []),
       );
+      ask.classList.toggle("has-dolls", Boolean(dollBox));
+      ask.replaceChildren(askText, ...(dollBox ? [dollBox] : []));
     }
 
     // the left panel: the reader's prompt, with this trial's changes marked;
@@ -854,7 +863,7 @@
             }
           }),
         )
-        .catch(() => dollBox.remove()); // the frames still play without the dolls
+        .catch(() => unstage()); // the frames still play without the dolls
     }
     group
       .catch(() => {}) // the page's own examples still play
@@ -862,8 +871,8 @@
         const wanted = asked.get("example");
         const known = [...stems, ...[...frameSelect.options].map((o) => o.value)];
         const first = stems[0] ?? frameSelect.options[0]?.value;
-        if (known.includes(wanted)) load(wanted, Number(asked.get("run") || 1) - 1, true);
-        else if (first) load(first, 0, true);
+        if (known.includes(wanted)) load(wanted, Number(asked.get("run") || 1) - 1, true, null);
+        else if (first) load(first, 0, true, null);
       });
   }
 

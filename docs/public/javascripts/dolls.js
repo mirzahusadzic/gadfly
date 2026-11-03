@@ -1,4 +1,4 @@
-// The doll stage: five painted nesting dolls standing over the watch view.
+// The doll stage: five painted nesting dolls beside the watch view's question.
 // Each line a doll says is one span, and each span paints one region, so a
 // trial that cuts a line lifts that paint off the doll. What the lines fix,
 // the drawing keeps: a doll that says its headscarf is red has a red
@@ -255,7 +255,7 @@
     return { root, regions };
   }
 
-  // ---- the stage: five dolls over one watch view
+  // ---- the stage: five dolls beside one watch view's question
   function stage(box, api, data) {
     const random = rng(Math.floor(Math.random() * 2 ** 31));
     const byName = Object.fromEntries(data.dolls.map((d) => [d.name, d]));
@@ -264,8 +264,25 @@
     const caption = document.createElement("p");
     caption.className = "d-caption";
     caption.setAttribute("aria-live", "polite");
+    // the frames of a doll asked more than once, always shown, the one
+    // played pressed, so nothing comes and goes as the sequence moves on
     const variants = document.createElement("div");
     variants.className = "d-variants";
+    variants.setAttribute("role", "group");
+    const twice = data.dolls.filter((d) => d.frames.length > 1);
+    variants.setAttribute("aria-label", twice.map((d) => `${d.name}'s frames`).join(", "));
+    variants.append(
+      ...twice.flatMap((d) => d.frames).map((s) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "w-run";
+        b.dataset.stem = s;
+        b.textContent = data.frames[s].variant;
+        b.setAttribute("aria-pressed", "false");
+        b.addEventListener("click", () => api.select(s, true));
+        return b;
+      }),
+    );
     box.replaceChildren(row, caption, variants);
     const drawn = data.dolls.map((doll, place) => {
       const fig = document.createElement("button");
@@ -297,6 +314,7 @@
       paint(entry, present);
     }
     function settle() {
+      for (const b of variants.children) b.setAttribute("aria-pressed", String(b.dataset.stem === current?.stem));
       for (const entry of drawn) {
         const asked = current && entry.doll.name === current.doll;
         entry.fig.setAttribute("aria-pressed", String(Boolean(asked)));
@@ -308,7 +326,13 @@
     }
 
     function unmark() {
+      row.classList.remove("is-travelling");
       for (const entry of drawn) entry.fig.classList.remove("is-reframed", "is-passing");
+    }
+    // the selection leaves the doll the view plays, for the one the words pass
+    function pass(entry) {
+      row.classList.add("is-travelling");
+      for (const other of drawn) other.fig.classList.toggle("is-passing", other === entry);
     }
 
     function select(name, byHand) {
@@ -322,7 +346,6 @@
         current = { doll: name, stem: null };
         step = { present: new Set(doll.lines.map((l) => l.id)), climbed: step?.climbed };
         caption.textContent = `${name} is walked, never asked: no run to play. ${name} says ${doll.lines.length} lines, and none says whether ${name} is a boy or a girl.`;
-        variants.replaceChildren();
         settle();
         return;
       }
@@ -338,20 +361,6 @@
       const climbed = stem !== data.order[0];
       step = { present: new Set(d.spans.map((s) => s.id)), climbed };
       caption.textContent = asking.caption;
-      const asked = byName[asking.doll].frames;
-      variants.replaceChildren(
-        ...(asked.length > 1
-          ? asked.map((s) => {
-              const b = document.createElement("button");
-              b.type = "button";
-              b.className = "w-run";
-              b.textContent = data.frames[s].variant;
-              b.setAttribute("aria-pressed", String(s === stem));
-              b.addEventListener("click", () => api.select(s, true));
-              return b;
-            })
-          : []),
-      );
       settle();
     }
     // a trial played: its cut lifts its paint
@@ -362,32 +371,32 @@
       settle();
     }
 
-    // between frames, the paper's words climb: each doll above passes them
-    // on, until the one whose hole they fit
+    // between frames, the paper's words climb, and the selection with them:
+    // each doll above passes them on, until the one whose hole they fit,
+    // which keeps the selection until its frame is shown
     async function climb() {
       const mine = turn;
-      const route = [...data.piece.passes, data.piece.fits];
-      for (const name of route) {
-        const entry = drawn.find((e) => e.doll.name === name);
-        entry.fig.classList.add("is-passing");
+      for (const name of [...data.piece.passes, data.piece.fits]) {
+        if (turn !== mine) return; // a reader took over: the stage is theirs
+        pass(drawn.find((e) => e.doll.name === name));
         caption.textContent = name === data.piece.fits
           ? `The paper's words fit ${name}'s hole: ${name} said it holds such a paper.`
           : `${name} passes the paper's words on: ${name}'s hole is for ${name}'s own word.`;
         await wait(reduced ? 300 : 1400);
-        entry.fig.classList.remove("is-passing");
-        if (turn !== mine) return; // a reader took over: the stage is theirs
       }
     }
-    // the gate: the decision climbs to the largest doll, which is reframed,
-    // and stays marked so until another doll is picked
+    // the gate: the decision climbs to the largest doll, the selection with
+    // it, and that doll is reframed, and stays marked so until another doll
+    // is picked; the selection goes back to the doll the view plays
     async function gate() {
       const mine = turn;
       const g = data.gate;
       const entry = drawn.find((e) => e.doll.name === g.fits);
-      entry.fig.classList.add("is-passing");
+      pass(entry);
       caption.textContent = g.caption;
       await wait(reduced ? 300 : 1400);
-      if (turn !== mine) return entry.fig.classList.remove("is-passing");
+      if (turn !== mine) return; // a reader took over: the stage is theirs
+      row.classList.remove("is-travelling");
       entry.fig.classList.replace("is-passing", "is-reframed");
     }
     const wait = (ms) => new Promise((done) => setTimeout(done, ms));

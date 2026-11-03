@@ -297,6 +297,66 @@ def _harness(name):
     return json.loads(done.stdout)
 
 
+def test_the_doll_stage_keeps_to_what_the_reader_picked():
+    # the stage driven in Node (tests/stage_harness.mjs): a walked doll
+    # picked holds the view, and later trials paint nothing on it; a climb
+    # under way stops when a reader takes over; the gate's mark stays through
+    # Back and Next until a doll is picked (pass 11, F7, F9, F10)
+    seen = _harness("stage_harness")
+    assert seen["walked"]["asked"] == [["hold"]] and seen["walked"]["amaniTrimCut"] is False
+    assert seen["walked"]["caption"].startswith("Amani is walked, never asked")
+    assert seen["takeover"] == {"asked": [["select", "22-kiran-paper"]], "captionKept": True}
+    assert seen["gate"] == {"afterGate": 1, "afterTrial": 1, "afterPick": 0, "selectionBack": True}
+    assert seen["decoyOnTop"]  # the decoy's bubble over the outline, never under it
+
+
+def test_the_selection_climbs_with_the_papers_words_doll_by_doll():
+    # from Mirza, the selection passes Robin and Sasha on its way to Kiran,
+    # never jumping, and rests on Kiran until Kiran's frame is shown
+    climb = _harness("stage_harness")["climb"]
+    assert climb["steps"] == [["Robin"], ["Sasha"], ["Kiran"], []]
+    assert climb["resting"] == {"passing": ["Kiran"], "travelling": True}
+    assert climb["shown"] == {"pressed": ["Kiran"], "travelling": False}
+
+
+def test_kirans_two_frames_stay_on_the_stage_whichever_doll_plays():
+    # nothing comes and goes as the sequence moves on: the one played is pressed
+    variants = _harness("stage_harness")["variants"]
+    unpressed = [["With the paper", "false"], ["With a decoy too", "false"]]
+    assert variants["mirza"] == variants["amani"] == unpressed
+    assert variants["kiran"] == [["With the paper", "true"], ["With a decoy too", "false"]]
+
+
+def test_the_watch_views_controls_wait_for_its_first_frame():
+    # Play, Back and Next pressed while the first frame still loads do
+    # nothing, rather than throw (tests/watch_harness.mjs; pass 11, F8)
+    waiting = _harness("watch_harness")["waiting"]
+    assert waiting == {"Back": "nothing", "Play": "nothing", "Next": "nothing"}
+
+
+def test_only_play_starts_the_watch_view():
+    # it plays once on first sight; after that a pick never starts it: what
+    # was paused stays paused, and what was playing plays on
+    assert _harness("watch_harness")["dolls"] == {
+        "beforeSight": False,
+        "inSight": True,
+        "paused": False,
+        "pickedWhilePaused": False,
+        "pickedWhilePlaying": True,
+    }
+
+
+def test_the_dolls_stand_beside_the_question_who_read_it_under_it():
+    # the question's card holds the question and the dolls; who read it, and
+    # through what, are two lines
+    seen = _harness("watch_harness")
+    assert seen["card"] == ["w-ask-text", "w-dolls"]
+    assert seen["by"] == (
+        "Read by Muse Spark 1.3 Contributor, Meta's model,\n"
+        "through unified-model-router (meta/muse-spark-1.3-contributor)"
+    )
+
+
 def test_a_long_code_block_shows_its_first_twelve_lines():
     # the site's renderer (tests/fold_harness.mjs): over twelve lines, the
     # rest folds under a button that names the count; the copy keeps every
@@ -321,31 +381,6 @@ def test_a_long_code_block_shows_its_first_twelve_lines():
     assert seen["mermaid"] is False
     assert seen["opened"] == ["true", "Show the first 12 lines", False]
     assert seen["closed"] == ["false", "Show all 45 lines", True]  # its button kept in sight
-
-
-def test_the_doll_stage_keeps_to_what_the_reader_picked():
-    # the stage driven in Node (tests/stage_harness.mjs): a walked doll
-    # picked holds the view, and later trials paint nothing on it; a climb
-    # under way stops when a reader takes over; the gate's mark stays through
-    # Back and Next until a doll is picked (pass 11, F7, F9, F10)
-    done = subprocess.run(
-        ["node", str(ROOT / "tests/stage_harness.mjs")], capture_output=True, text=True, check=True
-    )
-    seen = json.loads(done.stdout)
-    assert seen["walked"]["asked"] == [["hold"]] and seen["walked"]["amaniTrimCut"] is False
-    assert seen["walked"]["caption"].startswith("Amani is walked, never asked")
-    assert seen["takeover"] == {"asked": [["select", "22-kiran-paper"]], "captionKept": True}
-    assert seen["gate"] == {"afterGate": 1, "afterTrial": 1, "afterPick": 0}
-    assert seen["decoyOnTop"]  # the decoy's bubble over the outline, never under it
-
-
-def test_the_watch_views_controls_wait_for_its_first_frame():
-    # Play, Back and Next pressed while the first frame still loads do
-    # nothing, rather than throw (tests/watch_harness.mjs; pass 11, F8)
-    done = subprocess.run(
-        ["node", str(ROOT / "tests/watch_harness.mjs")], capture_output=True, text=True, check=True
-    )
-    assert json.loads(done.stdout) == {"Back": "nothing", "Play": "nothing", "Next": "nothing"}
 
 
 def test_the_watch_view_shows_what_a_crossings_maker_wrote():

@@ -70,7 +70,7 @@ const hooks = window.gadflyDolls.stage(box, {
   select: (stem) => asked.push(['select', stem]),
   hold: () => asked.push(['hold']),
 }, data);
-const [row, caption] = box.children;
+const [row, caption, variants] = box.children;
 const doll = (name) => row.children.find((fig) => fig.children[1].textContent === name);
 const regions = (fig) => {
   const all = [];
@@ -105,9 +105,40 @@ seen.takeover = { asked: asked.splice(0), captionKept: caption.textContent === t
 hooks.frame(kirans, frames[kirans]);
 await hooks.gate();
 const afterGate = marked();
+const selectedAfterGate = row.children.filter((fig) => fig.getAttribute('aria-pressed') === 'true').length;
+const travellingAfterGate = row.classes.has('is-travelling');
 hooks.trial({ removed: [] }, frames[kirans]);
 seen.gate = { afterGate, afterTrial: marked() };
 hooks.frame(mirzas, frames[mirzas]);
 seen.gate.afterPick = marked();
+seen.gate.selectionBack = selectedAfterGate === 1 && !travellingAfterGate;
+
+// Kiran's two frames stay on the stage whichever doll plays, the one played
+// pressed, so nothing comes and goes as the sequence moves on
+const pressed = () => variants.children.map((b) => [b.textContent, b.getAttribute('aria-pressed')]);
+seen.variants = { mirza: pressed() };
+hooks.frame(kirans, frames[kirans]);
+seen.variants.kiran = pressed();
+doll('Amani').click();
+seen.variants.amani = pressed();
+
+// the climb: the selection travels up with the paper's words, doll by doll,
+// never jumping, and rests on Kiran until Kiran's frame is shown
+hooks.frame(mirzas, frames[mirzas]);
+const passing = () => row.children.filter((fig) => fig.classes.has('is-passing')).map((fig) => fig.children[1].textContent);
+const steps = [];
+let said = caption.textContent;
+Object.defineProperty(caption, 'textContent', {
+  get: () => said,
+  set(value) {
+    said = value;
+    steps.push(passing());
+  },
+});
+await hooks.climb();
+const resting = { passing: passing(), travelling: row.classes.has('is-travelling') };
+hooks.frame(kirans, frames[kirans]);
+const pressedNow = row.children.filter((fig) => fig.getAttribute('aria-pressed') === 'true').map((fig) => fig.children[1].textContent);
+seen.climb = { steps, resting, shown: { pressed: pressedNow, travelling: row.classes.has('is-travelling') } };
 
 console.log(JSON.stringify(seen));
