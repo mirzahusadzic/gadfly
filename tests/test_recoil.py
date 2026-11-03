@@ -31,6 +31,7 @@ from midwife.recoil import (
     until_firm,
     walk,
 )
+from midwife.stats import stability
 from midwife.types import Budget, Observation
 
 RULE = "\n\n---\n\n"
@@ -550,3 +551,46 @@ def test_until_firm_refuses_more_kept_runs_than_it_may_read():
     kept = until_firm(after, DollReader(), budget(after)).runs * 3
     with pytest.raises(UsageError, match="kept holds more runs than most"):
         until_firm(after, None, Budget(calls=1), kept=kept, most=2)
+
+
+def test_a_runs_draws_are_seeded_by_its_place_as_gadfly_stats_reads_them():
+    # the same records read at place 0 and at place 1 draw differently; a
+    # run is read where it stands, so until_firm agrees with stability over
+    # the same runs (pass 11, F3)
+    probe = parse(
+        {
+            "name": "seed probe", "relation": "r", "locus": "l", "role": "ro",
+            "grain": "g", "purpose": "p", "trajectory": "t", "crossing": "c",
+            "promise": "pr", "baseline": "the frame as is",
+            "body": {"spans": [{"id": "a", "text": "The anchor says yes."}]},
+            "anchors": ["a"], "inputs": [{"id": "x", "text": "Is it yes?"}],
+            "observe": {"labels": ["yes", "no"], "instruction": "Answer yes or no."},
+            "interventions": {"ablation": True}, "allowed": {"ablation": ["no"]},
+            "standing": {"quorum": 5, "agree": 3}, "carriage": "listed",
+            "battery": {"kind": "probe"},
+        }
+    )  # fmt: skip
+
+    class Probe:
+        name = "probe"
+
+        def check(self, frame):
+            pass
+
+        def observe(self, frame, prompt, cap):
+            return Observation(label="yes" if "anchor" in prompt.split(RULE)[0] else "no")
+
+    clean = [r.as_dict() for r in run(probe, Probe(), Budget(calls_needed(probe))).records]
+
+    def flipped(index, label):
+        records = [dict(r) for r in clean]
+        records[index]["observation"] = label
+        return records
+
+    first = flipped(3, "no")
+    for second in (flipped(2, "no"), flipped(9, "yes")):
+        asked = until_firm(probe, None, Budget(calls=1), kept=[first, second])
+        [finding] = judge(probe, second)
+        share = stability(probe, [first, second])[1]["x"][finding.category]
+        assert asked.shares == {"x": share}
+        assert asked.firm is (share >= 0.95)

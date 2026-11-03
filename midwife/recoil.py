@@ -226,9 +226,12 @@ def _charged(usage: dict[str, Any], cap: int) -> int:
     return cap if not isinstance(used, int) or isinstance(used, bool) else used
 
 
-def _read(frame: Frame, records: Sequence[dict[str, Any]]) -> tuple[list[Finding], dict]:
-    findings = judge_records(frame, list(records))
-    [drawn] = stability(frame, [records])
+def _read(
+    frame: Frame, runs: Sequence[Sequence[dict[str, Any]]], place: int
+) -> tuple[list[Finding], dict]:
+    # a run's findings, and its draws seeded by its place, as gadfly stats reads them
+    findings = judge_records(frame, list(runs[place]))
+    drawn = stability(frame, runs[: place + 1])[place]
     shares = {f.input: drawn.get(f.input, {}).get(f.category, 0.0) for f in findings}
     return findings, shares
 
@@ -307,7 +310,7 @@ def until_firm(
             if result.stopped:
                 stopped = result.stopped
                 break
-        findings, shares = _read(frame, runs[place])
+        findings, shares = _read(frame, runs, place)
         read = {f.input: f.category for f in findings}
         alike = all(share >= firm for share in shares.values()) and before in (None, read)
         if alike and place == len(runs) - 1:  # a later kept run decides instead
