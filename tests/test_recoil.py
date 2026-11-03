@@ -606,3 +606,14 @@ def test_a_kept_run_with_a_prompt_its_frame_never_planned_is_refused():
     kept[0]["prompt"] = "0" * 64
     with pytest.raises(RecordsError, match="was made from another prompt"):
         until_firm(after, None, Budget(calls=1), kept=[kept])
+
+
+def test_a_text_the_start_holds_as_its_own_is_no_frontier():
+    # a frame may hold a text and quote it too: the text has a maker among
+    # the frames given, so the walk is not left incomplete by it (pass 11, F5)
+    smallest = matryoshka()[4]
+    smallest["body"]["spans"].insert(2, span("held", WORKSHOP, "mark"))
+    start = parse(smallest)
+    walked = walk(found(start, "slip"), start, [start])
+    assert sha256(WORKSHOP) not in walked.frontier
+    assert walked.frontier == (sha256(opens(3)),)  # the fourth doll was not given

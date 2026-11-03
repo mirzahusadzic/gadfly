@@ -139,9 +139,10 @@ def walk(piece: Piece, start: Frame, frames: Iterable[Frame]) -> Walk:
     holes of the piece's kind is a fit, and the piece climbs on past it,
     since it may fit at more than one height; any other frame passes it on.
     No call is made: the walk reads frames, and is given no battery."""
-    frames = [frame for frame in frames if frame.hash != start.hash]
+    given = {frame.hash: frame for frame in frames}
+    given[start.hash] = start  # its own texts are held too, though it is never its own parent
     makers: dict[str, list[Frame]] = {}
-    for frame in frames:
+    for frame in given.values():
         for text in _made(frame):
             makers.setdefault(text, []).append(frame)
     seen, fits, passed, frontier = {start.hash}, [], [], set()
