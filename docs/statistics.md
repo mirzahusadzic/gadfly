@@ -20,7 +20,7 @@ $ uv run gadfly stats examples/upgrade.json \
 frame: quill-upgrade (569c71692864ab0fcfbfcd41baaa0011ee213bc0b90ca9bcb95dd40b7f085679)
 records: 1 run, 40 calls
 agreement: 100% of calls give their trial's most common answer in their own run
-power: at 100% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 8 trials an input needs 100%
+power: at 100% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 8 trials the plan asks of an input 100%
 input pr
   baseline        5 calls  hold 5  top 100% (57%-100%)
   repeat          5 calls  hold 5  top 100% (57%-100%), at most 43% differ from hold
@@ -47,7 +47,7 @@ $ uv run gadfly stats examples/upgrade.json \
 frame: quill-upgrade (569c71692864ab0fcfbfcd41baaa0011ee213bc0b90ca9bcb95dd40b7f085679)
 records: 3 runs, 120 calls
 agreement: 100% of calls give their trial's most common answer in their own run
-power: at 100% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 8 trials an input needs 100%
+power: at 100% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 8 trials the plan asks of an input 100%
 input pr
   baseline       15 calls  hold 15  top 100% (80%-100%)
   repeat         15 calls  hold 15  top 100% (80%-100%), at most 20% differ from hold
@@ -72,9 +72,9 @@ input pr
   asked once in the run is left out, so a quorum of one has no agreement to
   measure.
 - **Power:** at that agreement, how often a trial reaches a level of `agree`
-  of `quorum`, and how often every trial an input needs does. A trial with no
-  level leaves its input unresolved, so this is the most a run can resolve,
-  whatever the evidence.
+  of `quorum`, and how often every trial the plan asks of an input does, the
+  one-anchor trials aside. A trial with no level leaves its input unresolved,
+  so this is the most a run can resolve, whatever the evidence.
 - **Top and its interval:** the most common answer's share of the trial's
   calls, with its 95% Wilson interval. Four of five is anywhere from 38% to
   96%; fifteen of fifteen is at least 80%.
@@ -107,7 +107,7 @@ $ uv run gadfly stats examples/19-router-waist.json \
 frame: router-waist (e881f5975ceb46ed93fb272e1bca4d8bc365ad08bac7b561cc53c238fa91562b)
 records: 3 runs, 90 calls
 agreement: 99% of calls give their trial's most common answer in their own run
-power: at 99% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 6 trials an input needs 99%
+power: at 99% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 6 trials the plan asks of an input 99%
 input review
   baseline       15 calls  waist 15  top 100% (80%-100%)
   repeat         15 calls  waist 15  top 100% (80%-100%), at most 20% differ from waist
@@ -137,7 +137,7 @@ from an earlier run's `stats`, or guess it:
 $ uv run gadfly plan examples/19-router-waist.json \
     --agreement 0.88
 router-waist (e881f5975ceb46ed93fb272e1bca4d8bc365ad08bac7b561cc53c238fa91562b): 30 calls
-power: at 88% agreement, a trial reaches a level of 4 of 5 89% of the time, and all 6 trials an input needs 49%
+power: at 88% agreement, a trial reaches a level of 4 of 5 89% of the time, and all 6 trials the plan asks of an input 49%
   baseline     body 46ae3eca5bb5  nothing
   repeat       body 46ae3eca5bb5  nothing, asked again
   ablation     body 41586bad7f3b  cuts gadfly

@@ -46,8 +46,10 @@ def wilson(hits: int, n: int, z: float = Z) -> tuple[float, float]:
 
 def at_least(k: int, n: int, p: float) -> float:
     """The chance that at least `k` of `n` calls give the reader's usual
-    answer, when each gives it with chance `p`."""
-    return sum(math.comb(n, i) * p**i * (1 - p) ** (n - i) for i in range(k, n + 1))
+    answer, when each gives it with chance `p`: a probability, kept within
+    0 and 1 however the sum's rounding falls."""
+    total = sum(math.comb(n, i) * p**i * (1 - p) ** (n - i) for i in range(k, n + 1))
+    return min(1.0, max(0.0, total))
 
 
 def fisher(a: int, b: int, c: int, d: int) -> float:
@@ -85,7 +87,7 @@ class Power:
     quorum: int
     agree: int
     trial: float  # one trial reaches a level of `agree` of `quorum`
-    trials: int  # the trials an input needs a level in (one-anchor trials are evidence only)
+    trials: int  # the trials the plan asks of an input, the one-anchor ones aside
     input: float  # every one of them reaches one
 
     def as_dict(self) -> dict[str, Any]:
@@ -94,11 +96,13 @@ class Power:
 
 
 def power(frame: Frame, agreement: float) -> Power:
-    """The chance that a trial, and every trial an input needs, reaches a
-    level, for a reader that gives its usual answer with chance `agreement`.
-    A trial with no level leaves its input unresolved, so this is the most
-    a run can resolve, whatever the evidence. An input that no input
-    inversion turns needs one trial fewer."""
+    """The chance that a trial, and every trial the plan asks of an input,
+    reaches a level, for a reader that gives its usual answer with chance
+    `agreement`. A trial with no level leaves its input unresolved, so this
+    is the most a run can resolve, whatever the evidence. The count is
+    every planned trial but the one-anchor ones, which are evidence only;
+    an input that no input inversion turns needs that trial's level no
+    more, so for it the figure is a floor."""
     if isinstance(agreement, bool) or not isinstance(agreement, int | float):
         raise UsageError("agreement is a share between 0 and 1")
     if not 0 <= agreement <= 1:

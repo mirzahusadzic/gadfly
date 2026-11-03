@@ -211,7 +211,7 @@ $ uv run gadfly stats examples/20b-incident-status.json \
 frame: incident-status (20f39215d11cccf3c12fe64fc07f7430cd17c89f286a9ef416fc68703edc40fe)
 records: 3 runs, 90 calls
 agreement: 99% of calls give their trial's most common answer in their own run
-power: at 99% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 6 trials an input needs 99%
+power: at 99% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 6 trials the plan asks of an input 99%
 input rollback
   baseline       15 calls  investigate 15  top 100% (80%-100%)
   repeat         15 calls  investigate 15  top 100% (80%-100%), at most 20% differ from investigate

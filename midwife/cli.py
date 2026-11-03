@@ -294,7 +294,7 @@ def _powered(power: stats.Power) -> str:
     return (
         f"at {_percent(power.agreement)} agreement, a trial reaches a level of "
         f"{power.agree} of {power.quorum} {_percent(power.trial)} of the time, and all "
-        f"{power.trials} trials an input needs {_percent(power.input)}"
+        f"{power.trials} trials the plan asks of an input {_percent(power.input)}"
     )
 
 

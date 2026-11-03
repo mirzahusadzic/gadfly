@@ -669,7 +669,8 @@ wilson(hits, n, z=Z)
 #### at_least
 
 The chance that at least `k` of `n` calls give the reader's usual
-answer, when each gives it with chance `p`.
+answer, when each gives it with chance `p`: a probability, kept within
+0 and 1 however the sum's rounding falls.
 
 ```python
 at_least(k, n, p)
@@ -713,11 +714,13 @@ as_dict()
 
 #### power
 
-The chance that a trial, and every trial an input needs, reaches a
-level, for a reader that gives its usual answer with chance `agreement`.
-A trial with no level leaves its input unresolved, so this is the most
-a run can resolve, whatever the evidence. An input that no input
-inversion turns needs one trial fewer.
+The chance that a trial, and every trial the plan asks of an input,
+reaches a level, for a reader that gives its usual answer with chance
+`agreement`. A trial with no level leaves its input unresolved, so this
+is the most a run can resolve, whatever the evidence. The count is
+every planned trial but the one-anchor ones, which are evidence only;
+an input that no input inversion turns needs that trial's level no
+more, so for it the figure is a floor.
 
 ```python
 power(frame, agreement)

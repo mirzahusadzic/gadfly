@@ -245,3 +245,14 @@ def test_the_same_calls_give_the_same_shares_in_whatever_order_they_were_kept(ra
     first = stats.stability(frame, wavering, 200)
     shuffled = [list(reversed(records)) for records in wavering]
     assert stats.stability(frame, shuffled, 200) == first
+
+
+def test_power_is_a_probability_at_any_quorum_and_says_what_it_counts(raw, tmp_path, capsys):
+    assert 0.0 <= stats.at_least(1, 60, 0.99) <= 1.0
+    raw["standing"] = {"quorum": 60, "agree": 1}
+    power = stats.power(situate(raw), 0.99)
+    assert power.trial <= 1.0 and power.input <= 1.0
+    path = tmp_path / "frame.json"
+    path.write_text(json.dumps(raw))
+    assert main(["plan", str(path), "--agreement", "0.9"]) == 0
+    assert "and all 7 trials the plan asks of an input " in capsys.readouterr().out

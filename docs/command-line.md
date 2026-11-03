@@ -209,7 +209,7 @@ $ uv run gadfly stats examples/upgrade.json \
 frame: quill-upgrade (569c71692864ab0fcfbfcd41baaa0011ee213bc0b90ca9bcb95dd40b7f085679)
 records: 1 run, 40 calls
 agreement: 100% of calls give their trial's most common answer in their own run
-power: at 100% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 8 trials an input needs 100%
+power: at 100% agreement, a trial reaches a level of 4 of 5 100% of the time, and all 8 trials the plan asks of an input 100%
 input pr
   baseline        5 calls  hold 5  top 100% (57%-100%)
   repeat          5 calls  hold 5  top 100% (57%-100%), at most 43% differ from hold
