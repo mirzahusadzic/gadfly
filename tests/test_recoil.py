@@ -331,6 +331,38 @@ def test_a_doll_whose_question_does_not_rest_on_its_word_absorbs_it():
     assert (recoil.gate, recoil.category, recoil.climbs) == ("absorbed", "cooled", ())
 
 
+class Unreachable(DollReader):
+    """The doll reader when its service is down: every call an opening."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        return Observation(label=None, opening="the reader could not be reached")
+
+
+@pytest.mark.parametrize("inputs", [1, 2])
+def test_a_firm_unresolved_successor_stops_naming_its_open_check(inputs):
+    # unanimous openings are firm, and unresolved: the gate stops and names
+    # the open check in the findings' own words, the input's beside it when
+    # there are several (pass 12, R1)
+    middle = dolls()[1]
+    if inputs == 2:
+        raw = copy.deepcopy(middle.raw)
+        raw["inputs"].append({**raw["inputs"][0], "id": "again"})
+        middle = parse(raw)
+    after = with_slip(middle)
+    asked = until_firm(after, Unreachable(), budget(after))
+    assert asked.firm and asked.category == "unresolved"
+    recoil = gate(middle, after, asked)
+    assert (recoil.gate, recoil.category) == ("stops", "unresolved")
+    evidence = asked.findings[0].evidence
+    assert evidence and evidence[0].startswith("no agreed level in baseline")
+    if inputs == 1:
+        assert recoil.open == "; ".join(evidence)
+    else:
+        assert recoil.open == "; ".join(
+            f"in {f.input}, {'; '.join(f.evidence)}" for f in asked.findings
+        )
+
+
 def test_a_shaky_reader_is_asked_again_until_its_verdict_is_firm():
     middle = dolls()[1]
     after = with_slip(middle)

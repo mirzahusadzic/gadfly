@@ -370,6 +370,7 @@ def gate(before: Frame, after: Frame, asked: Firm | None = None) -> Recoil:
     is a reframing, read against no category and asked nothing. Any other is
     read from its own runs (`until_firm`): one whose verdict never came out
     firm stops, with why named; a firm one sets the gate by its category,
+    and a firm unresolved one stops with its open check named,
     and when it climbs, its decision climbs on as one piece for each label
     its inputs' baselines read, if the frame offers a kind."""
     changed = reframes(before, after)
@@ -384,6 +385,14 @@ def gate(before: Frame, after: Frame, asked: Firm | None = None) -> Recoil:
         return Recoil("stops", asked.category, open=why)
     category = asked.category  # a firm run read a finding for every input
     gated = GATE[category] if category else "stops"
+    if gated == "stops":  # unresolved names its open check, in its findings' words
+        several = len(asked.findings) > 1
+        said = [
+            f"in {f.input}, {'; '.join(f.evidence)}" if several else "; ".join(f.evidence)
+            for f in asked.findings
+            if f.category == UNRESOLVED and f.evidence
+        ]
+        return Recoil("stops", category, open="; ".join(said) or "its verdict was unresolved")
     climbs: tuple[Piece, ...] = ()
     if gated == "climbs" and after.offers is not None:
         labels = sorted({f.levels.get("baseline") for f in asked.findings} - {None})

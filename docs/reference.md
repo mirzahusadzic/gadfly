@@ -1013,6 +1013,7 @@ The gate a fit sets. A successor that changed more than its evidence
 is a reframing, read against no category and asked nothing. Any other is
 read from its own runs (`until_firm`): one whose verdict never came out
 firm stops, with why named; a firm one sets the gate by its category,
+and a firm unresolved one stops with its open check named,
 and when it climbs, its decision climbs on as one piece for each label
 its inputs' baselines read, if the frame offers a kind.
 
