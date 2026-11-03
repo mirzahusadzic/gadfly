@@ -5,6 +5,9 @@ raises what it refuses. Verdicts do not change: every kept run reads to the
 same category as in 0.6.0. This page lists what a caller of 0.6.0 meets, and
 what to do.
 
+0.7.1 changes nothing a caller meets: one test that read a refusal's message
+now passes on Python 3.14 and later, as on 3.13.
+
 ---
 
 ### The command line
