@@ -51,6 +51,7 @@ const sidebar = [
       { text: 'Inversion', link: '/examples/inversion' },
       { text: 'Asked', link: '/examples/asked' },
       { text: 'Each anchor alone', link: '/examples/each-anchor' },
+      { text: 'Crossing', link: '/examples/crossing' },
       { text: 'Run your own', link: '/examples/your-own' },
     ],
   },

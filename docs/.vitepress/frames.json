@@ -104,6 +104,16 @@
     "name": "router-waist",
     "hash": "e881f5975ceb46ed93fb272e1bca4d8bc365ad08bac7b561cc53c238fa91562b"
   },
+  "20-incident-cause": {
+    "path": "examples/20-incident-cause.json",
+    "name": "incident-cause",
+    "hash": "282805e302be793a78b7addbe303fd178c542d7e9584b54141d44196c6cf20ab"
+  },
+  "20b-incident-status": {
+    "path": "examples/20b-incident-status.json",
+    "name": "incident-status",
+    "hash": "20f39215d11cccf3c12fe64fc07f7430cd17c89f286a9ef416fc68703edc40fe"
+  },
   "rung1": {
     "path": "examples/rung1.json",
     "name": "quill-upgrade-rung-1",

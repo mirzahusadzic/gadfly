@@ -3,9 +3,10 @@
 Every example here is an experiment, not a demonstration: a frame, the
 predictions written before its first call, and the records of every run. The
 reader is Gemma 4 26B (the QAT q4_0 GGUF build, revision `d1c082be`), served by
-[eGemma](https://github.com/mirzahusadzic/egemma) on one machine, except in rung
-19, read by Muse Spark 1.3 Contributor through the unified model router; reading
-an example back needs no model.
+[eGemma](https://github.com/mirzahusadzic/egemma) on one machine, except in rungs
+19 and 20, read by Muse Spark 1.3 Contributor through the unified model router,
+which in rung 20 also writes what it reads; reading an example back needs no
+model.
 
 - **Predictions first:** `examples/PREDICTIONS.md` holds what each step
   expected, written before its first call.
@@ -14,7 +15,7 @@ an example back needs no model.
   design was worked out; only the reading shown is kept.
 - **Nothing edited after:** a wrong prediction stays in, and so does a frame
   that turned out to be built wrong; a corrected frame is a new one beside it.
-- **Cheap to run:** 6,380 calls in all, across code review, design review,
+- **Cheap to run:** 6,560 calls in all, across code review, design review,
   contracts, access rules, incidents, migrations and performance work, and
   not one failed (`examples/FINDINGS.md`).
 
@@ -41,6 +42,7 @@ and it teaches one more thing Gadfly does, on top of the steps before it.
 | [Inversion](inversion.md) | 16 | the inversion trial, a direction the answer must follow; a default no rule carries | access, one rule, two cases |
 | [Asked](asked.md) | 17 | the input inversion, a change to what is asked the answer must follow | code review, one rule, the diff in the question |
 | [Each anchor alone](each-anchor.md) | 18, 18b, 18b2, 18c | each anchor cut alone, evidence after a moved ablation; a default no cut moves | access and incidents, two statements each |
+| [Crossing](crossing.md) | 20, 20b | the crossing battery, a maker inside the reading; carried through one artefact, cooled through another | an incident, written up two ways |
 | [Run your own](your-own.md) | yours | predictions first; plan, run, report; which trial answers which question | yours |
 
 ---
@@ -88,3 +90,4 @@ and Gadfly.
 | `17-clock-asked.json` | code review, one rule, the diff asked about | the clock rule, and does the review turn with the diff? | carried in two runs of three; the review turns to approve |
 | `18`, `18b`, `18b2`, `18c` | access and incidents, two statements each | each of two statements, alone? | the restore rule carries it and the cited break-glass line has no agreed level (one run); elsewhere another route, a default or a split comes first |
 | `19-router-waist.json` | design review, a repository and a program that calls it | the second program, not the repository's name? | read by Muse: carried in every run, and the name changes nothing |
+| `20`, `20b` | an incident, written up, then a rollback decided | the pool change, through what the maker writes? | written and read by Muse: carried through the cause section, cooled through the status update, in every run |

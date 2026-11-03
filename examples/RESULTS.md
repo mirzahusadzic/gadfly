@@ -305,3 +305,32 @@ the router, and the frame names the category with that check beside it.
 This frame was also read by other models while the design was worked out;
 only the reading shown here is kept, and its predictions were written before
 its calls.
+
+## Rung 20: across a boundary, a cause and a status update
+
+Written and read by Muse Spark 1.3 Contributor through the crossing
+battery, each side at reasoning `low`, 3 runs of 30 calls a frame; each
+kept call is two calls to Muse, the maker's and the reader's. Calls per
+trial over the three runs:
+
+| trial | 20, the cause section | 20b, the status update |
+|---|---|---|
+| baseline | rollback 15 | investigate 15 |
+| repeat | rollback 15 | investigate 15 |
+| ablation (the pool change) | investigate 15 | investigate 15 |
+| sham-1 (deploy 41's logs) | rollback 15 | investigate 15 |
+| presentation (deploy to release) | rollback 15 | investigate 15 |
+| control (latency and pool) | keep 15 | keep 14, investigate 1 |
+| per run | carried in all three | cooled in all three |
+
+Predicted carried through the cause section and cooled through the status
+update, in every run: right in all six. With the pool line, every cause
+section named deploy 42's cut to the connection pool; without it, each said
+that nothing given explained the rise. Every status update said what
+customers saw, slow responses, and none said what changed, so the
+commander investigated with the pool line or without it. Each kept call
+spent 689 to 2,118 output tokens, the maker's and the reader's together.
+
+Drawn again 200 times, every run of 20 is carried every time; 20b's third
+run, with its one control call at investigate, is cooled in 70% of draws
+and unresolved otherwise.

@@ -5,12 +5,15 @@ verdict. No model is called; the records are the ones kept under runs/.
     uv run python examples/read.py examples/07-sql-rule.json --verdict 1
     uv run python examples/read.py examples/07-sql-rule.json --frame
     uv run python examples/read.py examples/12-payroll-access.json --verdict 1 --input sam
+    uv run python examples/read.py examples/20-incident-cause.json --made 1
 """
 
 from __future__ import annotations
 
 import json
+import re
 import sys
+import textwrap
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -50,15 +53,32 @@ def reading(frame, run: Path) -> str:
     return f"{overall(findings).category} ({each})"
 
 
+def reader(served: str) -> str:
+    """What served a call, in short: the model and its revision cut to 8
+    characters, without the provider or endpoint the router reports."""
+    return re.sub(r"@(\w{8})\w*", r"@\1", re.sub(r" via [^,]*", "", served))
+
+
 def table(path: Path) -> str:
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
     kept = runs_of(path)
     records = [r for run in kept for r in load_records(str(run))]
-    # the model and its revision, the revision cut to 8 characters
-    served = sorted({r["served"][: r["served"].find("@") + 9] for r in records if r.get("served")})
+    served = sorted({reader(r["served"]) for r in records if r.get("served")})
+    crossed = [re.fullmatch(r"made by (.*), read by (.*)", s) for s in served]
+    if served and all(crossed):  # a crossing: who wrote what the reader read
+        made_by = sorted({m[1] for m in crossed})
+        read_by = sorted({m[2] for m in crossed})
+        who = (
+            f"made and read by {', '.join(made_by)}"
+            if made_by == read_by
+            else f"made by {', '.join(made_by)}, read by {', '.join(read_by)}"
+        )
+    else:
+        who = f"read by {', '.join(served) or 'no record'}"
     inputs = [x["id"] for x in frame.raw["inputs"]]
-    trials = list(dict.fromkeys(r["trial"] for r in records))
-    lines = [f"{frame.name}: {len(kept)} kept runs, read by {', '.join(served) or 'no record'}"]
+    asked = {r["trial"] for r in records}  # in the plan's order, however the calls ended
+    trials = [t.id for t in plan(frame) if t.id in asked]
+    lines = [f"{frame.name}: {len(kept)} kept runs, {who}"]
     cells: dict[tuple[str, str], Counter] = defaultdict(Counter)  # one pass over the records
     for r in records:
         cells[r["input"], r["trial"]][r["observation"] or "opening"] += 1
@@ -114,6 +134,9 @@ def described(path: Path) -> str:
     lines += ["asked:"] + [
         f"  {x['id'].ljust(ids)}  {x['text'].replace(chr(10), gap)}" for x in frame.inputs
     ]
+    maker = frame.battery.get("maker")
+    if isinstance(maker, dict) and maker.get("instruction"):  # a crossing: what the reader reads
+        lines.append(f"made into: {maker['instruction']}")
     lines += [f"labels: {', '.join(frame.labels)}", "trials:"]
     lines += [f"  {t.id.ljust(12)}  {cut(frame, t)}" for t in trials]
     allowed = "; ".join(
@@ -141,10 +164,37 @@ def verdict(path: Path, n: int, only: str | None = None) -> str:
     return "\n".join(lines)
 
 
+def made(path: Path, n: int) -> str:
+    """What a crossing's maker wrote for each trial in run N, from the first
+    call of each, and what the reader answered from it."""
+    frame = situate(json.loads(path.read_text(encoding="utf-8")))
+    if frame.battery["kind"] != "crossing":
+        raise SystemExit(f"{path.name} makes nothing for its reader to read")
+    first = {}
+    for record in load_records(str(runs_of(path)[n - 1])):
+        if record["run"] == 0:
+            first.setdefault((record["input"], record["trial"]), record)
+    lines = []
+    for x in frame.inputs:
+        for trial in plan(frame):
+            record = first.get((x["id"], trial.id))
+            if record is None:
+                continue
+            name = trial.id if len(frame.inputs) == 1 else f"{x['id']}/{trial.id}"
+            lines.append(f"{name}, read as {record['observation'] or 'an opening'}")
+            text = json.loads(record["raw"])["made"]["text"]
+            lines += textwrap.wrap(
+                text, 72, initial_indent="  ", subsequent_indent="  ", break_on_hyphens=False
+            )
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     frame_path = Path(sys.argv[1])
     if "--frame" in sys.argv:
         print(described(frame_path))
+    elif "--made" in sys.argv:
+        print(made(frame_path, int(sys.argv[sys.argv.index("--made") + 1])))
     elif "--verdict" in sys.argv:
         only = sys.argv[sys.argv.index("--input") + 1] if "--input" in sys.argv else None
         print(verdict(frame_path, int(sys.argv[sys.argv.index("--verdict") + 1]), only))

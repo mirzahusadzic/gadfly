@@ -53,6 +53,8 @@ REPORTED: dict[str, list[list[str]]] = {
     "18b2-access-logs-both": [[UNR]] * 3,
     "18c-restore-cited": [[UNR], [UNR], [CAR]],
     "19-router-waist": [[CAR]] * 3,
+    "20-incident-cause": [[CAR]] * 3,
+    "20b-incident-status": [[COO]] * 3,
     "rung1": [[UNR]] * 5,
     "rung2": [[UNR]] * 5,
     "rung3": [[UNR]] * 5,
@@ -128,7 +130,7 @@ def test_a_run_that_stops_at_unresolved_reads_every_kept_run_alike():
             read = [f.category for f in judge(frame, stopped)]
             assert read == [f.category for f in judge(frame, records)], each
             asked, kept = asked + len(stopped), kept + len(records)
-    assert (asked, kept) == (4780, 6380)
+    assert (asked, kept) == (4960, 6560)
 
 
 def test_only_the_approved_restore_raises_monotonicity():
