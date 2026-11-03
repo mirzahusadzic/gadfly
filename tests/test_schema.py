@@ -65,6 +65,11 @@ def test_every_shipped_frame_meets_the_schema_and_the_parser(name):
             scopeCheck={"owner": "o", "statement": "s", "source": "x", "encounter": "e"}
         ),  # a check of no declared exclusion
         lambda r: r["allowed"].update(ablation=[]),
+        lambda r: r["body"]["spans"][1].update(source={"sha256": "XYZ"}),
+        lambda r: r["body"]["spans"][1].update(source={"from": "elsewhere"}),
+        lambda r: r["body"]["spans"][1].update(source={"sha256": "0" * 64, "from": ""}),
+        lambda r: r["body"]["spans"][1].update(source={"sha256": "0" * 64, "when": "now"}),
+        lambda r: r["body"]["spans"][1].update(source="0" * 64),
     ],
 )
 def test_the_schema_refuses_what_the_parser_refuses(change):

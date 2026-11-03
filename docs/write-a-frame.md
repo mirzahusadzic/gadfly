@@ -145,7 +145,7 @@ These keys hold what the reader reads and what it may answer.
 
 | Key | Required | Shape | What you write |
 |---|---|---|---|
-| `body.spans` | yes | a list of `{id, text, kind}` with unique ids; `kind` is `text` by default | the evidence, one span per unit a trial may cut; `kind` matches sham spans |
+| `body.spans` | yes | a list of `{id, text, kind, source}` with unique ids; `kind` is `text` by default; `source`, optional, is `{sha256, from}` | the evidence, one span per unit a trial may cut; `kind` matches sham spans; `source` names the SHA-256 of a text that crossed from another frame or system, and the span's text must match it byte for byte |
 | `anchors` | yes | a list of span ids, at least one | the spans the relation rests on |
 | `inputs` | yes | a list of `{id, text}` with unique ids | the test domain, one case each |
 | `observe.labels` | yes | two or more different strings | the answers a reader may give |

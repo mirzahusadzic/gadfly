@@ -365,6 +365,23 @@
           "type": "string",
           "minLength": 1,
           "default": "text"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sha256"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "from": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         }
       }
     },

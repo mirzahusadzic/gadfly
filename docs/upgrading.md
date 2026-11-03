@@ -13,8 +13,10 @@ does not exist; `--refresh-package midwife` makes it look again.
 
 On `main`, for the next release: nothing a caller of 0.8.0 meets changes.
 New, and opt-in: `gadfly stats` and `midwife.stats`, which say beside each
-verdict how firm it is over the kept runs, and `gadfly plan --agreement`,
-which says before a run how often its quorum can reach a level.
+verdict how firm it is over the kept runs; `gadfly plan --agreement`,
+which says before a run how often its quorum can reach a level; and a span's
+`source`, the SHA-256 of the text it crossed with, which the parser holds it
+to.
 
 ---
 

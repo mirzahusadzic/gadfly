@@ -61,6 +61,8 @@ common ones.
 | --- | --- |
 | `FrameError: file 'frame.json' is not JSON at line 2, column 1 (Expecting value)` | Correct the file at that place; a frame is plain JSON. |
 | `FrameError: file 'frame.json' is not UTF-8 text` | Save the file as UTF-8. |
+| `FrameError: span 'r2' does not hash to its source` | `its text hashes to '...'; it must be byte for byte the text that crossed`. The span's text was changed after it crossed, or `source.sha256` names another text. |
+| `FrameError: span 'r2' names a source that is not {sha256, from}` | `sha256 is 64 lowercase hex digits; from, if given, says where the text came from`. |
 | `FrameError: the body has no span 'r9'` | `anchors name spans of the body`. Name as anchors only the ids of its spans. |
 | `FrameError: required influence is tested by ablation, and none is declared` | `set ablation to true`. |
 

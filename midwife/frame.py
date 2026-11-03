@@ -60,6 +60,8 @@ SCOPE_CHECK = {"owner", "statement", "source", "encounter"}
 # (the default) carried and cooled need theirs passed; under listed they are
 # listed beside the category, as After the Poem's study reads them.
 CARRIAGE = ("all-checks", "listed")
+# A span names its id and text, and may name its kind and the source it crossed from
+SPAN_KEYS = {"id", "text", "kind", "source"}
 
 
 @dataclass(frozen=True)
@@ -414,11 +416,37 @@ def _one_name(value: str, what: str) -> None:
 
 
 def _span(value: Any) -> Span:
-    if not isinstance(value, dict) or not {"id", "text"} <= set(value) <= {"id", "text", "kind"}:
-        raise FrameError("a span is {id, text} with an optional kind")
-    if not all(isinstance(value[key], str) and value[key] for key in value):
+    if not isinstance(value, dict) or not {"id", "text"} <= set(value) <= SPAN_KEYS:
+        raise FrameError("a span is {id, text} with an optional kind and source")
+    named = {key: value[key] for key in ("id", "text", "kind") if key in value}
+    if not all(isinstance(item, str) and item for item in named.values()):
         raise FrameError("a span's id, text and kind are non-empty strings")
-    return Span(**value)
+    if "source" in value:
+        _check_source(named["id"], named["text"], value["source"])
+    return Span(**named)
+
+
+def _check_source(span: str, text: str, source: Any) -> None:
+    """A span that crossed from elsewhere names the SHA-256 of the exact text
+    that crossed, and optionally where it came from: its text must hash to
+    it, byte for byte, so what reached this frame is what left the other."""
+    if not (
+        isinstance(source, dict)
+        and {"sha256"} <= set(source) <= {"sha256", "from"}
+        and isinstance(source["sha256"], str)
+        and re.fullmatch(r"[0-9a-f]{64}", source["sha256"])
+        and ("from" not in source or (isinstance(source["from"], str) and source["from"]))
+    ):
+        raise FrameError(
+            f"span {span!r} names a source that is not {{sha256, from}}",
+            "sha256 is 64 lowercase hex digits; from, if given, says where the text came from",
+        )
+    found = hashlib.sha256(text.encode("utf-8", "surrogatepass")).hexdigest()
+    if found != source["sha256"]:
+        raise FrameError(
+            f"span {span!r} does not hash to its source",
+            f"its text hashes to {found!r}; it must be byte for byte the text that crossed",
+        )
 
 
 def _check_sham_kind(pools: Any, spans: tuple[Span, ...], anchors: tuple[str, ...]) -> None:
