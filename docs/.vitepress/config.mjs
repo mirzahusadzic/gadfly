@@ -31,7 +31,7 @@ const description =
 // each step building on the ones before it), guides for writing and reading
 // frames, the reference, and the background. A page left out of it is a
 // draft, and goes in srcExclude, which keeps it off the site and its search.
-const guides = ['write-a-frame', 'interventions', 'crossings', 'reading-a-verdict', 'statistics', 'batteries'];
+const guides = ['write-a-frame', 'interventions', 'crossings', 'recoil', 'reading-a-verdict', 'statistics', 'batteries'];
 const reference = ['command-line', 'reference', 'glossary', 'upgrading', 'troubleshooting', 'roadmap', 'breadth/'];
 const sidebar = [
   { text: 'Home', link: '/' },
@@ -71,6 +71,7 @@ const sidebar = [
       { text: 'Write a frame', link: '/write-a-frame' },
       { text: 'Interventions', link: '/interventions' },
       { text: 'Crossings', link: '/crossings' },
+      { text: 'Recoil', link: '/recoil' },
       { text: 'Reading a verdict', link: '/reading-a-verdict' },
       { text: 'Statistics', link: '/statistics' },
       { text: 'Batteries', link: '/batteries' },

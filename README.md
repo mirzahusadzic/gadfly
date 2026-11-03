@@ -230,8 +230,8 @@ too.
   runs, beside it and never changing it.
 - **[Crossings](https://mirzahusadzic.github.io/gadfly/crossings):** a decision made from something
   written from the evidence, with the maker inside the reading.
-- **[Five dolls, one kid](https://mirzahusadzic.github.io/gadfly/examples/dolls):** recoil, where a
-  piece found deep in a chain of frames climbs back to the hole it fits, asked until firm.
+- **[Recoil](https://mirzahusadzic.github.io/gadfly/recoil):** a piece found deep in a chain of
+  frames, carried back across its crossings to the hole it fits, asked until firm.
 - **[Batteries](https://mirzahusadzic.github.io/gadfly/batteries):** the shipped scorers, their privacy
   guarantees, and writing your own.
 - **[Architecture and limits](https://mirzahusadzic.github.io/gadfly/architecture):** what Gadfly keeps, and

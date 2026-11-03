@@ -39,7 +39,8 @@ These fragments are from `examples/upgrade.json`, the frame
   decides, as [Crossings](crossings.md) shows.
 - **Hole and piece:** a hole is an anchor the body is missing, by id and
   kind; a piece is a text found further down a chain of frames, which fills a
-  hole of its kind. Recoil carries a piece back up to the holes it fills.
+  hole of its kind. [Recoil](recoil.md) carries a piece back up to the holes
+  it fills.
 - **Input:** one case of the test domain, the question the reader is asked.
 - **Labels:** the answers a reader may give, each defined in the instruction.
 - **Allowed:** what the ablation may produce, and, for a bypass, the

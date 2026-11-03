@@ -131,6 +131,7 @@ Every page reads on GitHub as it does here.
 | write a frame and check it before any call | [Write a frame](write-a-frame.md) |
 | choose trials and estimate their calls | [Interventions](interventions.md) |
 | test a decision made from something written from the evidence | [Crossings](crossings.md) |
+| carry what a chain of frames found back to the frames it answers | [Recoil](recoil.md) |
 | read evidence apart from obligations | [Reading a verdict](reading-a-verdict.md) |
 | say how firm a verdict is over several runs | [Statistics](statistics.md) |
 | use a model, a local service or your own scorer | [Batteries](batteries.md) |

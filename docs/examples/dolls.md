@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > **This step**
 >
-> - **Teaches:** [recoil](../breadth/recoil.md), where something found deep
+> - **Teaches:** [recoil](../recoil.md), where something found deep
 >   in a chain of frames climbs back to the frame whose hole it fits, and the
 >   gate it opens there; a frame asked lightly until firm; and a decoy, and a
 >   second route that holds an answer.

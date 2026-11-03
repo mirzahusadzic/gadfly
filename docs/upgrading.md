@@ -35,7 +35,8 @@ kind its decision climbs as; a frame without them keeps its hash. A frame
 whose anchors are all holes is walked, never planned: `plan` and
 `calls_needed` refuse it with a `FrameError` until a hole is filled.
 `midwife.recoil` carries a piece found further down a chain of frames up to
-the holes it fills, and asks each fit again until its verdict is firm.
+the holes it fills, and asks each fit again until its verdict is firm, as
+[Recoil](recoil.md) shows.
 
 ---
 

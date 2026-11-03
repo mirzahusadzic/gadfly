@@ -27,7 +27,8 @@ reads it depends on whether the artefact can be made again:
 
 The same holds upward: findings become a brief, and a brief a decision about
 a product's posture. Each step is a crossing of its own, and each can be
-tested where it happens.
+tested where it happens; what a later step finds, [Recoil](recoil.md) carries
+back across them to the step that lacked it.
 
 ---
 
