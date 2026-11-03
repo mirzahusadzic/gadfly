@@ -167,6 +167,38 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/12-payroll-access.json
+payroll-access (202930b299ef9e09c878a7bec08524032b364c6d2fb91d94f72d8e018bff7cf7): 120 calls
+  baseline     body 5d38c457d964  nothing
+  repeat       body 5d38c457d964  nothing, asked again
+  ablation     body a66529da8e07  cuts finance
+  sham-1       body 7c98c6d0f419  cuts reports
+  sham-2       body de63debf91b2  cuts tickets
+  presentation body aad0b8aabcfb  renames Dana to Mira, Sam to Leo, payroll to salary
+  bypass       body 1d010026c7f8  cuts directory
+  control      body 2331b810d3fe  cuts finance, backup, default
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/12-payroll-access.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 120 --out my-run.jsonl
+uv run gadfly report examples/12-payroll-access.json my-run.jsonl
+```
+
+---
+
 ### Try next
 
 Split 12 into three frames, one per requester, each with its own `allowed` and

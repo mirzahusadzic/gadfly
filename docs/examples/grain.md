@@ -165,6 +165,41 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/13-drop-table-section.json
+drop-table-section (26f3ff8bd382fed4bfede459afaca45b3cc05bfa1b343296719516d5a41a7be5): 35 calls
+  baseline     body 7841e14be6e3  nothing
+  repeat       body 7841e14be6e3  nothing, asked again
+  ablation     body 543226fb4c28  cuts backfill, dualwrite, reads
+  sham-1       body 6a1deba76ebd  cuts audit, index, search
+  sham-2       body 281ff8c4f759  cuts invoices, replica, sessions
+  presentation body bbce24897b81  renames orders_v1 to sales_old, orders_v2 to sales_new
+  control      body 3a5a5c5335c1  cuts request
+never carried, whatever the answers: these stay open
+  no hidden fallback (no bypass trial was declared)
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/13-drop-table-section.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 35 --out my-run.jsonl
+uv run gadfly report examples/13-drop-table-section.json my-run.jsonl
+```
+
+`examples/13b-drop-table-reads.json` runs the same way, in 35 calls.
+
+---
+
 ### Try next
 
 Write 13c, anchored on the writes line alone ("writes to orders_v1 stopped on 1

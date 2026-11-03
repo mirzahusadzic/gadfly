@@ -215,6 +215,39 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/18c-restore-cited.json
+restore-cited (4713844abfdae2bbedb8cc6e1b554c26bbf4ba1ca0ac55209e45cf1384bb15a5): 35 calls
+  baseline     body 6b5fb296cb98  nothing
+  repeat       body 6b5fb296cb98  nothing, asked again
+  ablation     body 9b8749ef0f6a  cuts s15, s14
+  ablation-s15 body 3de07b40f14a  cuts s15
+  ablation-s14 body e049245613ae  cuts s14
+  sham-1       body bb8cac470e86  cuts s13, s25
+  control      body 4f53cda18c2b  cuts every span
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/18c-restore-cited.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 35 --out my-run.jsonl
+uv run gadfly report examples/18c-restore-cited.json my-run.jsonl
+```
+
+`examples/18-notify-chain.json`, `examples/18b-access-logs.json` and `examples/18b2-access-logs-both.json` run the same way, in 40, 40 and 40 calls.
+
+---
+
 ### Try next
 
 Give the chain a question only the chain answers: "Who renews an expired

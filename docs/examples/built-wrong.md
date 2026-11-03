@@ -145,6 +145,42 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/10c-incident-both.json
+incident-both (6ae0c64c23ee03e348c2833d2d6c07f8b7fcd8e9424c0d2b19b85235f47c5f7e): 160 calls
+  baseline     body cf0bc03d909b  nothing
+  repeat       body cf0bc03d909b  nothing, asked again
+  ablation     body af0877114f7c  cuts rollback
+  cumulative   body 8257a99b4eac  cuts cache, rollback, slowq
+  sham-1       body 58cb32c2b28a  cuts dns
+  sham-2       body 73103050668c  cuts health
+  presentation body c9ad08e0ffe1  renames v2.30 to v7.3, v2.31 to v7.4
+  control      body cf587eea07be  cuts deploy, failover
+never carried, whatever the answers: these stay open
+  no hidden fallback (no bypass trial was declared)
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/10c-incident-both.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 160 --out my-run.jsonl
+uv run gadfly report examples/10c-incident-both.json my-run.jsonl
+```
+
+`examples/10c2-incident-both.json` runs the same way, in 160 calls.
+
+---
+
 ### Try next
 
 Copy 10c to a file of your own, change one word of its `crossing`, and report a

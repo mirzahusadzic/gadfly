@@ -148,6 +148,38 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/11-eu-clause.json
+eu-clause (7eecfa8c8b8976746af2c390230d9e2bc99a3dd75abe8836c8d258461eaf7345): 40 calls
+  baseline     body 8f5e5a8c0eca  nothing
+  repeat       body 8f5e5a8c0eca  nothing, asked again
+  ablation     body d1daecd5423a  cuts clause
+  sham-1       body 9f52292e2a26  cuts ending
+  sham-2       body afd52358d71e  cuts support
+  presentation body 5d479ff2fdf5  renames Acme to Borealis, ReplayCo to ScreenTrail
+  bypass       body 8394590cea26  cuts account
+  control      body 77f79fbeb7cf  cuts clause, vendor
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/11-eu-clause.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 40 --out my-run.jsonl
+uv run gadfly report examples/11-eu-clause.json my-run.jsonl
+```
+
+---
+
 ### Try next
 
 Add a second input: "Can we turn on ReplayCo session replay for Borealis Ltd?",

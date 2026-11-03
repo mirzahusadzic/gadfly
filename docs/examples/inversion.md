@@ -179,6 +179,37 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/16-restore-inversion.json
+restore-approval-inversion (43f144660597fce2a301e56f8b3aaeb72f8c5ad9bc0bf93fd0581b6ad7526f35): 70 calls
+  baseline     body 6b5fb296cb98  nothing
+  repeat       body 6b5fb296cb98  nothing, asked again
+  ablation     body 3de07b40f14a  cuts s15
+  sham-1       body 6f684f32e7fa  cuts s13
+  sham-2       body e049245613ae  cuts s14
+  inversion    body 1c8dcb6d1177  inverts the incident commander approves the restore to the incident commander does not approve the restore
+  control      body 4f53cda18c2b  cuts every span
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/16-restore-inversion.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 70 --out my-run.jsonl
+uv run gadfly report examples/16-restore-inversion.json my-run.jsonl
+```
+
+---
+
 ### Try next
 
 Give the break-glass credentials a kind of their own, so no sham can cut them,

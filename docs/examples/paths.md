@@ -178,6 +178,40 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/14-orders-latency.json
+orders-latency (c9764840315d8942f39546a34dffdb2382fd72e4dbf76b9fbd96a60e920e655c): 200 calls
+  baseline     body 316bc4899714  nothing
+  repeat       body 316bc4899714  nothing, asked again
+  ablation     body 28c4ef288e67  cuts goal
+  sham-1       body a315e9b749f3  cuts languages
+  sham-2       body 54e2b245bc90  cuts exports
+  presentation body 09909a263217  renames order to purchase, orders to purchases
+  bypass       body 0dd83bbe68df  cuts index, cache, batch, readmodel, timeout
+  control      body b39806c76584  cuts goal, before, index, cache, batch, readmodel, timeout
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/14-orders-latency.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 200 --out my-run.jsonl
+uv run gadfly report examples/14-orders-latency.json my-run.jsonl
+```
+
+`examples/15-invoice-export.json` runs the same way, in 140 calls.
+
+---
+
 ### Try next
 
 In 15 the process lives in the question, so no trial can cut it. Write 15b with

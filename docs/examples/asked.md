@@ -124,6 +124,38 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/17-clock-asked.json
+clock-asked (153f8c201dcbfb4c87e8ea2036f927e0e12b817da993a08d3a85495b455b538d): 40 calls
+  baseline     body e284ee4fa775  nothing
+  repeat       body e284ee4fa775  nothing, asked again
+  ablation     body 797a047c02ac  cuts rule
+  sham-1       body 24c75b31c532  cuts branches
+  sham-2       body 4a5281175298  cuts size
+  presentation body f97feceffb79  renames PAY-884 to OPS-220, due.py to billing_day.py, invoices_due_on to bills_due_on
+  input-inversion body e284ee4fa775  inverts the input's datetime.now() to clock.now()
+  control      body 4f53cda18c2b  cuts every span
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/17-clock-asked.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 40 --out my-run.jsonl
+uv run gadfly report examples/17-clock-asked.json my-run.jsonl
+```
+
+---
+
 ### Try next
 
 Ask it the other way round, in a new frame: a diff that calls `clock.now()`,

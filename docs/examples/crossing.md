@@ -275,6 +275,40 @@ transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were made and read by Muse through unified-model-router, with
+the `crossing` battery, and a live run asks it the same way, with the router
+running on this machine
+([Batteries](../batteries.md#a-maker-before-the-reader)). `gadfly plan`
+counts a run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/20-incident-cause.json
+incident-cause (282805e302be793a78b7addbe303fd178c542d7e9584b54141d44196c6cf20ab): 30 calls
+  baseline     body e6e21468ac74  nothing
+  repeat       body e6e21468ac74  nothing, asked again
+  ablation     body 9e49e1de2d55  cuts pool
+  sham-1       body 691b1a0e73f7  cuts logs
+  presentation body 1b7639c42a0c  renames deploy to release
+  control      body fa671a8f00db  cuts latency, pool
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict; each call both makes and reads, and Muse thinks before
+it answers, so each is given up to 4,000 output tokens:
+
+```bash
+uv run gadfly run examples/20-incident-cause.json \
+  --battery midwife.batteries.crossing:Crossing \
+  --calls 30 --output-tokens 4000 --out my-run.jsonl
+uv run gadfly report examples/20-incident-cause.json my-run.jsonl
+```
+
+`examples/20b-incident-status.json` runs the same way, in 30 calls.
+
+---
+
 ### Try next
 
 Have 20's maker write for an executive in one sentence, and see

@@ -161,6 +161,38 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/09-sync-sms.json
+sync-sms-design (832cb4bdc42eb6196d645d0b85cc3014d2903fa0459f01e51d075ab16d5bc717): 40 calls
+  baseline     body 2abe63d6d63f  nothing
+  repeat       body 2abe63d6d63f  nothing, asked again
+  ablation     body 6bbbf22e0a3a  cuts latency
+  sham-1       body 61480be0c255  cuts languages
+  sham-2       body 7a063591143e  cuts cards
+  presentation body 2d9206585445  renames N-1 to Q-10, N-2 to Q-11, N-3 to Q-12, N-4 to Q-13, handler to endpoint
+  bypass       body 3037d2ef0b0c  cuts provider
+  control      body c29fd273d291  cuts design, provider
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/09-sync-sms.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 40 --out my-run.jsonl
+uv run gadfly report examples/09-sync-sms.json my-run.jsonl
+```
+
+---
+
 ### Try next
 
 `uv run gadfly plan examples/09-sync-sms.json` prints the trials and their

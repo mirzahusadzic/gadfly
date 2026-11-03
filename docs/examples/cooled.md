@@ -189,6 +189,41 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/07-sql-rule.json
+sql-rule (0fe4f0d4994453fabdf647d5c8f1ad90978f4d2c3e6d6d9c1def1fd676e3b1c1): 35 calls
+  baseline     body 22bf6e6555c8  nothing
+  repeat       body 22bf6e6555c8  nothing, asked again
+  ablation     body 6124bb2e4a65  cuts rule
+  sham-1       body 15b71e9b8c80  cuts branches
+  sham-2       body 856dab033e53  cuts size
+  presentation body 62567e6fea7e  renames PAY-881 to OPS-217, customers to accounts, search.py to lookup.py
+  control      body 6a515d35e727  cuts rule, diff
+never carried, whatever the answers: these stay open
+  no hidden fallback (no bypass trial was declared)
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/07-sql-rule.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 35 --out my-run.jsonl
+uv run gadfly report examples/07-sql-rule.json my-run.jsonl
+```
+
+`examples/08-clock-rule.json` runs the same way, in 35 calls.
+
+---
+
 ### Try next
 
 Write a third frame for the pair: a house rule Gemma could half-guess, such as

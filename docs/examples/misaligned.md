@@ -201,6 +201,42 @@ run, and the transcripts above read the same runs.
 
 ---
 
+### Run it live
+
+The kept runs were read by Gemma through eGemma on this machine, and a live
+run asks it the same way, with eGemma running and its key set
+([Batteries](../batteries.md#addresses-and-keys)). `gadfly plan` counts a
+run's calls first, and costs nothing:
+
+```text
+$ uv run gadfly plan examples/10a-incident-fast.json
+incident-fast (35ed49cc9bf1e1495050666fcdc3db839b97e69b189dc1f72a16e22a2bfe23e5): 160 calls
+  baseline     body 39318fc1587d  nothing
+  repeat       body 39318fc1587d  nothing, asked again
+  ablation     body 8257a99b4eac  cuts rollback
+  sham-1       body 3af1cbc0d956  cuts dns
+  sham-2       body f55dad6b73c7  cuts health
+  presentation body 789898bfaa3d  renames v2.30 to v7.3, v2.31 to v7.4
+  placement    body 328a4dd29caa  moves rollback after latency
+  control      body a19a0547f65b  cuts deploy, failover
+never carried, whatever the answers: these stay open
+  no hidden fallback (no bypass trial was declared)
+```
+
+These commands ask it once, fresh, beside the kept runs and never into them,
+and read the verdict:
+
+```bash
+uv run gadfly run examples/10a-incident-fast.json \
+  --battery midwife.batteries.egemma:EGemma \
+  --calls 160 --out my-run.jsonl
+uv run gadfly report examples/10a-incident-fast.json my-run.jsonl
+```
+
+`examples/10b-incident-slow.json` runs the same way, in 140 calls.
+
+---
+
 ### Try next
 
 Change 10b's instruction to say "answer unclear unless the evidence rules a
