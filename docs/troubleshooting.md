@@ -132,6 +132,7 @@ read from them.
 | `RecordsError: a kept run is not whole, so its verdict cannot be read as firm` or `RecordsError: a kept run holds no records` | `give whole runs only, and leave out one that stopped short`. The same, from `until_firm` in Python, which takes each run's records as a list. |
 | `RecordsError: a made run holds no records` | `give each run's records as a list`. A `--made` file, or a run given to `walk` as `made` in Python, is one run of a crossing frame. |
 | `RecordsError: a made record names frame '7e1c0a9d...', which is not among the frames given` | `give the crossing frame whose records they are`. A walk climbs to a crossing only as one of its frames. |
+| `RecordsError: frame 'rollback-from-cause' is no crossing, so its records made no artefact` | `give the records of a crossing frame, whose battery kind is crossing`. Another battery's `raw` is its reader's answer, whatever it holds, so it links no frame. |
 | `RecordsError: the records of frame 'rollback-from-cause' hold no artefact its maker made` | `give the records of a crossing frame, whose maker made one for each call`. The records are another battery's, or every call opened before its maker made anything. |
 | ``RecordsError: a portfolio reads `gadfly report --json` documents, and this is not one`` | Each file `portfolio` reads is the output of `gadfly report --json`. |
 

@@ -628,6 +628,25 @@ def test_a_crossings_records_are_checked_before_they_are_climbed():
     unmade = [{**record, "raw": ""} for record in kept]
     with pytest.raises(RecordsError, match="the records of frame 'rollback-from-cause' hold no"):
         walk(piece, start, [incident], made=[unmade])
+
+    # a reader's raw is no artefact, whatever it holds: only a crossing made one
+    # (pass 14, R3)
+    class Claiming:
+        name = "rule-reader"
+
+        def check(self, frame):
+            pass
+
+        def observe(self, frame, prompt, max_output_tokens):
+            claimed = json.dumps({"made": {"sha256": sha256(CAUSE)}})
+            return Observation(label="investigate", raw=claimed)
+
+    from tests.fixtures.incident import INCIDENT
+
+    reader = parse({**copy.deepcopy(INCIDENT), "battery": {"kind": "rule-reader"}})
+    claimed = run(reader, Claiming(), Budget(calls=calls_needed(reader))).records
+    with pytest.raises(RecordsError, match="frame 'rollback-from-cause' is no crossing"):
+        walk(piece, start, [reader], made=[claimed])
     # runs, not records: a flat list is refused, not read as one run or many
     with pytest.raises(UsageError, match="made holds a record where a run belongs"):
         walk(piece, start, [incident], made=kept)

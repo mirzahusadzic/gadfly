@@ -499,6 +499,11 @@ def _artefacts(
                     "give the crossing frame whose records they are",
                 )
             frame = given[name]
+            if frame.battery.get("kind") != "crossing":  # its raw is a reader's, made by none
+                raise RecordsError(
+                    f"frame {frame.name!r} is no crossing, so its records made no artefact",
+                    "give the records of a crossing frame, whose battery kind is crossing",
+                )
             _own(frame, kept)
             texts = [(_artefact(record), record) for record in kept]
             if not any(text for text, _ in texts):
