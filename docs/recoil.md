@@ -89,19 +89,6 @@ sideways again: a sibling's sibling is not reached.
 
 ---
 
-### A walk's budget
-
-Each hole a piece fits is a fit of its own, in `order`: frames as the walk
-reached them, holes as each frame lists them. Given calls, `walk(...,
-calls=N)` counts each fit before the first call, as `calls_until_firm`
-counts its successor as drafted, over at most `most` runs.
-
-The budget asks the fits in order up to the first it cannot cover. That fit
-and every one after it are listed as not asked, so a later fit is never
-asked before an earlier one, and `unasked` names them.
-
----
-
 ### Ordered by whole-text vectors
 
 Gadfly never makes a vector: its caller acquires one for each whole text
@@ -130,6 +117,20 @@ space, and a second refuses them all, even with the same values:
   overflows. The fits with one are sorted among the places they hold.
 - **Order only:** a vector never decides a fit, since the kind does, and a
   budget asks in this order.
+
+---
+
+### A walk's budget
+
+Each hole a piece fits is a fit of its own, in `order`: frames as the walk
+reached them and holes as each frame lists them, or by cosine. Given calls,
+`walk(..., calls=N)` counts each fit before the first call, as
+`calls_until_firm` counts its successor as drafted, over at most `most`
+runs.
+
+The budget asks the fits in order up to the first it cannot cover. That fit
+and every one after it are listed as not asked, so a later fit is never
+asked before an earlier one, and `unasked` names them.
 
 ---
 
