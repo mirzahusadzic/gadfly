@@ -140,3 +140,25 @@ Every page reads on GitHub as it does here.
 | fix an error Gadfly prints | [Troubleshooting](troubleshooting.md) |
 | see the trust boundaries and current limits | [Architecture and limits](architecture.md) |
 | find a function or class | [Python API](reference.md) |
+
+---
+
+### Cite Gadfly
+
+The working paper,
+[When Meaning Is Load-Bearing](https://doi.org/10.5281/zenodo.23962158),
+describes the method, the library and the evidence of its examples, under
+CC BY 4.0. Its DOI always resolves to the latest version:
+
+```bibtex
+@misc{husadzic2026loadbearing,
+  author    = {Husadzic, Mirza},
+  title     = {When Meaning Is Load-Bearing: Testing Whether
+               a Decision Rests on Its Declared Evidence},
+  year      = {2026},
+  publisher = {Zenodo},
+  note      = {Working paper},
+  doi       = {10.5281/zenodo.23962158},
+  url       = {https://doi.org/10.5281/zenodo.23962158}
+}
+```

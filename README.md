@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/mirzahusadzic/gadfly/actions/workflows/ci.yml/badge.svg)](https://github.com/mirzahusadzic/gadfly/actions/workflows/ci.yml)
 [![midwife on PyPI](https://img.shields.io/github/v/tag/mirzahusadzic/gadfly?sort=semver&label=midwife&logo=pypi&logoColor=white)](https://pypi.org/project/midwife/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23962158.svg)](https://doi.org/10.5281/zenodo.23962158)
 
 Gadfly tests whether a decision rests on the evidence you think it rests on.
 It removes or changes one declared line under fixed interventions, has a
@@ -238,6 +239,27 @@ too.
 - **[Architecture and limits](https://mirzahusadzic.github.io/gadfly/architecture):** what Gadfly keeps, and
   what a verdict does not claim.
 - **[Python API](https://mirzahusadzic.github.io/gadfly/reference):** every public function and class.
+
+---
+
+### Cite
+
+The working paper, archived on Zenodo under CC BY 4.0, describes the method,
+this library and the evidence of its examples. The DOI in the badge above
+always resolves to its latest version:
+
+```bibtex
+@misc{husadzic2026loadbearing,
+  author    = {Husadzic, Mirza},
+  title     = {When Meaning Is Load-Bearing: Testing Whether
+               a Decision Rests on Its Declared Evidence},
+  year      = {2026},
+  publisher = {Zenodo},
+  note      = {Working paper},
+  doi       = {10.5281/zenodo.23962158},
+  url       = {https://doi.org/10.5281/zenodo.23962158}
+}
+```
 
 ---
 

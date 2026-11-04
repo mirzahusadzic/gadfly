@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use Gadfly, please cite the working paper."
+title: Gadfly
+type: software
+authors:
+  - family-names: Husadzic
+    given-names: Mirza
+    orcid: "https://orcid.org/0009-0004-8359-4090"
+repository-code: "https://github.com/mirzahusadzic/gadfly"
+url: "https://mirzahusadzic.github.io/gadfly/"
+license: Apache-2.0
+preferred-citation:
+  type: report
+  title: "When Meaning Is Load-Bearing: Testing Whether a Decision Rests on Its Declared Evidence"
+  authors:
+    - family-names: Husadzic
+      given-names: Mirza
+      orcid: "https://orcid.org/0009-0004-8359-4090"
+  year: 2026
+  month: 11
+  publisher:
+    name: Zenodo
+  doi: "10.5281/zenodo.23962158"
+  url: "https://doi.org/10.5281/zenodo.23962158"
