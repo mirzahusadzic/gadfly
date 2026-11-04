@@ -6,7 +6,8 @@
 
 Gadfly tests whether a decision rests on the evidence you think it rests on.
 It removes or changes one declared line under fixed interventions, has a
-scorer read each trial, and reads one verdict by fixed rules. The method is
+scorer, the reader under test, answer each trial, and reads one verdict by
+fixed rules, so the scorer answers and never judges. The method is
 [When meaning is load-bearing](https://mirzahusadzic.github.io/gadfly/load-bearing).
 
 - **Fixed rules, not a model:** a verdict follows from the kept answers, so

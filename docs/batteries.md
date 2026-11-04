@@ -1,6 +1,7 @@
 # Batteries
 
-A battery is the scorer in a trial. Gadfly passes it the frame and the exact
+A battery is the scorer in a trial, the reader under test; the fixed rules,
+not the battery, read the verdict. Gadfly passes it the frame and the exact
 prompt for one call, and it returns one observation: a declared label, or a
 typed opening when there is no answer to read. It is never told which trial
 produced the prompt.

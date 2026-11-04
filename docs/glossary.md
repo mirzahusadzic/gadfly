@@ -172,8 +172,9 @@ A run asks a battery each trial's prompt and keeps what comes back.
 > A battery is never told which trial it is serving: it gets the frame and
 > the prompt, not the trial's id.
 
-- **Battery:** the scorer, which reads the frame and one exact prompt and
-  answers with one label or one opening.
+- **Battery:** the scorer, the reader under test, which reads the frame and
+  one exact prompt and answers with one label or one opening; the fixed
+  rules, not the scorer, read the verdict.
 - **Opening:** a typed answer for a refusal, an unreadable answer or a failed
   call, never a guessed label.
 - **Record:** one call kept: its frame, input, trial and run, the hashes of
