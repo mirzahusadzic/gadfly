@@ -10,10 +10,9 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
-### To 0.10.0, not yet released
+### To 0.10.0
 
-On `main`, for the next release. No verdict changes, and this thing a caller
-of 0.9.1 meets does:
+No verdict changes, and this thing a caller of 0.9.1 meets does:
 
 | In 0.9.1 | In 0.10.0 | What to do |
 | --- | --- | --- |
