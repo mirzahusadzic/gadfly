@@ -83,27 +83,39 @@ details.
 
 ### What comes next
 
-The examples point at these, most useful first. None is built yet.
+These come next, most useful first. None is built yet.
 
-1. **Expectations per input:** an optional expected result for each input,
+1. **Known answers:** frames whose dependence is fixed by construction, where
+   the answer comes only from the anchor, only from the reader's prior, from
+   a decoy, or from the wording. Each category is read against that truth, as
+   a confusion matrix with an error rate for each, predictions written first,
+   so it says how often a category is wrong.
+2. **A pipeline built elsewhere:** frames and runs from someone else's
+   system, kept and read as the examples are, so the method meets decisions
+   its author did not choose.
+3. **Expectations per input:** an optional expected result for each input,
    so a frame whose inputs differ on purpose reads as promised. Today several
    real frames read unresolved when each input behaved as promised (design
    calls A and B in `examples/FINDINGS.md`).
-2. **Regression tests for AI deployments:** keep a set of frames and run them
+4. **Regression tests for AI deployments:** keep a set of frames and run them
    again when the model, prompt or policy changes, then compare verdicts. Does
    the new model still enforce the rule because of the rule? `gadfly
    portfolio` is a start.
-3. **Comparing readers:** run one frame on Gemma, Claude or a panel of human
-   reviewers, which makes the essay's handoff measurable.
-4. **Adding evidence:** add contrary evidence, beyond the cuts, the renames,
+5. **Comparing readers:** run one frame on Gemma, Claude or a panel of human
+   reviewers, which makes the essay's handoff measurable, with each hosted
+   reader's thinking counted from the reasoning tokens its provider reports,
+   and, where a model allows, with thinking switched off beside its default.
+6. **Adding evidence:** add contrary evidence, beyond the cuts, the renames,
    the moves and the inversion's turned words.
-5. **The temperature with the answers:** keep in each record the temperature
-   its call was made at, which a frame that names none leaves unknown.
-6. **Help writing frames:** beyond the dead ends `plan` names, a warning
+7. **The temperature and the effort with the answers:** keep in each record
+   the temperature its call was made at, and the effort its provider was
+   sent, which a frame that names none, or a gateway that renames an effort,
+   leaves unknown.
+8. **Help writing frames:** beyond the dead ends `plan` names, a warning
    when a control leaves a line that still points to the answer, as in
    [A frame built wrong](examples/built-wrong.md). It flags problems and never
    writes a frame from a result.
-7. **Icons for the trials:** in the watch view, a small set of icons, one for
+9. **Icons for the trials:** in the watch view, a small set of icons, one for
    the ablation, the sham and each other trial, that reads at the size of the
    view's text and is never told apart by colour alone.
 
