@@ -603,6 +603,13 @@ def test_a_frame_quoting_an_artefact_climbs_to_the_crossing_that_made_it():
     # as dicts too, as a caller keeps them, and a run given twice is two runs
     kept = [record.as_dict() for record in records]
     assert walk(piece, start, [incident], made=[kept, kept]).made == walked.made
+    # a run cut short still links what its records made, and names only those
+    # (pass 14, R2: Mirza's call)
+    short = [record for record in records if record.trial != "baseline"]
+    assert ("baseline", "q1") not in walk(piece, start, [incident], made=[short]).made[
+        incident.hash
+    ]
+    assert walk(piece, start, [incident], made=[short]).fits == ((incident, ("m5",)),)
     # a crossing with no hole of the piece's kind passes it on, and says how it was reached
     plain, others = crossed_run()
     walked = walk(piece, start, [plain], made=[others])

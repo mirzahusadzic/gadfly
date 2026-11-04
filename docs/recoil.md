@@ -71,6 +71,9 @@ made, so a frame quoting it by `source` climbs to the crossing.
 
 Each run is checked against its frame first, as a kept run is, and a frame
 reached so names the trial and input of each record that made the artefact.
+A run cut short still links what its records made: one record a maker made
+is enough to name it, and a run need be whole only where a verdict is read.
+
 The walk still makes no call: where the piece fits the crossing, its
 successor puts it on the near side, and the maker makes the artefact again.
 

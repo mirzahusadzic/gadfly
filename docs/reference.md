@@ -1010,10 +1010,11 @@ walk(
 ```
 
 `made` holds runs of crossing frames given, each a list of its records,
-each checked against its frame first. Each artefact a record says its
-maker made is text that frame made, so a frame quoting the artefact by
-`source` climbs to the crossing, and the walk names the trial and input
-of each record that made it.
+each checked against its frame first; a run cut short still links what
+its records made. Each artefact a record says its maker made is text
+that frame made, so a frame quoting the artefact by `source` climbs to
+the crossing, and the walk names the trial and input of each record
+that made it.
 
 `sideways` offers the piece one step aside too, from the start frame
 only: to each frame given that quotes, by `source`, a text the start
