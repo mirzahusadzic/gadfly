@@ -5,7 +5,8 @@ above that. A piece is a text found in a kept run, with a kind. It climbs from
 the frame it was found in to each frame whose own text that frame quotes, and
 on up, and fits any of those frames' holes of its kind; a frame with no such
 hole passes it on, at no cost. A hole may defer: its fit is listed, kept
-and not asked. The walk reads frames and makes no call.
+and not asked. The walk reads frames and makes no call; given a budget, it
+counts each fit's calls before the first, and lists those it cannot cover.
 
 A fit is asked again as a successor: the frame with the piece as a span and
 its anchor. `successor` drafts it for the frame's author and writes nothing.
@@ -33,11 +34,11 @@ import hashlib
 import warnings
 from collections import deque
 from collections.abc import Callable, Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
-from .errors import RecordsError, StoppedWarning, UsageError
-from .frame import SALIENCE, Frame, digest
+from .errors import GadflyError, RecordsError, StoppedWarning, UsageError
+from .frame import SALIENCE, Frame, digest, parse
 from .interventions import plan, prompt
 from .pipeline import calls_needed, run
 from .stats import stability
@@ -111,35 +112,62 @@ def _made(frame: Frame) -> set[str]:
 
 
 @dataclass(frozen=True)
+class Fit:
+    """A hole a piece fits, as a walk would ask it: the frame and the hole;
+    and, when the walk was given a budget, the most calls asking its
+    successor until firm can make, and whether the budget covers them."""
+
+    frame: Frame
+    hole: str
+    calls: int | None = None
+    asked: bool | None = None
+
+
+@dataclass(frozen=True)
 class Walk:
     """Where a piece fits above the frame it was found in: each frame it
     fits, with the holes it fits there that are considered; each frame it
     passed; the frontier, each quoted text no frame given holds as its own;
-    and each frame with the holes it fits there that defer, kept and not
-    asked."""
+    each frame with the holes it fits there that defer, kept and not asked;
+    every considered fit, one hole each, in the order it would be asked;
+    and the budget in calls and the most runs a fit, when one was given."""
 
     piece: Piece
     fits: tuple[tuple[Frame, tuple[str, ...]], ...]
     passed: tuple[Frame, ...]
     frontier: tuple[str, ...]
     deferred: tuple[tuple[Frame, tuple[str, ...]], ...] = ()
+    order: tuple[Fit, ...] = ()
+    budget: int | None = None
+    most: int | None = None
 
     @property
     def complete(self) -> bool:
         """Every frame above was given: a walk with a frontier is never complete."""
         return not self.frontier
 
+    @property
+    def unasked(self) -> tuple[Fit, ...]:
+        """Each fit the budget does not cover, in the order it would be asked."""
+        return tuple(fit for fit in self.order if fit.asked is False)
+
     def lines(self) -> list[dict[str, Any]]:
-        """The walk as its record, one line each: every frame it fits, then
-        every frame whose holes of its kind defer, then every frame that
-        passed it on, each in the order the walk reached it, then every text
-        it could not follow."""
-        head = {"piece": self.piece.sha256, "kind": self.piece.kind}
+        """The walk as its record, one line each: every hole it fits, in the
+        order it would be asked, with its calls and whether the budget asks
+        it when there is one; then every frame whose holes of its kind
+        defer, then every frame that passed it on, each in the order the
+        walk reached it; then every text it could not follow."""
+        head: dict[str, Any] = {"piece": self.piece.sha256, "kind": self.piece.kind}
+        if self.budget is not None:
+            head |= {"budget": self.budget, "most": self.most}
+        fitted = []
+        for fit in self.order:
+            line = {**head, "frame": fit.frame.hash, "name": fit.frame.name, "fits": [fit.hole]}
+            if fit.calls is not None:
+                line |= {"calls": fit.calls, "asked": fit.asked}
+            fitted.append(line)
         reached = (
-            [
-                {**head, "frame": frame.hash, "name": frame.name, "fits": list(holes)}
-                for frame, holes in self.fits
-            ]
+            fitted
             + [
                 {**head, "frame": frame.hash, "name": frame.name, "deferred": list(holes)}
                 for frame, holes in self.deferred
@@ -152,14 +180,28 @@ class Walk:
         return reached + [{**head, "frontier": text} for text in self.frontier]
 
 
-def walk(piece: Piece, start: Frame, frames: Iterable[Frame]) -> Walk:
+def walk(
+    piece: Piece,
+    start: Frame,
+    frames: Iterable[Frame],
+    *,
+    calls: int | None = None,
+    most: int = MOST,
+) -> Walk:
     """Climb from the frame a piece was found in to each frame whose own text
     it quotes, and on up, visiting each frame once by its hash. A frame with
     holes of the piece's kind is a fit, and the piece climbs on past it,
     since it may fit at more than one height; any other frame passes it on.
     A hole whose salience is defer is listed under `deferred`, its fit kept
-    and not asked, never dropped. No call is made: the walk reads frames,
-    and is given no battery."""
+    and not asked, never dropped.
+
+    Each considered hole is a fit in `order`, in the order the walk reached
+    its frame and the frame lists its holes. Given `calls`, each fit is
+    counted before the first call, as `calls_until_firm` counts its
+    successor as drafted over at most `most` runs, and the budget asks the
+    fits in order up to the first it cannot cover: that one and every one
+    after it are listed as not asked, so no fit is asked before an earlier
+    one. No call is made: the walk reads frames, and is given no battery."""
     given = {frame.hash: frame for frame in frames}
     given[start.hash] = start  # its own texts are held too, though it is never its own parent
     makers: dict[str, list[Frame]] = {}
@@ -188,7 +230,43 @@ def walk(piece: Piece, start: Frame, frames: Iterable[Frame]) -> Walk:
                 if not kind:
                     passed.append(parent)
                 climbing.append(parent)
-    return Walk(piece, tuple(fits), tuple(passed), tuple(sorted(frontier)), tuple(deferred))
+    order = tuple(Fit(frame, hole) for frame, holes in fits for hole in holes)
+    if calls is not None:
+        order = _budgeted(order, piece, calls, most)
+    return Walk(
+        piece,
+        tuple(fits),
+        tuple(passed),
+        tuple(sorted(frontier)),
+        tuple(deferred),
+        order,
+        calls,
+        None if calls is None else most,
+    )
+
+
+def _budgeted(order: tuple[Fit, ...], piece: Piece, calls: int, most: int) -> tuple[Fit, ...]:
+    # each fit's calls until firm, on its successor as drafted, and whether
+    # the calls left cover them: up to the first fit they cannot, and none
+    # after it, so the order the walk asks in is never jumped
+    if isinstance(calls, bool) or not isinstance(calls, int) or calls < 1:
+        raise UsageError("a walk's budget is a whole number of calls, at least 1")
+    if isinstance(most, bool) or not isinstance(most, int) or most < 1:
+        raise UsageError("most is a whole number of runs, at least 1")
+    left, covering, counted = calls, True, []
+    for fit in order:
+        try:
+            cost = calls_until_firm(parse(successor(fit.frame, fit.hole, piece)), most=most)
+        except GadflyError as error:  # the frame's own refusal, said where the walk met it
+            error.add_note(
+                f"the walk's budget counts the successor of frame {fit.frame.name!r} "
+                f"with hole {fit.hole!r} filled, as drafted"
+            )
+            raise
+        covering = covering and cost <= left
+        left -= cost if covering else 0
+        counted.append(replace(fit, calls=cost, asked=covering))
+    return tuple(counted)
 
 
 def _salience(hole: dict[str, str]) -> str:

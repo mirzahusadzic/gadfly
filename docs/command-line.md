@@ -26,7 +26,7 @@ a command reads may be `-`, standard input, once in a command.
 | `run FRAME` | yes, up to `--calls` | the calls written and how to read the verdict, then an `OpeningWarning` for calls that came back as openings and a `StoppedWarning` for an early stop | 0; 1 when every call came back as an opening, stopped early or not; 3 when stopped early, its records partial; 130 when stopped by Ctrl-C; 141 when its reader stops reading; a refusal's |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0; a refusal's |
 | `stats FRAME RECORDS...` | no | each trial's answers over the kept runs, how firm they are and how far they moved or held, the quorum's power, and how often each run's verdict comes out the same when its calls are drawn again | 0; a refusal's |
-| `walk FRAMES... --from FRAME` | no | the piece, each frame it fits and with which holes, each whose fit defers, each that passed it on, each text it could not follow, and whether the walk is complete | 0; a refusal's |
+| `walk FRAMES... --from FRAME` | no | the piece, each hole it fits in the order it would be asked, each whose fit defers, each frame that passed it on, each text it could not follow, and whether the walk is complete; with `--calls`, each fit's calls until firm and whether they are covered | 0; a refusal's |
 | `successor FRAME --hole ID --from FRAME` | no | the drafted frame, checked, on standard output or in a new file, and whether it asks another question | 0; a refusal's |
 | `firm FRAME --runs FOLDER` | yes, up to `--calls` | each run's category, kept or asked now, and whether the verdict is firm, then an `OpeningWarning` or a `StoppedWarning` as `run` says them | 0; 1 when every call came back as an opening; 3 when stopped before the verdict was firm; 130 when stopped by Ctrl-C; a refusal's |
 | `gate BEFORE AFTER` | no | the gate, the successor's category, what climbs on from it, what a reframing changed, and the check still open | 0; a refusal's |
@@ -265,6 +265,25 @@ complete: yes
 
 A walk that names a text it could not follow is not complete: the frame
 that holds it was not given.
+
+With `--calls N`, `walk` counts each fit before the first call: the most
+calls asking its successor until firm can make, over at most `--most` runs,
+5 by default. It covers the fits in order up to the first the calls left
+cannot, and names that one and every one after it as not asked:
+
+```text
+$ uv run gadfly walk examples/dolls/1-amani.json \
+    examples/dolls/2-kiran.json examples/dolls/3-sasha.json \
+    examples/dolls/4-robin.json \
+    --from examples/dolls/5-mirza.json --span says --calls 40
+piece: 'The paper says: "My name is Kiran, and I am a boy."', of kind kiran-paper, from Mirza (2502951a6892)
+fits: Kiran (68efde28470c), hole paper, at most 45 calls until firm, not asked, past the budget
+passed: Robin (4df473486555)
+passed: Sasha (a3684beb68f9)
+passed: Amani (f67c31b5a5df)
+complete: yes
+budget: 40 calls cover 0 fits of 1, each fit at most 5 runs
+```
 
 #### Draft a successor
 

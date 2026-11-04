@@ -12,11 +12,18 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ### To 0.11.0, not yet released
 
-No verdict changes, and nothing a caller of 0.10.0 meets changes. New, and
-opt-in: a hole may say what it is read for, under `about`, and its
-`salience`, `consider` or `defer`. A walk lists a deferred fit under
-`deferred`, kept and not asked; `gadfly walk` prints it, and its `--json`
-has `deferred`.
+No verdict changes, and this thing a caller of 0.10.0 meets does:
+
+| In 0.10.0 | In 0.11.0 | What to do |
+| --- | --- | --- |
+| A frame with two holes the piece fits was one line of `Walk.lines()` and of `gadfly walk`, naming both | It is one line for each hole, in the order the walk would ask it; `fits` in a line names its one hole | Read a hole a line; a frame with one such hole reads as before |
+
+New, and opt-in: a hole may say what it is read for, under `about`, and
+its `salience`, `consider` or `defer`. A walk lists a deferred fit under
+`deferred`, kept and not asked, and every considered fit under `order`, a
+`Fit` each. `walk(..., calls=N, most=M)` and `gadfly walk --calls N --most M`
+count each fit's calls until firm before the first, and list the fits the
+calls cannot cover as not asked.
 
 ---
 

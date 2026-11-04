@@ -62,6 +62,19 @@ is, so a successor that changes them on a hole it leaves open reframes.
 
 ---
 
+### A walk's budget
+
+Each hole a piece fits is a fit of its own, in `order`: frames as the walk
+reached them, holes as each frame lists them. Given calls, `walk(...,
+calls=N)` counts each fit before the first call, as `calls_until_firm`
+counts its successor as drafted, over at most `most` runs.
+
+The budget asks the fits in order up to the first it cannot cover. That fit
+and every one after it are listed as not asked, so a later fit is never
+asked before an earlier one, and `unasked` names them.
+
+---
+
 ### Climbing without asking again
 
 Recoil is content-addressed, as a build is. A frame is its hash, it names its

@@ -838,7 +838,8 @@ above that. A piece is a text found in a kept run, with a kind. It climbs from
 the frame it was found in to each frame whose own text that frame quotes, and
 on up, and fits any of those frames' holes of its kind; a frame with no such
 hole passes it on, at no cost. A hole may defer: its fit is listed, kept
-and not asked. The walk reads frames and makes no call.
+and not asked. The walk reads frames and makes no call; given a budget, it
+counts each fit's calls before the first, and lists those it cannot cover.
 
 A fit is asked again as a successor: the frame with the piece as a span and
 its anchor. `successor` drafts it for the frame's author and writes nothing.
@@ -896,13 +897,25 @@ it reads, of the kind the frame offers.
 decided(frame, label)
 ```
 
+#### Fit
+
+A hole a piece fits, as a walk would ask it: the frame and the hole;
+and, when the walk was given a budget, the most calls asking its
+successor until firm can make, and whether the budget covers them.
+
+```python
+@dataclass(frozen=True)
+class Fit
+```
+
 #### Walk
 
 Where a piece fits above the frame it was found in: each frame it
 fits, with the holes it fits there that are considered; each frame it
 passed; the frontier, each quoted text no frame given holds as its own;
-and each frame with the holes it fits there that defer, kept and not
-asked.
+each frame with the holes it fits there that defer, kept and not asked;
+every considered fit, one hole each, in the order it would be asked;
+and the budget in calls and the most runs a fit, when one was given.
 
 ```python
 @dataclass(frozen=True)
@@ -912,13 +925,15 @@ class Walk
 Walk has these properties:
 
 - **`complete`:** `bool`. Every frame above was given: a walk with a frontier is never complete.
+- **`unasked`:** `tuple[Fit, ...]`. Each fit the budget does not cover, in the order it would be asked.
 
 ##### Walk.lines
 
-The walk as its record, one line each: every frame it fits, then
-every frame whose holes of its kind defer, then every frame that
-passed it on, each in the order the walk reached it, then every text
-it could not follow.
+The walk as its record, one line each: every hole it fits, in the
+order it would be asked, with its calls and whether the budget asks
+it when there is one; then every frame whose holes of its kind
+defer, then every frame that passed it on, each in the order the
+walk reached it; then every text it could not follow.
 
 ```python
 lines()
@@ -931,12 +946,19 @@ it quotes, and on up, visiting each frame once by its hash. A frame with
 holes of the piece's kind is a fit, and the piece climbs on past it,
 since it may fit at more than one height; any other frame passes it on.
 A hole whose salience is defer is listed under `deferred`, its fit kept
-and not asked, never dropped. No call is made: the walk reads frames,
-and is given no battery.
+and not asked, never dropped.
 
 ```python
-walk(piece, start, frames)
+walk(piece, start, frames, *, calls=None, most=MOST)
 ```
+
+Each considered hole is a fit in `order`, in the order the walk reached
+its frame and the frame lists its holes. Given `calls`, each fit is
+counted before the first call, as `calls_until_firm` counts its
+successor as drafted over at most `most` runs, and the budget asks the
+fits in order up to the first it cannot cover: that one and every one
+after it are listed as not asked, so no fit is asked before an earlier
+one. No call is made: the walk reads frames, and is given no battery.
 
 #### successor
 
@@ -2114,7 +2136,8 @@ command_portfolio(args)
 #### command_walk
 
 `gadfly walk`: where a piece climbs from the frame it was found in, up
-through the frames given, without a call (`midwife.recoil.walk`).
+through the frames given, without a call (`midwife.recoil.walk`); with
+--calls, which fits that many calls cover, each until firm.
 
 ```python
 command_walk(args)

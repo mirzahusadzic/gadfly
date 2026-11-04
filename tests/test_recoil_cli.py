@@ -85,11 +85,64 @@ def test_walk_json_is_what_midwife_recoil_walk_returns(capsys):
             {"frame": frame.name, "hash": frame.hash, "holes": list(holes)}
             for frame, holes in walked.fits
         ],
+        "order": [
+            {"frame": fit.frame.name, "hash": fit.frame.hash, "hole": fit.hole}
+            | {"calls": None, "asked": None}
+            for fit in walked.order
+        ],
         "deferred": [],
         "passed": [{"frame": frame.name, "hash": frame.hash} for frame in walked.passed],
         "frontier": list(walked.frontier),
         "complete": walked.complete,
+        "budget": None,
+        "most": None,
     }
+
+
+def test_walk_counts_the_fits_its_calls_cover_before_the_first(capsys):
+    # Kiran's successor takes at most 45 calls until firm: 45 calls cover it
+    source = load_frame(MIRZA)
+    kiran = load_frame(KIRAN)
+    walked = walk(found(source, "says"), source, [load_frame(path) for path in CHAIN], calls=45)
+    assert main(["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "45"]) == 0
+    lines = told(capsys)
+    assert f"fits: Kiran ({kiran.hash[:12]}), hole paper, at most 45 calls until firm" in lines
+    assert (
+        lines[-1]
+        == "budget: 45 calls cover 1 fit of 1, at most 45 calls in all, each fit at most 5 runs"
+    )
+    argv = ["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "45", "--json"]
+    assert main(argv) == 0
+    document = json.loads(capsys.readouterr().out)
+    [fit] = walked.order
+    assert document["order"] == [
+        {"frame": "Kiran", "hash": kiran.hash, "hole": "paper", "calls": 45, "asked": True}
+    ]
+    assert (document["budget"], document["most"]) == (45, 5) == (walked.budget, walked.most)
+    # one call fewer, or one run fewer a fit, and the order says so
+    assert main(["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "44"]) == 0
+    lines = told(capsys)
+    assert lines[1].endswith(", at most 45 calls until firm, not asked, past the budget")
+    assert lines[-1] == "budget: 44 calls cover 0 fits of 1, each fit at most 5 runs"
+    argv = ["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "44", "--most", "4"]
+    assert main(argv) == 0
+    assert told(capsys)[1].endswith("hole paper, at most 36 calls until firm")
+
+
+@pytest.mark.parametrize(
+    "more, message",
+    [
+        (["--most", "3"], "UsageError: --most is given without --calls"),
+        (
+            ["--calls", "45", "--most", "0"],
+            "UsageError: --most is a whole number of runs, at least 1",
+        ),
+        (["--calls", "0"], "UsageError: a walk's budget is a whole number of calls, at least 1"),
+    ],
+)
+def test_walk_refuses_a_budget_it_cannot_count(more, message, capsys):
+    assert main(["walk", *CHAIN, "--from", MIRZA, "--span", "says", *more]) == 2
+    assert told(capsys, "err")[0] == message
 
 
 def deferring(tmp_path, **hole):

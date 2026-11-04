@@ -67,7 +67,9 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: --most is a whole number of runs, at least 1` or `UsageError: most is a whole number of runs, at least 1` | Give the most runs to read, kept ones included; the second is `until_firm`'s, in Python. |
 | `UsageError: folder 'runs' keeps 6 runs, more than --most reads` | `raise --most, or move the earliest runs out`. Only the latest run decides, and every run kept is read. |
 | `UsageError: kept holds more runs than most lets until_firm read` | `give it the latest runs only, or raise most`. The same, in Python. |
-| `UsageError: frame 'Kiran' asks each trial once, so a run has no calls to draw again` | `give it a quorum of 2 or more`. Whether a verdict is firm is read from its calls drawn again, so a frame asked until firm is asked lightly, but more than once a trial. |
+| `UsageError: frame 'Kiran' asks each trial once, so a run has no calls to draw again` | `give it a quorum of 2 or more`. Whether a verdict is firm is read from its calls drawn again, so a frame asked until firm is asked lightly, but more than once a trial. A walk given calls counts each fit's successor so, and a second note names the fit. |
+| `UsageError: a walk's budget is a whole number of calls, at least 1` | Give `--calls`, or `calls` in Python, as the calls the walk's fits may take, or leave it out to count nothing. |
+| `UsageError: --most is given without --calls` | `--most counts the runs each fit may take against the calls --calls gives`. Give both, or neither. |
 | `UsageError: a successor that asks the same question is read from its own runs` | `name the folder that keeps them with --runs; gadfly firm makes them`. Only a reframing is read against no category, with no runs. |
 | `UsageError: folder 'runs' keeps no run of the successor` | `gadfly firm asks it, and keeps each run there`. A run is a file named by its place, `1.jsonl` and on. |
 

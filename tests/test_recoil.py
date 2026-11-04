@@ -308,6 +308,85 @@ def test_a_text_many_frames_share_is_followed_once():
     assert reads(40) <= 2.2 * reads(20)
 
 
+def star(name, own, inputs=1, holes=(), quorum=3):
+    # a frame holding `own` and quoting the shared line, asked of `inputs`
+    # questions, `quorum` calls a trial, with `holes` of kind note
+    raw = copy.deepcopy(dolls()[4].raw)
+    quoted = {"id": "q", "text": SHARED, "kind": "note", "source": {"sha256": sha256(SHARED)}}
+    raw["name"] = name
+    raw["body"] = {"spans": [{"id": "own", "text": own, "kind": "note"}, quoted]}
+    raw["anchors"] = ["own"]
+    raw["inputs"] = [{"id": f"x{i}", "text": f"Question {i}?"} for i in range(inputs)]
+    raw["standing"] = {"quorum": quorum, "agree": 2 if quorum > 1 else 1}
+    raw.pop("holes", None)
+    if holes:
+        raw["holes"] = [{"id": hole, "kind": "note"} for hole in holes]
+    raw["interventions"] = {"ablation": True}
+    raw["allowed"] = {"ablation": ["unclear"]}
+    return parse(raw)
+
+
+def test_a_walks_budget_asks_its_fits_in_order_up_to_the_first_it_cannot_cover():
+    start = star("start", "the start's own line")
+    wide = star("wide", SHARED, inputs=2, holes=["h"])  # two questions: twice the calls
+    narrow = star("narrow", SHARED, holes=["h", "g"])  # two holes: two fits
+    piece = Piece(SHARED, "note")
+    each = calls_until_firm(parse(successor(narrow, "h", piece)))
+    assert each == 2 * 3 * MOST  # baseline and ablation, three calls each, five runs
+    walked = walk(piece, start, [wide, narrow])
+    assert [(fit.frame.name, fit.hole, fit.calls, fit.asked) for fit in walked.order] == [
+        ("wide", "h", None, None),
+        ("narrow", "h", None, None),
+        ("narrow", "g", None, None),
+    ]
+    assert walked.budget is None and walked.most is None and walked.unasked == ()
+    # enough for the wide fit and one narrow one: the last is listed, not asked
+    walked = walk(piece, start, [wide, narrow], calls=3 * each)
+    assert [(fit.calls, fit.asked) for fit in walked.order] == [
+        (2 * each, True),
+        (each, True),
+        (each, False),
+    ]
+    assert [(fit.frame.name, fit.hole) for fit in walked.unasked] == [("narrow", "g")]
+    # too little for the wide fit: nothing after it is asked before it, though it fits
+    walked = walk(piece, start, [wide, narrow], calls=2 * each - 1)
+    assert [fit.asked for fit in walked.order] == [False, False, False]
+    # fewer runs a fit, fewer calls each
+    walked = walk(piece, start, [wide, narrow], calls=2 * each - 1, most=2)
+    assert [(fit.calls, fit.asked) for fit in walked.order] == [(24, True), (12, True), (12, True)]
+    lines = walked.lines()
+    assert [line["fits"] for line in lines] == [["h"], ["h"], ["g"]]  # a line a hole
+    assert lines[0] == {
+        "piece": piece.sha256,
+        "kind": "note",
+        "budget": 2 * each - 1,
+        "most": 2,
+        "frame": wide.hash,
+        "name": "wide",
+        "fits": ["h"],
+        "calls": 24,
+        "asked": True,
+    }
+
+
+def test_a_walks_budget_refuses_what_it_cannot_count():
+    start = star("start", "the start's own line")
+    piece = Piece(SHARED, "note")
+    fitted = star("fitted", SHARED, holes=["h"])
+    for calls in (0, -1, True, 1.5):
+        with pytest.raises(UsageError, match="a walk's budget is a whole number of calls"):
+            walk(piece, start, [fitted], calls=calls)
+    with pytest.raises(UsageError, match="most is a whole number of runs, at least 1"):
+        walk(piece, start, [fitted], calls=10, most=0)
+    # a fit whose successor cannot be asked until firm is named where the walk met it
+    once = star("once", SHARED, holes=["h"], quorum=1)
+    with pytest.raises(UsageError, match="asks each trial once") as refused:
+        walk(piece, start, [fitted, once], calls=10)
+    said = "the walk's budget counts the successor of frame 'once' with hole 'h' filled, as drafted"
+    assert refused.value.__notes__[-1] == said
+    assert walk(piece, start, [fitted, once]).order[1].frame.name == "once"  # no budget, no count
+
+
 def test_the_second_doll_with_its_word_is_a_boy_asked_once_and_carried():
     second = dolls()[1]
     after = with_slip(second)
