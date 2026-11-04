@@ -2,7 +2,10 @@
 or an agent runs them. Each `--json` is what `midwife.recoil`'s function of
 the same name returns, and each refusal says what to fix, with its status."""
 
+import hashlib
+import io
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -87,7 +90,7 @@ def test_walk_json_is_what_midwife_recoil_walk_returns(capsys):
         ],
         "order": [
             {"frame": fit.frame.name, "hash": fit.frame.hash, "hole": fit.hole}
-            | {"calls": None, "asked": None}
+            | {"cosine": None, "unordered": None, "calls": None, "asked": None}
             for fit in walked.order
         ],
         "deferred": [],
@@ -96,6 +99,8 @@ def test_walk_json_is_what_midwife_recoil_walk_returns(capsys):
         "complete": walked.complete,
         "budget": None,
         "most": None,
+        "space": None,
+        "vectors": None,
     }
 
 
@@ -116,7 +121,8 @@ def test_walk_counts_the_fits_its_calls_cover_before_the_first(capsys):
     document = json.loads(capsys.readouterr().out)
     [fit] = walked.order
     assert document["order"] == [
-        {"frame": "Kiran", "hash": kiran.hash, "hole": "paper", "calls": 45, "asked": True}
+        {"frame": "Kiran", "hash": kiran.hash, "hole": "paper"}
+        | {"cosine": None, "unordered": None, "calls": 45, "asked": True}
     ]
     assert (document["budget"], document["most"]) == (45, 5) == (walked.budget, walked.most)
     # one call fewer, or one run fewer a fit, and the order says so
@@ -127,6 +133,65 @@ def test_walk_counts_the_fits_its_calls_cover_before_the_first(capsys):
     argv = ["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "44", "--most", "4"]
     assert main(argv) == 0
     assert told(capsys)[1].endswith("hole paper, at most 36 calls until firm")
+
+
+def test_walk_orders_its_fits_by_the_vectors_given(tmp_path, capsys, monkeypatch):
+    about = "who the second doll is, in its own words"
+    kiran = deferring(tmp_path, salience="consider", about=about)
+    chain = [AMANI, kiran, *CHAIN[2:]]
+    lines = [
+        {"text": sha256(PAPER), "space": "e128", "values": [1, 0]},
+        {"text": sha256(about), "space": "e128", "values": [3, 4]},
+    ]
+    data = "".join(json.dumps(line) + "\n" for line in lines).encode()
+    vectors = tmp_path / "vectors.jsonl"
+    vectors.write_bytes(data)
+    argv = ["walk", *chain, "--from", MIRZA, "--span", "says", "--vectors", str(vectors)]
+    assert main(argv) == 0
+    said = told(capsys)
+    held = load_frame(kiran)
+    digest = hashlib.sha256(data).hexdigest()
+    assert f"fits: Kiran ({held.hash[:12]}), hole paper, cosine 0.6000" in said
+    assert said[-1] == f"ordered: by cosine in space e128, vectors {digest}"
+    assert main([*argv, "--json"]) == 0
+    document = json.loads(capsys.readouterr().out)
+    assert (document["space"], document["vectors"]) == ("e128", digest)
+    assert document["order"][0]["cosine"] == 0.6 and document["order"][0]["unordered"] is None
+    # read from standard input as from a file; with no vector for the piece, it keeps its place
+    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(data[data.index(b"\n") + 1 :])))
+    assert main([*argv[:-1], "-"]) == 0
+    assert f"fits: Kiran ({held.hash[:12]}), hole paper, kept in its place, " in told(capsys)[1]
+    monkeypatch.setattr("sys.stdin", io.StringIO(data.decode()))  # a text stream of a caller's
+    assert main([*argv[:-1], "-"]) == 0
+    assert told(capsys)[1].endswith("hole paper, cosine 0.6000")
+
+
+@pytest.mark.parametrize(
+    "lines, more, message",
+    [
+        (None, ["--space", "e128"], "UsageError: --space is given without --vectors"),
+        (
+            ['{"text": "%s", "space": "e", "values": [1]}' % sha256(PAPER)] * 2,
+            [],
+            f"UsageError: file 'v.jsonl' holds text {sha256(PAPER)!r} in space 'e' twice, "
+            "at lines 1 and 2",
+        ),
+        (["{"], [], "UsageError: file 'v.jsonl' cannot be read as JSON at line 1"),
+        (
+            ['{"text": "%s", "space": "e", "values": [1]}' % sha256(PAPER)],
+            ["--space", "f"],
+            "UsageError: the vectors hold no vector in space 'f'",
+        ),
+    ],
+)
+def test_walk_refuses_vectors_it_cannot_order_by(lines, more, message, tmp_path, capsys):
+    frames = [str(Path(path).resolve()) for path in (*CHAIN, MIRZA)]
+    os.chdir(tmp_path)  # at_root goes back after
+    if lines is not None:
+        Path("v.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        more = ["--vectors", "v.jsonl", *more]
+    assert main(["walk", *frames[:-1], "--from", frames[-1], "--span", "says", *more]) == 2
+    assert told(capsys, "err")[0] == message
 
 
 @pytest.mark.parametrize(

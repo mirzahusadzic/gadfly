@@ -838,8 +838,9 @@ above that. A piece is a text found in a kept run, with a kind. It climbs from
 the frame it was found in to each frame whose own text that frame quotes, and
 on up, and fits any of those frames' holes of its kind; a frame with no such
 hole passes it on, at no cost. A hole may defer: its fit is listed, kept
-and not asked. The walk reads frames and makes no call; given a budget, it
-counts each fit's calls before the first, and lists those it cannot cover.
+and not asked. The walk reads frames and makes no call; given vectors, it
+orders the fits by cosine, and given a budget, it counts each fit's calls
+before the first and lists those it cannot cover.
 
 A fit is asked again as a successor: the frame with the piece as a span and
 its anchor. `successor` drafts it for the frame's author and writes nothing.
@@ -897,11 +898,42 @@ it reads, of the kind the frame offers.
 decided(frame, label)
 ```
 
+#### Vectors
+
+Whole-text vectors a caller acquired: each a tuple of floats, keyed by
+the SHA-256 of the exact text it stands for and the opaque id of the
+space it was made in; and the SHA-256 of what they were read from.
+
+```python
+@dataclass(frozen=True)
+class Vectors
+```
+
+Vectors has these properties:
+
+- **`spaces`:** `tuple[str, ...]`. Each space a vector names, in sorted order.
+
+#### read_vectors
+
+Vectors from JSON Lines, one line each,
+`{"text": SHA256, "space": ID, "values": [...]}`, as a caller acquired
+them: whole texts only, one vector a text in each space. Spaces may mix,
+and a walk compares two vectors only within one. A text named twice in
+one space refuses them all, even with the same values, and a value that
+is not finite is kept, to give no order where it is read. A refusal
+names the file at `path` they were read from, `-` standard input.
+
+```python
+read_vectors(data, *, path=None)
+```
+
 #### Fit
 
 A hole a piece fits, as a walk would ask it: the frame and the hole;
-and, when the walk was given a budget, the most calls asking its
-successor until firm can make, and whether the budget covers them.
+when the walk was given vectors, its cosine to the piece, or why it has
+none, kept in its place; and, when it was given a budget, the most calls
+asking its successor until firm can make, and whether the budget covers
+them.
 
 ```python
 @dataclass(frozen=True)
@@ -915,7 +947,9 @@ fits, with the holes it fits there that are considered; each frame it
 passed; the frontier, each quoted text no frame given holds as its own;
 each frame with the holes it fits there that defer, kept and not asked;
 every considered fit, one hole each, in the order it would be asked;
-and the budget in calls and the most runs a fit, when one was given.
+the space its fits were ordered by and the SHA-256 of the vectors, when
+it was given them; and the budget in calls and the most runs a fit,
+when one was given.
 
 ```python
 @dataclass(frozen=True)
@@ -930,10 +964,12 @@ Walk has these properties:
 ##### Walk.lines
 
 The walk as its record, one line each: every hole it fits, in the
-order it would be asked, with its calls and whether the budget asks
-it when there is one; then every frame whose holes of its kind
-defer, then every frame that passed it on, each in the order the
-walk reached it; then every text it could not follow.
+order it would be asked, with its cosine or why it has none when it
+was ordered, and its calls and whether the budget asks it when there
+is one; then every frame whose holes of its kind defer, then every
+frame that passed it on, each in the order the walk reached it; then
+every text it could not follow. Each line names the space and the
+vectors it was ordered by, and the budget, when there were any.
 
 ```python
 lines()
@@ -949,11 +985,25 @@ A hole whose salience is defer is listed under `deferred`, its fit kept
 and not asked, never dropped.
 
 ```python
-walk(piece, start, frames, *, calls=None, most=MOST)
+walk(
+    piece,
+    start,
+    frames,
+    *,
+    vectors=None,
+    space=None,
+    calls=None,
+    most=MOST,
+)
 ```
 
 Each considered hole is a fit in `order`, in the order the walk reached
-its frame and the frame lists its holes. Given `calls`, each fit is
+its frame and the frame lists its holes. Given `vectors`, the fits are
+ordered by the cosine of the piece's vector to the vector of what each
+hole is read for, its `about`, both in one `space`, highest first, and
+ties by frame hash. A fit with no cosine keeps its place, with why, and
+the others are sorted among theirs, so no fit takes a default score and
+a vector only orders. Given `calls`, each fit is
 counted before the first call, as `calls_until_firm` counts its
 successor as drafted over at most `most` runs, and the budget asks the
 fits in order up to the first it cannot cover: that one and every one
@@ -2062,6 +2112,15 @@ broke; `line` is where `text` starts in the file, when it is one line.
 load_json(path, text, refusal, line=None)
 ```
 
+#### read_bytes
+
+A file's bytes, or standard input's for `-`, as they are: what a
+file's SHA-256 is taken of.
+
+```python
+read_bytes(path)
+```
+
 #### load_records
 
 The records kept in a JSON Lines file, or on standard input for `-`.
@@ -2137,7 +2196,8 @@ command_portfolio(args)
 
 `gadfly walk`: where a piece climbs from the frame it was found in, up
 through the frames given, without a call (`midwife.recoil.walk`); with
---calls, which fits that many calls cover, each until firm.
+--vectors, its fits ordered by cosine; with --calls, which fits that
+many calls cover, each until firm.
 
 ```python
 command_walk(args)

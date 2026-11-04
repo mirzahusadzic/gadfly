@@ -12,8 +12,13 @@ word is missing, and is caught for it.
 """
 
 import copy
+import hashlib
+import json
+import math
 import random
+import re
 import warnings
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
@@ -25,10 +30,12 @@ from midwife.pipeline import calls_needed, judge, run
 from midwife.recoil import (
     MOST,
     Piece,
+    Vectors,
     calls_until_firm,
     decided,
     found,
     gate,
+    read_vectors,
     reframes,
     sha256,
     successor,
@@ -385,6 +392,158 @@ def test_a_walks_budget_refuses_what_it_cannot_count():
     said = "the walk's budget counts the successor of frame 'once' with hole 'h' filled, as drafted"
     assert refused.value.__notes__[-1] == said
     assert walk(piece, start, [fitted, once]).order[1].frame.name == "once"  # no budget, no count
+
+
+def jsonl(*vectors):
+    # vectors as a caller writes them: each (text, space, values), one a line
+    lines = (
+        json.dumps({"text": sha256(text), "space": space, "values": values})
+        for text, space, values in vectors
+    )
+    return "".join(line + "\n" for line in lines)
+
+
+def read_for(name, about=None):
+    # a frame holding the shared line, with one hole of kind note, read for `about`
+    frame = star(name, SHARED, holes=["h"])
+    raw = copy.deepcopy(frame.raw)
+    raw["holes"] = [{"id": "h", "kind": "note", **({"about": about} if about else {})}]
+    return parse(raw)
+
+
+def test_read_vectors_takes_whole_texts_one_a_space():
+    text = jsonl(("a", "s", [1, 0.5]), ("a", "t", [2.0, -1, 3]), ("b", "s", [0, 0]))
+    vectors = read_vectors(text.replace("\n", "\r\n", 1))
+    assert vectors.spaces == ("s", "t")
+    assert vectors.values[sha256("a"), "s"] == (1.0, 0.5)
+    assert vectors.values[sha256("a"), "t"] == (2.0, -1.0, 3.0)
+    raw = text.encode()
+    assert read_vectors(raw).sha256 == hashlib.sha256(raw).hexdigest()  # what was read, whole
+    # a value that is not finite is kept, to give no order where it is read
+    kept = read_vectors(
+        '{"text": "%s", "space": "s", "values": [NaN, 1e999, %s]}' % (sha256("a"), "9" * 400)
+    )
+    assert [math.isfinite(x) for x in kept.values[sha256("a"), "s"]] == [False, False, False]
+
+
+@pytest.mark.parametrize(
+    "text, message",
+    [
+        (b"\xff", "the text given is not UTF-8 text"),
+        ("{", "the text given cannot be read as JSON at line 1"),
+        ("\n[1]", "the text given holds a vector that is not {text, space, values} at line 2"),
+        ('{"text": "a", "space": "s", "values": [1], "x": 1}', "is not {text, space, values}"),
+        ('{"text": "A%s", "space": "s", "values": [1]}' % ("0" * 63), "keys a vector by 'A0"),
+        ('{"text": 5, "space": "s", "values": [1]}', "keys a vector by 5 at line 1"),
+        ('{"text": "%s", "space": "", "values": [1]}' % sha256("a"), "names space ''"),
+        ('{"text": "%s", "space": "a: b", "values": [1]}' % sha256("a"), "not one plain name"),
+        ('{"text": "%s", "space": 7, "values": [1]}' % sha256("a"), "names space 7"),
+        ('{"text": "%s", "space": "s", "values": []}' % sha256("a"), "not a list of numbers"),
+        ('{"text": "%s", "space": "s", "values": [true]}' % sha256("a"), "not a list of numbers"),
+        ('{"text": "%s", "space": "s", "values": "1"}' % sha256("a"), "not a list of numbers"),
+        (
+            jsonl(("a", "s", [1]), ("b", "s", [1]), ("a", "s", [1])),
+            "in space 's' twice, at lines 1 and 3",
+        ),
+    ],
+)
+def test_read_vectors_refuses_what_it_cannot_take(text, message):
+    with pytest.raises(UsageError, match=re.escape(message)):
+        read_vectors(text)
+
+
+def test_vectors_order_the_fits_and_a_fit_with_no_cosine_keeps_its_place():
+    start = star("start", "the start's own line")
+    piece = Piece(SHARED, "note")
+    a, b, c, d = (
+        read_for(n, about) for n, about in [("a", "A"), ("b", "B"), ("c", None), ("d", "D")]
+    )
+    given = [a, b, c, d]
+    vectors = read_vectors(
+        jsonl((SHARED, "s", [1, 0]), ("A", "s", [0, 3]), ("B", "s", [1, 1]), ("D", "s", [2, 0]))
+    )
+    walked = walk(piece, start, given, vectors=vectors)
+    # d (1), b (0.71) and a (0) sort among the places they hold; c keeps its own
+    assert [fit.frame.name for fit in walked.order] == ["d", "b", "c", "a"]
+    assert [fit.cosine for fit in walked.order] == [1.0, pytest.approx(0.5**0.5), None, 0.0]
+    assert walked.order[2].unordered == "the hole says nothing under about"
+    assert (walked.space, walked.vectors) == ("s", vectors.sha256)
+    assert walk(piece, start, given).order == tuple(
+        replace(fit, cosine=None, unordered=None)
+        for fit in sorted(walked.order, key=lambda fit: given.index(fit.frame))
+    )  # without vectors, the walk's own order
+    lines = walked.lines()
+    assert lines[0]["space"] == "s" and lines[0]["vectors"] == vectors.sha256
+    assert lines[0]["cosine"] == 1.0 and "unordered" not in lines[0]
+    assert lines[2]["unordered"] == "the hole says nothing under about" and "cosine" not in lines[2]
+    # the budget asks in that order: one fit's calls ask the nearest
+    each = calls_until_firm(parse(successor(d, "h", piece)))
+    walked = walk(piece, start, given, vectors=vectors, calls=each)
+    assert [(fit.frame.name, fit.asked) for fit in walked.order][:2] == [("d", True), ("b", False)]
+
+
+def test_a_cosine_tie_breaks_by_frame_hash():
+    start = star("start", "the start's own line")
+    piece = Piece(SHARED, "note")
+    one, two = read_for("one", "A"), read_for("two", "B")
+    vectors = read_vectors(jsonl((SHARED, "s", [1, 0]), ("A", "s", [1, 1]), ("B", "s", [2, 2])))
+    for given in ([one, two], [two, one]):
+        walked = walk(piece, start, given, vectors=vectors)
+        assert [fit.frame.hash for fit in walked.order] == sorted([one.hash, two.hash])
+
+
+@pytest.mark.parametrize(
+    "vectors, why",
+    [
+        ([("A", "s", [1, 0])], "the piece has no vector in this space"),
+        ([(SHARED, "s", [1, 0])], "what the hole is read for has no vector in this space"),
+        (
+            [(SHARED, "s", [1, 0]), ("A", "s", [1, 0, 0])],
+            "its vector has 3 values, and the piece's 2",
+        ),
+        ([(SHARED, "s", [1, 0]), ("A", "s", [0, 0])], "a vector has no length"),
+        ([(SHARED, "s", [1e200, 1e200]), ("A", "s", [1e200, 1])], "its cosine overflows"),
+    ],
+)
+def test_a_fit_geometry_cannot_read_is_said_never_scored(vectors, why):
+    start = star("start", "the start's own line")
+    piece = Piece(SHARED, "note")
+    fit = read_for("a", "A")
+    [read] = walk(piece, start, [fit], vectors=read_vectors(jsonl(*vectors))).order
+    assert (read.cosine, read.unordered) == (None, why)
+
+
+def test_a_value_that_is_not_finite_gives_no_order():
+    start = star("start", "the start's own line")
+    piece = Piece(SHARED, "note")
+    text = '{"text": "%s", "space": "s", "values": [1, 0]}\n' % piece.sha256
+    text += '{"text": "%s", "space": "s", "values": [NaN, 1]}\n' % sha256("A")
+    [read] = walk(piece, start, [read_for("a", "A")], vectors=read_vectors(text)).order
+    assert (read.cosine, read.unordered) == (None, "a vector holds a value that is not finite")
+
+
+def test_a_walk_orders_by_one_space_named_or_alone():
+    start = star("start", "the start's own line")
+    piece = Piece(SHARED, "note")
+    fit = read_for("a", "A")
+    two = read_vectors(jsonl((SHARED, "s", [1, 0]), ("A", "s", [1, 0]), (SHARED, "t", [1])))
+    with pytest.raises(UsageError, match=r"the vectors hold 2 spaces, 's', 't'"):
+        walk(piece, start, [fit], vectors=two)
+    assert walk(piece, start, [fit], vectors=two, space="s").order[0].cosine == 1.0
+    # in t the piece has a vector and the hole none: never one from another space
+    [read] = walk(piece, start, [fit], vectors=two, space="t").order
+    assert (read.cosine, read.unordered) == (
+        None,
+        "what the hole is read for has no vector in this space",
+    )
+    built = Vectors({(piece.sha256, "s"): (1.0,)}, "0" * 64)  # vectors a caller built
+    assert walk(piece, start, [fit], vectors=built).vectors == "0" * 64
+    with pytest.raises(UsageError, match="the vectors hold no vector in space 'u'"):
+        walk(piece, start, [fit], vectors=two, space="u")
+    with pytest.raises(UsageError, match="the vectors hold no vector"):
+        walk(piece, start, [fit], vectors=read_vectors(""))
+    with pytest.raises(UsageError, match="space is given without vectors"):
+        walk(piece, start, [fit], space="s")
 
 
 def test_the_second_doll_with_its_word_is_a_boy_asked_once_and_carried():

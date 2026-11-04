@@ -38,8 +38,10 @@ spent every call again.
 
 - **Siblings:** frames of the same grain side by side, joined so that a piece
   offered to one is offered to its neighbours too.
-- **Grouping by locus:** frames grouped by where their relation acts, so a
-  walk offers a piece first where it is most likely to fit.
+- **Grouping by locus:** frames grouped by where their relation acts. A walk
+  already offers a piece first where it is most likely to fit, by the
+  vectors its caller gives ([Recoil](../recoil.md#ordered-by-whole-text-vectors));
+  a locus is free text, so frames sharing one are not yet grouped.
 - **Artefacts as parents:** a crossing's records keep each artefact's SHA-256,
   so a frame that quotes an artefact could climb to the crossing that made it.
 - **Offering down:** a piece only climbs, so one found above its hole is never

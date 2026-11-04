@@ -164,6 +164,20 @@ def load_json(path: str, text: str, refusal: type[GadflyError], line: int | None
         raise refusal(f"{_named(path)} holds a number too long to read{at}") from None
 
 
+def read_bytes(path: str) -> bytes:
+    """A file's bytes, or standard input's for `-`, as they are: what a
+    file's SHA-256 is taken of."""
+    if path == "-" and sys.stdin.isatty():  # nothing is piped in: say so rather than wait
+        raise UsageError(
+            "- reads standard input, which is a terminal", "pipe the file in, or name it"
+        )
+    if path != "-":
+        return Path(path).read_bytes()
+    stream = getattr(sys.stdin, "buffer", None)
+    # a caller's own text stream: a lone surrogate stays a byte no UTF-8 reader takes
+    return stream.read() if stream else sys.stdin.read().encode("utf-8", "surrogatepass")
+
+
 def _named(path: str) -> str:
     return "standard input" if path == "-" else f"file {path!r}"
 
@@ -831,8 +845,14 @@ def _kept_runs(folder: Path, frame, most: int) -> list[tuple[int, Path, list[dic
 def command_walk(args) -> int:
     """`gadfly walk`: where a piece climbs from the frame it was found in, up
     through the frames given, without a call (`midwife.recoil.walk`); with
-    --calls, which fits that many calls cover, each until firm."""
+    --vectors, its fits ordered by cosine; with --calls, which fits that
+    many calls cover, each until firm."""
     source, piece = _piece(args)
+    if args.space is not None and args.vectors is None:
+        raise UsageError(
+            "--space is given without --vectors",
+            "--space names the space to order by, among the vectors --vectors gives",
+        )
     if args.most is not None:
         if args.calls is None:
             raise UsageError(
@@ -841,14 +861,26 @@ def command_walk(args) -> int:
             )
         _most(args.most)
     frames = [load_frame(path) for path in args.frames]
+    vectors = None
+    if args.vectors is not None:
+        vectors = recoil.read_vectors(read_bytes(args.vectors), path=args.vectors)
     most = recoil.MOST if args.most is None else args.most
-    walked = recoil.walk(piece, source, frames, calls=args.calls, most=most)
+    walked = recoil.walk(
+        piece, source, frames, vectors=vectors, space=args.space, calls=args.calls, most=most
+    )
     if args.json:
         document = {
             "piece": {**_piece_document(piece), "from": _which(source)},
             "fits": [{**_which(frame), "holes": list(holes)} for frame, holes in walked.fits],
             "order": [
-                {**_which(fit.frame), "hole": fit.hole, "calls": fit.calls, "asked": fit.asked}
+                {
+                    **_which(fit.frame),
+                    "hole": fit.hole,
+                    "cosine": fit.cosine,
+                    "unordered": fit.unordered,
+                    "calls": fit.calls,
+                    "asked": fit.asked,
+                }
                 for fit in walked.order
             ],
             "deferred": [
@@ -859,14 +891,18 @@ def command_walk(args) -> int:
             "complete": walked.complete,
             "budget": walked.budget,
             "most": walked.most,
+            "space": walked.space,
+            "vectors": walked.vectors,
         }
         print(json.dumps(document, indent=2))
         return 0
     print(f"piece: {piece.text!r}, of kind {plain(piece.kind)}, from {_short(source)}")
     for fit in walked.order:
+        near = "" if fit.cosine is None else f", cosine {fit.cosine:.4f}"
+        kept = "" if fit.unordered is None else f", kept in its place, {fit.unordered}"
         counted = "" if fit.calls is None else f", at most {fit.calls} calls until firm"
         unasked = ", not asked, past the budget" if fit.asked is False else ""
-        print(f"fits: {_short(fit.frame)}, hole {fit.hole}{counted}{unasked}")
+        print(f"fits: {_short(fit.frame)}, hole {fit.hole}{near}{kept}{counted}{unasked}")
     for frame, holes in walked.deferred:
         print(f"deferred: {_short(frame)}, hole {', '.join(holes)}, kept and not asked")
     for frame in walked.passed:
@@ -874,6 +910,8 @@ def command_walk(args) -> int:
     for text in walked.frontier:
         print(f"frontier: {text}, quoted by a frame and held by none given")
     print(f"complete: {'yes' if walked.complete else 'no'}")
+    if walked.space is not None:
+        print(f"ordered: by cosine in space {plain(walked.space)}, vectors {walked.vectors}")
     if walked.budget is not None:
         asked = [fit for fit in walked.order if fit.asked]
         covered = f"{len(asked)} fit{'s' * (len(asked) != 1)} of {len(walked.order)}"
@@ -1259,6 +1297,14 @@ def parser() -> argparse.ArgumentParser:
     walked = command("walk", help="where a piece climbs through frames, without spending")
     walked.add_argument("frames", nargs="+", help="the frames to climb, JSON files, one may be -")
     piece(walked)
+    walked.add_argument(
+        "--vectors",
+        metavar="FILE",
+        help="order the fits by cosine, from these whole-text vectors, JSON Lines, or - for stdin",
+    )
+    walked.add_argument(
+        "--space", metavar="ID", help="the space to order by, when --vectors holds several"
+    )
     walked.add_argument(
         "--calls", type=int, help="the calls to ask fits with, each until firm, in order"
     )

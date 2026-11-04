@@ -75,6 +75,37 @@ asked before an earlier one, and `unasked` names them.
 
 ---
 
+### Ordered by whole-text vectors
+
+Gadfly never makes a vector: its caller acquires one for each whole text
+and hands them over, as `walk(..., vectors=read_vectors(data))` or
+`gadfly walk --vectors FILE`. Each is keyed by the SHA-256 of its exact
+text, as a span's `source` is, and by an opaque `space` id that Gadfly only
+compares. The fits are then ordered by the cosine of the piece's vector to
+the vector of what each hole is read for, its `about`.
+
+The vectors are JSON Lines, one a line. A text has at most one vector in a
+space, and a second refuses them all, even with the same values:
+
+```json
+{"text": "<sha256>", "space": "<id>", "values": [0.6, 0.8]}
+```
+
+- **One space:** two vectors are compared only within one space, the one
+  named or the only one given. The walk's record names it, and the SHA-256
+  of the vectors.
+- **Exact:** cosine is dot / (|a| |b|), each sum by `math.fsum`, highest
+  first and ties by frame hash, so a replay orders alike. Nothing is cut or
+  normalised: vectors come already cut.
+- **No default score:** a fit with no cosine keeps its place, with why: the
+  piece or the hole's `about` has no vector in the space, their lengths
+  differ, a value is not finite, a vector has no length, or the cosine
+  overflows. The fits with one are sorted among the places they hold.
+- **Order only:** a vector never decides a fit, since the kind does, and a
+  budget asks in this order.
+
+---
+
 ### Climbing without asking again
 
 Recoil is content-addressed, as a build is. A frame is its hash, it names its

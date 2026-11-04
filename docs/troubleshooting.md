@@ -69,6 +69,17 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: kept holds more runs than most lets until_firm read` | `give it the latest runs only, or raise most`. The same, in Python. |
 | `UsageError: frame 'Kiran' asks each trial once, so a run has no calls to draw again` | `give it a quorum of 2 or more`. Whether a verdict is firm is read from its calls drawn again, so a frame asked until firm is asked lightly, but more than once a trial. A walk given calls counts each fit's successor so, and a second note names the fit. |
 | `UsageError: a walk's budget is a whole number of calls, at least 1` | Give `--calls`, or `calls` in Python, as the calls the walk's fits may take, or leave it out to count nothing. |
+| `UsageError: --space is given without --vectors` or `UsageError: space is given without vectors` | `--space names the space to order by, among the vectors --vectors gives`. Give both, or neither; the second is `walk`'s, in Python. |
+| `UsageError: file 'vectors.jsonl' is not UTF-8 text` | Save the vectors as UTF-8. In Python, `read_vectors` names them `the text given`, or by the `path` it is given. |
+| `UsageError: file 'vectors.jsonl' cannot be read as JSON at line 3` | Correct that line; each line is one JSON object. |
+| `UsageError: file 'vectors.jsonl' holds a vector that is not {text, space, values} at line 3` | Give each line exactly `text`, `space` and `values`. |
+| `UsageError: file 'vectors.jsonl' keys a vector by 'abc' at line 3, which is no SHA-256` | `text is the SHA-256 of the exact text, 64 lowercase hex digits`. A vector stands for a whole text, named as a span's `source` names it. |
+| `UsageError: file 'vectors.jsonl' names space 'e: 128' at line 3, not one plain name` | A space id is a non-empty string with no line break and no colon followed by a space; Gadfly prints it, and only compares it. |
+| `UsageError: file 'vectors.jsonl' holds values that are not a list of numbers at line 3` | Give `values` as a non-empty list of numbers. |
+| `UsageError: file 'vectors.jsonl' holds text '9f86d081...' in space 'e128' twice, at lines 1 and 4` | `a text has one vector in a space; even the same values twice are refused`. Keep one of them; the vectors are refused whole, never the last taken. |
+| `UsageError: the vectors hold 2 spaces, 'e128', 'e768'` | `name the one to order by, since a cosine compares two vectors of one space only`. Give `--space`, or `space` in Python. |
+| `UsageError: the vectors hold no vector in space 'e64'` | `they hold 'e128'`. Name one of the spaces the vectors hold. |
+| `UsageError: the vectors hold no vector` | `give vectors, or leave them out`. The file is empty, or holds blank lines only. |
 | `UsageError: --most is given without --calls` | `--most counts the runs each fit may take against the calls --calls gives`. Give both, or neither. |
 | `UsageError: a successor that asks the same question is read from its own runs` | `name the folder that keeps them with --runs; gadfly firm makes them`. Only a reframing is read against no category, with no runs. |
 | `UsageError: folder 'runs' keeps no run of the successor` | `gadfly firm asks it, and keeps each run there`. A run is a file named by its place, `1.jsonl` and on. |

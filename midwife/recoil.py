@@ -5,8 +5,9 @@ above that. A piece is a text found in a kept run, with a kind. It climbs from
 the frame it was found in to each frame whose own text that frame quotes, and
 on up, and fits any of those frames' holes of its kind; a frame with no such
 hole passes it on, at no cost. A hole may defer: its fit is listed, kept
-and not asked. The walk reads frames and makes no call; given a budget, it
-counts each fit's calls before the first, and lists those it cannot cover.
+and not asked. The walk reads frames and makes no call; given vectors, it
+orders the fits by cosine, and given a budget, it counts each fit's calls
+before the first and lists those it cannot cover.
 
 A fit is asked again as a successor: the frame with the piece as a span and
 its anchor. `successor` drafts it for the frame's author and writes nothing.
@@ -31,13 +32,16 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
+import math
+import re
 import warnings
 from collections import deque
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any
 
-from .errors import GadflyError, RecordsError, StoppedWarning, UsageError
+from .errors import GadflyError, RecordsError, StoppedWarning, UsageError, is_plain, quoted
 from .frame import SALIENCE, Frame, digest, parse
 from .interventions import plan, prompt
 from .pipeline import calls_needed, run
@@ -61,6 +65,10 @@ GATE = {
 }
 FIRM = 0.95  # the share of draws that must read each input's category alike
 MOST = 5  # runs `until_firm` makes at most
+# A vector's key: the SHA-256 of the exact text it stands for, as a span's
+# source names it, and the id of the space it was made in
+SHA256 = re.compile(r"[0-9a-f]{64}")
+VECTOR_KEYS = {"text", "space", "values"}
 
 
 def sha256(text: str) -> str:
@@ -112,13 +120,103 @@ def _made(frame: Frame) -> set[str]:
 
 
 @dataclass(frozen=True)
+class Vectors:
+    """Whole-text vectors a caller acquired: each a tuple of floats, keyed by
+    the SHA-256 of the exact text it stands for and the opaque id of the
+    space it was made in; and the SHA-256 of what they were read from."""
+
+    values: Mapping[tuple[str, str], tuple[float, ...]]
+    sha256: str
+
+    @property
+    def spaces(self) -> tuple[str, ...]:
+        """Each space a vector names, in sorted order."""
+        return tuple(sorted({space for _, space in self.values}))
+
+
+def read_vectors(data: bytes | str, *, path: str | None = None) -> Vectors:
+    """Vectors from JSON Lines, one line each,
+    `{"text": SHA256, "space": ID, "values": [...]}`, as a caller acquired
+    them: whole texts only, one vector a text in each space. Spaces may mix,
+    and a walk compares two vectors only within one. A text named twice in
+    one space refuses them all, even with the same values, and a value that
+    is not finite is kept, to give no order where it is read. A refusal
+    names the file at `path` they were read from, `-` standard input."""
+    raw = data.encode("utf-8") if isinstance(data, str) else bytes(data)
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        raise UsageError(f"{_named(path)} is not UTF-8 text") from None
+    values: dict[tuple[str, str], tuple[float, ...]] = {}
+    lines: dict[tuple[str, str], int] = {}
+    for line, written in enumerate(text.split("\n"), 1):
+        if not written.strip():
+            continue
+        try:
+            entry = json.loads(written)
+        except (ValueError, RecursionError):
+            raise UsageError(f"{_named(path)} cannot be read as JSON at line {line}") from None
+        if not (isinstance(entry, dict) and set(entry) == VECTOR_KEYS):
+            raise UsageError(
+                f"{_named(path)} holds a vector that is not {{text, space, values}} at line {line}"
+            )
+        key, space, numbers = entry["text"], entry["space"], entry["values"]
+        if not (isinstance(key, str) and SHA256.fullmatch(key)):
+            raise UsageError(
+                f"{_named(path)} keys a vector by {key!r} at line {line}, which is no SHA-256",
+                "text is the SHA-256 of the exact text, 64 lowercase hex digits",
+            )
+        if not (isinstance(space, str) and space and is_plain(space)):
+            raise UsageError(
+                f"{_named(path)} names space {space!r} at line {line}, not one plain name"
+            )
+        if not (
+            isinstance(numbers, list)
+            and numbers
+            and all(isinstance(x, int | float) and not isinstance(x, bool) for x in numbers)
+        ):
+            raise UsageError(
+                f"{_named(path)} holds values that are not a list of numbers at line {line}"
+            )
+        if (key, space) in lines:
+            at = lines[key, space]
+            raise UsageError(
+                f"{_named(path)} holds text {key!r} in space {space!r} twice, "
+                f"at lines {at} and {line}",
+                "a text has one vector in a space; even the same values twice are refused",
+            )
+        lines[key, space] = line
+        values[key, space] = tuple(_float(x) for x in numbers)
+    return Vectors(values, hashlib.sha256(raw).hexdigest())
+
+
+def _named(path: str | None) -> str:
+    # the vectors as a refusal names them: by the file they were read from
+    if path is None:
+        return "the text given"
+    return "standard input" if path == "-" else f"file {path!r}"
+
+
+def _float(number: int | float) -> float:
+    # a whole number past a float's range is no finite value, and gives no order
+    try:
+        return float(number)
+    except OverflowError:
+        return math.inf
+
+
+@dataclass(frozen=True)
 class Fit:
     """A hole a piece fits, as a walk would ask it: the frame and the hole;
-    and, when the walk was given a budget, the most calls asking its
-    successor until firm can make, and whether the budget covers them."""
+    when the walk was given vectors, its cosine to the piece, or why it has
+    none, kept in its place; and, when it was given a budget, the most calls
+    asking its successor until firm can make, and whether the budget covers
+    them."""
 
     frame: Frame
     hole: str
+    cosine: float | None = None
+    unordered: str | None = None
     calls: int | None = None
     asked: bool | None = None
 
@@ -130,7 +228,9 @@ class Walk:
     passed; the frontier, each quoted text no frame given holds as its own;
     each frame with the holes it fits there that defer, kept and not asked;
     every considered fit, one hole each, in the order it would be asked;
-    and the budget in calls and the most runs a fit, when one was given."""
+    the space its fits were ordered by and the SHA-256 of the vectors, when
+    it was given them; and the budget in calls and the most runs a fit,
+    when one was given."""
 
     piece: Piece
     fits: tuple[tuple[Frame, tuple[str, ...]], ...]
@@ -140,6 +240,8 @@ class Walk:
     order: tuple[Fit, ...] = ()
     budget: int | None = None
     most: int | None = None
+    space: str | None = None
+    vectors: str | None = None
 
     @property
     def complete(self) -> bool:
@@ -153,16 +255,23 @@ class Walk:
 
     def lines(self) -> list[dict[str, Any]]:
         """The walk as its record, one line each: every hole it fits, in the
-        order it would be asked, with its calls and whether the budget asks
-        it when there is one; then every frame whose holes of its kind
-        defer, then every frame that passed it on, each in the order the
-        walk reached it; then every text it could not follow."""
+        order it would be asked, with its cosine or why it has none when it
+        was ordered, and its calls and whether the budget asks it when there
+        is one; then every frame whose holes of its kind defer, then every
+        frame that passed it on, each in the order the walk reached it; then
+        every text it could not follow. Each line names the space and the
+        vectors it was ordered by, and the budget, when there were any."""
         head: dict[str, Any] = {"piece": self.piece.sha256, "kind": self.piece.kind}
+        if self.space is not None:
+            head |= {"space": self.space, "vectors": self.vectors}
         if self.budget is not None:
             head |= {"budget": self.budget, "most": self.most}
         fitted = []
         for fit in self.order:
             line = {**head, "frame": fit.frame.hash, "name": fit.frame.name, "fits": [fit.hole]}
+            if self.space is not None:
+                line |= {"cosine": fit.cosine} if fit.unordered is None else {}
+                line |= {} if fit.unordered is None else {"unordered": fit.unordered}
             if fit.calls is not None:
                 line |= {"calls": fit.calls, "asked": fit.asked}
             fitted.append(line)
@@ -185,6 +294,8 @@ def walk(
     start: Frame,
     frames: Iterable[Frame],
     *,
+    vectors: Vectors | None = None,
+    space: str | None = None,
     calls: int | None = None,
     most: int = MOST,
 ) -> Walk:
@@ -196,7 +307,12 @@ def walk(
     and not asked, never dropped.
 
     Each considered hole is a fit in `order`, in the order the walk reached
-    its frame and the frame lists its holes. Given `calls`, each fit is
+    its frame and the frame lists its holes. Given `vectors`, the fits are
+    ordered by the cosine of the piece's vector to the vector of what each
+    hole is read for, its `about`, both in one `space`, highest first, and
+    ties by frame hash. A fit with no cosine keeps its place, with why, and
+    the others are sorted among theirs, so no fit takes a default score and
+    a vector only orders. Given `calls`, each fit is
     counted before the first call, as `calls_until_firm` counts its
     successor as drafted over at most `most` runs, and the budget asks the
     fits in order up to the first it cannot cover: that one and every one
@@ -231,6 +347,13 @@ def walk(
                     passed.append(parent)
                 climbing.append(parent)
     order = tuple(Fit(frame, hole) for frame, holes in fits for hole in holes)
+    if vectors is not None:
+        space = _space(vectors, space)
+        order = _ordered(order, piece, vectors, space)
+    elif space is not None:
+        raise UsageError(
+            "space is given without vectors", "name the space to order by among the vectors given"
+        )
     if calls is not None:
         order = _budgeted(order, piece, calls, most)
     return Walk(
@@ -242,7 +365,73 @@ def walk(
         order,
         calls,
         None if calls is None else most,
+        space,
+        None if vectors is None else vectors.sha256,
     )
+
+
+def _space(vectors: Vectors, space: str | None) -> str:
+    # the one space a walk orders by: the one named, or the only one given
+    spaces = vectors.spaces
+    if not spaces:
+        raise UsageError("the vectors hold no vector", "give vectors, or leave them out")
+    if space is None:
+        many = len(spaces)
+        if many > 1:
+            raise UsageError(
+                f"the vectors hold {many} spaces, {quoted(spaces)}",
+                "name the one to order by, since a cosine compares two vectors of one space only",
+            )
+        return spaces[0]
+    if space not in spaces:
+        raise UsageError(
+            f"the vectors hold no vector in space {space!r}", f"they hold {quoted(spaces)}"
+        )
+    return space
+
+
+def _ordered(order: tuple[Fit, ...], piece: Piece, vectors: Vectors, space: str) -> tuple[Fit, ...]:
+    # each fit's cosine, or why it has none; the fits with one sorted among
+    # the places they hold, highest first and ties by frame hash, and the
+    # rest left where the walk put them
+    near = vectors.values.get((piece.sha256, space))
+    read = []
+    for fit in order:
+        about = next(h for h in fit.frame.holes if h["id"] == fit.hole).get("about")
+        if near is None:
+            cosine, why = None, "the piece has no vector in this space"
+        elif about is None:
+            cosine, why = None, "the hole says nothing under about"
+        elif (sha256(about), space) not in vectors.values:
+            cosine, why = None, "what the hole is read for has no vector in this space"
+        else:
+            cosine, why = _cosine(near, vectors.values[sha256(about), space])
+        read.append(replace(fit, cosine=cosine, unordered=why))
+    places = [i for i, fit in enumerate(read) if fit.cosine is not None]
+    ranked = sorted(places, key=lambda i: (-read[i].cosine, read[i].frame.hash, i))
+    ordered = list(read)
+    for place, i in zip(places, ranked, strict=True):
+        ordered[place] = read[i]
+    return tuple(ordered)
+
+
+def _cosine(a: tuple[float, ...], b: tuple[float, ...]) -> tuple[float | None, str | None]:
+    # dot / (|a| |b|), each sum exact with fsum, or why there is none
+    if len(a) != len(b):
+        return None, f"its vector has {len(b)} values, and the piece's {len(a)}"
+    if not all(map(math.isfinite, a + b)):
+        return None, "a vector holds a value that is not finite"
+    try:
+        dot = math.fsum(x * y for x, y in zip(a, b, strict=True))
+        norms = math.sqrt(math.fsum(x * x for x in a)) * math.sqrt(math.fsum(y * y for y in b))
+    except (OverflowError, ValueError):
+        return None, "its cosine overflows"
+    if norms == 0:
+        return None, "a vector has no length"
+    cosine = dot / norms
+    if not (math.isfinite(dot) and math.isfinite(norms) and math.isfinite(cosine)):
+        return None, "its cosine overflows"
+    return cosine, None
 
 
 def _budgeted(order: tuple[Fit, ...], piece: Piece, calls: int, most: int) -> tuple[Fit, ...]:

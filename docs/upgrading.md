@@ -23,7 +23,9 @@ its `salience`, `consider` or `defer`. A walk lists a deferred fit under
 `deferred`, kept and not asked, and every considered fit under `order`, a
 `Fit` each. `walk(..., calls=N, most=M)` and `gadfly walk --calls N --most M`
 count each fit's calls until firm before the first, and list the fits the
-calls cannot cover as not asked.
+calls cannot cover as not asked. `walk(..., vectors=read_vectors(data))`
+and `gadfly walk --vectors FILE` order the fits by cosine, from whole-text
+vectors a caller acquired, and only order them.
 
 ---
 
