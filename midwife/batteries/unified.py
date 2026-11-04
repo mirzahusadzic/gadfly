@@ -271,6 +271,12 @@ def parse_stream(
                 for key, value in (reported if isinstance(reported, dict) else {}).items():
                     if isinstance(value, int) and not isinstance(value, bool):
                         usage[key] = value
+                    elif key.endswith("_details") and isinstance(value, dict):
+                        # a provider's breakdown, such as the reasoning a call
+                        # spent: each whole count kept under its own name
+                        for name, count in value.items():
+                            if isinstance(count, int) and not isinstance(count, bool):
+                                usage.setdefault(name, count)
                 for item in response.get("output") or []:
                     for part in item.get("content") or [] if isinstance(item, dict) else []:
                         if isinstance(part, dict) and part.get("type") == "output_text":

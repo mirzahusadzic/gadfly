@@ -112,6 +112,12 @@ passes `battery.reasoning` to the model through the router as an effort, one
 of `none`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max`. A model that
 does not take a level refuses the call, which comes back as an opening.
 
+A level is a request: some models decide on each call whether to think at
+all. Each record's `usage` keeps every whole count the router reports, and
+each count of a breakdown such as `output_tokens_details` under its own name,
+so a call's `reasoning_tokens` say whether it thought, when the router passes
+them on.
+
 Gemma 4 has no levels: its thinking is on or off. With `reasoning: true` in
 the battery line, eGemma lets Gemma think before every answer, and only the
 answer is held to the schema:

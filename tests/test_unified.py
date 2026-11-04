@@ -63,6 +63,27 @@ def router():
         server.close()
 
 
+def test_a_record_keeps_the_reasoning_a_call_spent(raw, token, router):
+    # a model that decides on each call whether to think: the record says
+    # whether this one did, from the breakdown the router passes on
+    reported = {
+        "input_tokens": 300,
+        "output_tokens": 412,
+        "total_tokens": 712,
+        "output_tokens_details": {"reasoning_tokens": 400, "note": "x"},
+        "input_tokens_details": {"cached_tokens": 128, "flag": True},
+    }
+    fake = router((200, {"content-type": "text/event-stream"}, answer("decline", reported)))
+    observation = Unified(fake.url).observe(situate(raw), "the prompt", 1024)
+    assert observation.usage == {
+        "input_tokens": 300,
+        "output_tokens": 412,
+        "total_tokens": 712,
+        "reasoning_tokens": 400,
+        "cached_tokens": 128,
+    }
+
+
 def test_the_payload_has_no_tools_stores_nothing_and_caps_the_answer(raw):
     body = payload(situate(raw), "text", 32)
     assert "tools" not in body and body["store"] is False and body["max_output_tokens"] == 32

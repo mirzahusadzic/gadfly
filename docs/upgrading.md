@@ -35,6 +35,9 @@ New, and opt-in, for a walk:
   crossing.
 - **Sideways:** `walk(..., sideways=True)` and `--sideways` offer the piece
   one step aside too, to each frame quoting a text the start frame quotes.
+- **Reasoning tokens:** the `unified` battery keeps each count of a
+  provider's usage breakdown in the record, such as `reasoning_tokens`, so a
+  record says whether a call thought.
 - **What a walk returns:** `Walk` adds `order`, `deferred`, `unasked`,
   `budget`, `most`, `space`, `vectors`, `made` and `siblings`, and each
   `Fit` holds `frame`, `hole`, `cosine`, `unordered`, `calls`, `asked`,
