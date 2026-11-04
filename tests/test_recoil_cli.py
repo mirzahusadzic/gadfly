@@ -294,6 +294,17 @@ def test_walk_refuses_vectors_it_cannot_order_by(lines, more, message, tmp_path,
 def test_walk_refuses_a_budget_it_cannot_count(more, message, capsys):
     assert main(["walk", *CHAIN, "--from", MIRZA, "--span", "says", *more]) == 2
     assert told(capsys, "err")[0] == message
+    # before any file is read: a frame missing, or no frame at all, is not said first
+    # (pass 14, R4)
+    missing = str(ROOT / "tests/fixtures/no-such-frame.json")
+    assert main(["walk", missing, "--from", missing, "--span", "says", *more]) == 2
+    assert told(capsys, "err")[0] == message
+
+
+def test_walk_refuses_a_space_without_vectors_before_any_file(capsys):
+    missing = str(ROOT / "tests/fixtures/no-such-frame.json")
+    assert main(["walk", missing, "--from", missing, "--span", "says", "--space", "e"]) == 2
+    assert told(capsys, "err")[0] == "UsageError: --space is given without --vectors"
 
 
 def deferring(tmp_path, **hole):

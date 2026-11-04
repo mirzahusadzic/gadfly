@@ -382,8 +382,7 @@ def walk(
         raise UsageError(
             "space is given without vectors", "name the space to order by among the vectors given"
         )
-    if calls is not None:
-        _calls(calls, most)
+    _check_budget(calls, most)
     given = {frame.hash: frame for frame in frames}
     given[start.hash] = start  # its own texts are held too, though it is never its own parent
     makers: dict[str, dict[str, Frame]] = {}
@@ -594,9 +593,11 @@ def _cosine(a: tuple[float, ...], b: tuple[float, ...]) -> tuple[float | None, s
     return cosine, None
 
 
-def _calls(calls: int, most: int) -> None:
-    # a walk's budget, in whole calls, and the most runs each fit may take
-    if isinstance(calls, bool) or not isinstance(calls, int) or calls < 1:
+def _check_budget(calls: int | None, most: int) -> None:
+    # a walk's budget, refused before anything is read: the calls, a whole
+    # number of at least 1 when given, and the most runs each fit may take,
+    # a whole number of at least 1 whether or not calls are
+    if calls is not None and (isinstance(calls, bool) or not isinstance(calls, int) or calls < 1):
         raise UsageError("a walk's budget is a whole number of calls, at least 1")
     if isinstance(most, bool) or not isinstance(most, int) or most < 1:
         raise UsageError("most is a whole number of runs, at least 1")

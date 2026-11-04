@@ -849,8 +849,7 @@ def command_walk(args) -> int:
     --sideways, one step aside to the siblings of the frame it starts from; with
     --vectors, its fits ordered by cosine; with --calls, which fits that
     many calls cover, each until firm."""
-    source, piece = _piece(args)
-    if args.space is not None and args.vectors is None:
+    if args.space is not None and args.vectors is None:  # what it is asked, before any file
         raise UsageError(
             "--space is given without --vectors",
             "--space names the space to order by, among the vectors --vectors gives",
@@ -862,6 +861,9 @@ def command_walk(args) -> int:
                 "--most counts the runs each fit may take against the calls --calls gives",
             )
         _most(args.most)
+    if args.calls is not None and args.calls < 1:
+        raise UsageError("a walk's budget is a whole number of calls, at least 1")
+    source, piece = _piece(args)
     frames = [load_frame(path) for path in args.frames]
     made = [load_records(path) for path in args.made or []]
     vectors = None

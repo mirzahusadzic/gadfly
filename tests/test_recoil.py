@@ -386,6 +386,8 @@ def test_a_walks_budget_refuses_what_it_cannot_count():
             walk(piece, start, [fitted], calls=calls)
     with pytest.raises(UsageError, match="most is a whole number of runs, at least 1"):
         walk(piece, start, [fitted], calls=10, most=0)
+    with pytest.raises(UsageError, match="most is a whole number of runs, at least 1"):
+        walk(piece, start, [fitted], most=0)  # never in silence, budget or not (pass 14, U2)
     # a fit whose successor cannot be asked until firm is named where the walk met it
     once = star("once", SHARED, holes=["h"], quorum=1)
     with pytest.raises(UsageError, match="asks each trial once") as refused:
