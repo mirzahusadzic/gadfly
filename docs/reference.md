@@ -837,7 +837,8 @@ A frame knows where its text came from, by each span's `source`, and nothing
 above that. A piece is a text found in a kept run, with a kind. It climbs from
 the frame it was found in to each frame whose own text that frame quotes, and
 on up, and fits any of those frames' holes of its kind; a frame with no such
-hole passes it on, at no cost. The walk reads frames and makes no call.
+hole passes it on, at no cost. A hole may defer: its fit is listed, kept
+and not asked. The walk reads frames and makes no call.
 
 A fit is asked again as a successor: the frame with the piece as a span and
 its anchor. `successor` drafts it for the frame's author and writes nothing.
@@ -898,8 +899,10 @@ decided(frame, label)
 #### Walk
 
 Where a piece fits above the frame it was found in: each frame it
-fits, with the holes it fits there; each frame it passed; and the
-frontier, each quoted text no frame given holds as its own.
+fits, with the holes it fits there that are considered; each frame it
+passed; the frontier, each quoted text no frame given holds as its own;
+and each frame with the holes it fits there that defer, kept and not
+asked.
 
 ```python
 @dataclass(frozen=True)
@@ -913,8 +916,9 @@ Walk has these properties:
 ##### Walk.lines
 
 The walk as its record, one line each: every frame it fits, then
-every frame that passed it on, each in the order the walk reached it,
-then every text it could not follow.
+every frame whose holes of its kind defer, then every frame that
+passed it on, each in the order the walk reached it, then every text
+it could not follow.
 
 ```python
 lines()
@@ -926,7 +930,9 @@ Climb from the frame a piece was found in to each frame whose own text
 it quotes, and on up, visiting each frame once by its hash. A frame with
 holes of the piece's kind is a fit, and the piece climbs on past it,
 since it may fit at more than one height; any other frame passes it on.
-No call is made: the walk reads frames, and is given no battery.
+A hole whose salience is defer is listed under `deferred`, its fit kept
+and not asked, never dropped. No call is made: the walk reads frames,
+and is given no battery.
 
 ```python
 walk(piece, start, frames)

@@ -36,6 +36,11 @@ them keeps its hash. `offers` is the kind the frame's decision climbs as:
 "offers": "role"
 ```
 
+A hole may also say what it is read for, under `about`, and its
+`salience`: `consider`, the default, or `defer`, whose fit a walk lists as
+deferred, kept and not asked. Both are written before any walk, as the hole
+is, so a successor that changes them on a hole it leaves open reframes.
+
 ---
 
 ### The walk
@@ -48,10 +53,12 @@ them keeps its hash. `offers` is the kind the frame's decision climbs as:
 2. At each frame it offers the piece to the frame's holes. A frame with no
    hole of the piece's kind passes it on, and is reported as passed.
 3. A frame with a hole of that kind is a fit. The walk names it and climbs on,
-   since a piece may fit at more than one height.
-4. It returns the fits, the frames that passed, and its frontier: each quoted
-   text that no frame it was given holds as its own. A walk with a frontier is
-   never complete, and `lines()` keeps it as a record, one JSON line each.
+   since a piece may fit at more than one height. A hole that defers is
+   listed as deferred instead: its fit is kept and not asked, never dropped.
+4. It returns the fits, the deferred, the frames that passed, and its
+   frontier: each quoted text that no frame it was given holds as its own. A
+   walk with a frontier is never complete, and `lines()` keeps it as a
+   record, one JSON line each.
 
 ---
 

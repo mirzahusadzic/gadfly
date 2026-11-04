@@ -646,6 +646,10 @@ def test_a_piece_fills_only_a_hole_of_its_kind():
         ([{"id": "binding", "kind": "note"}], None, "holes name span 'binding', which the body"),
         ([{"id": "a", "kind": "x"}, {"id": "a", "kind": "y"}], None, "two holes share an id"),
         ([{"id": "a: b", "kind": "x"}], None, "hole id 'a: b' is not one plain name"),
+        ([{"id": "head", "kind": "head", "about": ""}], None, "holes lists"),
+        ([{"id": "head", "kind": "head", "about": 5}], None, "holes lists"),
+        ([{"id": "head", "kind": "head", "salience": "maybe"}], None, "hole 'head' has salience"),
+        ([{"id": "head", "kind": "head", "salience": ""}], None, "holes lists"),
         ([{"id": "head", "kind": "head"}], "", "offers names the kind"),
         ([{"id": "head", "kind": "head"}], 5, "offers names the kind"),
         (None, None, "key 'holes' is null"),
@@ -658,6 +662,47 @@ def test_the_parser_refuses_holes_it_cannot_read(holes, offers, message):
         del middle["offers"]
     with pytest.raises(FrameError, match=message):
         parse(middle)
+
+
+def test_a_deferred_hole_is_listed_kept_and_never_asked():
+    largest, second, third, fourth, smallest = dolls()
+    raw = copy.deepcopy(second.raw)
+    raw["holes"] = [{"id": "says", "kind": "statement", "salience": "defer"}]
+    held = parse(raw)
+    slip = found(smallest, "slip")
+    walked = walk(slip, smallest, [largest, held, third, fourth])
+    # its fit is kept and not asked: never a fit, never passed, never dropped
+    assert walked.fits == () and walked.deferred == ((held, ("says",)),)
+    assert held not in walked.passed and walked.complete
+    line = {"piece": slip.sha256, "kind": "statement", "frame": held.hash, "name": "second doll"}
+    assert {**line, "deferred": ["says"]} in walked.lines()
+    # beside a considered hole of the same kind, each is listed where it belongs
+    raw["holes"] = [{"id": "said", "kind": "statement"}, *raw["holes"]]
+    both = parse(raw)
+    walked = walk(slip, smallest, [largest, both, third, fourth])
+    assert walked.fits == ((both, ("said",)),) and walked.deferred == ((both, ("says",)),)
+    assert both not in walked.passed
+    # and the frame's author may still ask it, by drafting its successor
+    assert parse(successor(held, "says", slip)).anchors == ("says",)
+
+
+def test_a_holes_salience_and_what_it_is_read_for_are_hashed():
+    middle = matryoshka()[1]
+    plain = parse(middle)
+    about = "what the second doll says of itself"
+    for hole in ({"about": about}, {"salience": "consider"}, {"salience": "defer"}):
+        middle["holes"] = [{"id": "says", "kind": "statement", **hole}]
+        salient = parse(middle)
+        assert salient.hash != plain.hash and salient.holes == tuple(middle["holes"])
+    # a successor that changes them on a hole it leaves open reframes
+    middle["holes"] = [{"id": "says", "kind": "statement"}, {"id": "else", "kind": "x"}]
+    before = parse(middle)
+    filled = successor(before, "says", found(dolls()[4], "slip"))
+    assert reframes(before, parse(filled)) == []
+    filled["holes"] = [{"id": "else", "kind": "x", "salience": "defer"}]
+    assert reframes(before, parse(filled)) == ["holes"]
+    filled["holes"] = [{"id": "else", "kind": "x", "about": about}]
+    assert reframes(before, parse(filled)) == ["holes"]
 
 
 def test_holes_and_offers_are_hashed_and_change_no_other_frame():

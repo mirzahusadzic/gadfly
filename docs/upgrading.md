@@ -10,6 +10,16 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
+### To 0.11.0, not yet released
+
+No verdict changes, and nothing a caller of 0.10.0 meets changes. New, and
+opt-in: a hole may say what it is read for, under `about`, and its
+`salience`, `consider` or `defer`. A walk lists a deferred fit under
+`deferred`, kept and not asked; `gadfly walk` prints it, and its `--json`
+has `deferred`.
+
+---
+
 ### To 0.10.0
 
 No verdict changes, and this thing a caller of 0.9.1 meets does:

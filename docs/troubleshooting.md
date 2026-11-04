@@ -92,6 +92,8 @@ common ones.
 | `FrameError: the body holds no span` | `a frame's evidence is one span or more`. Holes stand in for anchors, never for the evidence. |
 | `FrameError: the body has no span 'nope'` | `the successor of frame 'Kiran' is checked as any frame is`. `gadfly successor` checks its draft before it prints or writes it, and a `--set` value made it what the parser refuses: correct that value, or leave it out and finish the draft by hand. |
 | `FrameError: holes name span 'paper', which the body has` | `a hole is what the body lacks`. Give the hole an id no span has. |
+| `FrameError: holes lists what the body is missing, each an id and a kind` | `a hole may also say what it is read for, under about, and its salience`. Each hole is an object with a non-empty `id` and `kind`, and may add a non-empty `about` and `salience`, nothing else. |
+| `FrameError: hole 'paper' has salience 'maybe', which is neither consider nor defer` | `consider, the default, asks a fit of it; defer keeps the fit unasked`. |
 
 ---
 

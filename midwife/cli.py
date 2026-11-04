@@ -837,6 +837,9 @@ def command_walk(args) -> int:
         document = {
             "piece": {**_piece_document(piece), "from": _which(source)},
             "fits": [{**_which(frame), "holes": list(holes)} for frame, holes in walked.fits],
+            "deferred": [
+                {**_which(frame), "holes": list(holes)} for frame, holes in walked.deferred
+            ],
             "passed": [_which(frame) for frame in walked.passed],
             "frontier": list(walked.frontier),
             "complete": walked.complete,
@@ -846,6 +849,8 @@ def command_walk(args) -> int:
     print(f"piece: {piece.text!r}, of kind {plain(piece.kind)}, from {_short(source)}")
     for frame, holes in walked.fits:
         print(f"fits: {_short(frame)}, hole {', '.join(holes)}")
+    for frame, holes in walked.deferred:
+        print(f"deferred: {_short(frame)}, hole {', '.join(holes)}, kept and not asked")
     for frame in walked.passed:
         print(f"passed: {_short(frame)}")
     for text in walked.frontier:

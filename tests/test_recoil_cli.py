@@ -85,10 +85,34 @@ def test_walk_json_is_what_midwife_recoil_walk_returns(capsys):
             {"frame": frame.name, "hash": frame.hash, "holes": list(holes)}
             for frame, holes in walked.fits
         ],
+        "deferred": [],
         "passed": [{"frame": frame.name, "hash": frame.hash} for frame in walked.passed],
         "frontier": list(walked.frontier),
         "complete": walked.complete,
     }
+
+
+def deferring(tmp_path, **hole):
+    # Kiran, its paper hole deferred, or otherwise salient as `hole` says
+    raw = json.loads(Path(KIRAN).read_text(encoding="utf-8"))
+    raw["holes"] = [{**raw["holes"][0], "salience": "defer", **hole}]
+    path = tmp_path / "kiran.json"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    return str(path)
+
+
+def test_walk_lists_a_deferred_fit_kept_and_not_asked(tmp_path, capsys):
+    kiran = deferring(tmp_path, about="who the second doll is, in its own words")
+    chain = [AMANI, kiran, *CHAIN[2:]]
+    assert main(["walk", *chain, "--from", MIRZA, "--span", "says"]) == 0
+    lines = told(capsys)
+    held = load_frame(kiran)
+    assert f"deferred: Kiran ({held.hash[:12]}), hole paper, kept and not asked" in lines
+    assert not any(line.startswith(("fits: ", "passed: Kiran")) for line in lines)
+    assert main(["walk", *chain, "--from", MIRZA, "--span", "says", "--json"]) == 0
+    document = json.loads(capsys.readouterr().out)
+    assert document["fits"] == []
+    assert document["deferred"] == [{"frame": "Kiran", "hash": held.hash, "holes": ["paper"]}]
 
 
 def test_walk_names_each_text_it_could_not_follow(capsys):

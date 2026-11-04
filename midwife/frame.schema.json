@@ -331,6 +331,18 @@
           "kind": {
             "type": "string",
             "minLength": 1
+          },
+          "about": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the hole is read for, in words: the text a vector stands for when a walk's fits are ordered."
+          },
+          "salience": {
+            "enum": [
+              "consider",
+              "defer"
+            ],
+            "description": "consider (default): a walk asks a fit of this hole; defer: it lists the fit, kept and not asked."
           }
         }
       },

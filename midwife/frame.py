@@ -57,8 +57,12 @@ KEYS = {
     "offers",
 }
 # A hole is an anchor the body is missing, by id and kind: what a piece found
-# further down a chain of frames must be to fill it (`midwife.recoil`).
+# further down a chain of frames must be to fill it (`midwife.recoil`). It may
+# also say what it is read for (`about`), and its salience: whether a walk
+# asks a fit of it (consider, the default) or keeps the fit unasked (defer).
 HOLE_KEYS = {"id", "kind"}
+HOLE_OPTIONS = {"about", "salience"}
+SALIENCE = ("consider", "defer")
 # The receiving owner's independent check of an outsideScope exclusion.
 SCOPE_CHECK = {"owner", "statement", "source", "encounter"}
 # How a category treats the checks its trials left open: under all-checks
@@ -433,7 +437,8 @@ def _one_name(value: str, what: str) -> None:
 
 def _check_holes(raw: dict[str, Any], known: set[str]) -> None:
     """A frame's holes, each an id and a kind, plain names, none a span the
-    body already has; and the kind its decision climbs as, under `offers`."""
+    body already has, each with what it is read for and its salience if it
+    says; and the kind its decision climbs as, under `offers`."""
     holes = raw.get("holes")
     if holes is not None:
         if not (
@@ -441,15 +446,24 @@ def _check_holes(raw: dict[str, Any], known: set[str]) -> None:
             and holes
             and all(
                 isinstance(hole, dict)
-                and set(hole) == HOLE_KEYS
+                and HOLE_KEYS <= set(hole) <= HOLE_KEYS | HOLE_OPTIONS
                 and all(isinstance(value, str) and value for value in hole.values())
                 for hole in holes
             )
         ):
-            raise FrameError("holes lists what the body is missing, each an id and a kind")
+            raise FrameError(
+                "holes lists what the body is missing, each an id and a kind",
+                "a hole may also say what it is read for, under about, and its salience",
+            )
         for hole in holes:
             _one_name(hole["id"], "hole id")
             _one_name(hole["kind"], "hole kind")
+            if hole.get("salience", SALIENCE[0]) not in SALIENCE:
+                raise FrameError(
+                    f"hole {hole['id']!r} has salience {hole['salience']!r}, "
+                    "which is neither consider nor defer",
+                    "consider, the default, asks a fit of it; defer keeps the fit unasked",
+                )
         ids = [hole["id"] for hole in holes]
         if len(set(ids)) != len(ids):
             raise FrameError("two holes share an id")

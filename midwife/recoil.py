@@ -4,7 +4,8 @@ A frame knows where its text came from, by each span's `source`, and nothing
 above that. A piece is a text found in a kept run, with a kind. It climbs from
 the frame it was found in to each frame whose own text that frame quotes, and
 on up, and fits any of those frames' holes of its kind; a frame with no such
-hole passes it on, at no cost. The walk reads frames and makes no call.
+hole passes it on, at no cost. A hole may defer: its fit is listed, kept
+and not asked. The walk reads frames and makes no call.
 
 A fit is asked again as a successor: the frame with the piece as a span and
 its anchor. `successor` drafts it for the frame's author and writes nothing.
@@ -36,7 +37,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .errors import RecordsError, StoppedWarning, UsageError
-from .frame import Frame, digest
+from .frame import SALIENCE, Frame, digest
 from .interventions import plan, prompt
 from .pipeline import calls_needed, run
 from .stats import stability
@@ -112,13 +113,16 @@ def _made(frame: Frame) -> set[str]:
 @dataclass(frozen=True)
 class Walk:
     """Where a piece fits above the frame it was found in: each frame it
-    fits, with the holes it fits there; each frame it passed; and the
-    frontier, each quoted text no frame given holds as its own."""
+    fits, with the holes it fits there that are considered; each frame it
+    passed; the frontier, each quoted text no frame given holds as its own;
+    and each frame with the holes it fits there that defer, kept and not
+    asked."""
 
     piece: Piece
     fits: tuple[tuple[Frame, tuple[str, ...]], ...]
     passed: tuple[Frame, ...]
     frontier: tuple[str, ...]
+    deferred: tuple[tuple[Frame, tuple[str, ...]], ...] = ()
 
     @property
     def complete(self) -> bool:
@@ -127,16 +131,24 @@ class Walk:
 
     def lines(self) -> list[dict[str, Any]]:
         """The walk as its record, one line each: every frame it fits, then
-        every frame that passed it on, each in the order the walk reached it,
-        then every text it could not follow."""
+        every frame whose holes of its kind defer, then every frame that
+        passed it on, each in the order the walk reached it, then every text
+        it could not follow."""
         head = {"piece": self.piece.sha256, "kind": self.piece.kind}
-        reached = [
-            {**head, "frame": frame.hash, "name": frame.name, "fits": list(holes)}
-            for frame, holes in self.fits
-        ] + [
-            {**head, "frame": frame.hash, "name": frame.name, "passed": True}
-            for frame in self.passed
-        ]
+        reached = (
+            [
+                {**head, "frame": frame.hash, "name": frame.name, "fits": list(holes)}
+                for frame, holes in self.fits
+            ]
+            + [
+                {**head, "frame": frame.hash, "name": frame.name, "deferred": list(holes)}
+                for frame, holes in self.deferred
+            ]
+            + [
+                {**head, "frame": frame.hash, "name": frame.name, "passed": True}
+                for frame in self.passed
+            ]
+        )
         return reached + [{**head, "frontier": text} for text in self.frontier]
 
 
@@ -145,14 +157,16 @@ def walk(piece: Piece, start: Frame, frames: Iterable[Frame]) -> Walk:
     it quotes, and on up, visiting each frame once by its hash. A frame with
     holes of the piece's kind is a fit, and the piece climbs on past it,
     since it may fit at more than one height; any other frame passes it on.
-    No call is made: the walk reads frames, and is given no battery."""
+    A hole whose salience is defer is listed under `deferred`, its fit kept
+    and not asked, never dropped. No call is made: the walk reads frames,
+    and is given no battery."""
     given = {frame.hash: frame for frame in frames}
     given[start.hash] = start  # its own texts are held too, though it is never its own parent
     makers: dict[str, list[Frame]] = {}
     for frame in given.values():
         for text in _made(frame):
             makers.setdefault(text, []).append(frame)
-    seen, fits, passed, frontier = {start.hash}, [], [], set()
+    seen, fits, passed, deferred, frontier = {start.hash}, [], [], [], set()
     followed: set[str] = set()  # a text once followed has every maker of it seen
     climbing = deque([start])  # drained from the front: a list would shift every frame left
     while climbing:
@@ -164,13 +178,22 @@ def walk(piece: Piece, start: Frame, frames: Iterable[Frame]) -> Walk:
                 if parent.hash in seen:
                     continue
                 seen.add(parent.hash)
-                holes = tuple(h["id"] for h in parent.holes if h["kind"] == piece.kind)
-                if holes:
-                    fits.append((parent, holes))
-                else:
+                kind = [h for h in parent.holes if h["kind"] == piece.kind]
+                asked = tuple(h["id"] for h in kind if _salience(h) == "consider")
+                held = tuple(h["id"] for h in kind if _salience(h) == "defer")
+                if asked:
+                    fits.append((parent, asked))
+                if held:
+                    deferred.append((parent, held))
+                if not kind:
                     passed.append(parent)
                 climbing.append(parent)
-    return Walk(piece, tuple(fits), tuple(passed), tuple(sorted(frontier)))
+    return Walk(piece, tuple(fits), tuple(passed), tuple(sorted(frontier)), tuple(deferred))
+
+
+def _salience(hole: dict[str, str]) -> str:
+    # whether a walk asks a fit of a hole: consider, unless it defers
+    return hole.get("salience", SALIENCE[0])
 
 
 def successor(
