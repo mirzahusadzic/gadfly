@@ -25,7 +25,8 @@ class Battery(Protocol):
     ) -> Observation: ...
 ```
 
-- **`name`:** must equal the frame's `battery.kind`.
+- **`name`:** must equal the frame's `battery.kind`. Another battery is
+  another frame, so call `situate()` again when you swap it.
 - **`check`:** refuses a frame the battery cannot serve, such as another
   battery's kind or a missing model. `run` calls it once before the first
   call, so a refusal spends nothing.
@@ -83,7 +84,8 @@ Each shipped battery finds its service and its key on this machine:
   from the file named by `EGEMMA_API_KEY_FILE`, else `EGEMMA_API_KEY`, else
   `WORKBENCH_API_KEY`.
 - **`unified`:** the router at `http://127.0.0.1:18766`, and its token from
-  `CODEX_ROUTER_TOKEN`, else the router's own settings file.
+  `CODEX_ROUTER_TOKEN`, else the router's own settings file. The router's
+  `GET /v1/models` lists the models a frame may name.
 - **`local-json`:** the frame's `battery.url`, and no key at all.
 - **`tendora`:** the frame's `battery.url`, the engine server's address, and
   no key.
