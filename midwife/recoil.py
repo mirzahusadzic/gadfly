@@ -289,6 +289,7 @@ class Walk:
             head |= {"space": self.space, "vectors": self.vectors}
         if self.budget is not None:
             head |= {"budget": self.budget, "most": self.most}
+        aside = {sibling.hash for sibling in self.siblings}  # each looked up once a line
         fitted = []
         for fit in self.order:
             line = {**head, "frame": fit.frame.hash, "name": fit.frame.name, "fits": [fit.hole]}
@@ -297,26 +298,25 @@ class Walk:
                 line |= {} if fit.unordered is None else {"unordered": fit.unordered}
             if fit.calls is not None:
                 line |= {"calls": fit.calls, "asked": fit.asked}
-            fitted.append(line | self._through(fit.frame))
+            fitted.append(line | self._through(fit.frame, aside))
         reached = (
             fitted
             + [
                 {**head, "frame": frame.hash, "name": frame.name, "deferred": list(holes)}
-                | self._through(frame)
+                | self._through(frame, aside)
                 for frame, holes in self.deferred
             ]
             + [
                 {**head, "frame": frame.hash, "name": frame.name, "passed": True}
-                | self._through(frame)
+                | self._through(frame, aside)
                 for frame in self.passed
             ]
         )
         return reached + [{**head, "frontier": text} for text in self.frontier]
 
-    def _through(self, frame: Frame) -> dict[str, Any]:
+    def _through(self, frame: Frame, aside: set[str]) -> dict[str, Any]:
         # how the walk reached a frame: sideways, or through an artefact it made
-        aside = any(sibling.hash == frame.hash for sibling in self.siblings)
-        how: dict[str, Any] = {"sideways": True} if aside else {}
+        how: dict[str, Any] = {"sideways": True} if frame.hash in aside else {}
         if frame.hash in self.made:
             how["made"] = [{"trial": t, "input": x} for t, x in self.made[frame.hash]]
         return how
@@ -464,11 +464,11 @@ def _siblings(start: Frame, given: Mapping[str, Frame]) -> list[Frame]:
 
 def _artefacts(
     given: Mapping[str, Frame], made: Iterable[Iterable[Record | dict[str, Any]]]
-) -> dict[str, dict[str, list[tuple[str, str]]]]:
+) -> dict[str, dict[str, dict[tuple[str, str], None]]]:
     # each artefact's SHA-256, the crossing frame that made it, and the trial
     # and input of each record that did, once each, in the records' order;
     # each run's records checked against their frame as a kept run is
-    artefacts: dict[str, dict[str, list[tuple[str, str]]]] = {}
+    artefacts: dict[str, dict[str, dict[tuple[str, str], None]]] = {}
     for run_ in made:
         if isinstance(run_, dict | Record):
             raise UsageError(
@@ -496,10 +496,10 @@ def _artefacts(
                     f"the records of frame {frame.name!r} hold no artefact its maker made",
                     "give the records of a crossing frame, whose maker made one for each call",
                 )
-            for text, record in texts:
-                pairs = artefacts.setdefault(text, {}).setdefault(name, []) if text else []
-                if text and (record["trial"], record["input"]) not in pairs:
-                    pairs.append((record["trial"], record["input"]))
+            for text, record in texts:  # a dict keeps each pair once, in order, by hash
+                if text:
+                    pairs = artefacts.setdefault(text, {}).setdefault(name, {})
+                    pairs[record["trial"], record["input"]] = None
     return artefacts
 
 

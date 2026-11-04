@@ -704,6 +704,54 @@ def test_a_sibling_is_found_by_its_quote_never_by_nearness():
     assert walked.order[0].cosine == -1.0
 
 
+def test_a_walks_record_reads_its_siblings_once_not_once_a_line():
+    # each line says whether its frame was reached sideways: a set looked up
+    # once a line, so the record grows with the siblings, not their square
+    def reads(n):
+        counted = []
+        start = framed("start", "the start's own line", quotes=[SHARED])
+        siblings = [
+            Counted(framed(f"s{i}", f"line {i}", quotes=[SHARED], holes=["h"]), counted)
+            for i in range(n)
+        ]
+        walked = walk(found(start, "own"), start, siblings, sideways=True)
+        assert len(walked.siblings) == n
+        counted.clear()
+        assert all(line["sideways"] for line in walked.lines() if "frame" in line)
+        return len(counted)
+
+    assert reads(40) <= 2.2 * reads(20)
+
+
+class Compared(str):
+    """A trial or input id, each comparison of it counted."""
+
+    seen = [0]
+    __hash__ = str.__hash__
+
+    def __eq__(self, other):
+        Compared.seen[0] += 1
+        return str.__eq__(self, other)
+
+
+def test_the_records_that_made_an_artefact_are_gathered_in_linear_work():
+    # each (trial, input) a record names is kept once: by hash, not by a
+    # search of those already kept, so the work grows with the records
+    def compared(n):
+        questions = [
+            {"id": f"q{i}", "text": f"Should deploy 42 be rolled back, {i}?"} for i in range(n)
+        ]
+        frame, records = crossed_run(inputs=questions)
+        kept = [
+            {**r.as_dict(), "trial": Compared(r.trial), "input": Compared(r.input)} for r in records
+        ]
+        Compared.seen[0] = 0
+        walk(found(review(), "found"), review(), [frame], made=[kept])
+        return Compared.seen[0]
+
+    assert compared(20) <= 2.2 * compared(10)
+
+
 def test_the_second_doll_with_its_word_is_a_boy_asked_once_and_carried():
     second = dolls()[1]
     after = with_slip(second)
