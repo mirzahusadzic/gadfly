@@ -168,7 +168,9 @@ A verdict is narrower than it may look. Read these before relying on one.
   program or state. `scopeCheck` records the owner's check of an exclusion,
   which Gadfly does not make itself.
 - **Records are yours to keep and trust:** traceability rests on records the
-  caller keeps, which Gadfly neither authenticates nor signs. `judge` does
+  caller keeps, which Gadfly neither authenticates nor signs. A record's
+  hashes tie it to its frame and trial, so `judge` refuses a record of
+  another frame or trial, but an answer edited in place is not caught. `judge` does
   not check a record's prompt digest against the current prompt, so a replay
   may keep its study's own; a run resumed from kept records does, since they
   are its own. Keep records somewhere you trust, with the run details you
