@@ -148,6 +148,14 @@ def test_walk_counts_the_fits_its_calls_cover_before_the_first(capsys):
     argv = ["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "44", "--most", "4"]
     assert main(argv) == 0
     assert told(capsys)[1].endswith("hole paper, at most 36 calls until firm")
+    # one call, one run: said in the singular (pass 14, R7)
+    assert main(["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "1"]) == 0
+    assert told(capsys)[-1] == "budget: 1 call covers 0 fits of 1, each fit at most 5 runs"
+    argv = ["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "9", "--most", "1"]
+    assert main(argv) == 0
+    assert told(capsys)[-1] == (
+        "budget: 9 calls cover 1 fit of 1, at most 9 calls in all, each fit at most 1 run"
+    )
 
 
 def test_walk_climbs_from_a_frame_quoting_an_artefact_to_its_crossing(tmp_path, capsys):

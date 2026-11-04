@@ -942,13 +942,12 @@ def command_walk(args) -> int:
     if walked.space is not None:
         print(f"ordered: by cosine in space {plain(walked.space)}, vectors {walked.vectors}")
     if walked.budget is not None:
-        asked = [fit for fit in walked.order if fit.asked]
+        asked, budget, most = [fit for fit in walked.order if fit.asked], walked.budget, walked.most
+        calls = f"{budget} call{'s' * (budget != 1)} cover{'s' * (budget == 1)}"
         covered = f"{len(asked)} fit{'s' * (len(asked) != 1)} of {len(walked.order)}"
-        spent = f", at most {sum(fit.calls for fit in asked)} calls in all" if asked else ""
-        print(
-            f"budget: {walked.budget} calls cover {covered}{spent}, "
-            f"each fit at most {walked.most} runs"
-        )
+        spent = sum(fit.calls for fit in asked)
+        spent = f", at most {spent} call{'s' * (spent != 1)} in all" if asked else ""
+        print(f"budget: {calls} {covered}{spent}, each fit at most {most} run{'s' * (most != 1)}")
     return 0
 
 
