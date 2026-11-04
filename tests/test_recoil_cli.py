@@ -253,6 +253,21 @@ def test_successor_says_which_piece_it_was_not_given(more, said, capsys):
     assert err[0] == f"UsageError: {said[0]}" and err[1 : len(said)] == said[1:]
 
 
+@pytest.mark.parametrize(
+    "first, second, said",
+    [
+        (["--span", "says"], ["--text", PAPER], "--span and --text"),
+        (["--decision", "boy"], ["--text", PAPER], "--decision and --text"),
+        (["--span", "says"], ["--decision", "boy"], "--decision and --span"),
+    ],
+)
+def test_a_clash_is_named_alike_whichever_flag_came_first(first, second, said, capsys):
+    # one mistake, one message, whatever order it was typed in (pass 13, F4)
+    for flags in ([*first, *second], [*second, *first]):
+        assert main(["successor", KIRAN, "--hole", "paper", "--from", MIRZA, *flags]) == 2
+        assert told(capsys, "err")[0] == f"UsageError: {said} cannot be given together"
+
+
 def test_walk_takes_no_text_piece(capsys):
     # a walk climbs from the frame a piece was found in, so it needs that frame
     assert main(["walk", KIRAN, "--from", MIRZA, "--text", PAPER, "--kind", "x"]) == 2

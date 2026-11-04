@@ -56,6 +56,7 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: --from and --text cannot be given together` | `a piece is a text of its own, or one found in the frame --from names`. Give `--text` and `--kind` alone, or `--from` with `--span` or `--decision`. |
 | `UsageError: --kind is given without --text` | `a piece found in a frame is of its span's kind, or the kind its frame offers`. Leave out `--kind`, or give the piece as `--text`. |
 | `UsageError: --decision and --span cannot be given together` | `gadfly walk --help shows its arguments`. The piece is a span of the frame `--from` names, or its decision: name one. |
+| `UsageError: --span and --text cannot be given together` or `UsageError: --decision and --text cannot be given together` | `gadfly successor --help shows its arguments`. The piece is a span or the decision of the frame `--from` names, or a text of its own with `--kind`: name one. |
 | `UsageError: missing --battery` or `UsageError: missing frames` | `gadfly run --help shows its arguments`. A flag or a file the command needs was not given; its help names each, and a mistyped flag is named as unrecognized instead. |
 | `UsageError: frame 'Kiran' has no span 'nope' to place the piece after` | `name one of its spans, the line the piece amends`. `--after`, or `after` in Python, names a span of the frame the piece fills. |
 | `UsageError: frame 'Kiran' has no hole 'nope'` | Name with `--hole` one of the frame's `holes`; `gadfly walk` names the holes a piece fits. |

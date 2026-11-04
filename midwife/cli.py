@@ -248,7 +248,8 @@ def _change(frame, trial) -> str:
 
 def command_plan(args) -> int:
     """`gadfly plan`: the trials, what each changes, and the call count,
-    without a call."""
+    without a call; with --most or --runs, also the most calls asking the
+    frame until firm can make (`midwife.recoil.calls_until_firm`)."""
     frame = load_frame(args.frame)
     trials = plan(frame)
     body = {
@@ -1428,8 +1429,10 @@ class Parser(argparse.ArgumentParser):
         choice = re.fullmatch(r"one of the arguments (.+) is required", message)
         if required:
             message = f"missing {required[1]}"
-        elif clash:  # two flags of one group, as walk's --span and --decision
-            message = f"{clash[1]} and {clash[2]} cannot be given together"
+        elif clash:  # two flags of one group, as walk's --span and --decision,
+            # named in one order whichever was typed first
+            first, second = sorted((clash[1], clash[2]))
+            message = f"{first} and {second} cannot be given together"
         elif choice:  # one flag of a group, as walk's piece is a --span or a --decision
             message = f"missing one of {', '.join(choice[1].split())}"
         else:  # argparse's words hold colons: "argument --calls: invalid int value: 'x'"

@@ -2054,7 +2054,8 @@ render_report(frame, records)
 #### command_plan
 
 `gadfly plan`: the trials, what each changes, and the call count,
-without a call.
+without a call; with --most or --runs, also the most calls asking the
+frame until firm can make (`midwife.recoil.calls_until_firm`).
 
 ```python
 command_plan(args)
