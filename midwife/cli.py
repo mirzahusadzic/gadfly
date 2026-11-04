@@ -1430,10 +1430,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.command is None:  # no command: what the tool does, not an error
             command_line.print_help()
             return 0
-        named = [vars(args).get(key) for key in ("frame", "records", "kept", "source")]
+        named = [vars(args).get(key) for key in ("frame", "records", "kept", "source", "vectors")]
         named += [vars(args).get(key) for key in ("before", "after")]  # gate's two frames
-        # stats takes several records, portfolio reports, walk frames
-        for many in ("records", "reports", "frames"):
+        # stats takes several records, portfolio reports, walk frames and made runs
+        for many in ("records", "reports", "frames", "made"):
             if isinstance(vars(args).get(many), list):
                 named += vars(args)[many]
         named += [path for pair in vars(args).get("pool") or [] for path in pair]

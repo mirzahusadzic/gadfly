@@ -44,6 +44,7 @@ from midwife.recoil import (
 )
 from midwife.stats import stability
 from midwife.types import Budget, Observation
+from tests.test_schema import VALIDATOR
 
 RULE = "\n\n---\n\n"
 BINDING = "Only a doll's own word says who it is."
@@ -617,6 +618,16 @@ def test_a_crossings_records_are_checked_before_they_are_climbed():
     unmade = [{**record, "raw": ""} for record in kept]
     with pytest.raises(RecordsError, match="the records of frame 'rollback-from-cause' hold no"):
         walk(piece, start, [incident], made=[unmade])
+    # runs, not records: a flat list is refused, not read as one run or many
+    with pytest.raises(UsageError, match="made holds a record where a run belongs"):
+        walk(piece, start, [incident], made=kept)
+    with pytest.raises(UsageError, match="made holds a record where a run belongs"):
+        walk(piece, start, [incident], made=list(records))
+    # a call it cannot make is refused before any record is read
+    with pytest.raises(UsageError, match="a walk's budget is a whole number of calls"):
+        walk(piece, start, [], made=[kept], calls=0)
+    with pytest.raises(UsageError, match="space is given without vectors"):
+        walk(piece, start, [], made=[kept], space="s")
     # a record that made nothing is no link, beside one that did
     some = [kept[0], *({**record, "raw": "{}"} for record in kept[1:])]
     assert walk(piece, start, [incident], made=[some]).made[incident.hash] == (("baseline", "q1"),)
@@ -1079,6 +1090,9 @@ def test_a_holes_salience_and_what_it_is_read_for_are_hashed():
         middle["holes"] = [{"id": "says", "kind": "statement", **hole}]
         salient = parse(middle)
         assert salient.hash != plain.hash and salient.holes == tuple(middle["holes"])
+        assert VALIDATOR.is_valid(middle)  # the published schema takes them too
+    middle["holes"] = [{"id": "says", "kind": "statement", "salience": "maybe"}]
+    assert not VALIDATOR.is_valid(middle)
     # a successor that changes them on a hole it leaves open reframes
     middle["holes"] = [{"id": "says", "kind": "statement"}, {"id": "else", "kind": "x"}]
     before = parse(middle)

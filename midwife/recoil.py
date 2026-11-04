@@ -359,12 +359,20 @@ def walk(
     hole is read for, its `about`, both in one `space`, highest first, and
     ties by frame hash. A fit with no cosine keeps its place, with why, and
     the others are sorted among theirs, so no fit takes a default score and
-    a vector only orders. Given `calls`, each fit is
-    counted before the first call, as `calls_until_firm` counts its
-    successor as drafted over at most `most` runs, and the budget asks the
-    fits in order up to the first it cannot cover: that one and every one
-    after it are listed as not asked, so no fit is asked before an earlier
-    one. No call is made: the walk reads frames, and is given no battery."""
+    a vector only orders.
+
+    Given `calls`, each fit is counted before the first call, as
+    `calls_until_firm` counts its successor as drafted over at most `most`
+    runs, and the budget asks the fits in order up to the first it cannot
+    cover: that one and every one after it are listed as not asked, so no
+    fit is asked before an earlier one. No call is made: the walk reads
+    frames, and is given no battery."""
+    if space is not None and vectors is None:
+        raise UsageError(
+            "space is given without vectors", "name the space to order by among the vectors given"
+        )
+    if calls is not None:
+        _calls(calls, most)
     given = {frame.hash: frame for frame in frames}
     given[start.hash] = start  # its own texts are held too, though it is never its own parent
     makers: dict[str, dict[str, Frame]] = {}
@@ -421,10 +429,6 @@ def walk(
     if vectors is not None:
         space = _space(vectors, space)
         order = _ordered(order, piece, vectors, space)
-    elif space is not None:
-        raise UsageError(
-            "space is given without vectors", "name the space to order by among the vectors given"
-        )
     if calls is not None:
         order = _budgeted(order, piece, calls, most)
     return Walk(
@@ -466,6 +470,11 @@ def _artefacts(
     # each run's records checked against their frame as a kept run is
     artefacts: dict[str, dict[str, list[tuple[str, str]]]] = {}
     for run_ in made:
+        if isinstance(run_, dict | Record):
+            raise UsageError(
+                "made holds a record where a run belongs",
+                "give each run's records as a list, made=[records]",
+            )
         records = [r.as_dict() if isinstance(r, Record) else r for r in run_]
         if not records:
             raise RecordsError("a made run holds no records", "give each run's records as a list")
@@ -569,14 +578,18 @@ def _cosine(a: tuple[float, ...], b: tuple[float, ...]) -> tuple[float | None, s
     return cosine, None
 
 
-def _budgeted(order: tuple[Fit, ...], piece: Piece, calls: int, most: int) -> tuple[Fit, ...]:
-    # each fit's calls until firm, on its successor as drafted, and whether
-    # the calls left cover them: up to the first fit they cannot, and none
-    # after it, so the order the walk asks in is never jumped
+def _calls(calls: int, most: int) -> None:
+    # a walk's budget, in whole calls, and the most runs each fit may take
     if isinstance(calls, bool) or not isinstance(calls, int) or calls < 1:
         raise UsageError("a walk's budget is a whole number of calls, at least 1")
     if isinstance(most, bool) or not isinstance(most, int) or most < 1:
         raise UsageError("most is a whole number of runs, at least 1")
+
+
+def _budgeted(order: tuple[Fit, ...], piece: Piece, calls: int, most: int) -> tuple[Fit, ...]:
+    # each fit's calls until firm, on its successor as drafted, and whether
+    # the calls left cover them: up to the first fit they cannot, and none
+    # after it, so the order the walk asks in is never jumped
     left, covering, counted = calls, True, []
     for fit in order:
         try:

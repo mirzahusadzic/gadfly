@@ -1027,12 +1027,14 @@ ordered by the cosine of the piece's vector to the vector of what each
 hole is read for, its `about`, both in one `space`, highest first, and
 ties by frame hash. A fit with no cosine keeps its place, with why, and
 the others are sorted among theirs, so no fit takes a default score and
-a vector only orders. Given `calls`, each fit is
-counted before the first call, as `calls_until_firm` counts its
-successor as drafted over at most `most` runs, and the budget asks the
-fits in order up to the first it cannot cover: that one and every one
-after it are listed as not asked, so no fit is asked before an earlier
-one. No call is made: the walk reads frames, and is given no battery.
+a vector only orders.
+
+Given `calls`, each fit is counted before the first call, as
+`calls_until_firm` counts its successor as drafted over at most `most`
+runs, and the budget asks the fits in order up to the first it cannot
+cover: that one and every one after it are listed as not asked, so no
+fit is asked before an earlier one. No call is made: the walk reads
+frames, and is given no battery.
 
 #### successor
 

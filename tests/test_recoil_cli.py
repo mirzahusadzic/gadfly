@@ -239,6 +239,14 @@ def test_walk_orders_its_fits_by_the_vectors_given(tmp_path, capsys, monkeypatch
     assert told(capsys)[1].endswith("hole paper, cosine 0.6000")
 
 
+def test_walk_reads_standard_input_once_for_its_vectors_and_runs_too(capsys):
+    argv = ["walk", *CHAIN, "--from", "-", "--span", "says", "--vectors", "-"]
+    assert main(argv) == 2
+    assert told(capsys, "err")[0] == "UsageError: standard input is read once"
+    argv = ["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--made", "-", "--made", "-"]
+    assert main(argv) == 2
+
+
 @pytest.mark.parametrize(
     "lines, more, message",
     [

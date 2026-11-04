@@ -80,6 +80,7 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: the vectors hold 2 spaces, 'e128', 'e768'` | `name the one to order by, since a cosine compares two vectors of one space only`. Give `--space`, or `space` in Python. |
 | `UsageError: the vectors hold no vector in space 'e64'` | `they hold 'e128'`. Name one of the spaces the vectors hold. |
 | `UsageError: the vectors hold no vector` | `give vectors, or leave them out`. The file is empty, or holds blank lines only. |
+| `UsageError: made holds a record where a run belongs` | `give each run's records as a list, made=[records]`. In Python, `walk` takes a crossing's runs, each a list of its records, as `until_firm` takes kept runs. |
 | `UsageError: --most is given without --calls` | `--most counts the runs each fit may take against the calls --calls gives`. Give both, or neither. |
 | `UsageError: a successor that asks the same question is read from its own runs` | `name the folder that keeps them with --runs; gadfly firm makes them`. Only a reframing is read against no category, with no runs. |
 | `UsageError: folder 'runs' keeps no run of the successor` | `gadfly firm asks it, and keeps each run there`. A run is a file named by its place, `1.jsonl` and on. |
