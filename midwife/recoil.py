@@ -274,6 +274,13 @@ class Walk:
     made: Mapping[str, tuple[tuple[str, str], ...]] = field(default_factory=dict)
     siblings: tuple[Frame, ...] = ()
 
+    def __post_init__(self) -> None:
+        # a walk made by hand, as 0.10.0 made one, names its fits and no order:
+        # each hole is then a fit in the order the fits name them
+        if self.fits and not self.order:
+            order = tuple(Fit(frame, hole) for frame, holes in self.fits for hole in holes)
+            object.__setattr__(self, "order", order)
+
     @property
     def complete(self) -> bool:
         """Every frame above was given: a walk with a frontier is never complete."""

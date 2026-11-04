@@ -31,6 +31,7 @@ from midwife.recoil import (
     MOST,
     Piece,
     Vectors,
+    Walk,
     calls_until_firm,
     decided,
     found,
@@ -375,6 +376,14 @@ def test_a_walks_budget_asks_its_fits_in_order_up_to_the_first_it_cannot_cover()
         "calls": 24,
         "asked": True,
     }
+
+
+def test_a_walk_made_by_hand_with_its_fits_alone_records_each_hole():
+    # as 0.10.0 made one: fits, passed and frontier, and no order (pass 14, R6)
+    fitted = star("narrow", SHARED, holes=["h", "g"])
+    made = Walk(Piece(SHARED, "note"), ((fitted, ("h", "g")),), (), ())
+    assert [(fit.frame, fit.hole) for fit in made.order] == [(fitted, "h"), (fitted, "g")]
+    assert [line["fits"] for line in made.lines()] == [["h"], ["g"]]
 
 
 def test_a_walks_budget_refuses_what_it_cannot_count():
