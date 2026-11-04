@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from midwife.cli import load_frame, load_records, main
-from midwife.pipeline import situate
+from midwife.pipeline import calls_needed, run, situate
 from midwife.recoil import Piece, calls_until_firm, found, gate, sha256, successor, until_firm, walk
 from midwife.types import Budget
 
@@ -85,16 +85,18 @@ def test_walk_json_is_what_midwife_recoil_walk_returns(capsys):
             "from": {"frame": "Mirza", "hash": source.hash},
         },
         "fits": [
-            {"frame": frame.name, "hash": frame.hash, "holes": list(holes)}
+            {"frame": frame.name, "hash": frame.hash, "made": [], "holes": list(holes)}
             for frame, holes in walked.fits
         ],
         "order": [
-            {"frame": fit.frame.name, "hash": fit.frame.hash, "hole": fit.hole}
+            {"frame": fit.frame.name, "hash": fit.frame.hash, "made": [], "hole": fit.hole}
             | {"cosine": None, "unordered": None, "calls": None, "asked": None}
             for fit in walked.order
         ],
         "deferred": [],
-        "passed": [{"frame": frame.name, "hash": frame.hash} for frame in walked.passed],
+        "passed": [
+            {"frame": frame.name, "hash": frame.hash, "made": []} for frame in walked.passed
+        ],
         "frontier": list(walked.frontier),
         "complete": walked.complete,
         "budget": None,
@@ -121,7 +123,7 @@ def test_walk_counts_the_fits_its_calls_cover_before_the_first(capsys):
     document = json.loads(capsys.readouterr().out)
     [fit] = walked.order
     assert document["order"] == [
-        {"frame": "Kiran", "hash": kiran.hash, "hole": "paper"}
+        {"frame": "Kiran", "hash": kiran.hash, "made": [], "hole": "paper"}
         | {"cosine": None, "unordered": None, "calls": 45, "asked": True}
     ]
     assert (document["budget"], document["most"]) == (45, 5) == (walked.budget, walked.most)
@@ -133,6 +135,38 @@ def test_walk_counts_the_fits_its_calls_cover_before_the_first(capsys):
     argv = ["walk", *CHAIN, "--from", MIRZA, "--span", "says", "--calls", "44", "--most", "4"]
     assert main(argv) == 0
     assert told(capsys)[1].endswith("hole paper, at most 36 calls until firm")
+
+
+def test_walk_climbs_from_a_frame_quoting_an_artefact_to_its_crossing(tmp_path, capsys):
+    from tests.fixtures.incident import INCIDENT, crossing
+    from tests.test_recoil import CAUSE, made_cause, review
+
+    raw = {**INCIDENT, "holes": [{"id": "m5", "kind": "metric"}]}
+    incident = tmp_path / "incident.json"
+    incident.write_text(json.dumps(raw), encoding="utf-8")
+    frame = load_frame(str(incident))
+    records = run(frame, crossing, Budget(calls=calls_needed(frame))).records
+    kept = tmp_path / "made.jsonl"
+    kept.write_text("".join(json.dumps(r.as_dict()) + "\n" for r in records), encoding="utf-8")
+    start = tmp_path / "review.json"
+    start.write_text(json.dumps(review().raw), encoding="utf-8")
+    argv = ["walk", str(incident), "--from", str(start), "--span", "found"]
+    assert main([*argv, "--made", str(kept)]) == 0
+    pairs = made_cause(records)
+    said = ", ".join(f"{trial} for {input_}" for trial, input_ in pairs)
+    head = f"fits: rollback-from-cause ({frame.hash[:12]}), hole m5"
+    assert f"{head}, through the artefact made in {said}" in told(capsys)
+    assert main([*argv, "--made", str(kept), "--json"]) == 0
+    document = json.loads(capsys.readouterr().out)
+    made = [{"trial": t, "input": x} for t, x in pairs]
+    assert document["fits"][0]["made"] == made == document["order"][0]["made"]
+    # without the records, the cause is the frontier; with another frame's, refused
+    assert main(argv) == 0 and told(capsys)[-2].startswith(f"frontier: {sha256(CAUSE)}")
+    assert main(["walk", KIRAN, *argv[2:], "--made", str(kept)]) == 5
+    assert told(capsys, "err")[0] == (
+        f"RecordsError: a made record names frame {frame.hash!r}, "
+        "which is not among the frames given"
+    )
 
 
 def test_walk_orders_its_fits_by_the_vectors_given(tmp_path, capsys, monkeypatch):
@@ -230,7 +264,9 @@ def test_walk_lists_a_deferred_fit_kept_and_not_asked(tmp_path, capsys):
     assert main(["walk", *chain, "--from", MIRZA, "--span", "says", "--json"]) == 0
     document = json.loads(capsys.readouterr().out)
     assert document["fits"] == []
-    assert document["deferred"] == [{"frame": "Kiran", "hash": held.hash, "holes": ["paper"]}]
+    assert document["deferred"] == [
+        {"frame": "Kiran", "hash": held.hash, "made": [], "holes": ["paper"]}
+    ]
 
 
 def test_walk_names_each_text_it_could_not_follow(capsys):

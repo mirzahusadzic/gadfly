@@ -845,6 +845,7 @@ def _kept_runs(folder: Path, frame, most: int) -> list[tuple[int, Path, list[dic
 def command_walk(args) -> int:
     """`gadfly walk`: where a piece climbs from the frame it was found in, up
     through the frames given, without a call (`midwife.recoil.walk`); with
+    --made, through the artefacts a crossing's records say it made; with
     --vectors, its fits ordered by cosine; with --calls, which fits that
     many calls cover, each until firm."""
     source, piece = _piece(args)
@@ -861,20 +862,38 @@ def command_walk(args) -> int:
             )
         _most(args.most)
     frames = [load_frame(path) for path in args.frames]
+    made = [load_records(path) for path in args.made or []]
     vectors = None
     if args.vectors is not None:
         vectors = recoil.read_vectors(read_bytes(args.vectors), path=args.vectors)
     most = recoil.MOST if args.most is None else args.most
     walked = recoil.walk(
-        piece, source, frames, vectors=vectors, space=args.space, calls=args.calls, most=most
+        piece,
+        source,
+        frames,
+        made=made,
+        vectors=vectors,
+        space=args.space,
+        calls=args.calls,
+        most=most,
     )
+
+    def reached(frame) -> dict[str, Any]:  # a frame, and the records that made its artefact
+        pairs = walked.made.get(frame.hash, ())
+        return {**_which(frame), "made": [{"trial": t, "input": x} for t, x in pairs]}
+
+    def through(frame) -> str:
+        pairs = walked.made.get(frame.hash, ())
+        said = ", ".join(f"{trial} for {input_}" for trial, input_ in pairs)
+        return f", through the artefact made in {said}" if pairs else ""
+
     if args.json:
         document = {
             "piece": {**_piece_document(piece), "from": _which(source)},
-            "fits": [{**_which(frame), "holes": list(holes)} for frame, holes in walked.fits],
+            "fits": [{**reached(frame), "holes": list(holes)} for frame, holes in walked.fits],
             "order": [
                 {
-                    **_which(fit.frame),
+                    **reached(fit.frame),
                     "hole": fit.hole,
                     "cosine": fit.cosine,
                     "unordered": fit.unordered,
@@ -884,9 +903,9 @@ def command_walk(args) -> int:
                 for fit in walked.order
             ],
             "deferred": [
-                {**_which(frame), "holes": list(holes)} for frame, holes in walked.deferred
+                {**reached(frame), "holes": list(holes)} for frame, holes in walked.deferred
             ],
-            "passed": [_which(frame) for frame in walked.passed],
+            "passed": [reached(frame) for frame in walked.passed],
             "frontier": list(walked.frontier),
             "complete": walked.complete,
             "budget": walked.budget,
@@ -902,11 +921,13 @@ def command_walk(args) -> int:
         kept = "" if fit.unordered is None else f", kept in its place, {fit.unordered}"
         counted = "" if fit.calls is None else f", at most {fit.calls} calls until firm"
         unasked = ", not asked, past the budget" if fit.asked is False else ""
-        print(f"fits: {_short(fit.frame)}, hole {fit.hole}{near}{kept}{counted}{unasked}")
+        line = f"fits: {_short(fit.frame)}, hole {fit.hole}{through(fit.frame)}"
+        print(f"{line}{near}{kept}{counted}{unasked}")
     for frame, holes in walked.deferred:
-        print(f"deferred: {_short(frame)}, hole {', '.join(holes)}, kept and not asked")
+        held = f"hole {', '.join(holes)}{through(frame)}"
+        print(f"deferred: {_short(frame)}, {held}, kept and not asked")
     for frame in walked.passed:
-        print(f"passed: {_short(frame)}")
+        print(f"passed: {_short(frame)}{through(frame)}")
     for text in walked.frontier:
         print(f"frontier: {text}, quoted by a frame and held by none given")
     print(f"complete: {'yes' if walked.complete else 'no'}")
@@ -1297,6 +1318,13 @@ def parser() -> argparse.ArgumentParser:
     walked = command("walk", help="where a piece climbs through frames, without spending")
     walked.add_argument("frames", nargs="+", help="the frames to climb, JSON files, one may be -")
     piece(walked)
+    walked.add_argument(
+        "--made",
+        action="append",
+        metavar="RECORDS",
+        help="a crossing's run, JSON Lines: a frame quoting an artefact it made climbs to it; "
+        "may repeat",
+    )
     walked.add_argument(
         "--vectors",
         metavar="FILE",

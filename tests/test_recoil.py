@@ -546,6 +546,82 @@ def test_a_walk_orders_by_one_space_named_or_alone():
         walk(piece, start, [fit], space="s")
 
 
+CAUSE = "Deploy 42 shrank the connection pool, and requests queued for a connection."
+
+
+def crossed_run(**fields):
+    # the incident's crossing, run whole: a maker writes its cause, a reader decides
+    from tests.fixtures.incident import INCIDENT, crossing
+
+    frame = parse({**copy.deepcopy(INCIDENT), **fields})
+    return frame, run(frame, crossing, Budget(calls=calls_needed(frame))).records
+
+
+def review(own="Deploy 43 cut the connection pool again."):
+    # the far side: a review that quotes the cause the crossing made, by source
+    raw = copy.deepcopy(dolls()[4].raw)
+    cited = {"id": "cause", "text": CAUSE, "kind": "cause", "source": {"sha256": sha256(CAUSE)}}
+    raw |= {"name": "review", "anchors": ["found"], "interventions": {"ablation": True}}
+    raw["body"] = {"spans": [{"id": "found", "text": own, "kind": "metric"}, cited]}
+    raw["allowed"] = {"ablation": ["unclear"]}
+    raw.pop("holes", None)
+    return parse(raw)
+
+
+def made_cause(records):
+    # the trial and input of each record whose maker made the cause, once each
+    pairs = [
+        (r.trial, r.input) for r in records if json.loads(r.raw)["made"]["sha256"] == sha256(CAUSE)
+    ]
+    return tuple(dict.fromkeys(pairs))
+
+
+def test_a_frame_quoting_an_artefact_climbs_to_the_crossing_that_made_it():
+    incident, records = crossed_run(holes=[{"id": "m5", "kind": "metric"}])
+    start = review()
+    piece = found(start, "found")
+    # without its records, the cause is a text no frame given holds
+    alone = walk(piece, start, [incident])
+    assert alone.fits == () and alone.frontier == (sha256(CAUSE),)
+    walked = walk(piece, start, [incident], made=[records])
+    assert walked.fits == ((incident, ("m5",)),) and walked.complete
+    pairs = made_cause(records)
+    assert ("baseline", "q1") in pairs and ("ablation", "q1") not in pairs  # its own cause
+    assert walked.made == {incident.hash: pairs} and walked.order[0].made == pairs
+    assert walked.lines()[0]["made"] == [{"trial": t, "input": x} for t, x in pairs]
+    # as dicts too, as a caller keeps them, and a run given twice is two runs
+    kept = [record.as_dict() for record in records]
+    assert walk(piece, start, [incident], made=[kept, kept]).made == walked.made
+    # a crossing with no hole of the piece's kind passes it on, and says how it was reached
+    plain, others = crossed_run()
+    walked = walk(piece, start, [plain], made=[others])
+    assert walked.passed == (plain,)
+    assert walked.lines()[0]["made"][0] == {"trial": "baseline", "input": "q1"}
+
+
+def test_a_crossings_records_are_checked_before_they_are_climbed():
+    incident, records = crossed_run(holes=[{"id": "m5", "kind": "metric"}])
+    start = review()
+    piece = found(start, "found")
+    kept = [record.as_dict() for record in records]
+    with pytest.raises(RecordsError, match="a made run holds no records"):
+        walk(piece, start, [incident], made=[[]])
+    with pytest.raises(RecordsError, match=f"a made record names frame {incident.hash!r}, which"):
+        walk(piece, start, [], made=[kept])
+    with pytest.raises(RecordsError, match="a record is a JSON object"):
+        walk(piece, start, [incident], made=[["not a record"]])
+    changed = copy.deepcopy(kept)
+    changed[0]["body"] = "0" * 64
+    with pytest.raises(RecordsError, match="was made on another body"):
+        walk(piece, start, [incident], made=[changed])
+    unmade = [{**record, "raw": ""} for record in kept]
+    with pytest.raises(RecordsError, match="the records of frame 'rollback-from-cause' hold no"):
+        walk(piece, start, [incident], made=[unmade])
+    # a record that made nothing is no link, beside one that did
+    some = [kept[0], *({**record, "raw": "{}"} for record in kept[1:])]
+    assert walk(piece, start, [incident], made=[some]).made[incident.hash] == (("baseline", "q1"),)
+
+
 def test_the_second_doll_with_its_word_is_a_boy_asked_once_and_carried():
     second = dolls()[1]
     after = with_slip(second)

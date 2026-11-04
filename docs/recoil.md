@@ -62,6 +62,20 @@ is, so a successor that changes them on a hole it leaves open reframes.
 
 ---
 
+### Artefacts as parents
+
+A crossing's maker makes an artefact from each trial's body, and each record
+keeps its SHA-256. Given a crossing's runs, `walk(..., made=[run, ...])` or
+`gadfly walk --made FILE` takes each artefact as text that crossing frame
+made, so a frame quoting it by `source` climbs to the crossing.
+
+Each run is checked against its frame first, as a kept run is, and a frame
+reached so names the trial and input of each record that made the artefact.
+The walk still makes no call: where the piece fits the crossing, its
+successor puts it on the near side, and the maker makes the artefact again.
+
+---
+
 ### A walk's budget
 
 Each hole a piece fits is a fit of its own, in `order`: frames as the walk

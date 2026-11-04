@@ -25,7 +25,9 @@ its `salience`, `consider` or `defer`. A walk lists a deferred fit under
 count each fit's calls until firm before the first, and list the fits the
 calls cannot cover as not asked. `walk(..., vectors=read_vectors(data))`
 and `gadfly walk --vectors FILE` order the fits by cosine, from whole-text
-vectors a caller acquired, and only order them.
+vectors a caller acquired, and only order them. `walk(..., made=[run])`
+and `gadfly walk --made FILE` take a crossing's records, so a frame quoting
+an artefact its maker made climbs to the crossing.
 
 ---
 

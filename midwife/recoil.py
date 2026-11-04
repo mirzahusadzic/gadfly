@@ -5,9 +5,11 @@ above that. A piece is a text found in a kept run, with a kind. It climbs from
 the frame it was found in to each frame whose own text that frame quotes, and
 on up, and fits any of those frames' holes of its kind; a frame with no such
 hole passes it on, at no cost. A hole may defer: its fit is listed, kept
-and not asked. The walk reads frames and makes no call; given vectors, it
-orders the fits by cosine, and given a budget, it counts each fit's calls
-before the first and lists those it cannot cover.
+and not asked. Given a crossing's records, each artefact it made is text
+that frame made, so a frame quoting the artefact climbs to the crossing.
+The walk reads frames and makes no call; given vectors, it orders the fits
+by cosine, and given a budget, it counts each fit's calls before the first
+and lists those it cannot cover.
 
 A fit is asked again as a successor: the frame with the piece as a span and
 its anchor. `successor` drafts it for the frame's author and writes nothing.
@@ -38,7 +40,7 @@ import re
 import warnings
 from collections import deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .errors import GadflyError, RecordsError, StoppedWarning, UsageError, is_plain, quoted
@@ -47,7 +49,16 @@ from .interventions import plan, prompt
 from .pipeline import calls_needed, run
 from .stats import stability
 from .types import Battery, Budget, Record
-from .verdict import CARRIED, COOLED, MISALIGNED, OUTSIDE, UNRESOLVED, Finding, check_records
+from .verdict import (
+    CARRIED,
+    COOLED,
+    MISALIGNED,
+    OUTSIDE,
+    UNRESOLVED,
+    Finding,
+    _check_shape,
+    check_records,
+)
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
 
@@ -209,9 +220,10 @@ def _float(number: int | float) -> float:
 class Fit:
     """A hole a piece fits, as a walk would ask it: the frame and the hole;
     when the walk was given vectors, its cosine to the piece, or why it has
-    none, kept in its place; and, when it was given a budget, the most calls
+    none, kept in its place; when it was given a budget, the most calls
     asking its successor until firm can make, and whether the budget covers
-    them."""
+    them; and, when the walk reached the frame through an artefact it made,
+    the trial and input of each record that made it."""
 
     frame: Frame
     hole: str
@@ -219,6 +231,7 @@ class Fit:
     unordered: str | None = None
     calls: int | None = None
     asked: bool | None = None
+    made: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -229,8 +242,9 @@ class Walk:
     each frame with the holes it fits there that defer, kept and not asked;
     every considered fit, one hole each, in the order it would be asked;
     the space its fits were ordered by and the SHA-256 of the vectors, when
-    it was given them; and the budget in calls and the most runs a fit,
-    when one was given."""
+    it was given them; the budget in calls and the most runs a fit, when one
+    was given; and, for each frame it reached through an artefact the frame
+    made, by its hash, the trial and input of each record that made it."""
 
     piece: Piece
     fits: tuple[tuple[Frame, tuple[str, ...]], ...]
@@ -242,6 +256,7 @@ class Walk:
     most: int | None = None
     space: str | None = None
     vectors: str | None = None
+    made: Mapping[str, tuple[tuple[str, str], ...]] = field(default_factory=dict)
 
     @property
     def complete(self) -> bool:
@@ -260,7 +275,9 @@ class Walk:
         is one; then every frame whose holes of its kind defer, then every
         frame that passed it on, each in the order the walk reached it; then
         every text it could not follow. Each line names the space and the
-        vectors it was ordered by, and the budget, when there were any."""
+        vectors it was ordered by, and the budget, when there were any, and
+        each frame line the records that made the artefact it was reached
+        through."""
         head: dict[str, Any] = {"piece": self.piece.sha256, "kind": self.piece.kind}
         if self.space is not None:
             head |= {"space": self.space, "vectors": self.vectors}
@@ -274,19 +291,27 @@ class Walk:
                 line |= {} if fit.unordered is None else {"unordered": fit.unordered}
             if fit.calls is not None:
                 line |= {"calls": fit.calls, "asked": fit.asked}
-            fitted.append(line)
+            fitted.append(line | self._through(fit.frame))
         reached = (
             fitted
             + [
                 {**head, "frame": frame.hash, "name": frame.name, "deferred": list(holes)}
+                | self._through(frame)
                 for frame, holes in self.deferred
             ]
             + [
                 {**head, "frame": frame.hash, "name": frame.name, "passed": True}
+                | self._through(frame)
                 for frame in self.passed
             ]
         )
         return reached + [{**head, "frontier": text} for text in self.frontier]
+
+    def _through(self, frame: Frame) -> dict[str, Any]:
+        # the records that made the artefact the walk reached a frame through
+        if frame.hash not in self.made:
+            return {}
+        return {"made": [{"trial": t, "input": x} for t, x in self.made[frame.hash]]}
 
 
 def walk(
@@ -294,6 +319,7 @@ def walk(
     start: Frame,
     frames: Iterable[Frame],
     *,
+    made: Iterable[Iterable[Record | dict[str, Any]]] = (),
     vectors: Vectors | None = None,
     space: str | None = None,
     calls: int | None = None,
@@ -305,6 +331,12 @@ def walk(
     since it may fit at more than one height; any other frame passes it on.
     A hole whose salience is defer is listed under `deferred`, its fit kept
     and not asked, never dropped.
+
+    `made` holds runs of crossing frames given, each a list of its records,
+    each checked against its frame first. Each artefact a record says its
+    maker made is text that frame made, so a frame quoting the artefact by
+    `source` climbs to the crossing, and the walk names the trial and input
+    of each record that made it.
 
     Each considered hole is a fit in `order`, in the order the walk reached
     its frame and the frame lists its holes. Given `vectors`, the fits are
@@ -320,10 +352,15 @@ def walk(
     one. No call is made: the walk reads frames, and is given no battery."""
     given = {frame.hash: frame for frame in frames}
     given[start.hash] = start  # its own texts are held too, though it is never its own parent
-    makers: dict[str, list[Frame]] = {}
+    makers: dict[str, dict[str, Frame]] = {}
     for frame in given.values():
         for text in _made(frame):
-            makers.setdefault(text, []).append(frame)
+            makers.setdefault(text, {})[frame.hash] = frame
+    artefacts = _artefacts(given, made)
+    for text, by in artefacts.items():
+        for name in by:
+            makers.setdefault(text, {})[name] = given[name]
+    through: dict[str, tuple[tuple[str, str], ...]] = {}
     seen, fits, passed, deferred, frontier = {start.hash}, [], [], [], set()
     followed: set[str] = set()  # a text once followed has every maker of it seen
     climbing = deque([start])  # drained from the front: a list would shift every frame left
@@ -332,10 +369,12 @@ def walk(
             followed.add(text)
             if text not in makers:
                 frontier.add(text)
-            for parent in makers.get(text, ()):
+            for parent in makers.get(text, {}).values():
                 if parent.hash in seen:
                     continue
                 seen.add(parent.hash)
+                if parent.hash in artefacts.get(text, {}):
+                    through[parent.hash] = tuple(artefacts[text][parent.hash])
                 kind = [h for h in parent.holes if h["kind"] == piece.kind]
                 asked = tuple(h["id"] for h in kind if _salience(h) == "consider")
                 held = tuple(h["id"] for h in kind if _salience(h) == "defer")
@@ -346,7 +385,11 @@ def walk(
                 if not kind:
                     passed.append(parent)
                 climbing.append(parent)
-    order = tuple(Fit(frame, hole) for frame, holes in fits for hole in holes)
+    order = tuple(
+        Fit(frame, hole, made=through.get(frame.hash, ()))
+        for frame, holes in fits
+        for hole in holes
+    )
     if vectors is not None:
         space = _space(vectors, space)
         order = _ordered(order, piece, vectors, space)
@@ -367,7 +410,55 @@ def walk(
         None if calls is None else most,
         space,
         None if vectors is None else vectors.sha256,
+        through,
     )
+
+
+def _artefacts(
+    given: Mapping[str, Frame], made: Iterable[Iterable[Record | dict[str, Any]]]
+) -> dict[str, dict[str, list[tuple[str, str]]]]:
+    # each artefact's SHA-256, the crossing frame that made it, and the trial
+    # and input of each record that did, once each, in the records' order;
+    # each run's records checked against their frame as a kept run is
+    artefacts: dict[str, dict[str, list[tuple[str, str]]]] = {}
+    for run_ in made:
+        records = [r.as_dict() if isinstance(r, Record) else r for r in run_]
+        if not records:
+            raise RecordsError("a made run holds no records", "give each run's records as a list")
+        frames: dict[str, list[dict[str, Any]]] = {}
+        for record in records:
+            _check_shape(record)
+            frames.setdefault(record["frame"], []).append(record)
+        for name, kept in frames.items():
+            if name not in given:
+                raise RecordsError(
+                    f"a made record names frame {name!r}, which is not among the frames given",
+                    "give the crossing frame whose records they are",
+                )
+            frame = given[name]
+            _own(frame, kept)
+            texts = [(_artefact(record), record) for record in kept]
+            if not any(text for text, _ in texts):
+                raise RecordsError(
+                    f"the records of frame {frame.name!r} hold no artefact its maker made",
+                    "give the records of a crossing frame, whose maker made one for each call",
+                )
+            for text, record in texts:
+                pairs = artefacts.setdefault(text, {}).setdefault(name, []) if text else []
+                if text and (record["trial"], record["input"]) not in pairs:
+                    pairs.append((record["trial"], record["input"]))
+    return artefacts
+
+
+def _artefact(record: dict[str, Any]) -> str | None:
+    # the SHA-256 of the artefact a crossing's record says its maker made
+    try:
+        kept = json.loads(record["raw"])
+    except ValueError:
+        return None
+    made = kept.get("made") if isinstance(kept, dict) else None
+    text = made.get("sha256") if isinstance(made, dict) else None
+    return text if isinstance(text, str) and SHA256.fullmatch(text) else None
 
 
 def _space(vectors: Vectors, space: str | None) -> str:

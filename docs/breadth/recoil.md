@@ -42,8 +42,6 @@ spent every call again.
   already offers a piece first where it is most likely to fit, by the
   vectors its caller gives ([Recoil](../recoil.md#ordered-by-whole-text-vectors));
   a locus is free text, so frames sharing one are not yet grouped.
-- **Artefacts as parents:** a crossing's records keep each artefact's SHA-256,
-  so a frame that quotes an artefact could climb to the crossing that made it.
 - **Offering down:** a piece only climbs, so one found above its hole is never
   offered to it.
 - **Reframing down:** going up, only a frame whose question changes can

@@ -129,6 +129,9 @@ read from them.
 | `RecordsError: file 'kept.jsonl' holds a lone surrogate at line 3` | `no file can hold it; correct or drop that record, then run again`. That record holds text, often from another tool, that cannot be written back, and nothing was spent. |
 | `RecordsError: file 'runs/3.jsonl' holds 1 of a run's 24 calls` | `a run cut short is never read as firm; move it out of the folder`. A battery, a budget or Ctrl-C cut that run short; `firm` reads whole runs only. |
 | `RecordsError: a kept run is not whole, so its verdict cannot be read as firm` or `RecordsError: a kept run holds no records` | `give whole runs only, and leave out one that stopped short`. The same, from `until_firm` in Python, which takes each run's records as a list. |
+| `RecordsError: a made run holds no records` | `give each run's records as a list`. A `--made` file, or a run given to `walk` as `made` in Python, is one run of a crossing frame. |
+| `RecordsError: a made record names frame '7e1c0a9d...', which is not among the frames given` | `give the crossing frame whose records they are`. A walk climbs to a crossing only as one of its frames. |
+| `RecordsError: the records of frame 'rollback-from-cause' hold no artefact its maker made` | `give the records of a crossing frame, whose maker made one for each call`. The records are another battery's, or every call opened before its maker made anything. |
 | ``RecordsError: a portfolio reads `gadfly report --json` documents, and this is not one`` | Each file `portfolio` reads is the output of `gadfly report --json`. |
 
 ---
