@@ -212,10 +212,16 @@ def test_the_watch_view_plays_the_kept_runs(stem):
         ),
         ("meta/muse-spark-1.3-contributor via DeepInfra", "meta/muse-spark-1.3-contributor"),
         ("meta/muse-spark-1.3-contributor", "meta/muse-spark-1.3-contributor"),
+        ("meta/muse-spark-1.3-contributor (route openrouter)", "meta/muse-spark-1.3-contributor"),
+        (
+            "meta/muse-spark-1.3-contributor via DeepInfra (route openrouter)",
+            "meta/muse-spark-1.3-contributor",
+        ),
     ],
 )
 def test_the_watch_view_names_the_model_whatever_form_served_takes(monkeypatch, served, model):
-    # served is "model", "model@revision", or the unified battery's "model via endpoint"
+    # served is "model", "model@revision", or the unified battery's "model via
+    # endpoint", each with the route the router names after it
     stem = "19-router-waist"
     runs = watch_data.runs_of(watch_data.ROOT / "examples" / f"{stem}.json")
     records = [{**r, "served": served} for r in load_records(str(runs[0]))]

@@ -12,7 +12,7 @@ import pytest
 
 from midwife.batteries import unified
 from midwife.batteries.critic import pointed, read_label
-from midwife.batteries.unified import Unified, parse_stream, payload, pinned, policy
+from midwife.batteries.unified import Unified, parse_stream, payload, pinned, policy, routing
 from midwife.errors import BatteryError
 from midwife.pipeline import situate
 from tests.fakes import Fake
@@ -20,7 +20,13 @@ from tests.fakes import Fake
 TOKEN = "ab" * 32
 LISTS = unified.capabilities  # the router's health, asked as the battery asks it
 DENY = {"x-codex-router-data-policy": "deny"}
-FULL = {"dataPolicies": ["deny"], "endpointPins": True, "reports": ["provider"]}
+FULL = {
+    "dataPolicies": ["deny"],
+    "endpointPins": True,
+    "reports": ["provider"],
+    "fallbackPolicies": ["none"],
+    "thinkingBudgets": True,
+}
 
 
 def sse(*events):
@@ -541,5 +547,162 @@ def test_one_pinned_endpoint_names_what_served_when_the_router_does_not(
         },
     )
     battery = Unified(router((200, {}, body)).url)
+    battery.check(situate(raw))
+    assert battery.observe(situate(raw), "p", 16).served == served
+
+
+def completed(**response):
+    # a streamed decline, its final event's response as given
+    return sse(
+        {"type": "response.output_text.delta", "delta": json.dumps({"label": "decline"})},
+        {"type": "response.completed", "response": response},
+    )
+
+
+def test_fallback_none_keeps_a_claude_call_on_anthropics_api(raw, token, router):
+    raw["battery"]["fallback"] = "none"
+    fake = router((200, {}, answer("decline")))
+    battery = Unified(fake.url)
+    battery.check(situate(raw))
+    assert battery.observe(situate(raw), "p", 16).label == "decline"
+    [(headers, body)] = fake.requests
+    assert headers["x-codex-router-fallback"] == "none" and "fallback" not in body
+    assert routing(situate(raw)) == {"x-codex-router-fallback": "none"}
+    del raw["battery"]["fallback"]
+    assert routing(situate(raw)) == {}  # a frame that names none sends none
+
+
+def test_a_thinking_budget_goes_as_the_routers_header_in_place_of_an_effort(raw, token, router):
+    raw["battery"]["thinkingBudget"] = 2048
+    fake = router((200, {}, answer("decline")))
+    battery = Unified(fake.url)
+    battery.check(situate(raw))
+    battery.check_cap(situate(raw), 4096)
+    assert battery.observe(situate(raw), "p", 4096).label == "decline"
+    [(headers, body)] = fake.requests
+    assert headers["x-codex-router-thinking-budget"] == "2048"
+    assert "reasoning" not in body and body["max_output_tokens"] == 4096
+
+
+@pytest.mark.parametrize(
+    "line, said",
+    [
+        ({"fallback": "default"}, "battery.fallback is 'none' or left out"),
+        ({"fallback": ["none"]}, "battery.fallback is 'none' or left out"),
+        ({"thinkingBudget": 1023}, "battery.thinkingBudget is a whole number of tokens"),
+        ({"thinkingBudget": 1_000_000}, "battery.thinkingBudget is a whole number of tokens"),
+        ({"thinkingBudget": 2048.0}, "battery.thinkingBudget is a whole number of tokens"),
+        ({"thinkingBudget": "2048"}, "battery.thinkingBudget is a whole number of tokens"),
+        ({"thinkingBudget": True}, "battery.thinkingBudget is a whole number of tokens"),
+        (
+            {"fallback": "none", "model": "deepseek/deepseek-v4.1-flash"},
+            "battery.fallback applies only to an anthropic/ model",
+        ),
+        (
+            {"thinkingBudget": 2048, "model": "deepseek/deepseek-v4.1-flash"},
+            "battery.thinkingBudget applies only to an anthropic/ model",
+        ),
+        (
+            {"thinkingBudget": 2048, "reasoning": "low"},
+            "battery.reasoning and battery.thinkingBudget cannot both be set",
+        ),
+    ],
+)
+def test_a_line_names_a_fallback_or_a_budget_only_as_the_router_keeps_it(raw, token, line, said):
+    raw["battery"].update(line)
+    with pytest.raises(BatteryError, match=said):
+        Unified().check(situate(raw))
+
+
+@pytest.mark.parametrize(
+    "line, missing, said",
+    [
+        ({"fallback": "none"}, "fallbackPolicies", "the router takes no fallback policy"),
+        ({"thinkingBudget": 2048}, "thinkingBudgets", "the router takes no thinking budget"),
+    ],
+)
+def test_a_router_that_does_not_list_them_refuses_the_frame(
+    raw, token, monkeypatch, line, missing, said
+):
+    raw["battery"].update(line)
+    lists = {key: value for key, value in FULL.items() if key != missing}
+    monkeypatch.setattr(unified, "capabilities", lambda url, timeout: lists)
+    with pytest.raises(BatteryError, match=said):
+        Unified().check(situate(raw))
+
+    def unreachable(url, timeout):
+        raise BatteryError("the router at 'x' could not be asked what it takes")
+
+    monkeypatch.setattr(unified, "capabilities", unreachable)
+    with pytest.raises(BatteryError, match="could not be asked"):  # needed, so not skipped
+        Unified().check(situate(raw))
+
+
+def test_a_budget_the_cap_cannot_hold_is_refused_before_any_call(raw, token, router):
+    from midwife.pipeline import calls_needed, run
+    from midwife.types import Budget
+
+    raw["battery"]["thinkingBudget"] = 2048
+    fake = router((200, {}, answer("decline")))
+    frame = situate(raw)
+    with pytest.raises(BatteryError, match="is not below each answer's cap of 2048 tokens"):
+        run(
+            frame, Unified(fake.url), Budget(calls=calls_needed(frame), output_tokens_per_call=2048)
+        )
+    assert fake.requests == []
+    battery = Unified(fake.url)
+    battery.check(frame)
+    seen = battery.observe(frame, "p", 64)  # a caller past run: an opening, and no call
+    assert seen.label is None and seen.opening == (
+        "battery.thinkingBudget 2048 is not below each answer's cap of 64 tokens"
+    )
+    assert fake.requests == []
+
+
+@pytest.mark.parametrize(
+    "error, opening",
+    [
+        (
+            {"code": "anthropic_refused", "reason": "credits"},
+            "Anthropic's API refused the call ('credits'), and the battery line keeps it there",
+        ),
+        (
+            {"code": "anthropic_refused"},
+            "Anthropic's API refused the call, and the battery line keeps it there",
+        ),
+        ({"code": "other"}, "the router answered 502"),
+    ],
+)
+def test_a_refusal_kept_on_anthropics_api_is_an_opening_that_says_why(
+    raw, token, router, error, opening
+):
+    raw["battery"]["fallback"] = "none"
+    fake = router(
+        (502, {"content-type": "application/json"}, json.dumps({"error": error}).encode())
+    )
+    battery = Unified(fake.url)
+    battery.check(situate(raw))
+    seen = battery.observe(situate(raw), "p", 16)
+    assert seen.label is None and seen.opening == opening and seen.served == ""
+
+
+@pytest.mark.parametrize(
+    "endpoints, reported, served",
+    [
+        ([], {"provider": "Anthropic", "route": "anthropic"}, "m via Anthropic (route anthropic)"),
+        ([], {"provider": "unknown", "route": "openrouter"}, "m (route openrouter)"),
+        (["fireworks"], {"provider": "unknown", "route": "openrouter"},
+         "m via fireworks (route openrouter)"),
+        ([], {"provider": "Anthropic", "route": "Open Router"}, "m via Anthropic"),  # no guess
+        ([], {"provider": "Anthropic", "route": 7}, "m via Anthropic"),
+    ],
+)  # fmt: skip
+def test_a_record_names_the_route_the_router_says_a_call_went(
+    raw, token, router, endpoints, reported, served
+):
+    # a Claude call moved to another provider reads apart from one kept on Anthropic's
+    if endpoints:
+        raw["battery"]["endpoints"] = endpoints
+    battery = Unified(router((200, {}, completed(model="m", **reported))).url)
     battery.check(situate(raw))
     assert battery.observe(situate(raw), "p", 16).served == served

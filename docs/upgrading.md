@@ -12,13 +12,14 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ### To 0.11.0, not yet released
 
-No verdict changes, and this thing a caller of 0.10.0 meets does:
+No verdict changes, and these things a caller of 0.10.0 meets do:
 
 | In 0.10.0 | In 0.11.0 | What to do |
 | --- | --- | --- |
 | A frame with two holes the piece fits was one line of `Walk.lines()` and of `gadfly walk`, naming both | It is one line for each hole, in the order the walk would ask it; `fits` in a line names its one hole | Read a hole a line; a frame with one such hole reads as before |
+| A `unified` record's `served` ended with the provider or the pinned endpoint | It ends with the route the router names, as `(route anthropic)` | A reader of `served` stops at ` (route ` for the model and provider |
 
-New, and opt-in, for a walk:
+New, and opt-in:
 
 - **Salience:** a hole may say what it is read for, under `about`, and its
   `salience`, `consider` or `defer`. A walk lists a deferred fit under
@@ -38,6 +39,15 @@ New, and opt-in, for a walk:
 - **Reasoning tokens:** the `unified` battery keeps each count of a
   provider's usage breakdown in the record, such as `reasoning_tokens`, so a
   record says whether a call thought.
+- **Claude on Anthropic's API:** `"fallback": "none"` in a `unified` battery
+  line, or a crossing's maker line, keeps an `anthropic/` model's calls on
+  Anthropic's API, and a refusal there is an opening.
+- **A thinking budget:** `"thinkingBudget": N` gives a Claude model that
+  still takes a budget a fixed one on every call, in place of `reasoning`;
+  `run` refuses a cap on each answer that is not above it. Both need a router
+  that lists them at `GET /health`.
+- **`check_cap`:** a battery may refuse, before any call, a cap on each
+  answer it cannot answer within.
 - **What a walk returns:** `Walk` adds `order`, `deferred`, `unasked`,
   `budget`, `most`, `space`, `vectors`, `made` and `siblings`, and each
   `Fit` holds `frame`, `hole`, `cosine`, `unordered`, `calls`, `asked`,

@@ -1400,7 +1400,7 @@ already has it) is adapted by saying where in its answer the label is:
 
 ```json
 "battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5",
-            "reasoning": "low",
+            "reasoning": "low", "fallback": "none",
             "output": {"schema": {...}, "label": "/verdict"}}
 ```
 
@@ -1421,7 +1421,17 @@ What this battery promises, whatever the frame says:
 - each record names what served it: the model the response names, and the
   provider the router reports (`X-Codex-Router-Report: provider`, asked when
   the router lists it), or, for one pinned endpoint, that endpoint's tag;
-  never a provider the router calls unknown;
+  never a provider the router calls unknown; then the route the router
+  names, the upstream the call went to (`anthropic`, `openrouter`, `openai`);
+- `fallback: "none"` keeps an `anthropic/` model's calls on Anthropic's API,
+  never moved to another provider (`X-Codex-Router-Fallback: none`): a
+  refusal there is an opening that says why;
+- `thinkingBudget` gives an `anthropic/` model that still takes one a fixed
+  budget of thinking tokens on every call, in place of adaptive thinking and
+  of `reasoning`, through `X-Codex-Router-Thinking-Budget`, which also keeps
+  the call on Anthropic's API; it must be below each answer's cap, and a
+  model that takes no budget answers each call with an opening;
+- the router must list each of these at `GET /health` for a frame that names it;
 - `endpoints` pins the endpoints the router may use, in order and without
   fallbacks, through the router's `X-Codex-Router-Endpoints`, so one endpoint
   reads a quorum; the router must list endpoint pins at `GET /health`;
@@ -1453,6 +1463,26 @@ without fallbacks; none when the frame names none.
 
 ```python
 pinned(frame)
+```
+
+#### routing
+
+The router's headers that keep this frame's calls on Anthropic's API
+(`fallback`) and give its model a fixed thinking budget
+(`thinkingBudget`); none when the frame names neither.
+
+```python
+routing(frame)
+```
+
+#### over_cap
+
+Why a battery line's thinking budget does not fit under a call's cap
+on output tokens, which holds the thinking and the answer both; None
+when it fits or the line names no budget.
+
+```python
+over_cap(battery, cap)
 ```
 
 #### capabilities
@@ -1494,13 +1524,19 @@ request_body(
 
 The answer's text, its usage, an opening if the call did not complete,
 and what served it, from the router's server-sent events: the model the
-response names, then the provider the router reports, or the tag of the
-one endpoint the call was pinned to, joined by " via ".
+response names, then the provider the router reports, or the endpoint it
+names, or `pin`, the one endpoint the call was pinned to, joined by
+" via "; then the route the router names, as "(route anthropic)".
 A stream still coming at `deadline` (on `clock`) is cut there, and a
 connection that times out or fails mid-stream keeps what arrived.
 
 ```python
-parse_stream(lines, deadline=None, clock=time.monotonic)
+parse_stream(
+    lines,
+    deadline=None,
+    clock=time.monotonic,
+    pin=None,
+)
 ```
 
 #### Unified
@@ -1520,6 +1556,16 @@ router token.
 
 ```python
 check(frame)
+```
+
+##### Unified.check_cap
+
+Refuse, before any call, a cap on each answer that leaves the
+frame's thinking budget no room: the cap holds the thinking and the
+answer both, and Anthropic takes a budget only below it.
+
+```python
+check_cap(frame, cap)
 ```
 
 ##### Unified.observe
@@ -2063,6 +2109,16 @@ whose body cannot be told from its input.
 
 ```python
 check(frame)
+```
+
+##### Crossing.check_cap
+
+Refuse, before any call, a cap that leaves a side's thinking budget
+no room: the maker writes within half of each call's cap, and the
+reader reads within what the maker leaves, at least the other half.
+
+```python
+check_cap(frame, cap)
 ```
 
 ##### Crossing.observe

@@ -323,6 +323,34 @@ def test_the_maker_line_is_held_to_the_unified_batterys_checks(through_router):
     Crossing(UnifiedMaker(router.url)).check(frame)  # named, it may go there
 
 
+def test_a_side_kept_on_anthropic_with_a_budget_must_fit_its_share_of_the_cap(
+    through_router, monkeypatch
+):
+    from midwife.batteries import unified
+    from midwife.batteries.crossing import Crossing, UnifiedMaker
+    from midwife.batteries.unified import Unified
+
+    lists = {"dataPolicies": ["deny"], "fallbackPolicies": ["none"], "thinkingBudgets": True}
+    monkeypatch.setattr(unified, "capabilities", lambda url, timeout: lists)
+    router = through_router()
+    maker = {**MAKER, "fallback": "none", "thinkingBudget": 1024}
+    battery = {"kind": "crossing", "maker": maker, "reader": READER}
+    frame = parse({**copy.deepcopy(INCIDENT), "battery": battery})
+    crossing = Crossing(UnifiedMaker(router.url), Unified(router.url))
+    crossing.check(frame)  # a maker line takes both keys, as a battery line does
+    with pytest.raises(BatteryError, match="not below each answer's cap of 1024") as error:
+        run(frame, crossing, Budget(calls=calls_needed(frame), output_tokens_per_call=2048))
+    assert error.value.__notes__[-1].startswith(
+        "the crossing's maker gets 1024 of each call's 2048"
+    )
+    assert router.requests == []
+    budget = Budget(calls=calls_needed(frame), output_tokens_per_call=2050)
+    run(frame, crossing, budget, only=["baseline"])
+    (headers, made) = router.requests[0]
+    assert headers["x-codex-router-thinking-budget"] == "1024" and made["max_output_tokens"] == 1025
+    assert headers["x-codex-router-fallback"] == "none"
+
+
 def test_a_maker_answer_with_no_text_or_a_refusal_is_an_opening(through_router):
     from midwife.batteries.crossing import Crossing, UnifiedMaker
 

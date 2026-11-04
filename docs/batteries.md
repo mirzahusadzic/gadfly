@@ -33,6 +33,10 @@ class Battery(Protocol):
 - **`concurrent`:** an optional class attribute. A battery that can serve
   several calls at once sets it to `True`, and only then does
   `run(parallel=N)` make calls side by side; the unified battery sets it.
+- **`check_cap`:** an optional method, `check_cap(frame, cap)`. `run` calls
+  it after `check` with each answer's cap, so a battery refuses a cap it
+  cannot answer within before any call; the unified and crossing batteries
+  refuse one that leaves a thinking budget no room.
 
 The protocol's invariant is **trial blindness**: a battery sees the changed
 body and the input, never `baseline`, `sham-1` or `ablation`. A scorer that
@@ -64,7 +68,7 @@ does.
 
 | Battery | Reads with | Guarantees and recorded provenance |
 |---|---|---|
-| `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/unified-model-router), named as the router names its models | loopback, no tools, no proxy, no redirects, the router's deny data policy unless the exact model slug is listed under `trainsOnInputs`, checked at the router's `GET /health` before any call; refuses OpenAI slugs; `endpoints` pins up to 16 endpoints the router may use, through the router's own header; records the model, and the provider the router reports or a single pinned endpoint's tag |
+| `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/unified-model-router), named as the router names its models | loopback, no tools, no proxy, no redirects, the router's deny data policy unless the exact model slug is listed under `trainsOnInputs`, checked at the router's `GET /health` before any call; refuses OpenAI slugs; `endpoints` pins up to 16 endpoints the router may use, through the router's own header; `fallback` and `thinkingBudget` keep a Claude model on Anthropic's API, the second with a fixed thinking budget; records the model, the provider the router reports or a single pinned endpoint's tag, and the route |
 | `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced; Gemma thinks first with `reasoning: true` |
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 | `tendora` | Tendora's engine server, from its demo package, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
@@ -117,6 +121,30 @@ all. Each record's `usage` keeps every whole count the router reports, and
 each count of a breakdown such as `output_tokens_details` under its own name,
 so a call's `reasoning_tokens` say whether it thought, when the router passes
 them on.
+
+A Claude model that still takes a thinking budget, such as Claude Sonnet 4.6,
+thinks on every call within it. With `thinkingBudget` in the battery line, in
+place of `reasoning`, the router sends that budget, from 1,024 tokens, and
+each answer's cap must be above it, since the cap holds the thinking and the
+answer both. A later model that takes no budget answers each call with an
+opening:
+
+```json
+"battery": {
+  "kind": "unified",
+  "model": "anthropic/claude-sonnet-4-6",
+  "thinkingBudget": 2048
+}
+```
+
+#### Claude on Anthropic's API
+
+The router serves an `anthropic/` model on Anthropic's own API, and by
+default moves a call Anthropic refuses to another provider. `"fallback":
+"none"` in the battery line keeps every call there, so one frame is read by
+one route; a refusal comes back as an opening that says why. A thinking
+budget keeps its calls there too. Name it for a new frame with a Claude
+reader; a frame without it reads as before.
 
 Gemma 4 has no levels: its thinking is on or off. With `reasoning: true` in
 the battery line, eGemma lets Gemma think before every answer, and only the
@@ -254,7 +282,7 @@ consent, retention, credential and recording rules.
 | provider collection | the router's deny data policy, `X-Codex-Router-Data-Policy: deny`, unless the exact model slug is in `trainsOnInputs` | stays on this machine by contract | stays on this machine | stays on this machine; the engine reads a new text through eGemma unless offline | unknown |
 | credentials | router token from environment or its env file; never placed in a request body or record | key from environment/file; sent only as an Authorization header | none sent | none sent | unknown |
 | deadline | whole call, `timeout` seconds, even mid-line | whole call, per attempt | whole call, `battery.timeout` (30 s, at most an hour) | whole call, `battery.timeout` (60 s, at most an hour) | unknown |
-| verification | the model, and the provider the router reports or a single pinned endpoint's tag; never a provider the router calls unknown | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | the engine's version, revision and packs, from its reply | unknown |
+| verification | the model, the provider the router reports or a single pinned endpoint's tag, and the route; never a provider the router calls unknown | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | the engine's version, revision and packs, from its reply | unknown |
 
 #### Costs
 
@@ -291,7 +319,9 @@ usage, served
 runner may leave it empty. The `unified` battery records the model the
 response names, then the provider the router reports, or, for a call pinned to
 one endpoint, that endpoint's tag; a provider the router does not yet know is
-left out, never guessed. The `crossing` battery records `made by …, read by …`,
+left out, never guessed. Then it records the route the router names, the
+upstream the call went to, as `claude-sonnet-5-5 via Anthropic (route
+anthropic)`. The `crossing` battery records `made by …, read by …`,
 and its raw answer keeps the artefact's SHA-256 whole, beside as much of the
 artefact and the reader's answer as fit the record's 2,000 characters.
 

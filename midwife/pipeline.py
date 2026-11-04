@@ -117,6 +117,9 @@ def run(
         raise UsageError(f"battery {battery.name!r} does not take calls at once")
     try:
         battery.check(frame)
+        fits = getattr(battery, "check_cap", None)  # optional: a cap it cannot answer within
+        if callable(fits):
+            fits(frame, budget.output_tokens_per_call)
     except ValueError as error:  # a battery refuses as the protocol says, with a ValueError
         if isinstance(error, GadflyError) and type(battery).__module__.startswith("midwife."):
             raise  # a shipped battery's refusal, in Gadfly's own words

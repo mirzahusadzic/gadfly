@@ -131,7 +131,9 @@ def _model(stem: str, served: object) -> tuple[str, ...]:
         raise SystemExit(f"{stem}: a record does not say what served it")
     crossed = re.fullmatch(r"made by (.*), read by (.*)", served)
     sides = crossed.groups() if crossed else (served,)
-    return tuple(side.partition(" via ")[0].partition("@")[0] for side in sides)
+    return tuple(
+        side.partition(" (route ")[0].partition(" via ")[0].partition("@")[0] for side in sides
+    )
 
 
 def _made(raw: str) -> dict:

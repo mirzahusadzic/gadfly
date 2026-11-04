@@ -16,7 +16,7 @@ frame's labels>}`. A critic of your own (its output schema, as your project
 already has it) is adapted by saying where in its answer the label is:
 
     "battery": {"kind": "unified", "model": "anthropic/claude-sonnet-5-5",
-                "reasoning": "low",
+                "reasoning": "low", "fallback": "none",
                 "output": {"schema": {...}, "label": "/verdict"}}
 
 What this battery promises, whatever the frame says:
@@ -36,7 +36,17 @@ What this battery promises, whatever the frame says:
 - each record names what served it: the model the response names, and the
   provider the router reports (`X-Codex-Router-Report: provider`, asked when
   the router lists it), or, for one pinned endpoint, that endpoint's tag;
-  never a provider the router calls unknown;
+  never a provider the router calls unknown; then the route the router
+  names, the upstream the call went to (`anthropic`, `openrouter`, `openai`);
+- `fallback: "none"` keeps an `anthropic/` model's calls on Anthropic's API,
+  never moved to another provider (`X-Codex-Router-Fallback: none`): a
+  refusal there is an opening that says why;
+- `thinkingBudget` gives an `anthropic/` model that still takes one a fixed
+  budget of thinking tokens on every call, in place of adaptive thinking and
+  of `reasoning`, through `X-Codex-Router-Thinking-Budget`, which also keeps
+  the call on Anthropic's API; it must be below each answer's cap, and a
+  model that takes no budget answers each call with an opening;
+- the router must list each of these at `GET /health` for a frame that names it;
 - `endpoints` pins the endpoints the router may use, in order and without
   fallbacks, through the router's `X-Codex-Router-Endpoints`, so one endpoint
   reads a quorum; the router must list endpoint pins at `GET /health`;
@@ -84,10 +94,21 @@ EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 # reaches only endpoints that keep no data.
 DATA_POLICY = "deny"
 MAX_ENDPOINTS = 16  # the most tags the router's endpoints header takes
+# Values of the router's X-Codex-Router-Fallback a frame may name: none keeps
+# an anthropic/ model's calls on Anthropic's API.
+FALLBACKS = ("none",)
+# A thinking budget in tokens: Anthropic's least, and the most the router takes.
+LEAST_THINKING, MOST_THINKING = 1_024, 999_999
+# The upstream the router says a call went to, as a plain lowercase name.
+ROUTE = re.compile(r"[a-z][a-z0-9-]{0,31}")
+CLAUDE = "anthropic/"  # the slugs the router may keep on Anthropic's API
 # Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
 # which the router reaches only with the caller's Codex sign-in.
 ROUTED_PREFIXES = ("anthropic/", "openrouter/", "deepseek/", "ultra-spark/")
-BATTERY_KEYS = {"kind", "model", "reasoning", "output", "trainsOnInputs", "tools", "endpoints"}
+BATTERY_KEYS = {
+    "kind", "model", "reasoning", "output", "trainsOnInputs", "tools", "endpoints",
+    "fallback", "thinkingBudget",
+}  # fmt: skip
 CHUNK = 65_536  # the most one read asks the socket for
 
 
@@ -106,14 +127,14 @@ def _token() -> str:
     return token
 
 
-def _code(body: bytes) -> str | None:
-    # the code of the router's refusal, {"error": {"code": ...}}, if it holds one
+def _refusal(body: bytes) -> dict:
+    # the router's refusal, {"error": {"code": ..., "reason": ...}}, or nothing
     try:
         reply = json.loads(body)
     except ValueError:
-        return None
+        return {}
     error = reply.get("error") if isinstance(reply, dict) else None
-    return error.get("code") if isinstance(error, dict) else None
+    return error if isinstance(error, dict) else {}
 
 
 def consented(battery: dict) -> bool:
@@ -142,6 +163,32 @@ def _policy(battery: dict) -> dict[str, str]:
 def _pinned(battery: dict) -> dict[str, str]:
     endpoints = battery.get("endpoints")
     return {"x-codex-router-endpoints": ",".join(endpoints)} if endpoints else {}
+
+
+def routing(frame: Frame) -> dict[str, str]:
+    """The router's headers that keep this frame's calls on Anthropic's API
+    (`fallback`) and give its model a fixed thinking budget
+    (`thinkingBudget`); none when the frame names neither."""
+    return _routing(frame.battery)
+
+
+def _routing(battery: dict) -> dict[str, str]:
+    headers = {}
+    if battery.get("fallback") is not None:
+        headers["x-codex-router-fallback"] = battery["fallback"]
+    if battery.get("thinkingBudget") is not None:
+        headers["x-codex-router-thinking-budget"] = str(battery["thinkingBudget"])
+    return headers
+
+
+def over_cap(battery: dict, cap: int) -> str | None:
+    """Why a battery line's thinking budget does not fit under a call's cap
+    on output tokens, which holds the thinking and the answer both; None
+    when it fits or the line names no budget."""
+    budget = battery.get("thinkingBudget")
+    if budget is None or budget < cap:
+        return None
+    return f"battery.thinkingBudget {budget!r} is not below each answer's cap of {cap!r} tokens"
 
 
 def capabilities(url: str, timeout: float) -> dict:
@@ -224,12 +271,13 @@ def _lines(response, deadline: float | None = None, clock=time.monotonic):
 
 
 def parse_stream(
-    lines, deadline: float | None = None, clock=time.monotonic
+    lines, deadline: float | None = None, clock=time.monotonic, pin: str | None = None
 ) -> tuple[str, dict[str, int], str | None, str]:
     """The answer's text, its usage, an opening if the call did not complete,
     and what served it, from the router's server-sent events: the model the
-    response names, then the provider the router reports, or the tag of the
-    one endpoint the call was pinned to, joined by " via ".
+    response names, then the provider the router reports, or the endpoint it
+    names, or `pin`, the one endpoint the call was pinned to, joined by
+    " via "; then the route the router names, as "(route anthropic)".
     A stream still coming at `deadline` (on `clock`) is cut there, and a
     connection that times out or fails mid-stream keeps what arrived."""
     deltas: list[str] = []
@@ -266,7 +314,12 @@ def parse_stream(
                 if not (isinstance(by, str) and by and by != "unknown"):  # never a guess
                     by = response.get("endpoint")
                 by = by[:200] if isinstance(by, str) else ""
+                if not by and model and pin:
+                    by = pin  # one pin: no other endpoint could serve
                 served = " via ".join(part for part in (model, by) if part)
+                route = response.get("route")
+                if isinstance(route, str) and ROUTE.fullmatch(route):
+                    served = f"{served} (route {route})".lstrip()
                 reported = response.get("usage")
                 for key, value in (reported if isinstance(reported, dict) else {}).items():
                     if isinstance(value, int) and not isinstance(value, bool):
@@ -354,6 +407,29 @@ class Unified:
             )
         if battery.get("reasoning") not in (None, *EFFORTS):
             raise BatteryError(f"battery.reasoning is one of {', '.join(EFFORTS)}")
+        if battery.get("fallback") not in (None, *FALLBACKS):
+            raise BatteryError("battery.fallback is 'none' or left out")
+        budget = battery.get("thinkingBudget")
+        if budget is not None and not (
+            isinstance(budget, int)
+            and not isinstance(budget, bool)
+            and LEAST_THINKING <= budget <= MOST_THINKING
+        ):
+            raise BatteryError(
+                "battery.thinkingBudget is a whole number of tokens from 1,024 to 999,999"
+            )
+        for key in ("fallback", "thinkingBudget"):
+            if battery.get(key) is not None and not model.startswith(CLAUDE):
+                raise BatteryError(
+                    f"battery.{key} applies only to an anthropic/ model",
+                    "the router keeps only Claude's calls on Anthropic's API; leave it out",
+                )
+        if budget is not None and battery.get("reasoning") is not None:
+            raise BatteryError(
+                "battery.reasoning and battery.thinkingBudget cannot both be set",
+                "a thinking budget replaces the effort, which the router then does not send; "
+                "keep one",
+            )
         check_output(battery)
         named = battery.get("trainsOnInputs", [])
         if not (isinstance(named, list) and all(isinstance(m, str) and m for m in named)):
@@ -367,7 +443,7 @@ class Unified:
         # A router without the policy could reach an endpoint that keeps data,
         # and one without pins could spread a quorum: either refuses the run.
         # What served each call is asked only of a router that reports it.
-        needed = bool(_policy(battery)) or bool(_pinned(battery))
+        needed = bool(_policy(battery) or _pinned(battery) or _routing(battery))
         try:
             listed = capabilities(self.health, self.timeout)
         except BatteryError:
@@ -385,8 +461,29 @@ class Unified:
                 "the router takes no endpoint pins",
                 "update the router, or leave battery.endpoints out",
             )
+        fallbacks = listed.get("fallbackPolicies")
+        if battery.get("fallback") is not None and not (
+            isinstance(fallbacks, list) and battery["fallback"] in fallbacks
+        ):
+            raise BatteryError(
+                "the router takes no fallback policy",
+                "update the router, or leave battery.fallback out",
+            )
+        if budget is not None and listed.get("thinkingBudgets") is not True:
+            raise BatteryError(
+                "the router takes no thinking budget",
+                "update the router, or leave battery.thinkingBudget out",
+            )
         reports = listed.get("reports")
         self.reports = isinstance(reports, list) and "provider" in reports
+
+    def check_cap(self, frame: Frame, cap: int) -> None:
+        """Refuse, before any call, a cap on each answer that leaves the
+        frame's thinking budget no room: the cap holds the thinking and the
+        answer both, and Anthropic takes a budget only below it."""
+        over = over_cap(frame.battery, cap)
+        if over:
+            raise BatteryError(over, "raise --output-tokens above the budget, or lower the budget")
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
         """One call through the router: the prompt under the frame's
@@ -406,6 +503,9 @@ class Unified:
         the answer's text, its usage, an opening when there is no answer to
         read, and what served it. The battery's `observe` and a maker share
         it."""
+        over = over_cap(battery, body.get("max_output_tokens", 0))
+        if over:  # the router would refuse it: no call is made
+            return "", {}, over, ""
         request = urllib.request.Request(
             self.url,
             data=json.dumps(body).encode(),
@@ -415,6 +515,7 @@ class Unified:
                 "x-codex-router-token": _token(),
                 **_policy(battery),
                 **_pinned(battery),
+                **_routing(battery),
                 **({"x-codex-router-report": "provider"} if self.reports else {}),
             },
         )
@@ -432,18 +533,26 @@ class Unified:
                         return "", {}, opening, ""
                     return "", {}, f"the router reports {diagnostic!r}", ""
                 lines = _lines(response, deadline, self.clock)
-                text, usage, opening, served = parse_stream(lines, deadline, self.clock)
                 endpoints = battery.get("endpoints") or []
-                if served and " via " not in served and len(endpoints) == 1:
-                    served = f"{served} via {endpoints[0]}"  # one pin: no other could serve
-                return text, usage, opening, served
+                pin = endpoints[0] if len(endpoints) == 1 else None
+                return parse_stream(lines, deadline, self.clock, pin)
         except urllib.error.HTTPError as error:
-            if (
-                error.code == 409
-                and _code(read_error(error, deadline, self.clock)) == "data_policy"
-            ):
+            # only a refusal whose body says why is read: 409 data_policy, 502 anthropic_refused
+            said = {}
+            if error.code in (409, 502):
+                said = _refusal(read_error(error, deadline, self.clock))
+            if error.code == 409 and said.get("code") == "data_policy":
                 model = battery["model"]
                 opening = f"the router refused model {model!r}, whose provider trains on its inputs"
+                return "", {}, opening, ""
+            if error.code == 502 and said.get("code") == "anthropic_refused":
+                reason = said.get("reason")
+                opening = "Anthropic's API refused the call, and the battery line keeps it there"
+                if isinstance(reason, str) and reason:
+                    opening = (
+                        f"Anthropic's API refused the call ({reason[:200]!r}), and the battery "
+                        "line keeps it there"
+                    )
                 return "", {}, opening, ""
             return "", {}, f"the router answered {error.code}", ""
         except (TimeoutError, urllib.error.URLError, OSError) as error:

@@ -55,11 +55,14 @@ from ..frame import Frame, parse
 from ..interventions import plan, prompt
 from ..pipeline import RAW_LIMIT, _checked
 from ..types import Battery, Observation
-from .unified import DEFAULT_URL, Unified, request_body
+from .unified import DEFAULT_URL, Unified, over_cap, request_body
 
 SEPARATOR = "\n\n---\n\n"  # what parts a prompt's body from its input
 LINE_KEYS = {"kind", "maker", "reader"}
-MAKER_KEYS = {"kind", "model", "instruction", "reasoning", "trainsOnInputs", "endpoints"}
+MAKER_KEYS = {
+    "kind", "model", "instruction", "reasoning", "trainsOnInputs", "endpoints",
+    "fallback", "thinkingBudget",
+}  # fmt: skip
 # what a model maker answers: the artefact's text, and nothing else
 WRITTEN = {
     "type": "object",
@@ -287,6 +290,21 @@ class Crossing:
         except ValueError as error:
             error.add_note("it is the crossing's reader line, battery.reader, that is refused")
             raise
+
+    def check_cap(self, frame: Frame, cap: int) -> None:
+        """Refuse, before any call, a cap that leaves a side's thinking budget
+        no room: the maker writes within half of each call's cap, and the
+        reader reads within what the maker leaves, at least the other half."""
+        share = max(1, cap // 2)
+        for side, room in (("maker", share), ("reader", cap - share)):
+            line = frame.battery.get(side)
+            over = over_cap(line, room) if isinstance(line, dict) else None
+            if over:
+                raise BatteryError(
+                    over,
+                    f"the crossing's {side} gets {room!r} of each call's {cap!r} tokens; "
+                    "raise --output-tokens, or lower the budget",
+                )
 
     def observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
         """One call across the boundary: the maker makes the artefact from
