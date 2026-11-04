@@ -1509,6 +1509,27 @@ def test_the_stability_docs_name_the_share_until_firm_holds_to():
     assert f"{FIRM:.0%} of draws is firm" in inspect.getdoc(stability)
 
 
+def test_upgrading_and_the_schema_name_what_0_11_0_adds_to_a_walk():
+    # every field a walk's result gained since 0.10.0 is named where a caller
+    # upgrading reads, and the schema says what a hole may hold (pass 14, R8, U3)
+    from dataclasses import fields
+    from pathlib import Path
+
+    from midwife.frame import schema
+    from midwife.recoil import Fit
+
+    page = (Path(__file__).parent.parent / "docs/upgrading.md").read_text(encoding="utf-8")
+    section = page.split("### To 0.11.0")[1].split("\n### ")[0]
+    old = {"piece", "fits", "passed", "frontier"}
+    added = {f.name for f in fields(Walk)} - old | {"unasked"}
+    assert {
+        name for name in added | {f.name for f in fields(Fit)} if f"`{name}`" not in section
+    } == set()
+    holes = schema()["properties"]["holes"]
+    assert set(holes["items"]["properties"]) == {"id", "kind", "about", "salience"}
+    assert "about" in holes["description"] and "salience" in holes["description"]
+
+
 def test_the_troubleshooting_tables_name_what_recoil_refuses():
     # a frame resting on its holes alone is refused when planned, and the
     # tables say so in the words the refusal uses (pass 11, F13)

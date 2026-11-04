@@ -35,6 +35,12 @@ New, and opt-in, for a walk:
   crossing.
 - **Sideways:** `walk(..., sideways=True)` and `--sideways` offer the piece
   one step aside too, to each frame quoting a text the start frame quotes.
+- **What a walk returns:** `Walk` adds `order`, `deferred`, `unasked`,
+  `budget`, `most`, `space`, `vectors`, `made` and `siblings`, and each
+  `Fit` holds `frame`, `hole`, `cosine`, `unordered`, `calls`, `asked`,
+  `made` and `sideways`. `gadfly walk --json` adds `order`, `deferred`,
+  `budget`, `most`, `space` and `vectors`, and `sideways` and `made` on
+  each frame; its text adds the `deferred:`, `ordered:` and `budget:` lines.
 
 ---
 

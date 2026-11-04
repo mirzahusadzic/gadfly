@@ -346,7 +346,7 @@
           }
         }
       },
-      "description": "What the body is missing, each an id and a kind: a piece of that kind, found further down a chain of frames, fills it."
+      "description": "What the body is missing, each an id and a kind, and if it says, what it is read for (about) and its salience: a piece of that kind, found further down a chain of frames, fills it."
     },
     "offers": {
       "type": "string",
