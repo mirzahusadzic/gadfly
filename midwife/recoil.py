@@ -522,7 +522,7 @@ def _artefact(record: dict[str, Any]) -> str | None:
     # the SHA-256 of the artefact a crossing's record says its maker made
     try:
         kept = json.loads(record["raw"])
-    except ValueError:
+    except (ValueError, RecursionError):  # not JSON, or deeper than Python reads
         return None
     made = kept.get("made") if isinstance(kept, dict) else None
     text = made.get("sha256") if isinstance(made, dict) else None

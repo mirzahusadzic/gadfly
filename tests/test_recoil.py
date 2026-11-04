@@ -657,6 +657,9 @@ def test_a_crossings_records_are_checked_before_they_are_climbed():
         walk(piece, start, [], made=[kept], calls=0)
     with pytest.raises(UsageError, match="space is given without vectors"):
         walk(piece, start, [], made=[kept], space="s")
+    # a raw deeper than Python reads is no artefact, never a crash (pass 14, U1)
+    deep = [kept[0], {**kept[1], "raw": "[" * 100000}]
+    assert walk(piece, start, [incident], made=[deep]).made[incident.hash] == (("baseline", "q1"),)
     # a record that made nothing is no link, beside one that did
     some = [kept[0], *({**record, "raw": "{}"} for record in kept[1:])]
     assert walk(piece, start, [incident], made=[some]).made[incident.hash] == (("baseline", "q1"),)
