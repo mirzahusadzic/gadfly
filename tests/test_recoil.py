@@ -764,6 +764,48 @@ def test_a_walks_record_reads_its_siblings_once_not_once_a_line():
     assert reads(40) <= 2.2 * reads(20)
 
 
+def decoding(monkeypatch):
+    # the characters of JSON decoded from here on, counted
+    seen, loads = [0], json.loads
+
+    def counted(text, *args, **kwargs):
+        seen[0] += len(text)
+        return loads(text, *args, **kwargs)
+
+    monkeypatch.setattr(json, "loads", counted)
+    return seen
+
+
+def many_holes(n):
+    # a frame holding the shared line, with n holes of kind note, each read for its own text
+    raw = copy.deepcopy(framed("holes", SHARED).raw)
+    raw["holes"] = [{"id": f"h{i}", "kind": "note", "about": f"hole {i}"} for i in range(n)]
+    return parse(raw)
+
+
+def test_a_walks_record_and_order_decode_each_frame_once_not_once_a_hole(monkeypatch):
+    # a frame with n holes is n fits: each fit's name and what its hole is
+    # read for come from the frame decoded once, so the work grows with the
+    # frame, not with the frame times its holes (pass 14, R5)
+    start = framed("start", "the start's own line", quotes=[SHARED])
+    piece = Piece(SHARED, "note")
+
+    def work(n):
+        holed = many_holes(n)
+        given = [(piece.text, "s", [1, 0])] + [(f"hole {i}", "s", [1, i]) for i in range(n)]
+        vectors = read_vectors(jsonl(*given))
+        with pytest.MonkeyPatch.context() as patch:
+            seen = decoding(patch)
+            walked = walk(piece, start, [parse(holed.raw)], vectors=vectors)
+            ordering = seen[0]
+            seen[0] = 0
+            assert len(walked.lines()) == n  # a line a hole
+            return ordering, seen[0]
+
+    (ordered, lines), (ordered2, lines2) = work(40), work(80)
+    assert ordered2 <= 2.2 * ordered and lines2 <= 2.2 * lines
+
+
 class Compared(str):
     """A trial or input id, each comparison of it counted."""
 

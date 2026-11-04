@@ -46,7 +46,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .errors import GadflyError, RecordsError, StoppedWarning, UsageError, is_plain, quoted
-from .frame import SALIENCE, Frame, digest, parse
+from .frame import SALIENCE, Frame, _read_once, digest, parse
 from .interventions import plan, prompt
 from .pipeline import calls_needed, run
 from .stats import stability
@@ -554,9 +554,13 @@ def _ordered(order: tuple[Fit, ...], piece: Piece, vectors: Vectors, space: str)
     # the places they hold, highest first and ties by frame hash, and the
     # rest left where the walk put them
     near = vectors.values.get((piece.sha256, space))
+    abouts: dict[str, dict[str, str | None]] = {}  # each frame's holes, read once
     read = []
     for fit in order:
-        about = next(h for h in fit.frame.holes if h["id"] == fit.hole).get("about")
+        if fit.frame.hash not in abouts:
+            holes = _read_once(fit.frame).get("holes", ())
+            abouts[fit.frame.hash] = {hole["id"]: hole.get("about") for hole in holes}
+        about = abouts[fit.frame.hash][fit.hole]
         if near is None:
             cosine, why = None, "the piece has no vector in this space"
         elif about is None:

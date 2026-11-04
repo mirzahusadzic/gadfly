@@ -101,8 +101,8 @@ class Frame:
         return json.loads(self.source)
 
     @property
-    def name(self) -> str:
-        return self.raw["name"]
+    def name(self) -> str:  # a str changes nothing the hash names: decoded once
+        return _read_once(self)["name"]
 
     @property
     def inputs(self) -> tuple[dict[str, str], ...]:
