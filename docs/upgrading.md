@@ -10,7 +10,7 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
-### To 0.11.0, not yet released
+### To 0.11.0
 
 No verdict changes, and these things a caller of 0.10.0 meets do:
 
