@@ -380,7 +380,8 @@ def calls_until_firm(
     runs, and is a ceiling: asking stops sooner once a run is firm, and
     makes no call when the latest kept run is."""
     _asked_again(frame)
-    return calls_needed(frame) * (most - len(_kept(frame, kept, most)))
+    runs = _kept(frame, kept, most)  # its checks first, in until_firm's order
+    return calls_needed(frame) * (most - len(runs))
 
 
 def _asked_again(frame: Frame) -> None:

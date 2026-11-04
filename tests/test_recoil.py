@@ -537,6 +537,21 @@ def test_the_calls_until_firm_are_counted_before_the_first():
         calls_until_firm(once)
 
 
+def test_calls_until_firm_refuses_in_until_firms_order():
+    # a frame resting on its holes alone, asked with a bad most: both say
+    # what is wrong with most before planning the frame (pass 13, F2)
+    waiting = matryoshka()[1]
+    waiting["anchors"] = []
+    del waiting["interventions"]["repeat"]
+    waiting["standing"] = {"quorum": 3, "agree": 2}
+    frame = parse(waiting)
+    said = "most is a whole number of runs, at least 1"
+    with pytest.raises(UsageError, match=said):
+        until_firm(frame, None, Budget(calls=1), most=0)
+    with pytest.raises(UsageError, match=said):
+        calls_until_firm(frame, most=0)
+
+
 def test_kept_runs_count_as_runs_made_so_a_firm_frame_is_asked_nothing():
     middle = dolls()[1]
     after = with_slip(middle)
