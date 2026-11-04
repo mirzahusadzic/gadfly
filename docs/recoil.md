@@ -130,8 +130,8 @@ nothing; the old frame and its verdict stand.
 
 A successor may change its name, baseline, body, anchors, interventions,
 `allowed` and `standing`: its evidence, and how many calls read it. Of its
-holes it may only close the one it fills, since what a frame can take in is
-part of its question. A change to any other key or hole reframes, and a
+holes it may only close the one it fills, with a span of that hole's kind,
+since what a frame can take in is part of its question. A change to any other key or hole reframes, and a
 reframing stays open until its author declares how the two questions compare.
 
 ---

@@ -844,8 +844,9 @@ its anchor. `successor` drafts it for the frame's author and writes nothing.
 The successor's category is the gate: carried or coupled but misaligned, the
 frame's own decision climbs on, as a piece of the kind the frame `offers`;
 cooled or outside scope, the recoil is absorbed; unresolved, it stops with
-the open check named. A successor that changes anything but its evidence asks
-another question, and is a reframing opening, read against no category.
+the open check named. A successor that changes anything but its evidence, or
+any hole but closing the one it fills, asks another question, and is a
+reframing opening, read against no category.
 
 A successor is asked lightly, and again only while it must be (`until_firm`):
 one run at a time, until the fixed rules read every input's category the same
@@ -949,9 +950,10 @@ successor(frame, hole, piece, *, after=None, **changes)
 
 The keys a successor changed beyond its evidence, in sorted order:
 none when it only filled a declared hole, and asked it with its own
-trials and standing. Its holes are the frame's, less at most the one it
-filled, now a span of its own: a hole added, changed or dropped unfilled
-changes what the frame can take in, and lists `holes`.
+trials and standing. Its holes are the frame's, in any order, less at
+most the one it filled, now a span of the hole's kind: a hole added,
+changed, dropped unfilled or closed by a span of another kind changes
+what the frame can take in, and lists `holes`.
 
 ```python
 reframes(before, after)

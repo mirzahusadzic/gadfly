@@ -14,6 +14,7 @@ word is missing, and is caught for it.
 import copy
 import random
 import warnings
+from types import SimpleNamespace
 
 import pytest
 
@@ -391,6 +392,50 @@ def test_a_successor_that_changes_another_hole_reframes():
     # a hole closed with no span of its own filled nothing
     emptied = parse({**two.raw, "holes": [{"id": "base", "kind": "base"}]})
     assert reframes(two, emptied) == ["holes"]
+    # nor did one closed by a span of another kind: no piece of the hole's
+    # kind fits it any more (pass 13, F1)
+    slip = found(dolls()[4], "slip")
+    body = copy.deepcopy(two.raw["body"])
+    body["spans"].append({"id": "says", "text": slip.text, "kind": "note"})
+    painted = parse(successor(two, "says", slip, body=body, **TRIALS))
+    assert reframes(two, painted) == ["holes"]
+    assert gate(two, painted).gate == "reframing"
+    # the same holes in another order take in the same (pass 13, F5)
+    three = parse({**two.raw, "holes": [*two.raw["holes"], {"id": "note", "kind": "note"}]})
+    filled = parse(successor(three, "says", slip, **TRIALS))
+    turned = parse({**filled.raw, "holes": filled.raw["holes"][::-1]})
+    assert reframes(three, turned) == []
+
+
+def test_reframes_reads_each_hole_once():
+    # closing the last of many holes reads each hole a few times, not once
+    # a hole for every hole (pass 13, F3)
+    class Holes(list):
+        read = 0
+
+        def __getitem__(self, at):
+            Holes.read += len(range(*at.indices(len(self)))) if isinstance(at, slice) else 1
+            return super().__getitem__(at)
+
+        def __iter__(self):
+            for hole in super().__iter__():
+                Holes.read += 1
+                yield hole
+
+    def close_last(n):
+        holes = [{"id": f"h{i}", "kind": "k"} for i in range(n)]
+        filled = {"id": f"h{n - 1}", "text": "the last", "kind": "k"}
+        before = SimpleNamespace(raw={"holes": Holes(holes)}, spans=())
+        after = SimpleNamespace(
+            raw={"holes": Holes(holes[:-1]), "body": {"spans": [filled]}},
+            spans=(SimpleNamespace(id=filled["id"], kind="k"),),
+        )
+        Holes.read = 0
+        assert reframes(before, after) == []
+        return Holes.read
+
+    small, large = close_last(100), close_last(200)
+    assert large <= 2.5 * small, (small, large)
 
 
 def test_a_doll_whose_question_does_not_rest_on_its_word_absorbs_it():

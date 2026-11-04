@@ -11,8 +11,9 @@ its anchor. `successor` drafts it for the frame's author and writes nothing.
 The successor's category is the gate: carried or coupled but misaligned, the
 frame's own decision climbs on, as a piece of the kind the frame `offers`;
 cooled or outside scope, the recoil is absorbed; unresolved, it stops with
-the open check named. A successor that changes anything but its evidence asks
-another question, and is a reframing opening, read against no category.
+the open check named. A successor that changes anything but its evidence, or
+any hole but closing the one it fills, asks another question, and is a
+reframing opening, read against no category.
 
 A successor is asked lightly, and again only while it must be (`until_firm`):
 one run at a time, until the fixed rules read every input's category the same
@@ -215,27 +216,30 @@ def successor(
 def reframes(before: Frame, after: Frame) -> list[str]:
     """The keys a successor changed beyond its evidence, in sorted order:
     none when it only filled a declared hole, and asked it with its own
-    trials and standing. Its holes are the frame's, less at most the one it
-    filled, now a span of its own: a hole added, changed or dropped unfilled
-    changes what the frame can take in, and lists `holes`."""
+    trials and standing. Its holes are the frame's, in any order, less at
+    most the one it filled, now a span of the hole's kind: a hole added,
+    changed, dropped unfilled or closed by a span of another kind changes
+    what the frame can take in, and lists `holes`."""
     old, new = before.raw, after.raw
     keys = (set(old) | set(new)) - set(EVIDENCE)
     changed = {key for key in keys if old.get(key) != new.get(key)}
-    if not _closes_one(old, new):
+    if not _closes_one(before, after):
         changed.add("holes")
     return sorted(changed)
 
 
-def _closes_one(old: dict[str, Any], new: dict[str, Any]) -> bool:
-    # the holes as they were, or less the one hole now filled by a span
-    before, after = old.get("holes", []), new.get("holes", [])
-    if after == before:
+def _closes_one(before: Frame, after: Frame) -> bool:
+    # the holes as they were, or less the one hole now filled by a span of
+    # its kind; a hole's id is unique, so each is looked up once by it
+    old = {hole["id"]: hole for hole in before.raw.get("holes", [])}
+    new = {hole["id"]: hole for hole in after.raw.get("holes", [])}
+    if any(old.get(name) != hole for name, hole in new.items()):
+        return False  # a hole added, or changed
+    closed = [hole for name, hole in old.items() if name not in new]
+    if not closed:
         return True
-    spans = {span["id"] for span in new["body"]["spans"]}
-    return any(
-        before[:at] + before[at + 1 :] == after and hole["id"] in spans
-        for at, hole in enumerate(before)
-    )
+    kinds = {span.id: span.kind for span in after.spans}
+    return len(closed) == 1 and kinds.get(closed[0]["id"]) == closed[0]["kind"]
 
 
 @dataclass(frozen=True)
