@@ -453,6 +453,16 @@ def test_read_vectors_refuses_what_it_cannot_take(text, message):
         read_vectors(text)
 
 
+def test_read_vectors_refuses_a_lone_surrogate_in_a_space_or_the_text():
+    # an escaped lone surrogate reads as JSON, and is no name a line can print
+    # (pass 14, R1)
+    line = '{"text": "%s", "space": "\\ud800", "values": [1]}' % sha256("a")
+    with pytest.raises(UsageError, match=re.escape("names space '\\ud800' at line 1")):
+        read_vectors(line)
+    with pytest.raises(UsageError, match="the text given is not UTF-8 text"):
+        read_vectors("\ud800")
+
+
 def test_vectors_order_the_fits_and_a_fit_with_no_cosine_keeps_its_place():
     start = star("start", "the start's own line")
     piece = Piece(SHARED, "note")

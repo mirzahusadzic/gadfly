@@ -74,7 +74,7 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: file 'vectors.jsonl' cannot be read as JSON at line 3` | Correct that line; each line is one JSON object. |
 | `UsageError: file 'vectors.jsonl' holds a vector that is not {text, space, values} at line 3` | Give each line exactly `text`, `space` and `values`. |
 | `UsageError: file 'vectors.jsonl' keys a vector by 'abc' at line 3, which is no SHA-256` | `text is the SHA-256 of the exact text, 64 lowercase hex digits`. A vector stands for a whole text, named as a span's `source` names it. |
-| `UsageError: file 'vectors.jsonl' names space 'e: 128' at line 3, not one plain name` | A space id is a non-empty string with no line break and no colon followed by a space; Gadfly prints it, and only compares it. |
+| `UsageError: file 'vectors.jsonl' names space 'e: 128' at line 3, not one plain name` | A space id is a non-empty string of UTF-8 text, with no line break and no colon followed by a space; Gadfly prints it, and only compares it. |
 | `UsageError: file 'vectors.jsonl' holds values that are not a list of numbers at line 3` | Give `values` as a non-empty list of numbers. |
 | `UsageError: file 'vectors.jsonl' holds text '9f86d081...' in space 'e128' twice, at lines 1 and 4` | `a text has one vector in a space; even the same values twice are refused`. Keep one of them; the vectors are refused whole, never the last taken. |
 | `UsageError: the vectors hold 2 spaces, 'e128', 'e768'` | `name the one to order by, since a cosine compares two vectors of one space only`. Give `--space`, or `space` in Python. |

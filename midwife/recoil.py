@@ -155,10 +155,10 @@ def read_vectors(data: bytes | str, *, path: str | None = None) -> Vectors:
     one space refuses them all, even with the same values, and a value that
     is not finite is kept, to give no order where it is read. A refusal
     names the file at `path` they were read from, `-` standard input."""
-    raw = data.encode("utf-8") if isinstance(data, str) else bytes(data)
-    try:
+    try:  # a str holding a lone surrogate is no text a file could hold
+        raw = data.encode("utf-8") if isinstance(data, str) else bytes(data)
         text = raw.decode("utf-8")
-    except UnicodeDecodeError:
+    except UnicodeError:
         raise UsageError(f"{_named(path)} is not UTF-8 text") from None
     values: dict[tuple[str, str], tuple[float, ...]] = {}
     lines: dict[tuple[str, str], int] = {}
@@ -179,7 +179,7 @@ def read_vectors(data: bytes | str, *, path: str | None = None) -> Vectors:
                 f"{_named(path)} keys a vector by {key!r} at line {line}, which is no SHA-256",
                 "text is the SHA-256 of the exact text, 64 lowercase hex digits",
             )
-        if not (isinstance(space, str) and space and is_plain(space)):
+        if not (isinstance(space, str) and space and is_plain(space) and _utf8(space)):
             raise UsageError(
                 f"{_named(path)} names space {space!r} at line {line}, not one plain name"
             )
@@ -201,6 +201,16 @@ def read_vectors(data: bytes | str, *, path: str | None = None) -> Vectors:
         lines[key, space] = line
         values[key, space] = tuple(_float(x) for x in numbers)
     return Vectors(values, hashlib.sha256(raw).hexdigest())
+
+
+def _utf8(text: str) -> bool:
+    # whether a text can be printed and written: an escaped lone surrogate
+    # reads as JSON, and is no UTF-8 text
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
 
 
 def _named(path: str | None) -> str:

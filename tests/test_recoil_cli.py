@@ -259,6 +259,11 @@ def test_walk_reads_standard_input_once_for_its_vectors_and_runs_too(capsys):
         ),
         (["{"], [], "UsageError: file 'v.jsonl' cannot be read as JSON at line 1"),
         (
+            ['{"text": "%s", "space": "\\ud800", "values": [1]}' % sha256(PAPER)],
+            [],
+            "UsageError: file 'v.jsonl' names space '\\ud800' at line 1, not one plain name",
+        ),
+        (
             ['{"text": "%s", "space": "e", "values": [1]}' % sha256(PAPER)],
             ["--space", "f"],
             "UsageError: the vectors hold no vector in space 'f'",
