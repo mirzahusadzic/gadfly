@@ -85,17 +85,30 @@ def test_walk_json_is_what_midwife_recoil_walk_returns(capsys):
             "from": {"frame": "Mirza", "hash": source.hash},
         },
         "fits": [
-            {"frame": frame.name, "hash": frame.hash, "made": [], "holes": list(holes)}
+            {
+                "frame": frame.name,
+                "hash": frame.hash,
+                "sideways": False,
+                "made": [],
+                "holes": list(holes),
+            }
             for frame, holes in walked.fits
         ],
         "order": [
-            {"frame": fit.frame.name, "hash": fit.frame.hash, "made": [], "hole": fit.hole}
+            {
+                "frame": fit.frame.name,
+                "hash": fit.frame.hash,
+                "sideways": False,
+                "made": [],
+                "hole": fit.hole,
+            }
             | {"cosine": None, "unordered": None, "calls": None, "asked": None}
             for fit in walked.order
         ],
         "deferred": [],
         "passed": [
-            {"frame": frame.name, "hash": frame.hash, "made": []} for frame in walked.passed
+            {"frame": frame.name, "hash": frame.hash, "sideways": False, "made": []}
+            for frame in walked.passed
         ],
         "frontier": list(walked.frontier),
         "complete": walked.complete,
@@ -123,7 +136,7 @@ def test_walk_counts_the_fits_its_calls_cover_before_the_first(capsys):
     document = json.loads(capsys.readouterr().out)
     [fit] = walked.order
     assert document["order"] == [
-        {"frame": "Kiran", "hash": kiran.hash, "made": [], "hole": "paper"}
+        {"frame": "Kiran", "hash": kiran.hash, "sideways": False, "made": [], "hole": "paper"}
         | {"cosine": None, "unordered": None, "calls": 45, "asked": True}
     ]
     assert (document["budget"], document["most"]) == (45, 5) == (walked.budget, walked.most)
@@ -167,6 +180,32 @@ def test_walk_climbs_from_a_frame_quoting_an_artefact_to_its_crossing(tmp_path, 
         f"RecordsError: a made record names frame {frame.hash!r}, "
         "which is not among the frames given"
     )
+
+
+def test_walk_sideways_offers_the_piece_to_the_siblings_of_its_start(tmp_path, capsys):
+    from tests.test_recoil import sideways_case
+
+    frames = []
+    for frame in sideways_case():
+        path = tmp_path / f"{frame.name}.json"
+        path.write_text(json.dumps(frame.raw), encoding="utf-8")
+        frames.append((frame, str(path)))
+    (start, first), *others = frames
+    argv = ["walk", *(path for _, path in others), "--from", first, "--span", "own"]
+    assert main(argv) == 0
+    assert not any(line.startswith("fits: ") for line in told(capsys))
+    assert main([*argv, "--sideways"]) == 0
+    lines = told(capsys)
+    [sibling, quiet] = [frame for frame, _ in others if frame.name in ("sibling", "quiet")]
+    assert f"fits: sibling ({sibling.hash[:12]}), hole h, sideways" in lines
+    assert f"passed: quiet ({quiet.hash[:12]}), sideways" in lines
+    assert not any("cousin" in line for line in lines)
+    assert main([*argv, "--sideways", "--json"]) == 0
+    document = json.loads(capsys.readouterr().out)
+    assert [(fit["frame"], fit["sideways"]) for fit in document["order"]] == [
+        ("sibling", True),
+        ("workshop", False),
+    ]
 
 
 def test_walk_orders_its_fits_by_the_vectors_given(tmp_path, capsys, monkeypatch):
@@ -265,7 +304,7 @@ def test_walk_lists_a_deferred_fit_kept_and_not_asked(tmp_path, capsys):
     document = json.loads(capsys.readouterr().out)
     assert document["fits"] == []
     assert document["deferred"] == [
-        {"frame": "Kiran", "hash": held.hash, "made": [], "holes": ["paper"]}
+        {"frame": "Kiran", "hash": held.hash, "sideways": False, "made": [], "holes": ["paper"]}
     ]
 
 

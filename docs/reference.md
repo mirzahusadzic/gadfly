@@ -840,6 +840,8 @@ on up, and fits any of those frames' holes of its kind; a frame with no such
 hole passes it on, at no cost. A hole may defer: its fit is listed, kept
 and not asked. Given a crossing's records, each artefact it made is text
 that frame made, so a frame quoting the artefact climbs to the crossing.
+Sideways, the piece is also offered one step aside, to the frames quoting
+a text the frame it was found in quotes, and climbs on from each.
 The walk reads frames and makes no call; given vectors, it orders the fits
 by cosine, and given a budget, it counts each fit's calls before the first
 and lists those it cannot cover.
@@ -935,8 +937,9 @@ A hole a piece fits, as a walk would ask it: the frame and the hole;
 when the walk was given vectors, its cosine to the piece, or why it has
 none, kept in its place; when it was given a budget, the most calls
 asking its successor until firm can make, and whether the budget covers
-them; and, when the walk reached the frame through an artefact it made,
-the trial and input of each record that made it.
+them; when the walk reached the frame through an artefact it made, the
+trial and input of each record that made it; and whether it reached the
+frame sideways, as a sibling of the frame the piece was found in.
 
 ```python
 @dataclass(frozen=True)
@@ -952,8 +955,9 @@ each frame with the holes it fits there that defer, kept and not asked;
 every considered fit, one hole each, in the order it would be asked;
 the space its fits were ordered by and the SHA-256 of the vectors, when
 it was given them; the budget in calls and the most runs a fit, when one
-was given; and, for each frame it reached through an artefact the frame
-made, by its hash, the trial and input of each record that made it.
+was given; for each frame it reached through an artefact the frame
+made, by its hash, the trial and input of each record that made it; and
+each frame it reached sideways, a sibling of the frame it started from.
 
 ```python
 @dataclass(frozen=True)
@@ -975,7 +979,7 @@ frame that passed it on, each in the order the walk reached it; then
 every text it could not follow. Each line names the space and the
 vectors it was ordered by, and the budget, when there were any, and
 each frame line the records that made the artefact it was reached
-through.
+through, and whether it was reached sideways.
 
 ```python
 lines()
@@ -997,6 +1001,7 @@ walk(
     frames,
     *,
     made=(),
+    sideways=False,
     vectors=None,
     space=None,
     calls=None,
@@ -1009,6 +1014,12 @@ each checked against its frame first. Each artefact a record says its
 maker made is text that frame made, so a frame quoting the artefact by
 `source` climbs to the crossing, and the walk names the trial and input
 of each record that made it.
+
+`sideways` offers the piece one step aside too, from the start frame
+only: to each frame given that quotes, by `source`, a text the start
+frame quotes. Siblings come from that fixed rule, never from nearness,
+so none is dropped; each then climbs as usual, and is not followed
+sideways again.
 
 Each considered hole is a fit in `order`, in the order the walk reached
 its frame and the frame lists its holes. Given `vectors`, the fits are
@@ -2210,6 +2221,7 @@ command_portfolio(args)
 `gadfly walk`: where a piece climbs from the frame it was found in, up
 through the frames given, without a call (`midwife.recoil.walk`); with
 --made, through the artefacts a crossing's records say it made; with
+--sideways, one step aside to the siblings of the frame it starts from; with
 --vectors, its fits ordered by cosine; with --calls, which fits that
 many calls cover, each until firm.
 

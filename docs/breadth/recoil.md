@@ -37,7 +37,9 @@ spent every call again.
 ### Later
 
 - **Siblings:** frames of the same grain side by side, joined so that a piece
-  offered to one is offered to its neighbours too.
+  offered to one is offered to its neighbours too. One step aside from the
+  start frame, to the frames quoting a text it quotes, is built; siblings a
+  frame declares, or that share its locus, wait for a case that needs them.
 - **Grouping by locus:** frames grouped by where their relation acts. A walk
   already offers a piece first where it is most likely to fit, by the
   vectors its caller gives ([Recoil](../recoil.md#ordered-by-whole-text-vectors));

@@ -7,6 +7,8 @@ on up, and fits any of those frames' holes of its kind; a frame with no such
 hole passes it on, at no cost. A hole may defer: its fit is listed, kept
 and not asked. Given a crossing's records, each artefact it made is text
 that frame made, so a frame quoting the artefact climbs to the crossing.
+Sideways, the piece is also offered one step aside, to the frames quoting
+a text the frame it was found in quotes, and climbs on from each.
 The walk reads frames and makes no call; given vectors, it orders the fits
 by cosine, and given a budget, it counts each fit's calls before the first
 and lists those it cannot cover.
@@ -222,8 +224,9 @@ class Fit:
     when the walk was given vectors, its cosine to the piece, or why it has
     none, kept in its place; when it was given a budget, the most calls
     asking its successor until firm can make, and whether the budget covers
-    them; and, when the walk reached the frame through an artefact it made,
-    the trial and input of each record that made it."""
+    them; when the walk reached the frame through an artefact it made, the
+    trial and input of each record that made it; and whether it reached the
+    frame sideways, as a sibling of the frame the piece was found in."""
 
     frame: Frame
     hole: str
@@ -232,6 +235,7 @@ class Fit:
     calls: int | None = None
     asked: bool | None = None
     made: tuple[tuple[str, str], ...] = ()
+    sideways: bool = False
 
 
 @dataclass(frozen=True)
@@ -243,8 +247,9 @@ class Walk:
     every considered fit, one hole each, in the order it would be asked;
     the space its fits were ordered by and the SHA-256 of the vectors, when
     it was given them; the budget in calls and the most runs a fit, when one
-    was given; and, for each frame it reached through an artefact the frame
-    made, by its hash, the trial and input of each record that made it."""
+    was given; for each frame it reached through an artefact the frame
+    made, by its hash, the trial and input of each record that made it; and
+    each frame it reached sideways, a sibling of the frame it started from."""
 
     piece: Piece
     fits: tuple[tuple[Frame, tuple[str, ...]], ...]
@@ -257,6 +262,7 @@ class Walk:
     space: str | None = None
     vectors: str | None = None
     made: Mapping[str, tuple[tuple[str, str], ...]] = field(default_factory=dict)
+    siblings: tuple[Frame, ...] = ()
 
     @property
     def complete(self) -> bool:
@@ -277,7 +283,7 @@ class Walk:
         every text it could not follow. Each line names the space and the
         vectors it was ordered by, and the budget, when there were any, and
         each frame line the records that made the artefact it was reached
-        through."""
+        through, and whether it was reached sideways."""
         head: dict[str, Any] = {"piece": self.piece.sha256, "kind": self.piece.kind}
         if self.space is not None:
             head |= {"space": self.space, "vectors": self.vectors}
@@ -308,10 +314,12 @@ class Walk:
         return reached + [{**head, "frontier": text} for text in self.frontier]
 
     def _through(self, frame: Frame) -> dict[str, Any]:
-        # the records that made the artefact the walk reached a frame through
-        if frame.hash not in self.made:
-            return {}
-        return {"made": [{"trial": t, "input": x} for t, x in self.made[frame.hash]]}
+        # how the walk reached a frame: sideways, or through an artefact it made
+        aside = any(sibling.hash == frame.hash for sibling in self.siblings)
+        how: dict[str, Any] = {"sideways": True} if aside else {}
+        if frame.hash in self.made:
+            how["made"] = [{"trial": t, "input": x} for t, x in self.made[frame.hash]]
+        return how
 
 
 def walk(
@@ -320,6 +328,7 @@ def walk(
     frames: Iterable[Frame],
     *,
     made: Iterable[Iterable[Record | dict[str, Any]]] = (),
+    sideways: bool = False,
     vectors: Vectors | None = None,
     space: str | None = None,
     calls: int | None = None,
@@ -337,6 +346,12 @@ def walk(
     maker made is text that frame made, so a frame quoting the artefact by
     `source` climbs to the crossing, and the walk names the trial and input
     of each record that made it.
+
+    `sideways` offers the piece one step aside too, from the start frame
+    only: to each frame given that quotes, by `source`, a text the start
+    frame quotes. Siblings come from that fixed rule, never from nearness,
+    so none is dropped; each then climbs as usual, and is not followed
+    sideways again.
 
     Each considered hole is a fit in `order`, in the order the walk reached
     its frame and the frame lists its holes. Given `vectors`, the fits are
@@ -362,31 +377,44 @@ def walk(
             makers.setdefault(text, {})[name] = given[name]
     through: dict[str, tuple[tuple[str, str], ...]] = {}
     seen, fits, passed, deferred, frontier = {start.hash}, [], [], [], set()
+    siblings: list[Frame] = []
     followed: set[str] = set()  # a text once followed has every maker of it seen
     climbing = deque([start])  # drained from the front: a list would shift every frame left
+
+    def offer(frame: Frame) -> None:
+        # the piece offered to a frame reached: a fit, deferred, or passed on
+        seen.add(frame.hash)
+        kind = [h for h in frame.holes if h["kind"] == piece.kind]
+        asked = tuple(h["id"] for h in kind if _salience(h) == "consider")
+        held = tuple(h["id"] for h in kind if _salience(h) == "defer")
+        if asked:
+            fits.append((frame, asked))
+        if held:
+            deferred.append((frame, held))
+        if not kind:
+            passed.append(frame)
+        climbing.append(frame)
+
     while climbing:
-        for text in sorted(_quoted(climbing.popleft()) - followed):
+        frame = climbing.popleft()
+        for text in sorted(_quoted(frame) - followed):
             followed.add(text)
             if text not in makers:
                 frontier.add(text)
             for parent in makers.get(text, {}).values():
                 if parent.hash in seen:
                     continue
-                seen.add(parent.hash)
                 if parent.hash in artefacts.get(text, {}):
                     through[parent.hash] = tuple(artefacts[text][parent.hash])
-                kind = [h for h in parent.holes if h["kind"] == piece.kind]
-                asked = tuple(h["id"] for h in kind if _salience(h) == "consider")
-                held = tuple(h["id"] for h in kind if _salience(h) == "defer")
-                if asked:
-                    fits.append((parent, asked))
-                if held:
-                    deferred.append((parent, held))
-                if not kind:
-                    passed.append(parent)
-                climbing.append(parent)
+                offer(parent)
+        if sideways and frame is start:  # one step aside, from the start alone
+            for sibling in _siblings(start, given):
+                if sibling.hash not in seen:
+                    siblings.append(sibling)
+                    offer(sibling)
+    aside = {sibling.hash for sibling in siblings}
     order = tuple(
-        Fit(frame, hole, made=through.get(frame.hash, ()))
+        Fit(frame, hole, made=through.get(frame.hash, ()), sideways=frame.hash in aside)
         for frame, holes in fits
         for hole in holes
     )
@@ -411,7 +439,23 @@ def walk(
         space,
         None if vectors is None else vectors.sha256,
         through,
+        tuple(siblings),
     )
+
+
+def _siblings(start: Frame, given: Mapping[str, Frame]) -> list[Frame]:
+    # each frame given that quotes, by source, a text the start quotes: by
+    # that text's hash, then as given, once each
+    quoters: dict[str, list[Frame]] = {}
+    for frame in given.values():
+        for text in _quoted(frame):
+            quoters.setdefault(text, []).append(frame)
+    found = {}
+    for text in sorted(_quoted(start)):
+        for frame in quoters.get(text, ()):
+            if frame.hash != start.hash:
+                found.setdefault(frame.hash, frame)
+    return list(found.values())
 
 
 def _artefacts(

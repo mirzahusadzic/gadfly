@@ -846,6 +846,7 @@ def command_walk(args) -> int:
     """`gadfly walk`: where a piece climbs from the frame it was found in, up
     through the frames given, without a call (`midwife.recoil.walk`); with
     --made, through the artefacts a crossing's records say it made; with
+    --sideways, one step aside to the siblings of the frame it starts from; with
     --vectors, its fits ordered by cosine; with --calls, which fits that
     many calls cover, each until firm."""
     source, piece = _piece(args)
@@ -872,20 +873,25 @@ def command_walk(args) -> int:
         source,
         frames,
         made=made,
+        sideways=args.sideways,
         vectors=vectors,
         space=args.space,
         calls=args.calls,
         most=most,
     )
 
-    def reached(frame) -> dict[str, Any]:  # a frame, and the records that made its artefact
+    aside = {sibling.hash for sibling in walked.siblings}
+
+    def reached(frame) -> dict[str, Any]:  # a frame, and how the walk reached it
         pairs = walked.made.get(frame.hash, ())
-        return {**_which(frame), "made": [{"trial": t, "input": x} for t, x in pairs]}
+        made = [{"trial": t, "input": x} for t, x in pairs]
+        return {**_which(frame), "sideways": frame.hash in aside, "made": made}
 
     def through(frame) -> str:
         pairs = walked.made.get(frame.hash, ())
         said = ", ".join(f"{trial} for {input_}" for trial, input_ in pairs)
-        return f", through the artefact made in {said}" if pairs else ""
+        how = ", sideways" if frame.hash in aside else ""
+        return f"{how}, through the artefact made in {said}" if pairs else how
 
     if args.json:
         document = {
@@ -1324,6 +1330,11 @@ def parser() -> argparse.ArgumentParser:
         metavar="RECORDS",
         help="a crossing's run, JSON Lines: a frame quoting an artefact it made climbs to it; "
         "may repeat",
+    )
+    walked.add_argument(
+        "--sideways",
+        action="store_true",
+        help="offer the piece one step aside too, to each frame quoting a text --from quotes",
     )
     walked.add_argument(
         "--vectors",

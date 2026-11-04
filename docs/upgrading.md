@@ -18,16 +18,23 @@ No verdict changes, and this thing a caller of 0.10.0 meets does:
 | --- | --- | --- |
 | A frame with two holes the piece fits was one line of `Walk.lines()` and of `gadfly walk`, naming both | It is one line for each hole, in the order the walk would ask it; `fits` in a line names its one hole | Read a hole a line; a frame with one such hole reads as before |
 
-New, and opt-in: a hole may say what it is read for, under `about`, and
-its `salience`, `consider` or `defer`. A walk lists a deferred fit under
-`deferred`, kept and not asked, and every considered fit under `order`, a
-`Fit` each. `walk(..., calls=N, most=M)` and `gadfly walk --calls N --most M`
-count each fit's calls until firm before the first, and list the fits the
-calls cannot cover as not asked. `walk(..., vectors=read_vectors(data))`
-and `gadfly walk --vectors FILE` order the fits by cosine, from whole-text
-vectors a caller acquired, and only order them. `walk(..., made=[run])`
-and `gadfly walk --made FILE` take a crossing's records, so a frame quoting
-an artefact its maker made climbs to the crossing.
+New, and opt-in, for a walk:
+
+- **Salience:** a hole may say what it is read for, under `about`, and its
+  `salience`, `consider` or `defer`. A walk lists a deferred fit under
+  `deferred`, kept and not asked.
+- **A budget:** every considered fit is a `Fit` in `order`.
+  `walk(..., calls=N, most=M)` and `gadfly walk --calls N --most M` count
+  each fit's calls until firm before the first, and list those the calls
+  cannot cover as not asked.
+- **Vectors:** `walk(..., vectors=read_vectors(data))` and `--vectors FILE`
+  order the fits by cosine, from whole-text vectors a caller acquired, and
+  only order them.
+- **Artefacts:** `walk(..., made=[run])` and `--made FILE` take a crossing's
+  records, so a frame quoting an artefact its maker made climbs to the
+  crossing.
+- **Sideways:** `walk(..., sideways=True)` and `--sideways` offer the piece
+  one step aside too, to each frame quoting a text the start frame quotes.
 
 ---
 

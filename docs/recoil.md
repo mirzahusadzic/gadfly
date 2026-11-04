@@ -76,6 +76,19 @@ successor puts it on the near side, and the maker makes the artefact again.
 
 ---
 
+### Sideways
+
+A piece found in a frame can fit a frame beside it, which never quotes it.
+`walk(..., sideways=True)` or `gadfly walk --sideways` offers it one step
+aside too, from the start frame only: to each frame given that quotes, by
+`source`, a text the start frame quotes.
+
+Siblings come from that fixed rule, never from nearness, so none is dropped,
+and vectors only order them. Each then climbs as usual, and is not followed
+sideways again: a sibling's sibling is not reached.
+
+---
+
 ### A walk's budget
 
 Each hole a piece fits is a fit of its own, in `order`: frames as the walk
@@ -209,7 +222,8 @@ reframing stays open until its author declares how the two questions compare.
 - **Across a grain, where the question changes:** a decision climbs to a frame
   that asks something else, as a doll's answer climbs to its set. Where it
   fits, the frame asked again would ask another question: a reframing.
-- **Sideways, between frames of one grain:** not built, under Later.
+- **Sideways, between frames of one grain:** one step aside, from the frame
+  the piece was found in to the frames quoting a text it quotes, as above.
 
 ---
 

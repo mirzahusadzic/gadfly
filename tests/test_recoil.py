@@ -622,6 +622,77 @@ def test_a_crossings_records_are_checked_before_they_are_climbed():
     assert walk(piece, start, [incident], made=[some]).made[incident.hash] == (("baseline", "q1"),)
 
 
+def framed(name, own, quotes=(), holes=()):
+    # a frame holding `own`, quoting each text in `quotes` by source, with
+    # `holes` of kind note
+    raw = copy.deepcopy(dolls()[4].raw)
+    spans = [{"id": "own", "text": own, "kind": "note"}]
+    spans += [
+        {"id": f"q{i}", "text": text, "kind": "note", "source": {"sha256": sha256(text)}}
+        for i, text in enumerate(quotes)
+    ]
+    raw |= {"name": name, "anchors": ["own"], "body": {"spans": spans}}
+    raw |= {"interventions": {"ablation": True}, "allowed": {"ablation": ["unclear"]}}
+    raw.pop("holes", None)
+    if holes:
+        raw["holes"] = [{"id": hole, "kind": "note"} for hole in holes]
+    return parse(raw)
+
+
+def sideways_case():
+    # the start quotes the shared line, which the holder holds; a sibling and
+    # a quiet one quote it too, the sibling also quoting the workshop's mark;
+    # a cousin quotes only the mark, a text the start never quotes
+    start = framed("start", "the start's own line", quotes=[SHARED])
+    holder = framed("holder", SHARED)
+    sibling = framed("sibling", "the sibling's own line", quotes=[SHARED, WORKSHOP], holes=["h"])
+    quiet = framed("quiet", "the quiet sibling's own line", quotes=[SHARED])
+    workshop = framed("workshop", WORKSHOP, holes=["h"])
+    cousin = framed("cousin", "the cousin's own line", quotes=[WORKSHOP], holes=["h"])
+    return start, holder, sibling, quiet, workshop, cousin
+
+
+def test_sideways_offers_the_piece_to_the_starts_siblings_one_step_only():
+    start, holder, sibling, quiet, workshop, cousin = sideways_case()
+    given = [holder, sibling, quiet, workshop, cousin]
+    piece = found(start, "own")
+    up = walk(piece, start, given)
+    assert up.fits == () and up.passed == (holder,) and up.siblings == ()
+    walked = walk(piece, start, given, sideways=True)
+    # the siblings are offered the piece, and each climbs as usual: the sibling
+    # to the workshop, which it quotes; the cousin, a sibling's sibling, never
+    assert walked.siblings == (sibling, quiet)
+    assert [(frame.name, holes) for frame, holes in walked.fits] == [
+        ("sibling", ("h",)),
+        ("workshop", ("h",)),
+    ]
+    assert [fit.sideways for fit in walked.order] == [True, False]
+    assert walked.passed == (holder, quiet)  # the holder is a parent first, never a sibling
+    assert cousin.hash not in {line.get("frame") for line in walked.lines()}
+    lines = {line["name"]: line for line in walked.lines() if "name" in line}
+    assert lines["sibling"]["sideways"] and lines["quiet"]["sideways"]
+    assert "sideways" not in lines["workshop"] and "sideways" not in lines["holder"]
+
+
+def test_a_sibling_is_found_by_its_quote_never_by_nearness():
+    # a frame quoting nothing the start quotes is no sibling, however near
+    # its vector; one that quotes a text the start quotes is, however far
+    start, holder, sibling, quiet, workshop, cousin = sideways_case()
+    raw = copy.deepcopy(cousin.raw)
+    raw["holes"] = [{"id": "h", "kind": "note", "about": "near"}]
+    near = parse(raw)
+    raw = copy.deepcopy(sibling.raw)
+    raw["holes"] = [{"id": "h", "kind": "note", "about": "far"}]
+    far = parse(raw)
+    piece = found(start, "own")
+    vectors = read_vectors(
+        jsonl((piece.text, "s", [1, 0]), ("near", "s", [1, 0]), ("far", "s", [-1, 0]))
+    )
+    walked = walk(piece, start, [near, far], sideways=True, vectors=vectors)
+    assert walked.siblings == (far,) and [fit.frame for fit in walked.order] == [far]
+    assert walked.order[0].cosine == -1.0
+
+
 def test_the_second_doll_with_its_word_is_a_boy_asked_once_and_carried():
     second = dolls()[1]
     after = with_slip(second)

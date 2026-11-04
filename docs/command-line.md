@@ -26,7 +26,7 @@ a command reads may be `-`, standard input, once in a command.
 | `run FRAME` | yes, up to `--calls` | the calls written and how to read the verdict, then an `OpeningWarning` for calls that came back as openings and a `StoppedWarning` for an early stop | 0; 1 when every call came back as an opening, stopped early or not; 3 when stopped early, its records partial; 130 when stopped by Ctrl-C; 141 when its reader stops reading; a refusal's |
 | `report FRAME RECORDS` | no | the overall category, then each input's levels, evidence and open obligations | 0; a refusal's |
 | `stats FRAME RECORDS...` | no | each trial's answers over the kept runs, how firm they are and how far they moved or held, the quorum's power, and how often each run's verdict comes out the same when its calls are drawn again | 0; a refusal's |
-| `walk FRAMES... --from FRAME` | no | the piece, each hole it fits in the order it would be asked, each whose fit defers, each frame that passed it on, each text it could not follow, and whether the walk is complete; with `--made`, the records that made each artefact it climbed through; with `--vectors`, each fit's cosine or why it has none; with `--calls`, each fit's calls until firm and whether they are covered | 0; a refusal's |
+| `walk FRAMES... --from FRAME` | no | the piece, each hole it fits in the order it would be asked, each whose fit defers, each frame that passed it on, each text it could not follow, and whether the walk is complete; with `--made`, the records that made each artefact it climbed through; with `--sideways`, which frames it reached aside; with `--vectors`, each fit's cosine or why it has none; with `--calls`, each fit's calls until firm and whether they are covered | 0; a refusal's |
 | `successor FRAME --hole ID --from FRAME` | no | the drafted frame, checked, on standard output or in a new file, and whether it asks another question | 0; a refusal's |
 | `firm FRAME --runs FOLDER` | yes, up to `--calls` | each run's category, kept or asked now, and whether the verdict is firm, then an `OpeningWarning` or a `StoppedWarning` as `run` says them | 0; 1 when every call came back as an opening; 3 when stopped before the verdict was firm; 130 when stopped by Ctrl-C; a refusal's |
 | `gate BEFORE AFTER` | no | the gate, the successor's category, what climbs on from it, what a reframing changed, and the check still open | 0; a refusal's |
@@ -289,6 +289,10 @@ budget: 40 calls cover 0 fits of 1, each fit at most 5 runs
 artefact its maker made climbs to the crossing
 ([Recoil](recoil.md#artefacts-as-parents)), and each line it reaches so names
 the trial and input of each record that made it.
+
+`--sideways` offers the piece one step aside too, from the frame `--from`
+names to each frame given that quotes a text it quotes; each line it
+reaches so says `sideways`, and each sibling then climbs as usual.
 
 `--vectors FILE` orders the fits by cosine, from whole-text vectors acquired
 elsewhere ([Recoil](recoil.md#ordered-by-whole-text-vectors)), and
