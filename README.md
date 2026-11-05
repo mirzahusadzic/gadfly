@@ -207,9 +207,9 @@ too.
 
 ### Cite
 
-The working paper, on Zenodo under CC BY 4.0, describes the method, this
-library and its examples' evidence; its DOI always resolves to the latest
-version:
+The working paper on Zenodo describes the method, this library and its
+examples' evidence. The paper is under CC BY 4.0 and the code under
+Apache-2.0; the paper's DOI always resolves to its latest version:
 
 ```bibtex
 @misc{husadzic2026loadbearing,

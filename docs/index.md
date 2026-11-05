@@ -147,8 +147,9 @@ Every page reads on GitHub as it does here.
 
 The working paper,
 [When Meaning Is Load-Bearing](https://doi.org/10.5281/zenodo.23962158),
-describes the method, the library and the evidence of its examples, under
-CC BY 4.0. Its DOI always resolves to the latest version:
+describes the method, the library and the evidence of its examples. The
+paper is under CC BY 4.0 and the library's code under Apache-2.0; the paper's
+DOI always resolves to its latest version:
 
 ```bibtex
 @misc{husadzic2026loadbearing,
