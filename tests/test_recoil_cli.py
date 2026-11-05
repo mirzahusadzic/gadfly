@@ -694,6 +694,30 @@ def test_firm_keeps_each_run_and_reads_them_back_as_runs_made(thrice, capsys):
     assert [path.name for path in runs.iterdir()] == ["1.jsonl"]
 
 
+def test_firm_makes_calls_at_once_within_each_run(thrice, capsys):
+    # --parallel passes the battery's calls at once into each run firm makes
+    from tests.fixtures import refund
+
+    frame, runs = thrice
+    refund.AtOnce.most = 0
+    assert firm(frame, runs, "AtOnce", "--calls", "100", "--parallel", "4") == 0
+    assert refund.AtOnce.most > 1
+    assert told(capsys)[1:] == [
+        "run 1: carried, asked now",
+        "firm: yes, carried after 1 run, read alike in 100% of draws; 24 calls made now",
+    ]
+    assert len(load_records(str(runs / "1.jsonl"))) == 24
+
+
+def test_firm_refuses_calls_at_once_a_battery_does_not_take(thrice, capsys):
+    # refused before any call, and no run file is made
+    frame, runs = thrice
+    assert firm(frame, runs, "RuleReader", "--calls", "100", "--parallel", "2") == 2
+    refused = "UsageError: battery 'rule-reader' does not take calls at once"
+    assert told(capsys, "err")[-1] == refused
+    assert list(runs.iterdir()) == []
+
+
 def test_firm_says_when_its_budget_stops_it_before_the_verdict_is_firm(thrice, capsys):
     frame, runs = thrice
     assert firm(frame, runs, "Wavering", "--calls", "24") == 3

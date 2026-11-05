@@ -346,6 +346,10 @@ It prints each run's category and whether the verdict is firm. A stop for
 the budget is a `StoppedWarning`, and a run that a battery or Ctrl-C cut
 short is named by its file, since it is never read as firm.
 
+`--parallel N` makes up to N calls at once within each run, for a battery
+that takes them, as `run --parallel` does. The runs stay one after another,
+since each decides whether the next is asked.
+
 `plan` counts a climb before its first call. With `--most N`, and `--runs`
 for the runs already kept, it adds the most calls `firm` can make: a whole
 run's for each run beyond the kept ones, and fewer once a run is firm.

@@ -11,7 +11,7 @@ each answering one need and keeping its contracts.
 | `placement` intervention | `"placement": {"span": id, "after": id}` | old frames' hashes and categories |
 | `local-json` battery | `"battery": {"kind": "local-json", "url": ...}` | loopback, no credentials, a whole-call deadline |
 | Settled trials | `gadfly run --settle` | every level, category and evidence line of a whole run |
-| Calls at once | `gadfly run --parallel N` | the budget, and every call already made |
+| Calls at once | `gadfly run --parallel N`, `gadfly firm --parallel N` | the budget, and every call already made |
 | Dead ends before a call | `gadfly plan` | the verdict rules, read over every answer each trial could give |
 | Shams of another kind | `"sham": {"draws": n, "kind": {anchor: kind}}` | old frames' hashes and plans |
 | Stopping at unresolved | `gadfly run --stop-unresolved` | the category a whole run reads |

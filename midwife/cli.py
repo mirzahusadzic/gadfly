@@ -1047,6 +1047,7 @@ def command_firm(args) -> int:
                 firm=args.firm,
                 most=args.most,
                 on_record=keep,
+                parallel=args.parallel,
             )
     except KeyboardInterrupt:
         # every record made so far is already in its file: say which run is cut short
@@ -1390,6 +1391,12 @@ def parser() -> argparse.ArgumentParser:
     firmed.add_argument("--calls", required=True, type=int, help="the most calls to make")
     firmed.add_argument("--output-tokens", type=int, default=64, help="each answer's cap")
     firmed.add_argument("--token-budget", type=int, help="the most output tokens in all")
+    firmed.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="calls at once within each run, for a battery that takes them",
+    )
     reading(firmed)
     firmed.add_argument("--json", action="store_true", help="print JSON instead of text")
     firmed.set_defaults(func=command_firm)

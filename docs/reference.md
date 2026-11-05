@@ -1106,7 +1106,10 @@ nothing. It reads at most `most` runs in all, kept ones included, and
 starts none the budget cannot cover whole, in calls and, when it caps
 them, in tokens at each call's cap: a run cut short is never firm, and
 a stop for the budget is a `StoppedWarning`, as a run's is. With no
-battery, it reads the kept runs alone and asks nothing.
+battery, it reads the kept runs alone and asks nothing. `parallel`
+makes up to that many calls at once within each run, as `run`'s does;
+the runs stay one after another, since each decides whether the next
+is asked.
 
 ```python
 until_firm(
@@ -1118,6 +1121,7 @@ until_firm(
     firm=FIRM,
     most=MOST,
     on_record=lambda record: None,
+    parallel=1,
 )
 ```
 

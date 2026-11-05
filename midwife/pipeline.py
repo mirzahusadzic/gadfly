@@ -78,6 +78,15 @@ def calls_needed(frame: Frame) -> int:
     return len(frame.inputs) * len(trial_ids(frame)) * frame.quorum
 
 
+def _check_parallel(parallel: int, battery: Battery | None) -> None:
+    """Refuse calls at once that are not a whole number from 1, or that a
+    battery does not take (one that says `concurrent = True` does)."""
+    if not isinstance(parallel, int) or isinstance(parallel, bool) or parallel < 1:
+        raise UsageError("parallel is a whole number of calls, at least 1")
+    if parallel > 1 and battery is not None and getattr(battery, "concurrent", False) is not True:
+        raise UsageError(f"battery {battery.name!r} does not take calls at once")
+
+
 def run(
     frame: Frame,
     battery: Battery,
@@ -112,10 +121,7 @@ def run(
     named = frame.battery["kind"]
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise BatteryError(f"this frame asks for battery {named!r}, not {battery.name!r}")
-    if not isinstance(parallel, int) or isinstance(parallel, bool) or parallel < 1:
-        raise UsageError("parallel is a whole number of calls, at least 1")
-    if parallel > 1 and getattr(battery, "concurrent", False) is not True:
-        raise UsageError(f"battery {battery.name!r} does not take calls at once")
+    _check_parallel(parallel, battery)
     try:
         battery.check(frame)
         fits = getattr(battery, "check_cap", None)  # optional: a cap it cannot answer within

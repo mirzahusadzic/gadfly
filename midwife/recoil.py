@@ -48,7 +48,7 @@ from typing import Any
 from .errors import GadflyError, RecordsError, StoppedWarning, UsageError, is_plain, quoted
 from .frame import SALIENCE, Frame, _read_once, digest, parse
 from .interventions import plan, prompt
-from .pipeline import calls_needed, run
+from .pipeline import _check_parallel, calls_needed, run
 from .stats import stability
 from .types import Battery, Budget, Record
 from .verdict import (
@@ -771,6 +771,7 @@ def until_firm(
     firm: float = FIRM,
     most: int = MOST,
     on_record: Callable[[Record], None] = lambda record: None,
+    parallel: int = 1,
 ) -> Firm:
     """Ask a frame one whole run at a time, and disengage once its verdict
     is firm: every input's category read alike in at least `firm` of the
@@ -782,8 +783,12 @@ def until_firm(
     starts none the budget cannot cover whole, in calls and, when it caps
     them, in tokens at each call's cap: a run cut short is never firm, and
     a stop for the budget is a `StoppedWarning`, as a run's is. With no
-    battery, it reads the kept runs alone and asks nothing."""
+    battery, it reads the kept runs alone and asks nothing. `parallel`
+    makes up to that many calls at once within each run, as `run`'s does;
+    the runs stay one after another, since each decides whether the next
+    is asked."""
     _asked_again(frame)
+    _check_parallel(parallel, battery)
     if isinstance(firm, bool) or not isinstance(firm, int | float) or not 0 < firm <= 1:
         raise UsageError("firm is a share above 0, up to 1")
     runs = _kept(frame, kept, most)
@@ -816,6 +821,7 @@ def until_firm(
                 battery,
                 Budget(each, budget.output_tokens_per_call, tokens),
                 on_record=on_record,
+                parallel=parallel,
             )
             runs.append(tuple(record.as_dict() for record in result.records))
             made += len(result.records)

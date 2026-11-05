@@ -9,6 +9,7 @@ policy's binding line says the rules decide (its bypass cuts that line).
 from __future__ import annotations
 
 import random
+import threading
 import time
 import warnings
 
@@ -41,6 +42,27 @@ class RuleReader(PhraseMatcher):
         if "These rules decide every request." not in policy:
             return Observation(label="unclear")  # no rule binds: nothing to decide by
         return super().observe(frame, prompt, max_output_tokens)
+
+
+class AtOnce(RuleReader):
+    """The rule reader taking calls at once: it keeps the most it had out together."""
+
+    concurrent = True
+    most = 0
+    out = 0
+    lock = threading.Lock()
+
+    def observe(self, frame, prompt, max_output_tokens):
+        held = type(self)
+        with held.lock:
+            held.out += 1
+            held.most = max(held.most, held.out)
+        time.sleep(0.01)
+        try:
+            return super().observe(frame, prompt, max_output_tokens)
+        finally:
+            with held.lock:
+                held.out -= 1
 
 
 class Unreachable(RuleReader):

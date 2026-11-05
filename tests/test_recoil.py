@@ -1129,6 +1129,57 @@ def test_until_firm_never_starts_a_run_the_budget_cannot_cover():
     assert gate(middle, after, asked).open == asked.stopped
 
 
+class DollsAtOnce(DollReader):
+    """The doll reader taking calls at once: it keeps the most it had out together."""
+
+    concurrent = True
+
+    def __init__(self):
+        import threading
+
+        super().__init__()
+        self.out, self.most, self.lock = 0, 0, threading.Lock()
+
+    def observe(self, frame, prompt, max_output_tokens):
+        import time
+
+        with self.lock:
+            self.out += 1
+            self.most = max(self.most, self.out)
+        time.sleep(0.01)
+        try:
+            return super().observe(frame, prompt, max_output_tokens)
+        finally:
+            with self.lock:
+                self.out -= 1
+
+
+def test_until_firm_makes_calls_at_once_within_each_run():
+    # firm --parallel: the calls of a run go out together, the runs one after
+    # another, and the reading is the one a run of single calls gives
+    after = with_slip(dolls()[1])
+    alone = until_firm(after, DollReader(), budget(after))
+    reader = DollsAtOnce()
+    together = until_firm(after, reader, budget(after), parallel=4)
+    assert reader.most > 1
+    assert (together.firm, together.category, len(together.runs)) == (
+        alone.firm,
+        alone.category,
+        len(alone.runs),
+    )
+
+
+def test_until_firm_refuses_calls_at_once_a_battery_does_not_take():
+    # refused before any call, with run's own words
+    after = with_slip(dolls()[1])
+    reader = DollReader()
+    with pytest.raises(UsageError, match="^battery 'doll-reader' does not take calls at once$"):
+        until_firm(after, reader, budget(after), parallel=2)
+    with pytest.raises(UsageError, match="^parallel is a whole number of calls, at least 1$"):
+        until_firm(after, reader, budget(after), parallel=0)
+    assert reader.calls == 0
+
+
 def test_with_no_battery_until_firm_reads_the_kept_runs_alone():
     # gadfly gate reads a successor's runs so: nothing is asked, and a
     # verdict the kept runs leave unsettled is not firm, with no stop to warn of

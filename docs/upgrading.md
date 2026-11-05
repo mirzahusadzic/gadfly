@@ -10,6 +10,14 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
+### To 0.13.0, not yet released
+
+No verdict changes, and nothing a caller of 0.12.0 meets changes. New:
+
+- **Calls at once while asking until firm:** `until_firm(..., parallel=N)` and `gadfly firm --parallel N` make up to N calls at once within each run, for a battery that takes them, as `run`'s `parallel` does. The runs stay one after another, and a battery that takes one call at a time is refused before any call, in `run`'s words.
+
+---
+
 ### To 0.12.0
 
 No verdict changes, and these things a caller of 0.11.0 meets do:
