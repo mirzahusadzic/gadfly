@@ -725,3 +725,15 @@ def test_the_router_not_a_name_decides_which_models_train(raw, token, router, mo
     battery.observe(situate(raw), "p", 16)
     [(headers, body)] = fake.requests
     assert headers["x-codex-router-data-policy"] == "deny" and body["model"] == model
+
+
+def test_upgrading_says_the_name_list_is_gone_and_what_a_caller_does_instead():
+    # After the Poem imported TRAINS_ON_INPUTS; 0.12.0 removed it, so the page
+    # names the removal and the replacement, the frame's own trainsOnInputs
+    from pathlib import Path
+
+    assert not hasattr(unified, "TRAINS_ON_INPUTS")
+    page = (Path(__file__).parent.parent / "docs/upgrading.md").read_text(encoding="utf-8")
+    section = " ".join(page.split("### To 0.12.0")[1].split("\n### ")[0].split())
+    assert "`midwife.batteries.unified.TRAINS_ON_INPUTS`" in section
+    assert "ImportError" in section and "trainsOnInputs" in section
