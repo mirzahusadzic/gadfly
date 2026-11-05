@@ -10,6 +10,21 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
+### To 0.12.0, not yet released
+
+No verdict changes, and this thing a caller of 0.11.0 meets does:
+
+| In 0.11.0 | In 0.12.0 | What to do |
+| --- | --- | --- |
+| The `unified` battery refused, before any call, a model whose slug began `ultra-spark/` or `openrouter/meta/`, the non-training Muse Spark 1.3 included | Which models train is the router's to say: without `trainsOnInputs`, each call goes under the deny data policy, and the router refuses a model it declares training-tier, as an opening that names it | Name a training model under `trainsOnInputs` as before; a non-training one, such as `openrouter/meta/muse-spark-1.3`, now runs |
+
+New:
+
+- **`StopRun`:** a battery or a maker raises `midwife.errors.StopRun(reason)` when its harness fails. The run ends as a spent budget ends it, a `StoppedWarning` with exit 3 that quotes the reason, and `--kept` finishes it once the harness is fixed.
+- **Private Ultra Spark:** `ultra-spark-private/` slugs go to the router, which the `unified` battery refused before as an OpenAI slug.
+
+---
+
 ### To 0.11.0
 
 No verdict changes, and these things a caller of 0.10.0 meets do:

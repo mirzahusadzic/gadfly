@@ -50,7 +50,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
-from ..errors import BatteryError, quoted
+from ..errors import BatteryError, StopRun, quoted
 from ..frame import Frame, parse
 from ..interventions import plan, prompt
 from ..pipeline import RAW_LIMIT, _checked
@@ -126,6 +126,8 @@ class Function:
         """The function's text for this body; a function spends no tokens."""
         try:
             made = self._make(text)
+        except StopRun:
+            raise  # the harness failed: the run stops, as run says
         except Exception as error:  # noqa: BLE001 — the failure is what was made
             opening = f"the function failed ({type(error).__name__})"
             return Made(None, opening=opening, usage={"output_tokens": 0})
@@ -318,6 +320,8 @@ class Crossing:
         whole = {"output_tokens": share}  # what a maker that says nothing is charged
         try:
             made = self.maker.make(line["maker"], body, share)
+        except StopRun:
+            raise  # the harness failed: the run stops, as run says
         except Exception as error:  # noqa: BLE001 — the failure is the observation
             opening = f"the maker failed ({type(error).__name__})"
             return Observation(label=None, opening=opening, usage=whole, served=maker)
@@ -365,6 +369,8 @@ class Crossing:
             )
         try:
             seen = self.reader.observe(reading, f"{made.text}{SEPARATOR}{question}", left)
+        except StopRun:
+            raise  # the harness failed: the run stops, as run says
         except Exception as error:  # noqa: BLE001 — the failure is the observation
             return Observation(
                 label=None,

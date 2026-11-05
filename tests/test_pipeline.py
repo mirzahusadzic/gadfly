@@ -356,3 +356,61 @@ def test_a_malformed_kept_record_is_refused_before_a_budget_refusal(raw):
     frame = situate(raw)
     with pytest.raises(ValueError, match="a record is a JSON object"):
         run(frame, Rules(), Budget(calls=1), kept=[None])
+
+
+class Halting:
+    """A battery whose harness fails on its `after`-th call: it raises StopRun."""
+
+    name = "rule-reader"
+    concurrent = True
+
+    def __init__(self, after):
+        self.after, self.calls = after, 0
+
+    def check(self, frame):
+        pass
+
+    def observe(self, frame, prompt, max_output_tokens):
+        from midwife.errors import StopRun
+
+        self.calls += 1
+        if self.calls >= self.after:
+            raise StopRun("the key was refused")
+        return Observation(label="grant")
+
+
+@pytest.mark.parametrize("parallel", [1, 3])
+def test_a_battery_stops_the_run_and_the_call_it_stopped_makes_no_record(raw, parallel):
+    import warnings
+
+    from midwife.errors import StoppedWarning
+
+    raw["battery"] = {"kind": "rule-reader"}
+    frame = situate(raw)
+    n = calls_needed(frame)
+    with warnings.catch_warnings(record=True) as seen:
+        warnings.simplefilter("always")
+        result = run(frame, Halting(after=3), Budget(calls=n), parallel=parallel)
+    assert result.stopped == "the battery stopped the run ('the key was refused')"
+    assert all(r.opening is None for r in result.records)  # no record is the failure
+    assert len(result.records) < n and len(result.records) <= 2 + (parallel - 1)
+    assert any(issubclass(w.category, StoppedWarning) for w in seen)
+
+
+def test_a_maker_stops_the_run_through_a_crossing(raw):
+    import copy
+
+    from midwife.batteries.crossing import Crossing, Function
+    from midwife.errors import StopRun
+    from midwife.frame import parse
+    from tests.fixtures.incident import INCIDENT, CauseReader
+
+    def broken(text):
+        raise StopRun("the maker's tool is down")
+
+    frame = parse({**copy.deepcopy(INCIDENT), "battery": {"kind": "crossing",
+        "maker": {"kind": "cause"}, "reader": {"kind": "cause-reader"}}})  # fmt: skip
+    result = run(
+        frame, Crossing(Function("cause", broken), CauseReader()), Budget(calls=calls_needed(frame))
+    )
+    assert result.records == () and "the maker's tool is down" in result.stopped

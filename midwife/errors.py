@@ -98,6 +98,19 @@ class BatteryError(GadflyError):
     exit = 6
 
 
+class StopRun(Exception):  # noqa: N818 — a signal, not a failure to report
+    """Raised by a battery or a maker when its harness, not the frame, has
+    failed, so no further call can be read: a refused key, a broken tool.
+    The run makes no record of that call and starts no other; calls already
+    out end and are kept, and it ends as a stopped run that quotes `reason`,
+    as a spent budget ends one, so `--kept` finishes it once the harness is
+    fixed. Never a label, and never an opening."""
+
+    def __init__(self, reason: str):
+        super().__init__(reason)
+        self.reason = str(reason)
+
+
 class GadflyWarning(UserWarning):
     """What a run did not do as asked, though it went on and kept its
     records."""

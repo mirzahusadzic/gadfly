@@ -33,6 +33,7 @@ from .errors import (
     OpeningWarning,
     RecordsError,
     StoppedWarning,
+    StopRun,
     UsageError,
     quoted,
 )
@@ -264,7 +265,11 @@ def run(
                 if stopped:
                     return ended(stopped)
                 text = prompt(frame, trial, x)
-                stopped = keep(x, trial, index, text, _observe(battery, frame, text, cap))
+                try:
+                    observation = _observe(battery, frame, text, cap)
+                except StopRun as stop:
+                    return ended(_halted(stop))
+                stopped = keep(x, trial, index, text, observation)
                 if stopped:
                     return ended(stopped)
         except (KeyboardInterrupt, SystemExit) as interrupt:
@@ -287,11 +292,17 @@ def run(
     running: dict[Future[None], int] = {}
 
     def ask(seq: int, text: str) -> None:
-        ended_at[seq] = _observe(battery, frame, text, cap)
+        try:
+            ended_at[seq] = _observe(battery, frame, text, cap)
+        except StopRun as stop:
+            ended_at[seq] = stop  # read when kept: no record, and no call after
 
     def keep_call(seq: int) -> str | None:
         x, trial, index, text = started.pop(seq)
-        return keep(x, trial, index, text, ended_at.pop(seq))
+        observed = ended_at.pop(seq)
+        if isinstance(observed, StopRun):
+            return _halted(observed)
+        return keep(x, trial, index, text, observed)
 
     # A first Ctrl-C lets the calls already out end and keeps them, then goes
     # on as KeyboardInterrupt; a second stops at once.
@@ -399,11 +410,18 @@ def _text(text: str) -> str:
     return _SURROGATE.sub("\ufffd", text)
 
 
+def _halted(stop: StopRun) -> str:
+    """Why a run a battery stopped ended, its reason quoted."""
+    return f"the battery stopped the run ({stop.reason!r})"
+
+
 def _observe(battery: Battery, frame: Frame, text: str, cap: int) -> Observation:
     """A battery that fails gives an opening, never a guessed label; what it
     said and spent is kept beside the opening."""
     try:
         observation = battery.observe(frame, text, cap)
+    except StopRun:
+        raise  # the harness, not the call, failed: the run stops, with no record
     except Exception as error:  # noqa: BLE001 — the failure is the observation
         return Observation(label=None, opening=f"the battery failed ({type(error).__name__})")
     return _checked(frame, observation)

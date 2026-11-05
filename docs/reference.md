@@ -363,6 +363,19 @@ cannot reach what it needs.
 class BatteryError(GadflyError)
 ```
 
+#### StopRun
+
+Raised by a battery or a maker when its harness, not the frame, has
+failed, so no further call can be read: a refused key, a broken tool.
+The run makes no record of that call and starts no other; calls already
+out end and are kept, and it ends as a stopped run that quotes `reason`,
+as a spent budget ends one, so `--kept` finishes it once the harness is
+fixed. Never a label, and never an opening.
+
+```python
+class StopRun(Exception)
+```
+
 #### GadflyWarning
 
 What a run did not do as asked, though it went on and kept its
@@ -1386,8 +1399,9 @@ The unified battery: an LLM critic through the unified model router.
 The [unified model router](https://github.com/mirzahusadzic/unified-model-router)
 serves the Responses API on loopback and maps a model slug to the provider
 that serves it, with the router's own key: this battery sees only the router.
-A slug whose provider trains on its inputs, by the router's own list, is sent
-only when the frame names it exactly under `trainsOnInputs`.
+Which models train is the router's declaration, never this battery's: every
+call goes under the router's deny data policy unless the frame names its exact
+slug under `trainsOnInputs`.
 
 One battery covers them all; calling a provider's own endpoint is a
 different battery (a native one). An unprefixed slug is OpenAI's, which the
@@ -1408,11 +1422,11 @@ What this battery promises, whatever the frame says:
 - it talks only to a router on this machine (loopback);
 - it sends no tools: the router's web search runs on another provider, and a
   body would leave the model's own provider with it;
-- it refuses a model whose provider trains on its inputs unless the frame
-  names that model under `battery.trainsOnInputs`, and sends every other call
-  under the router's deny data policy (`X-Codex-Router-Data-Policy: deny`),
-  so the router refuses a model whose provider trains and reaches only
-  endpoints that keep no data; before the first call it checks that the
+- it sends every call under the router's deny data policy
+  (`X-Codex-Router-Data-Policy: deny`) unless the frame names that exact model
+  under `battery.trainsOnInputs`, so the router refuses a model it declares
+  training-tier, before anything is sent upstream, and that call is an
+  opening, and reaches only endpoints that keep no data; before the first call it checks that the
   router lists the policy at `GET /health`, and refuses to run if not;
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
@@ -1550,9 +1564,10 @@ class Unified
 ##### Unified.check
 
 Refuse, before any call, a frame this battery must not serve: another
-battery's, an unknown key, an OpenAI slug, tools, a model whose
-provider trains on its inputs without the frame's consent, or no
-router token.
+battery's, an unknown key, an OpenAI slug, tools, or no router
+token. Which models train is the router's to say: without the
+frame's consent each call goes under the deny data policy, and the
+router refuses a training-tier model then.
 
 ```python
 check(frame)

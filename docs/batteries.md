@@ -39,6 +39,10 @@ class Battery(Protocol):
   it after `check` with each answer's cap, so a battery refuses a cap it
   cannot answer within before any call; the unified and crossing batteries
   refuse one that leaves a thinking budget no room.
+- **`StopRun`:** raised by a battery or a maker when its harness, not the
+  frame, has failed, such as a refused key or a broken tool. The run keeps no
+  record of that call, starts no other, keeps the calls already out, and ends
+  as a stopped run that quotes the reason, as a spent budget ends one.
 
 The protocol's invariant is **trial blindness**: a battery sees the changed
 body and the input, never `baseline`, `sham-1` or `ablation`. A scorer that
