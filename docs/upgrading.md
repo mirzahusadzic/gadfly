@@ -16,7 +16,7 @@ No verdict changes, and these things a caller of 0.11.0 meets do:
 
 | In 0.11.0 | In 0.12.0 | What to do |
 | --- | --- | --- |
-| The `unified` battery refused, before any call, a model whose slug began `ultra-spark/` or `openrouter/meta/`, the non-training Muse Spark 1.3 included | Which models train is the router's to say: without `trainsOnInputs`, each call goes under the deny data policy, and the router refuses a model it declares training-tier, as an opening that names it | Name a training model under `trainsOnInputs` as before; a non-training one, such as `openrouter/meta/muse-spark-1.3`, now runs |
+| The `unified` battery refused, before any call, a model whose slug began `ultra-spark/` or `openrouter/meta/` unless the frame named that exact slug under `trainsOnInputs`, so the non-training Muse Spark 1.3 ran only with consent to training it does not do | Which models train is the router's to say: without `trainsOnInputs`, each call goes under the deny data policy, and the router refuses a model it declares training-tier, as an opening that names it | Name a training model under `trainsOnInputs` as before; a non-training one, such as `openrouter/meta/muse-spark-1.3`, now runs without it, under the deny policy |
 | `midwife.batteries.unified.TRAINS_ON_INPUTS` held the battery's prefixes of training models | The name is gone, and importing it raises `ImportError` | Keep your own list of the exact slugs you consent to, and name each under `trainsOnInputs` |
 
 New:

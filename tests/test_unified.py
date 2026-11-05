@@ -737,3 +737,15 @@ def test_upgrading_says_the_name_list_is_gone_and_what_a_caller_does_instead():
     section = " ".join(page.split("### To 0.12.0")[1].split("\n### ")[0].split())
     assert "`midwife.batteries.unified.TRAINS_ON_INPUTS`" in section
     assert "ImportError" in section and "trainsOnInputs" in section
+
+
+def test_upgrading_says_the_old_check_let_a_consented_model_through():
+    # the 0.11.0 check refused by prefix only without consent; the row once left
+    # that out, and read as if no Muse model had ever run
+    from pathlib import Path
+
+    page = (Path(__file__).parent.parent / "docs/upgrading.md").read_text(encoding="utf-8")
+    section = page.split("### To 0.12.0")[1].split("\n### ")[0]
+    first = next(line for line in section.splitlines() if line.startswith("| The `unified`"))
+    assert "unless the frame named that exact slug under `trainsOnInputs`" in first
+    assert "only with consent to training it does not do" in first
