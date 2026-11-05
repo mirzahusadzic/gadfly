@@ -133,7 +133,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | `--settle` | flag | Stops asking a trial once its level cannot change, such as after four alike of five with four to agree. The verdict reads as a whole run's; under `stable` the baseline and repeat always run whole. |
 | `--stop-unresolved` | flag | Asks the baseline, repeat, ablation, control, presentation and placement first, then stops asking an input once no answer its other trials could give would resolve it. The verdict reads the category a whole run would and names the trials not asked. |
 | `--parallel` | a whole number, 1 by default | Makes that many calls at once, for a battery that takes them (the unified battery does; eGemma, with its rate limit, does not). A first Ctrl-C lets the calls already out end and keeps them; a second stops at once. |
-| `--json` | flag | Prints the calls planned and made, the openings by reason, why it stopped, its exit status and its warnings, as one JSON object. |
+| `--json` | flag | Prints the calls planned and made, the tokens they reported as `usage`, the openings by reason, why it stopped, its exit status and its warnings, as one JSON object. |
 
 With `--out -` the records stream to standard output, and `report` reads
 them from standard input when its records are `-`:
@@ -199,7 +199,8 @@ pr: carried
 
 It opens with the frame, the records and the overall category, then each
 input's finding; the [example report](breadth/report-example.md) reads one
-with three inputs.
+with three inputs. With `--json` it also gives the records read and the tokens
+they reported, as `records` and `usage`, as `run` and `firm` do.
 
 ---
 
@@ -343,7 +344,7 @@ uv run gadfly firm kiran.json --runs kiran-runs \
 ```
 
 It prints each run's category, whether the verdict is firm, and the tokens
-the calls made now reported, in and out. A stop for the budget is a
+the calls made now reported, in and out, which `--json` gives as `usage`. A stop for the budget is a
 `StoppedWarning`, and a run that a battery or Ctrl-C cut short is named by
 its file, since it is never read as firm.
 

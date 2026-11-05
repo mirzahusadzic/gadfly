@@ -26,6 +26,7 @@ from collections import Counter, defaultdict, deque
 from collections.abc import Callable, Iterable
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, replace
+from typing import Any
 
 from .errors import (
     BatteryError,
@@ -76,6 +77,18 @@ def calls_needed(frame: Frame) -> int:
     """The calls a whole run makes: every trial of every input, `quorum`
     times each. A budget of this many calls covers it."""
     return len(frame.inputs) * len(trial_ids(frame)) * frame.quorum
+
+
+def _usage(records: Iterable[Record | dict[str, Any]]) -> dict[str, int]:
+    """Each whole count the records' calls reported, summed by name; a count
+    no call reported is absent, never a zero."""
+    summed: dict[str, int] = {}
+    for record in records:
+        usage = record.get("usage") if isinstance(record, dict) else record.usage
+        for name, count in (usage if isinstance(usage, dict) else {}).items():
+            if isinstance(count, int) and not isinstance(count, bool):
+                summed[name] = summed.get(name, 0) + count
+    return summed
 
 
 def _check_parallel(parallel: int, battery: Battery | None) -> None:

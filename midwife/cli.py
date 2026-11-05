@@ -52,7 +52,7 @@ from .errors import (
     plain,
 )
 from .frame import schema
-from .pipeline import calls_needed, judge, overall, plan, run, situate
+from .pipeline import _usage, calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
 from .types import Battery, Budget, Record
 from .verdict import settled, unreachable
@@ -553,6 +553,7 @@ def command_run(args) -> int:
             "out": str(out),
             "planned": result.planned,
             "made": len(result.records),
+            "usage": _usage(result.records),
             "kept": len(kept) if files else 0,
             "settled": result.settled,
             "unasked": result.unasked,
@@ -626,6 +627,8 @@ def command_report(args) -> int:
         document = {
             "frame": frame.name,
             "hash": frame.hash,
+            "records": len(records),
+            "usage": _usage(records),
             "overall": overall(findings).as_dict(),
             "findings": [finding.as_dict() for finding in findings],
         }

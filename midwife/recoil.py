@@ -48,7 +48,7 @@ from typing import Any
 from .errors import GadflyError, RecordsError, StoppedWarning, UsageError, is_plain, quoted
 from .frame import SALIENCE, Frame, _read_once, digest, parse
 from .interventions import plan, prompt
-from .pipeline import _check_parallel, calls_needed, run
+from .pipeline import _check_parallel, _usage, calls_needed, run
 from .stats import stability
 from .types import Battery, Budget, Record
 from .verdict import (
@@ -796,7 +796,7 @@ def until_firm(
         raise UsageError("firm is a share above 0, up to 1")
     runs = _kept(frame, kept, most)
     each, made, spent = calls_needed(frame), 0, 0
-    used: dict[str, int] = {}
+    made_now: list[Record] = []
     findings: list[Finding] = []
     shares: dict[str, float] = {}
     before: dict[str, str] | None = None
@@ -829,10 +829,7 @@ def until_firm(
             )
             runs.append(tuple(record.as_dict() for record in result.records))
             made += len(result.records)
-            for record in result.records:
-                for name, count in record.usage.items():
-                    if isinstance(count, int) and not isinstance(count, bool):
-                        used[name] = used.get(name, 0) + count
+            made_now.extend(result.records)
             spent += sum(
                 _charged(record.usage, budget.output_tokens_per_call) for record in result.records
             )
@@ -843,9 +840,11 @@ def until_firm(
         read = {f.input: f.category for f in findings}
         alike = all(share >= firm for share in shares.values()) and before in (None, read)
         if alike and place == len(runs) - 1:  # a later kept run decides instead
-            return Firm(frame, tuple(runs), tuple(findings), shares, True, made, usage=used)
+            return Firm(
+                frame, tuple(runs), tuple(findings), shares, True, made, usage=_usage(made_now)
+            )
         before = read
-    return Firm(frame, tuple(runs), tuple(findings), shares, False, made, stopped, used)
+    return Firm(frame, tuple(runs), tuple(findings), shares, False, made, stopped, _usage(made_now))
 
 
 def calls_until_firm(

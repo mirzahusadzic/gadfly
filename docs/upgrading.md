@@ -15,7 +15,7 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 No verdict changes, and nothing a caller of 0.12.0 meets changes. New:
 
 - **Calls at once while asking until firm:** `until_firm(..., parallel=N)` and `gadfly firm --parallel N` make up to N calls at once within each run, for a battery that takes them, as `run`'s `parallel` does. The runs stay one after another, and a battery that takes one call at a time is refused before any call, in `run`'s words.
-- **The readers' tokens beside firmness:** `gadfly firm` ends its last line with the tokens the calls made now reported, in and out and how many of those out were reasoning, and `--json` and `until_firm`'s result give them as `usage`, each count by name. Nothing is estimated: a count no call reported is absent.
+- **The readers' tokens beside firmness:** `gadfly firm` ends its last line with the tokens the calls made now reported, in and out and how many of those out were reasoning, and `--json` and `until_firm`'s result give them as `usage`, each count by name. `run --json` gives the same `usage` beside `made`, and `report --json` gives it beside `records`, the records it read. Nothing is estimated: a count no call reported is absent.
 
 ---
 

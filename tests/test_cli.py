@@ -105,6 +105,20 @@ def run_refund(tmp_path, *more):
     return main([*argv, "--out", str(out), *more]), out
 
 
+def test_run_and_report_say_the_tokens_as_firm_does(tmp_path, capsys):
+    # one field, said alike by every command where it applies: run gives the
+    # calls made and their usage, report the records read and theirs
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Metered", "--calls", "8"]
+    assert main([*argv, "--out", str(out), "--json"]) == 0
+    usage = {"input_tokens": 8000, "output_tokens": 320, "reasoning_tokens": 240}
+    ran = json.loads(capsys.readouterr().out)
+    assert (ran["made"], ran["usage"]) == (8, usage)
+    assert main(["report", REFUND, str(out), "--json"]) == 0
+    read = json.loads(capsys.readouterr().out)
+    assert (read["records"], read["usage"]) == (8, usage)
+
+
 def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):
     status, out = run_refund(tmp_path)
     assert status == 0 and capsys.readouterr().out == (
