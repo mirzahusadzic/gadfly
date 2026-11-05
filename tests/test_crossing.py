@@ -316,7 +316,9 @@ def test_the_maker_line_is_held_to_the_unified_batterys_checks(through_router):
     error = refused({**MAKER, "model": "gpt-5.5"}, "model 'gpt-5.5' is an OpenAI slug")
     assert error.__notes__[-1] == "it is the crossing's maker line, battery.maker, that is refused"
     muse = "openrouter/meta/muse-spark-1.3"
-    refused({**MAKER, "model": muse}, "trains on its inputs")
+    unnamed = parse({**copy.deepcopy(INCIDENT), "battery": {"kind": "crossing",
+        "maker": {**MAKER, "model": muse}, "reader": READER}})  # fmt: skip
+    Crossing(UnifiedMaker(router.url)).check(unnamed)  # the router decides, under deny
     frame = parse({**copy.deepcopy(INCIDENT), "battery": {
         "kind": "crossing", "maker": {**MAKER, "model": muse, "trainsOnInputs": [muse]},
         "reader": READER}})  # fmt: skip

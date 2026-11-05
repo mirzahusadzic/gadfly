@@ -3,8 +3,9 @@
 The [unified model router](https://github.com/mirzahusadzic/unified-model-router)
 serves the Responses API on loopback and maps a model slug to the provider
 that serves it, with the router's own key: this battery sees only the router.
-A slug whose provider trains on its inputs, by the router's own list, is sent
-only when the frame names it exactly under `trainsOnInputs`.
+Which models train is the router's declaration, never this battery's: every
+call goes under the router's deny data policy unless the frame names its exact
+slug under `trainsOnInputs`.
 
 One battery covers them all; calling a provider's own endpoint is a
 different battery (a native one). An unprefixed slug is OpenAI's, which the
@@ -23,11 +24,11 @@ What this battery promises, whatever the frame says:
 - it talks only to a router on this machine (loopback);
 - it sends no tools: the router's web search runs on another provider, and a
   body would leave the model's own provider with it;
-- it refuses a model whose provider trains on its inputs unless the frame
-  names that model under `battery.trainsOnInputs`, and sends every other call
-  under the router's deny data policy (`X-Codex-Router-Data-Policy: deny`),
-  so the router refuses a model whose provider trains and reaches only
-  endpoints that keep no data; before the first call it checks that the
+- it sends every call under the router's deny data policy
+  (`X-Codex-Router-Data-Policy: deny`) unless the frame names that exact model
+  under `battery.trainsOnInputs`, so the router refuses a model it declares
+  training-tier, before anything is sent upstream, and that call is an
+  opening, and reaches only endpoints that keep no data; before the first call it checks that the
   router lists the policy at `GET /health`, and refuses to run if not;
 - it uses no proxy and follows no redirect, so the body and the token go to
   the loopback address named and nowhere else;
@@ -83,8 +84,6 @@ from .critic import (
 
 DEFAULT_URL = "http://127.0.0.1:18766/v1/responses"
 ENV_FILE = Path.home() / ".codex" / "unified-router" / "openrouter.env"
-# Slugs whose provider trains on what it receives (the router's own warning).
-TRAINS_ON_INPUTS = ("ultra-spark/", "openrouter/meta/")
 # The router's diagnostic when no endpoint it may use for the model keeps no
 # data: which endpoints serve a model is the router's provider setting.
 NO_ENDPOINT_WITHOUT_DATA = "openrouter-data-policy"
@@ -104,7 +103,7 @@ ROUTE = re.compile(r"[a-z][a-z0-9-]{0,31}")
 CLAUDE = "anthropic/"  # the slugs the router may keep on Anthropic's API
 # Providers the router reaches with its own keys. An unprefixed slug is OpenAI's,
 # which the router reaches only with the caller's Codex sign-in.
-ROUTED_PREFIXES = ("anthropic/", "openrouter/", "deepseek/", "ultra-spark/")
+ROUTED_PREFIXES = ("anthropic/", "openrouter/", "deepseek/", "ultra-spark/", "ultra-spark-private/")
 BATTERY_KEYS = {
     "kind", "model", "reasoning", "output", "trainsOnInputs", "tools", "endpoints",
     "fallback", "thinkingBudget",
@@ -363,9 +362,10 @@ class Unified:
 
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this battery must not serve: another
-        battery's, an unknown key, an OpenAI slug, tools, a model whose
-        provider trains on its inputs without the frame's consent, or no
-        router token."""
+        battery's, an unknown key, an OpenAI slug, tools, or no router
+        token. Which models train is the router's to say: without the
+        frame's consent each call goes under the deny data policy, and the
+        router refuses a training-tier model then."""
         battery = frame.battery
         if battery.get("kind") != self.name:
             raise BatteryError(f"this frame asks for battery {battery.get('kind')!r}")
@@ -434,11 +434,6 @@ class Unified:
         named = battery.get("trainsOnInputs", [])
         if not (isinstance(named, list) and all(isinstance(m, str) and m for m in named)):
             raise BatteryError("battery.trainsOnInputs lists the model slugs that may train")
-        if model.startswith(TRAINS_ON_INPUTS) and not consented(battery):
-            raise BatteryError(
-                f"the provider of model {model!r} trains on its inputs",
-                "name it under battery.trainsOnInputs to send the body there",
-            )
         _token()  # no token, no run: refuse before the first call, not at each
         # A router without the policy could reach an endpoint that keeps data,
         # and one without pins could spread a quorum: either refuses the run.

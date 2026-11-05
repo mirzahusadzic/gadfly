@@ -179,7 +179,6 @@ def test_check_refuses_tools_training_providers_wrong_kinds_and_no_token(
         ({"tools": ["web_search"]}, "no tools"),
         ({"tools": []}, "no tools"),
         ({"tools": False}, "no tools"),
-        ({"model": "ultra-spark/deepseek-v4.1-flash-1017"}, "trains on its inputs"),
         ({"model": " "}, "slug the router serves"),
         ({"kind": "other"}, "asks for battery 'other'"),
         ({"reasoning": "extreme"}, "reasoning is one of"),
@@ -706,3 +705,23 @@ def test_a_record_names_the_route_the_router_says_a_call_went(
     battery = Unified(router((200, {}, completed(model="m", **reported))).url)
     battery.check(situate(raw))
     assert battery.observe(situate(raw), "p", 16).served == served
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "openrouter/meta/muse-spark-1.3",  # not training: its name once refused it
+        "ultra-spark-private/deepseek-v4.1-flash-1017",  # routed, not an OpenAI slug
+        "ultra-spark/deepseek-v4.1-flash-1017",  # training: the router refuses it
+    ],
+)
+def test_the_router_not_a_name_decides_which_models_train(raw, token, router, model):
+    # without consent every call goes under deny; the router's own list refuses
+    # a training-tier model then, before anything is sent upstream
+    raw["battery"]["model"] = model
+    fake = router((200, {}, answer("decline")))
+    battery = Unified(fake.url)
+    battery.check(situate(raw))
+    battery.observe(situate(raw), "p", 16)
+    [(headers, body)] = fake.requests
+    assert headers["x-codex-router-data-policy"] == "deny" and body["model"] == model
