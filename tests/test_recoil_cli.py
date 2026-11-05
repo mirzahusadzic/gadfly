@@ -682,6 +682,7 @@ def test_firm_keeps_each_run_and_reads_them_back_as_runs_made(thrice, capsys):
         "hash": asked.frame.hash,
         "runs": [{"file": str(runs / "1.jsonl"), "kept": True, "category": "carried"}],
         "made": 0,
+        "usage": {},
         "firm": asked.firm,
         "category": asked.category,
         "shares": asked.shares,
@@ -707,6 +708,25 @@ def test_firm_makes_calls_at_once_within_each_run(thrice, capsys):
         "firm: yes, carried after 1 run, read alike in 100% of draws; 24 calls made now",
     ]
     assert len(load_records(str(runs / "1.jsonl"))) == 24
+
+
+def test_firm_says_the_tokens_its_calls_reported_on_its_last_line(thrice, capsys):
+    # the readers' cost beside the calls: summed from each record's usage
+    frame, runs = thrice
+    assert firm(frame, runs, "Metered", "--calls", "100") == 0
+    assert told(capsys)[-1] == (
+        "firm: yes, carried after 1 run, read alike in 100% of draws; 24 calls made now, "
+        "24,000 tokens in, 960 out, 720 of them reasoning"
+    )
+    again = runs.parent / "again"
+    again.mkdir()
+    assert firm(frame, again, "Metered", "--calls", "100", "--json") == 0
+    document = json.loads(capsys.readouterr().out)
+    assert document["usage"] == {
+        "input_tokens": 24000,
+        "output_tokens": 960,
+        "reasoning_tokens": 720,
+    }
 
 
 def test_firm_refuses_calls_at_once_a_battery_does_not_take(thrice, capsys):

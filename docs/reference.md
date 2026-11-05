@@ -1083,7 +1083,9 @@ What asking a frame until its verdict was firm made: every run, kept
 ones first, and the last cut short when it stopped short; the findings
 of the latest whole run; how often the draws of its calls read each
 input's category; whether that was firm; the calls made now; and why it
-stopped short, if it did.
+stopped short, if it did. `usage` sums each whole count the calls made
+now reported, such as `input_tokens` and `output_tokens`, by name; a
+count no call reported is absent, never a zero.
 
 ```python
 @dataclass(frozen=True)

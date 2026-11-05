@@ -65,6 +65,15 @@ class AtOnce(RuleReader):
                 held.out -= 1
 
 
+class Metered(RuleReader):
+    """The rule reader reporting the tokens each call spent, as a provider does."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        read = super().observe(frame, prompt, max_output_tokens)
+        read.usage.update(input_tokens=1000, output_tokens=40, reasoning_tokens=30)
+        return read
+
+
 class Unreachable(RuleReader):
     """The rule reader when its service is down: every call is an opening."""
 

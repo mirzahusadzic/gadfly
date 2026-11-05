@@ -1102,6 +1102,7 @@ def command_firm(args) -> int:
             **_which(frame),
             "runs": runs,
             "made": len(made),
+            "usage": asked.usage,
             "firm": asked.firm,
             "category": asked.category,
             "shares": asked.shares,
@@ -1128,11 +1129,24 @@ def command_firm(args) -> int:
         state += f", read alike in {alike} of draws"
     if not asked.firm and not asked.stopped and many >= args.most:
         state += ", as many runs as --most reads"
-    print(f"firm: {state}; {len(made)} calls made now")
+    print(f"firm: {state}; {len(made)} calls made now{_tokens(asked.usage)}")
     for warning, _ in raised:
         notes = list(getattr(warning, "__notes__", []))
         print(f"{type(warning).__name__}: {warning}", *notes, sep="\n", file=sys.stderr)
     return status
+
+
+def _tokens(usage: dict[str, int]) -> str:
+    # the tokens the calls made now reported, in and out, and the reasoning
+    # among those out; nothing when no call reported them
+    said = []
+    if "input_tokens" in usage:
+        said.append(f"{usage['input_tokens']:,} tokens in")
+    if "output_tokens" in usage:
+        said.append(f"{usage['output_tokens']:,} out")
+        if "reasoning_tokens" in usage:
+            said.append(f"{usage['reasoning_tokens']:,} of them reasoning")
+    return "".join(f", {part}" for part in said)
 
 
 def command_gate(args) -> int:

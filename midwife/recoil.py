@@ -714,7 +714,9 @@ class Firm:
     ones first, and the last cut short when it stopped short; the findings
     of the latest whole run; how often the draws of its calls read each
     input's category; whether that was firm; the calls made now; and why it
-    stopped short, if it did."""
+    stopped short, if it did. `usage` sums each whole count the calls made
+    now reported, such as `input_tokens` and `output_tokens`, by name; a
+    count no call reported is absent, never a zero."""
 
     frame: Frame
     runs: tuple[tuple[dict[str, Any], ...], ...]
@@ -723,6 +725,7 @@ class Firm:
     firm: bool
     made: int
     stopped: str | None = None
+    usage: dict[str, int] = field(default_factory=dict)
 
     @property
     def category(self) -> str | None:
@@ -793,6 +796,7 @@ def until_firm(
         raise UsageError("firm is a share above 0, up to 1")
     runs = _kept(frame, kept, most)
     each, made, spent = calls_needed(frame), 0, 0
+    used: dict[str, int] = {}
     findings: list[Finding] = []
     shares: dict[str, float] = {}
     before: dict[str, str] | None = None
@@ -825,6 +829,10 @@ def until_firm(
             )
             runs.append(tuple(record.as_dict() for record in result.records))
             made += len(result.records)
+            for record in result.records:
+                for name, count in record.usage.items():
+                    if isinstance(count, int) and not isinstance(count, bool):
+                        used[name] = used.get(name, 0) + count
             spent += sum(
                 _charged(record.usage, budget.output_tokens_per_call) for record in result.records
             )
@@ -835,9 +843,9 @@ def until_firm(
         read = {f.input: f.category for f in findings}
         alike = all(share >= firm for share in shares.values()) and before in (None, read)
         if alike and place == len(runs) - 1:  # a later kept run decides instead
-            return Firm(frame, tuple(runs), tuple(findings), shares, True, made)
+            return Firm(frame, tuple(runs), tuple(findings), shares, True, made, usage=used)
         before = read
-    return Firm(frame, tuple(runs), tuple(findings), shares, False, made, stopped)
+    return Firm(frame, tuple(runs), tuple(findings), shares, False, made, stopped, used)
 
 
 def calls_until_firm(

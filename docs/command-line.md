@@ -342,9 +342,10 @@ uv run gadfly firm kiran.json --runs kiran-runs \
   --calls 45 --output-tokens 8000
 ```
 
-It prints each run's category and whether the verdict is firm. A stop for
-the budget is a `StoppedWarning`, and a run that a battery or Ctrl-C cut
-short is named by its file, since it is never read as firm.
+It prints each run's category, whether the verdict is firm, and the tokens
+the calls made now reported, in and out. A stop for the budget is a
+`StoppedWarning`, and a run that a battery or Ctrl-C cut short is named by
+its file, since it is never read as firm.
 
 `--parallel N` makes up to N calls at once within each run, for a battery
 that takes them, as `run --parallel` does. The runs stay one after another,
