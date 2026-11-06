@@ -745,6 +745,17 @@ def test_firm_counts_the_calls_that_reported_no_reasoning(thrice, capsys):
     assert sum(document["unthought"]["trials"].values()) == len(reflexes)
 
 
+def test_firm_takes_auto_calls_as_the_most_its_runs_can_take(thrice, capsys):
+    # --calls auto reserves calls_until_firm: whole runs up to --most, past the kept
+    frame, runs = thrice
+    assert firm(frame, runs, "RuleReader", "--calls", "auto") == 0
+    assert told(capsys)[-1].endswith("; 24 calls made now")
+    # a folder already holding --most runs leaves nothing to ask, and none is
+    assert firm(frame, runs, "RuleReader", "--calls", "auto", "--most", "1") == 0
+    assert told(capsys)[-1].endswith("; 0 calls made now")
+    assert [path.name for path in runs.iterdir()] == ["1.jsonl"]
+
+
 def test_firm_refuses_calls_at_once_a_battery_does_not_take(thrice, capsys):
     # refused before any call, and no run file is made
     frame, runs = thrice

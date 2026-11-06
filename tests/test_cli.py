@@ -121,6 +121,15 @@ def test_run_and_report_say_the_tokens_as_firm_does(tmp_path, capsys):
     assert (read["records"], read["usage"], read["unthought"]) == (8, usage, none)
 
 
+def test_run_takes_auto_calls_as_a_whole_run(tmp_path, capsys):
+    # --calls auto reserves what a whole run makes, calls_needed
+    out = tmp_path / "records.jsonl"
+    argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "auto"]
+    assert main([*argv, "--out", str(out), "--json"]) == 0
+    ran = json.loads(capsys.readouterr().out)
+    assert ran["made"] == ran["planned"] == len(out.read_text().splitlines())
+
+
 def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):
     status, out = run_refund(tmp_path)
     assert status == 0 and capsys.readouterr().out == (

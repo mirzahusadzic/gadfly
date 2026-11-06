@@ -428,6 +428,8 @@ def command_run(args) -> int:
     """`gadfly run`: every planned call the budget covers, each record kept."""
     frame = load_frame(args.frame)
     withhold = _withhold(args)
+    if args.calls == "auto":  # a whole run's calls, the most any run of it makes
+        args.calls = calls_needed(frame)
     battery = load_battery(args.battery)
     numbered = _numbered(args.kept) if args.kept else []
     kept = [old for _, old in numbered]
@@ -719,6 +721,15 @@ def command_check_frame(args) -> int:
     else:
         print(f"ok ({checked}): {plain(frame.name)} ({frame.hash}), {calls_needed(frame)} calls")
     return FrameError.exit if problems else 0
+
+
+def _calls(text: str) -> int | str:
+    # --calls: a whole number, or auto for what the frame itself needs; any
+    # other value is refused in argparse's own words for a whole number
+    return text if text == "auto" else int(text)
+
+
+_calls.__name__ = "int"
 
 
 def _withhold(args) -> Withhold | None:
@@ -1047,6 +1058,9 @@ def command_firm(args) -> int:
     folder = _runs_folder(args.runs, "make it, or choose another --runs", write=True)
     kept = _kept_runs(folder, frame, args.most)
     each = calls_needed(frame)
+    if args.calls == "auto":  # the most asking until firm can make, beyond the kept runs
+        made_by = [records for _, _, records in kept]
+        args.calls = max(1, recoil.calls_until_firm(frame, kept=made_by, most=args.most))
     if not kept and args.calls < each:  # nothing to read and nothing to ask: refused, as run's
         raise UsageError(
             f"a run needs {each} calls; --calls allows {args.calls}",
@@ -1287,7 +1301,9 @@ def parser() -> argparse.ArgumentParser:
     execute.add_argument(
         "--out", "-o", "--output", required=True, help="a new JSON Lines file, or - for stdout"
     )
-    execute.add_argument("--calls", required=True, type=int, help="the most calls to make")
+    execute.add_argument(
+        "--calls", required=True, type=_calls, help="the most calls to make, or auto for a run's"
+    )
     execute.add_argument("--output-tokens", type=int, default=64, help="each answer's cap")
     execute.add_argument("--token-budget", type=int, help="the most output tokens in all")
     execute.add_argument("--only", action="append", help="a trial id; may repeat")
@@ -1453,7 +1469,12 @@ def parser() -> argparse.ArgumentParser:
         metavar="FOLDER",
         help="the frame's runs, 1.jsonl and on: kept ones are read, new ones added",
     )
-    firmed.add_argument("--calls", required=True, type=int, help="the most calls to make")
+    firmed.add_argument(
+        "--calls",
+        required=True,
+        type=_calls,
+        help="the most calls to make, or auto for the most --most runs can take",
+    )
     firmed.add_argument("--output-tokens", type=int, default=64, help="each answer's cap")
     firmed.add_argument("--token-budget", type=int, help="the most output tokens in all")
     firmed.add_argument(

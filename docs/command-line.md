@@ -125,7 +125,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | --- | --- | --- |
 | `--battery` | `module:Class`, required | The battery, imported from the current directory. |
 | `--out`, also `-o` or `--output` | a new file or `-`, required | Where the records go, one JSON line each; `-` sends them to standard output and what `run` prints to standard error. |
-| `--calls` | a whole number, required | The most calls to make. |
+| `--calls` | a whole number or `auto`, required | The most calls to make; `auto` reserves a whole run's, which `plan` counts and `calls_needed` gives in Python. |
 | `--output-tokens` | a whole number, 64 by default | Each call's cap, a battery's own drafting included. |
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |
 | `--only` | a trial id, repeatable | Runs only those trials: a partial run, for diagnosis. |
@@ -390,12 +390,14 @@ uv run gadfly plan kiran.json --most 5 --runs kiran-runs
 | --- | --- | --- |
 | `--battery` | `module:Class`, required | The battery, imported from the current directory. |
 | `--runs` | a folder, required | The frame's runs, read in their order; each new run is added as the next file, record by record, never over one. |
-| `--calls` | a whole number, required | The most calls to make, over every run; no run starts that it cannot cover whole. |
+| `--calls` | a whole number or `auto`, required | The most calls to make, over every run; no run starts that it cannot cover whole. `auto` reserves the most `--most` runs can take beyond the kept ones, `calls_until_firm` in Python. |
 | `--output-tokens` | a whole number, 64 by default | Each call's cap, a battery's own drafting included. |
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |
 | `--firm` | a share, 0.95 by default | The share of draws that must read each input's category alike. |
 | `--most` | a whole number, 5 by default | The most runs read, kept ones included. |
-| `--json` | flag | Each run's file and category, whether the verdict is firm, the shares, the latest run's findings, the calls made, why it stopped, its exit status and its warnings. |
+| `--parallel` | a whole number, 1 by default | Makes that many calls at once within each run, for a battery that takes them; the runs stay one after another. |
+| `--withhold` | a file, or `-` | Refuses, before any call and without making a file, a frame whose prompts hold text the set withholds, as [Withhold text](#withhold-text) says. |
+| `--json` | flag | Each run's file and category, whether the verdict is firm, the shares, the latest run's findings, the calls made, their `usage` and `unthought` counts, why it stopped, its exit status and its warnings. |
 
 #### Read the gate
 
