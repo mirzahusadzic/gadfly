@@ -1618,3 +1618,13 @@ def test_a_frame_may_declare_the_most_runs_it_is_read_in():
         raw["standing"]["most"] = wrong
         with pytest.raises(FrameError, match="^standing.most is a whole number of runs"):
             parse(raw)
+
+
+def test_most_of_refuses_a_most_its_callers_cannot_read():
+    # pass 16 R8: the public answer is a whole number of runs, never True or 0
+    from midwife.recoil import most_of
+
+    after = with_slip(dolls()[1])
+    for wrong in (0, True, 1.5, "2"):
+        with pytest.raises(UsageError, match="^most is a whole number of runs, at least 1"):
+            most_of(after, wrong)

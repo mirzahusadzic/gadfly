@@ -14,7 +14,17 @@ import pytest
 
 from midwife.cli import load_frame, load_records, main
 from midwife.pipeline import calls_needed, run, situate
-from midwife.recoil import Piece, calls_until_firm, found, gate, sha256, successor, until_firm, walk
+from midwife.recoil import (
+    Piece,
+    calls_until_firm,
+    decided,
+    found,
+    gate,
+    sha256,
+    successor,
+    until_firm,
+    walk,
+)
 from midwife.types import Budget
 
 ROOT = Path(__file__).parent.parent
@@ -709,6 +719,48 @@ def test_firm_reads_as_many_runs_as_the_frame_declares(thrice, capsys):
     assert told(capsys, "err")[-2].startswith(
         "UsageError: frame 'refund-receipt' declares most 2, and 5 is asked"
     )
+
+
+def test_gate_refuses_a_different_most_for_a_reframing_too(tmp_path, capsys):
+    # pass 16 R6: one rule for every command, whether or not runs are read
+    before_path = ROOT / "examples/dolls/1-amani.json"
+    before = load_frame(str(before_path))
+    observe = before.raw["observe"]
+    labels = [observe["labels"][0], "boys", "mixed", *observe["labels"][1:]]
+    asked = load_frame(str(ROOT / "examples/22-kiran-paper.json"))
+    after = successor(
+        before,
+        "inside",
+        decided(asked, "boy"),
+        observe={"instruction": observe["instruction"], "labels": labels},
+    )
+    after["standing"]["most"] = 2
+    after_path = tmp_path / "after.json"
+    after_path.write_text(json.dumps(after), encoding="utf-8")
+    assert main(["gate", str(before_path), str(after_path), "--most", "5"]) == 2
+    assert "declares most 2, and 5 is asked" in capsys.readouterr().err
+    assert main(["gate", str(before_path), str(after_path)]) == 0
+
+
+def test_plan_help_names_the_frames_own_most(capsys):
+    # pass 16 R9
+    with pytest.raises(SystemExit):
+        main(["plan", "--help"])
+    assert "the frame's standing.most, else 5" in " ".join(capsys.readouterr().out.split())
+
+
+def test_a_full_folder_of_a_declared_most_is_told_only_to_move_runs_out(thrice, capsys):
+    # pass 16 R10: raising --most would be refused for this frame
+    frame, runs = thrice
+    raw = json.loads(frame.read_text(encoding="utf-8"))
+    raw["standing"]["most"] = 1
+    frame.write_text(json.dumps(raw), encoding="utf-8")
+    assert firm(frame, runs, "RuleReader", "--calls", "auto") == 0
+    (runs / "2.jsonl").write_text((runs / "1.jsonl").read_text(encoding="utf-8"), encoding="utf-8")
+    assert firm(frame, runs, "RuleReader", "--calls", "auto") == 2
+    said = told(capsys, "err")
+    assert said[-2].endswith("keeps 2 runs, more than --most reads")
+    assert said[-1] == "move the earliest runs out"
 
 
 def test_firm_makes_calls_at_once_within_each_run(thrice, capsys):

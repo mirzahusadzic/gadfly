@@ -877,7 +877,9 @@ def _kept_runs(folder: Path, frame, most: int) -> list[tuple[int, Path, list[dic
     if many > most:
         raise UsageError(
             f"folder {str(folder)!r} keeps {many} runs, more than --most reads",
-            "raise --most, or move the earliest runs out",
+            "move the earliest runs out"
+            if recoil.declared_most(frame) is not None
+            else "raise --most, or move the earliest runs out",
         )
     each, kept = calls_needed(frame), []
     for place, path in named:
@@ -1216,6 +1218,7 @@ def command_gate(args) -> int:
     reads them."""
     before, after = load_frame(args.before), load_frame(args.after)
     _bounds(args)
+    most = recoil.most_of(after, args.most)  # one rule for every command, a reframing too
     asked = None
     if not recoil.reframes(before, after):
         if args.runs is None:
@@ -1225,7 +1228,6 @@ def command_gate(args) -> int:
             )
         missing = "name the folder gadfly firm kept the successor's runs in"
         folder = _runs_folder(args.runs, missing, write=False)
-        most = recoil.most_of(after, args.most)
         kept = _kept_runs(folder, after, most)
         if not kept:
             raise UsageError(
@@ -1291,7 +1293,7 @@ def parser() -> argparse.ArgumentParser:
         "--most",
         type=int,
         help=f"count the calls asking until firm makes over at most this many runs "
-        f"(default {recoil.MOST} with --runs)",
+        f"(the frame's standing.most, else {recoil.MOST}, with --runs)",
     )
     show.add_argument(
         "--runs", metavar="FOLDER", help="the frame's runs gadfly firm keeps, counted as made"

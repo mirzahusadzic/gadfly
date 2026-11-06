@@ -905,6 +905,8 @@ def most_of(frame: Frame, most: int | None = None) -> int:
     declared = declared_most(frame)
     if most is None:
         return MOST if declared is None else declared
+    if isinstance(most, bool) or not isinstance(most, int) or most < 1:
+        raise UsageError("most is a whole number of runs, at least 1")
     if declared is not None and most != declared:
         raise UsageError(
             f"frame {frame.name!r} declares most {declared}, and {most} is asked",
@@ -932,7 +934,9 @@ def _kept(
     if len(kept) > most:
         raise UsageError(
             "kept holds more runs than most lets until_firm read",
-            "give it the latest runs only, or raise most",
+            "give it the latest runs only"
+            if declared_most(frame) is not None
+            else "give it the latest runs only, or raise most",
         )
     runs = []
     for records in kept:
