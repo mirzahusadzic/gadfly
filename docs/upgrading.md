@@ -12,7 +12,15 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ### To 0.13.0, not yet released
 
-No verdict changes, and nothing a caller of 0.12.0 meets changes. New:
+No verdict or record-format changes, and a frame without the new keys keeps its hash and reading. These things a caller of 0.12.0 meets do change:
+
+| In 0.12.0 | In 0.13.0 | What to do |
+| --- | --- | --- |
+| `gadfly firm`'s last line ended with the calls made now | It goes on with the tokens those calls reported and how many reported no reasoning | A script that reads that line reads `firm --json` instead, whose `usage` and `unthought` hold the same counts |
+| `--most` on `firm`, `gate` and `plan`, and `most` in `until_firm` and `calls_until_firm`, defaulted to 5 | They default to the frame's `standing.most`, else 5, and refuse a different value for a frame that declares one | Nothing, for a frame that declares none |
+| The `--json` of `run`, `firm` and `report` held what 0.12.0 printed | Each holds new fields, `usage` and `unthought`, and `report`'s `records` too | Nothing; no field was removed or renamed |
+
+New:
 
 - **Calls at once while asking until firm:** `until_firm(..., parallel=N)` and `gadfly firm --parallel N` make up to N calls at once within each run, for a battery that takes them, as `run`'s `parallel` does. The runs stay one after another, and a battery that takes one call at a time is refused before any call, in `run`'s words.
 - **The readers' tokens beside firmness:** `gadfly firm` ends its last line with the tokens the calls made now reported, in and out and how many of those out were reasoning, and `--json` and `until_firm`'s result give them as `usage`, each count by name. `run --json` gives the same `usage` beside `made`, and `report --json` gives it beside `records`, the records it read. Nothing is estimated: a count no call reported is absent.

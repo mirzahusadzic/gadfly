@@ -1139,3 +1139,11 @@ def test_the_upgrade_page_names_each_class_with_its_status():
         assert f"`{kind.__name__}`" in page, kind.__name__
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "gadfly/upgrading)" in readme
+
+
+def test_upgrading_says_what_a_caller_of_0_12_0_meets():
+    # pass 16 R12: the changed firm line is a change a caller meets
+    page = (ROOT / "docs/upgrading.md").read_text(encoding="utf-8")
+    section = page.split("### To 0.13.0")[1].split("\n### ")[0]
+    assert "nothing a caller of 0.12.0 meets changes" not in section
+    assert "`gadfly firm`'s last line" in section
