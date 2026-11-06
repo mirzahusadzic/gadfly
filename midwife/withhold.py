@@ -51,7 +51,7 @@ class Part:
     def kinds(self, text: str) -> list[str]:
         """The kinds of withheld text `text` holds: a name, a line, a pattern."""
         found = []
-        if self.named is not None and self.named.search(text):
+        if self.named is not None and self.named.search(text.casefold()):
             found.append("a name")
         if self.lines and any(digest in self.lines for digest in _line_digests(text)):
             found.append("a line")
@@ -72,7 +72,10 @@ class Withhold:
 @dataclass(frozen=True)
 class Held:
     """A place a run would send withheld text: the trial and input whose
-    prompt holds it, its kind, and the part of the set that withholds it."""
+    prompt holds it, its kind, and the part of the set that withholds it. A
+    trial or input whose id the set itself withholds is named by its place
+    instead, `trial 3` or `input 2`, counted from 1 in the plan's and the
+    frame's order, so a refusal never says the text."""
 
     trial: str
     input: str
@@ -145,14 +148,16 @@ def _part(value: Any, path: str | None) -> Part:
     for written in lists["patterns"]:
         try:
             patterns.append(re.compile(written))
-        except re.error as error:
+        except (re.error, OverflowError, RecursionError) as error:
             raise UsageError(
                 f"{_named(path)} holds a pattern that is no regular expression",
                 f"Python's re module said {str(error)!r}",
             ) from None
     names = tuple(lists["names"])
-    union = "|".join(re.escape(name) for name in sorted(names, key=len, reverse=True))
-    matcher = re.compile(rf"(?<!\w)(?:{union})(?!\w)", re.IGNORECASE) if names else None
+    folded = sorted({name.casefold() for name in names}, key=len, reverse=True)
+    union = "|".join(re.escape(name) for name in folded)
+    # matched in full case folding, so Straße holds STRASSE back too
+    matcher = re.compile(rf"(?<!\w)(?:{union})(?!\w)") if names else None
     return Part(names, frozenset(lists["lines"]), tuple(patterns), matcher)
 
 
@@ -160,7 +165,9 @@ def trains(battery: Any, frame: Frame) -> bool:
     """Whether a battery says its calls for this frame may reach a reader
     that trains on them; one that does not say may."""
     says = getattr(battery, "trains", None)
-    return True if not callable(says) else bool(says(frame))
+    # only an answer of exactly False keeps the training part off; None, 0 or
+    # anything else is no answer, and is read as one that may train
+    return True if not callable(says) else says(frame) is not False
 
 
 def withheld(frame: Frame, withhold: Withhold, *, training: bool = True) -> list[Held]:
@@ -172,12 +179,22 @@ def withheld(frame: Frame, withhold: Withhold, *, training: bool = True) -> list
     if training:
         parts.append(("training", withhold.training))
     held = []
-    for trial in plan(frame):
-        for x in frame.inputs:
+    for place, trial in enumerate(plan(frame), 1):
+        for at, x in enumerate(frame.inputs, 1):
             text = prompt(frame, trial, x)
+            named = (
+                _shown(withhold, trial.id, f"trial {place}"),
+                _shown(withhold, x["id"], f"input {at}"),
+            )
             for name, part in parts:
-                held.extend(Held(trial.id, x["id"], kind, name) for kind in part.kinds(text))
+                held.extend(Held(*named, kind, name) for kind in part.kinds(text))
     return held
+
+
+def _shown(withhold: Withhold, identifier: str, place: str) -> str:
+    # an id as a refusal may say it: by its place when the set withholds the id
+    held = any(part.kinds(identifier) for part in (withhold.always, withhold.training))
+    return place if held else identifier
 
 
 def refuse_withheld(frame: Frame, withhold: Withhold, *, training: bool = True) -> None:
@@ -187,8 +204,9 @@ def refuse_withheld(frame: Frame, withhold: Withhold, *, training: bool = True) 
     if not held:
         return
     first = held[0]
+    which = "the frame" if _shown(withhold, frame.name, "") == "" else f"frame {frame.name!r}"
     error = FrameError(
-        f"frame {frame.name!r} would send withheld text, {first.kind}, "
+        f"{which} would send withheld text, {first.kind}, "
         f"in trial {first.trial!r} for input {first.input!r}"
     )
     if first.part == "training":

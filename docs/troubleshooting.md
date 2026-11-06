@@ -116,7 +116,7 @@ common ones.
 | `FrameError: holes name span 'paper', which the body has` | `a hole is what the body lacks`. Give the hole an id no span has. |
 | `FrameError: holes lists what the body is missing, each an id and a kind` | `a hole may also say what it is read for, under about, and its salience`. Each hole is an object with a non-empty `id` and `kind`, and may add a non-empty `about` and `salience`, nothing else. |
 | `FrameError: hole 'paper' has salience 'maybe', which is neither consider nor defer` | `consider, the default, asks a fit of it; defer keeps the fit unasked`. |
-| `FrameError: frame 'refund' would send withheld text, a name, in trial 'baseline' for input 'r1'` | `its battery may train on what it reads; read it with a reader that keeps no data, or take the text out of the frame`, or, for the `always` part, `no call may carry it`. The message names where and what kind, never the text. `gadfly check-frame --withhold` lists every prompt that holds some. |
+| `FrameError: frame 'refund' would send withheld text, a name, in trial 'baseline' for input 'r1'` | `its battery may train on what it reads; read it with a reader that keeps no data, or take the text out of the frame`, or, for the `always` part, `no call may carry it`. The message names where and what kind, never the text: a frame, trial or input whose name the set withholds is said as `the frame`, `trial 3` or `input 2`. `gadfly check-frame --withhold` lists every prompt that holds some. |
 
 ---
 

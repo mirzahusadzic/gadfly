@@ -1270,7 +1270,10 @@ class Withhold
 #### Held
 
 A place a run would send withheld text: the trial and input whose
-prompt holds it, its kind, and the part of the set that withholds it.
+prompt holds it, its kind, and the part of the set that withholds it. A
+trial or input whose id the set itself withholds is named by its place
+instead, `trial 3` or `input 2`, counted from 1 in the plan's and the
+frame's order, so a refusal never says the text.
 
 ```python
 @dataclass(frozen=True)

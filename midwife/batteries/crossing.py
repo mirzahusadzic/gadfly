@@ -264,7 +264,9 @@ class Crossing:
         a maker or a reader that does not say is read as one that may."""
         says = getattr(self.maker, "trains", None)
         line = frame.battery.get("maker") if isinstance(frame.battery, dict) else None
-        maker = True if not callable(says) or not isinstance(line, dict) else bool(says(line))
+        maker = (
+            True if not callable(says) or not isinstance(line, dict) else says(line) is not False
+        )
         try:
             reading = self._reading(frame)
         except GadflyError:

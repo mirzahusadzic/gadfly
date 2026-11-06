@@ -174,3 +174,53 @@ def test_the_command_line_refuses_before_a_call_and_makes_no_file(tmp_path, caps
     assert places == expected and len(places) > 1
     assert main(["check-frame", str(REFUND), "--withhold", str(sets), "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["withheld"] == []
+
+
+def test_a_name_is_held_in_every_case_folding(raw):
+    # pass 16 R1: full case folding, so Straße holds STRASSE back too
+    held = withhold(always={"names": ["Straße"]})
+    assert withheld(planted(raw, "STRASSE requires a receipt."), held)
+    assert withheld(planted(raw, "strasse requires a receipt."), held)
+    assert not withheld(planted(raw, "Strassen require a receipt."), held)
+
+
+def test_a_refusal_names_a_withheld_id_by_its_place(raw, tmp_path, capsys):
+    # pass 16 R2: an id the set withholds is never said, in text or JSON
+    raw = json.loads(REFUND.read_text(encoding="utf-8"))
+    raw["name"], raw["inputs"][0]["id"] = "Kestrel", "Kestrel"
+    raw["body"]["spans"][1]["text"] = "Kestrel requires a receipt."
+    frame = tmp_path / "frame.json"
+    frame.write_text(json.dumps(raw), encoding="utf-8")
+    sets = tmp_path / "w.json"
+    sets.write_text(json.dumps({"always": {"names": ["kestrel"]}}), encoding="utf-8")
+    assert main(["check-frame", str(frame), "--withhold", str(sets), "--json"]) == 4
+    said = capsys.readouterr().err
+    assert "kestrel" not in said.casefold().replace(str(tmp_path).casefold(), "")
+    error = json.loads(said)["error"]
+    assert error["message"].startswith("the frame would send withheld text, a name")
+    assert {place["input"] for place in error["withheld"]} == {"input 1"}
+    assert main(["check-frame", str(frame), "--withhold", str(sets)]) == 4
+    assert "kestrel" not in capsys.readouterr().err.casefold().replace(str(tmp_path).casefold(), "")
+
+
+@pytest.mark.parametrize("answer", [None, 0, "", "no"])
+def test_only_an_answer_of_false_keeps_the_training_part_off(raw, answer):
+    # pass 16 R3: a trains() that does not answer False is read as one that may
+    frame = planted(raw, "Kestrel says a refund requires a receipt.")
+    reader = Counting(trains=answer)
+    with pytest.raises(FrameError):
+        run(frame, reader, Budget(calls=100), withhold=withhold(training={"names": ["Kestrel"]}))
+    assert reader.calls == 0
+    quiet = type("Quiet", (), {"name": "echo", "trains": lambda self, line: None})()
+    raw["battery"] = {"kind": "crossing", "maker": {"kind": "echo"}, "reader": {"kind": "egemma"}}
+    assert Crossing(quiet, EGemma()).trains(situate(raw)) is True
+
+
+def test_an_oversized_pattern_is_refused_as_no_regular_expression(tmp_path, capsys):
+    # pass 16 R4: OverflowError while compiling is a caller's mistake, never a bug
+    huge = {"always": {"patterns": ["(?:a){999999999999999999999999999999}"]}}
+    with pytest.raises(UsageError, match="holds a pattern that is no regular expression"):
+        read_withhold(json.dumps(huge))
+    sets = tmp_path / "w.json"
+    sets.write_text(json.dumps(huge), encoding="utf-8")
+    assert main(["check-frame", str(REFUND), "--withhold", str(sets)]) == 2
