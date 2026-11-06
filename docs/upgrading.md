@@ -10,7 +10,7 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
-### To 0.13.0, not yet released
+### To 0.13.0
 
 No verdict or record-format changes, and a frame without the new keys keeps its hash and reading. These things a caller of 0.12.0 meets do change:
 
