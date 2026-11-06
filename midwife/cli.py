@@ -822,7 +822,8 @@ def _bounds(args) -> None:
     # how firm is firm, and how many runs are read, as until_firm takes them
     if not 0 < args.firm <= 1:  # NaN included: it is no share
         raise UsageError("--firm is a share above 0, up to 1")
-    _most(args.most)
+    if args.most is not None:
+        _most(args.most)
 
 
 def _most(most: int) -> None:
@@ -835,8 +836,9 @@ def _climb(args, frame) -> dict[str, int] | None:
     # would ask it: --most runs at most, those --runs keeps counted as made
     if args.most is None and args.runs is None:
         return None
-    most = recoil.MOST if args.most is None else args.most
-    _most(most)
+    if args.most is not None:
+        _most(args.most)
+    most = recoil.most_of(frame, args.most)
     kept = []
     if args.runs is not None:
         missing = "name the folder gadfly firm keeps the frame's runs in"
@@ -1055,12 +1057,13 @@ def command_firm(args) -> int:
     frame = load_frame(args.frame)
     withhold = _withhold(args)
     _bounds(args)
+    most = recoil.most_of(frame, args.most)
     folder = _runs_folder(args.runs, "make it, or choose another --runs", write=True)
-    kept = _kept_runs(folder, frame, args.most)
+    kept = _kept_runs(folder, frame, most)
     each = calls_needed(frame)
     if args.calls == "auto":  # the most asking until firm can make, beyond the kept runs
         made_by = [records for _, _, records in kept]
-        args.calls = max(1, recoil.calls_until_firm(frame, kept=made_by, most=args.most))
+        args.calls = max(1, recoil.calls_until_firm(frame, kept=made_by, most=most))
     if not kept and args.calls < each:  # nothing to read and nothing to ask: refused, as run's
         raise UsageError(
             f"a run needs {each} calls; --calls allows {args.calls}",
@@ -1097,7 +1100,7 @@ def command_firm(args) -> int:
                 Budget(args.calls, args.output_tokens, args.token_budget),
                 kept=[records for _, _, records in kept],
                 firm=args.firm,
-                most=args.most,
+                most=most,
                 on_record=keep,
                 parallel=args.parallel,
                 withhold=withhold,
@@ -1181,7 +1184,7 @@ def command_firm(args) -> int:
     elif shares:
         alike = ", ".join(f"{plain(x)} {_percent(share)}" for x, share in shares.items())
         state += f", read alike in {alike} of draws"
-    if not asked.firm and not asked.stopped and many >= args.most:
+    if not asked.firm and not asked.stopped and many >= most:
         state += ", as many runs as --most reads"
     print(f"firm: {state}; {len(made)} calls made now{_tokens(asked.usage, asked.unthought)}")
     for warning, _ in raised:
@@ -1222,7 +1225,8 @@ def command_gate(args) -> int:
             )
         missing = "name the folder gadfly firm kept the successor's runs in"
         folder = _runs_folder(args.runs, missing, write=False)
-        kept = _kept_runs(folder, after, args.most)
+        most = recoil.most_of(after, args.most)
+        kept = _kept_runs(folder, after, most)
         if not kept:
             raise UsageError(
                 f"folder {str(folder)!r} keeps no run of the successor",
@@ -1230,7 +1234,7 @@ def command_gate(args) -> int:
             )
         runs = [records for _, _, records in kept]
         asked = recoil.until_firm(
-            after, None, Budget(calls=1), kept=runs, firm=args.firm, most=args.most
+            after, None, Budget(calls=1), kept=runs, firm=args.firm, most=most
         )
     opened = recoil.gate(before, after, asked)
     if args.json:
@@ -1400,8 +1404,7 @@ def parser() -> argparse.ArgumentParser:
         sub.add_argument(
             "--most",
             type=int,
-            default=recoil.MOST,
-            help=f"the most runs read, kept ones included (default {recoil.MOST})",
+            help=f"the most runs read, kept ones included (the frame's own, else {recoil.MOST})",
         )
 
     walked = command("walk", help="where a piece climbs through frames, without spending")

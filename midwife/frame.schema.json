@@ -291,6 +291,11 @@
         },
         "stable": {
           "type": "boolean"
+        },
+        "most": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The most runs asking this frame until firm reads, kept ones included; without it, the caller's, else 5."
         }
       }
     },

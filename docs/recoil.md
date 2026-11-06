@@ -189,7 +189,7 @@ asks it one whole run at a time, and disengages once the fixed rules read every
 input's category alike in at least 95% of the draws of the latest run's calls
 (`midwife.stats.stability`), and the same as the run before it. A reader that
 never wavers is done after one run; one that wavers is asked again, up to five
-runs, and never past the budget.
+runs, or the frame's own `standing.most`, and never past the budget.
 
 A run of one call a trial has nothing to draw again, so a successor needs a
 quorum of two or more; three with two to agree is light enough. Runs already

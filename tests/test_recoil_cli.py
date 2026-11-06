@@ -696,6 +696,21 @@ def test_firm_keeps_each_run_and_reads_them_back_as_runs_made(thrice, capsys):
     assert [path.name for path in runs.iterdir()] == ["1.jsonl"]
 
 
+def test_firm_reads_as_many_runs_as_the_frame_declares(thrice, capsys):
+    # standing.most in the frame binds firm; --most may only repeat it
+    frame, runs = thrice
+    raw = json.loads(frame.read_text(encoding="utf-8"))
+    raw["standing"]["most"] = 2
+    frame.write_text(json.dumps(raw), encoding="utf-8")
+    assert firm(frame, runs, "Wavering", "--calls", "1000") == 0
+    assert len(list(runs.iterdir())) <= 2
+    assert told(capsys)[-1].startswith("firm: ")
+    assert firm(frame, runs, "Wavering", "--calls", "1000", "--most", "5") == 2
+    assert told(capsys, "err")[-2].startswith(
+        "UsageError: frame 'refund-receipt' declares most 2, and 5 is asked"
+    )
+
+
 def test_firm_makes_calls_at_once_within_each_run(thrice, capsys):
     # --parallel passes the battery's calls at once into each run firm makes
     from tests.fixtures import refund

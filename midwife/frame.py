@@ -153,7 +153,7 @@ def _read_once(frame: Frame) -> dict[str, Any]:
 OPTIONAL = {
     "": ("materialized", "carriage", "outsideScope", "scopeCheck", "holes", "offers"),
     "observe": ("order",),
-    "standing": ("stable",),
+    "standing": ("stable", "most"),
     "allowed": ("bypass", "inversion", "inputInversion"),
     "interventions": ("repeat", "eachAnchor", "cumulative", "sham", "presentation", "placement",
                       "inversion", "inputInversion", "bypass", "control"),
@@ -360,13 +360,19 @@ def parse(raw: dict[str, Any]) -> Frame:
             raise FrameError("allowed names a label twice")
 
     standing = need("standing", dict)
-    if not set(standing) <= {"quorum", "agree", "stable"}:
-        raise FrameError("standing says quorum, agree and, optionally, stable")
+    if not set(standing) <= {"quorum", "agree", "stable", "most"}:
+        raise FrameError("standing says quorum, agree and, optionally, stable and most")
     quorum, agree = need("quorum", int, standing), need("agree", int, standing)
     if not 1 <= agree <= quorum:
         raise FrameError("agree is between 1 and quorum")
     if not isinstance(standing.get("stable", False), bool):
         raise FrameError("stable is true or false")
+    most = standing.get("most", 1)
+    if isinstance(most, bool) or not isinstance(most, int) or most < 1:
+        raise FrameError(
+            "standing.most is a whole number of runs, at least 1",
+            "it is the most runs asking until firm reads; leave it out for the default",
+        )
     if standing.get("stable") and not interventions.get("repeat"):
         raise FrameError(
             "stable reads the baseline and repeat sessions together, and no repeat is declared",

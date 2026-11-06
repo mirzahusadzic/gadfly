@@ -1133,7 +1133,8 @@ draws of the latest run's calls (`midwife.stats.stability`), and the
 same as the run before it, if there was one. Each kept run, a list of
 one run's records, counts as a run made, in the order given, and only
 the latest decides, so a frame whose last kept run is firm is asked
-nothing. It reads at most `most` runs in all, kept ones included, and
+nothing. It reads at most `most` runs in all, kept ones included (the
+frame's `standing.most` when it declares one, `most_of`), and
 starts none the budget cannot cover whole, in calls and, when it caps
 them, in tokens at each call's cap: a run cut short is never firm, and
 a stop for the budget is a `StoppedWarning`, as a run's is. With no
@@ -1150,7 +1151,7 @@ until_firm(
     *,
     kept=(),
     firm=FIRM,
-    most=MOST,
+    most=None,
     on_record=lambda record: None,
     parallel=1,
     withhold=None,
@@ -1166,7 +1167,26 @@ runs, and is a ceiling: asking stops sooner once a run is firm, and
 makes no call when the latest kept run is.
 
 ```python
-calls_until_firm(frame, *, kept=(), most=MOST)
+calls_until_firm(frame, *, kept=(), most=None)
+```
+
+#### declared_most
+
+The most runs the frame itself says asking it until firm reads
+(`standing.most`), or None when it leaves that to its caller.
+
+```python
+declared_most(frame)
+```
+
+#### most_of
+
+The most runs asking a frame until firm reads: the frame's own
+`standing.most`, else `most`, else `MOST`. A frame that declares it is
+read so, and a different `most` is refused rather than taken.
+
+```python
+most_of(frame, most=None)
 ```
 
 #### Recoil

@@ -148,7 +148,7 @@ UNQUOTED = {
     "type(reason).__name__", "type(error).__name__", "type(value).__name__", "kind.__name__",
     "many", "often", "made", "result.planned", "len(result.records)",
     "', '.join(EFFORTS)", "', '.join(wrong)", "max_output_tokens", "ANSWER_TOKENS", "MAX_ENDPOINTS",
-    "side", "most", "each", "args.calls", "len(a)", "len(b)", "first.kind", "places",
+    "side", "most", "declared", "each", "args.calls", "len(a)", "len(b)", "first.kind", "places",
 }  # fmt: skip
 
 

@@ -81,6 +81,7 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: the vectors hold no vector in space 'e64'` | `they hold 'e128'`. Name one of the spaces the vectors hold. |
 | `UsageError: the vectors hold no vector` | `give vectors, or leave them out`. The file is empty, or holds blank lines only. |
 | `UsageError: made holds a record where a run belongs` | `give each run's records as a list, made=[records]`. In Python, `walk` takes a crossing's runs, each a list of its records, as `until_firm` takes kept runs. |
+| `UsageError: frame 'Kiran' declares most 3, and 5 is asked` | `a frame that declares how many runs it reads is read so; leave most out`. The frame's `standing.most` is part of its hash, so `--most`, or `most` in Python, may only repeat it. |
 | `UsageError: --most is given without --calls` | `--most counts the runs each fit may take against the calls --calls gives`. Give both, or neither. |
 | `UsageError: a successor that asks the same question is read from its own runs` | `name the folder that keeps them with --runs; gadfly firm makes them`. Only a reframing is read against no category, with no runs. |
 | `UsageError: folder 'runs' keeps no run of the successor` | `gadfly firm asks it, and keeps each run there`. A run is a file named by its place, `1.jsonl` and on. |
@@ -110,6 +111,8 @@ common ones.
 | `FrameError: frame 'Kiran' rests on its holes alone, so no trial has an anchor to cut` | `fill a hole first, in the frame midwife.recoil.successor drafts`. A frame whose anchors are all holes is walked by [recoil](recoil.md), never planned or run. |
 | `FrameError: the body holds no span` | `a frame's evidence is one span or more`. Holes stand in for anchors, never for the evidence. |
 | `FrameError: the body has no span 'nope'` | `the successor of frame 'Kiran' is checked as any frame is`. `gadfly successor` checks its draft before it prints or writes it, and a `--set` value made it what the parser refuses: correct that value, or leave it out and finish the draft by hand. |
+| `FrameError: standing says quorum, agree and, optionally, stable and most` | Give `standing` only those keys. |
+| `FrameError: standing.most is a whole number of runs, at least 1` | `it is the most runs asking until firm reads; leave it out for the default`. |
 | `FrameError: holes name span 'paper', which the body has` | `a hole is what the body lacks`. Give the hole an id no span has. |
 | `FrameError: holes lists what the body is missing, each an id and a kind` | `a hole may also say what it is read for, under about, and its salience`. Each hole is an object with a non-empty `id` and `kind`, and may add a non-empty `about` and `salience`, nothing else. |
 | `FrameError: hole 'paper' has salience 'maybe', which is neither consider nor defer` | `consider, the default, asks a fit of it; defer keeps the fit unasked`. |

@@ -394,7 +394,7 @@ uv run gadfly plan kiran.json --most 5 --runs kiran-runs
 | `--output-tokens` | a whole number, 64 by default | Each call's cap, a battery's own drafting included. |
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |
 | `--firm` | a share, 0.95 by default | The share of draws that must read each input's category alike. |
-| `--most` | a whole number, 5 by default | The most runs read, kept ones included. |
+| `--most` | a whole number, the frame's `standing.most` or else 5 by default | The most runs read, kept ones included. A frame that declares `standing.most` is read so, and a different `--most` is refused. |
 | `--parallel` | a whole number, 1 by default | Makes that many calls at once within each run, for a battery that takes them; the runs stay one after another. |
 | `--withhold` | a file, or `-` | Refuses, before any call and without making a file, a frame whose prompts hold text the set withholds, as [Withhold text](#withhold-text) says. |
 | `--json` | flag | Each run's file and category, whether the verdict is firm, the shares, the latest run's findings, the calls made, their `usage` and `unthought` counts, why it stopped, its exit status and its warnings. |

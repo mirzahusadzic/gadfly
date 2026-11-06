@@ -46,7 +46,7 @@ $$\Gamma=(A,r,g,P,T,B_0,p,o_p,D,\sigma)$$
 | $A$ | `anchors` | span ids removed by ablation |
 | $o_p$ | `observe.instruction`, `labels`, `order` plus your battery | what the scorer reads and the complete label vocabulary |
 | $D$ | `interventions`, `allowed`, `standing` | the admissible changes, allowed influence, and sampling standing |
-| $\sigma$ | `standing.quorum`, `agree`, `stable` | observation standing |
+| $\sigma$ | `standing.quorum`, `agree`, `stable`, `most` | observation standing, and the most runs asking until firm reads |
 | $\simeq_p$ | exact label equality | no hidden similarity function |
 | $E_{p,\delta}$ | `allowed` | the permitted influence relation |
 | carriage checks | `carriage` | whether a category waits for the checks it needs, every carriage check for carried and a control that moved for cooled (`all-checks`), or is named with its open checks beside it (`listed`) |

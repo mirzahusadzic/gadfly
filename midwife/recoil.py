@@ -622,7 +622,9 @@ def _budgeted(order: tuple[Fit, ...], piece: Piece, calls: int, most: int) -> tu
     left, covering, counted = calls, True, []
     for fit in order:
         try:
-            cost = calls_until_firm(parse(successor(fit.frame, fit.hole, piece)), most=most)
+            drafted = parse(successor(fit.frame, fit.hole, piece))
+            # a fit that declares its own most is counted by it, any other by the walk's
+            cost = calls_until_firm(drafted, most=None if declared_most(drafted) else most)
         except GadflyError as error:  # the frame's own refusal, said where the walk met it
             error.add_note(
                 f"the walk's budget counts the successor of frame {fit.frame.name!r} "
@@ -775,7 +777,7 @@ def until_firm(
     *,
     kept: Sequence[Iterable[Record | dict[str, Any]]] = (),
     firm: float = FIRM,
-    most: int = MOST,
+    most: int | None = None,
     on_record: Callable[[Record], None] = lambda record: None,
     parallel: int = 1,
     withhold: Withhold | None = None,
@@ -786,7 +788,8 @@ def until_firm(
     same as the run before it, if there was one. Each kept run, a list of
     one run's records, counts as a run made, in the order given, and only
     the latest decides, so a frame whose last kept run is firm is asked
-    nothing. It reads at most `most` runs in all, kept ones included, and
+    nothing. It reads at most `most` runs in all, kept ones included (the
+    frame's `standing.most` when it declares one, `most_of`), and
     starts none the budget cannot cover whole, in calls and, when it caps
     them, in tokens at each call's cap: a run cut short is never firm, and
     a stop for the budget is a `StoppedWarning`, as a run's is. With no
@@ -795,6 +798,7 @@ def until_firm(
     the runs stay one after another, since each decides whether the next
     is asked. `withhold` refuses the frame before any call, as `run`'s does."""
     _asked_again(frame)
+    most = most_of(frame, most)
     _check_parallel(parallel, battery)
     if withhold is not None and battery is not None:
         refuse_withheld(frame, withhold, training=trains(battery, frame))
@@ -875,7 +879,7 @@ def calls_until_firm(
     frame: Frame,
     *,
     kept: Sequence[Iterable[Record | dict[str, Any]]] = (),
-    most: int = MOST,
+    most: int | None = None,
 ) -> int:
     """The most calls `until_firm` can make on a frame, counted before its
     first: a whole run's for each run `most` allows beyond the runs `kept`
@@ -883,8 +887,30 @@ def calls_until_firm(
     runs, and is a ceiling: asking stops sooner once a run is firm, and
     makes no call when the latest kept run is."""
     _asked_again(frame)
+    most = most_of(frame, most)
     runs = _kept(frame, kept, most)  # its checks first, in until_firm's order
     return calls_needed(frame) * (most - len(runs))
+
+
+def declared_most(frame: Frame) -> int | None:
+    """The most runs the frame itself says asking it until firm reads
+    (`standing.most`), or None when it leaves that to its caller."""
+    return frame.raw["standing"].get("most")
+
+
+def most_of(frame: Frame, most: int | None = None) -> int:
+    """The most runs asking a frame until firm reads: the frame's own
+    `standing.most`, else `most`, else `MOST`. A frame that declares it is
+    read so, and a different `most` is refused rather than taken."""
+    declared = declared_most(frame)
+    if most is None:
+        return MOST if declared is None else declared
+    if declared is not None and most != declared:
+        raise UsageError(
+            f"frame {frame.name!r} declares most {declared}, and {most} is asked",
+            "a frame that declares how many runs it reads is read so; leave most out",
+        )
+    return most
 
 
 def _asked_again(frame: Frame) -> None:

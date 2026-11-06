@@ -1594,3 +1594,27 @@ def test_the_troubleshooting_tables_name_what_recoil_refuses():
     said = str(refused.value).replace("'second doll'", "'Kiran'")
     assert f"`FrameError: {said}`" in tables
     assert "`FrameError: the body holds no span`" in tables
+
+
+def test_a_frame_may_declare_the_most_runs_it_is_read_in():
+    # standing.most is optional: a frame without it keeps its hash and the
+    # default; one with it is read so, and a different most is refused
+    from midwife.recoil import declared_most, most_of
+
+    after = with_slip(dolls()[1])
+    assert declared_most(after) is None and most_of(after) == MOST == 5
+    assert most_of(after, 3) == 3
+    raw = copy.deepcopy(after.raw)
+    raw["standing"]["most"] = 2
+    two = parse(raw)
+    assert two.hash != after.hash and VALIDATOR.is_valid(raw)
+    assert most_of(two) == most_of(two, 2) == 2
+    assert calls_until_firm(two) == 2 * calls_needed(two)
+    with pytest.raises(UsageError, match="^frame '.+' declares most 2, and 5 is asked"):
+        until_firm(two, DollReader(), budget(two), most=5)
+    asked = until_firm(two, DollReader(), budget(two))
+    assert len(asked.runs) <= 2
+    for wrong in (0, True, "3"):
+        raw["standing"]["most"] = wrong
+        with pytest.raises(FrameError, match="^standing.most is a whole number of runs"):
+            parse(raw)
