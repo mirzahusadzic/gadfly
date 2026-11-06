@@ -71,6 +71,10 @@ class LocalJSON:
     def __init__(self, clock: Callable[[], float] = time.monotonic):
         self.clock = clock
 
+    def trains(self, frame: Frame) -> bool:
+        """Never: what it reads stays on this machine."""
+        return False
+
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this battery must not serve:
         another battery's, an unknown key, an address off this machine, a

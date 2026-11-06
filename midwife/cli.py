@@ -56,6 +56,7 @@ from .pipeline import _usage, calls_needed, judge, overall, plan, run, situate
 from .portfolio import entry_from, summarize
 from .types import Battery, Budget, Record
 from .verdict import settled, unreachable
+from .withhold import Withhold, read_withhold, refuse_withheld, withheld
 
 EXAMPLES = """\
 examples:
@@ -417,6 +418,7 @@ def command_stats(args) -> int:
 def command_run(args) -> int:
     """`gadfly run`: every planned call the budget covers, each record kept."""
     frame = load_frame(args.frame)
+    withhold = _withhold(args)
     battery = load_battery(args.battery)
     numbered = _numbered(args.kept) if args.kept else []
     kept = [old for _, old in numbered]
@@ -474,6 +476,7 @@ def command_run(args) -> int:
                 settle=args.settle,
                 stop_unresolved=args.stop_unresolved,
                 parallel=args.parallel,
+                withhold=withhold,
             )
     except KeyboardInterrupt as interrupt:
         # every record made so far is already in its file: say how to finish
@@ -640,7 +643,10 @@ def command_report(args) -> int:
 
 def command_check_frame(args) -> int:
     """`gadfly check-frame`: the frame's shape against the schema (when
-    jsonschema is installed), then the parser's authoritative refusal."""
+    jsonschema is installed), then the parser's authoritative refusal, and
+    with --withhold, any prompt holding text the set withholds, every part
+    read, since no battery is named."""
+    withhold, frame = _withhold(args), None
     try:
         raw = load_json(args.frame, read_text(args.frame, FrameError), FrameError)
     except FrameError as error:  # not text or not JSON: one problem, and nothing more to check
@@ -670,10 +676,19 @@ def command_check_frame(args) -> int:
         except FrameError as error:
             notes = list(getattr(error, "__notes__", []))
             frame, problems = None, [*problems, {"at": "/", "problem": str(error), "notes": notes}]
+    held = [] if frame is None or withhold is None else withheld(frame, withhold)
+    if held:
+        try:
+            refuse_withheld(frame, withhold)
+        except FrameError as error:
+            notes = list(getattr(error, "__notes__", []))
+            problems.append({"at": "/", "problem": str(error), "notes": notes})
     if problems and args.json:  # one FrameError, as every refusal is, listing them all
         said = {"type": "FrameError", "exit": FrameError.exit, "message": problems[0]["problem"]}
         said |= {"notes": problems[0]["notes"], "help": f"{TROUBLESHOOTING}#frameerror"}
         said |= {"checked": checked, "problems": problems}
+        if withhold is not None:
+            said["withheld"] = [place.as_dict() for place in held]
         print(json.dumps({"error": said}, indent=2), file=sys.stderr)
     elif problems:  # each a FrameError, gathered rather than raised at the first
         for problem in problems:
@@ -687,10 +702,18 @@ def command_check_frame(args) -> int:
     elif args.json:
         result = {"ok": True, "checked": checked, "problems": []}
         result.update(frame=frame.name, hash=frame.hash, calls=calls_needed(frame))
+        if withhold is not None:
+            result["withheld"] = []
         print(json.dumps(result, indent=2))
     else:
         print(f"ok ({checked}): {plain(frame.name)} ({frame.hash}), {calls_needed(frame)} calls")
     return FrameError.exit if problems else 0
+
+
+def _withhold(args) -> Withhold | None:
+    # the withhold set --withhold names, read before anything is asked
+    path = getattr(args, "withhold", None)
+    return None if path is None else read_withhold(read_bytes(path), path=path)
 
 
 def command_portfolio(args) -> int:
@@ -1008,6 +1031,7 @@ def command_firm(args) -> int:
     firm (`midwife.recoil.until_firm`). The runs --runs keeps count as runs
     made, and each new run is kept there as a new file, record by record."""
     frame = load_frame(args.frame)
+    withhold = _withhold(args)
     _bounds(args)
     folder = _runs_folder(args.runs, "make it, or choose another --runs", write=True)
     kept = _kept_runs(folder, frame, args.most)
@@ -1051,6 +1075,7 @@ def command_firm(args) -> int:
                 most=args.most,
                 on_record=keep,
                 parallel=args.parallel,
+                withhold=withhold,
             )
     except KeyboardInterrupt:
         # every record made so far is already in its file: say which run is cut short
@@ -1263,6 +1288,11 @@ def parser() -> argparse.ArgumentParser:
     execute.add_argument(
         "--parallel", type=int, default=1, help="calls at once, for a battery that takes them"
     )
+    execute.add_argument(
+        "--withhold",
+        metavar="FILE",
+        help="refuse before any call a frame holding text it withholds",
+    )
     execute.add_argument("--json", action="store_true", help="print JSON instead of text")
     execute.set_defaults(func=command_run)
 
@@ -1274,6 +1304,9 @@ def parser() -> argparse.ArgumentParser:
 
     check = command("check-frame", help="check a frame before any call")
     check.add_argument("frame", help="the frame, a JSON file, or - for stdin")
+    check.add_argument(
+        "--withhold", metavar="FILE", help="also refuse a frame holding text it withholds"
+    )
     check.add_argument("--json", action="store_true", help="print JSON instead of text")
     check.set_defaults(func=command_check_frame)
 
@@ -1414,6 +1447,11 @@ def parser() -> argparse.ArgumentParser:
         default=1,
         help="calls at once within each run, for a battery that takes them",
     )
+    firmed.add_argument(
+        "--withhold",
+        metavar="FILE",
+        help="refuse before any call a frame holding text it withholds",
+    )
     reading(firmed)
     firmed.add_argument("--json", action="store_true", help="print JSON instead of text")
     firmed.set_defaults(func=command_firm)
@@ -1456,6 +1494,7 @@ def main(argv: list[str] | None = None) -> int:
             command_line.print_help()
             return 0
         named = [vars(args).get(key) for key in ("frame", "records", "kept", "source", "vectors")]
+        named.append(vars(args).get("withhold"))
         named += [vars(args).get(key) for key in ("before", "after")]  # gate's two frames
         # stats takes several records, portfolio reports, walk frames and made runs
         for many in ("records", "reports", "frames", "made"):

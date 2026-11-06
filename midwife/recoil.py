@@ -63,6 +63,7 @@ from .verdict import (
 )
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
+from .withhold import Withhold, refuse_withheld, trains
 
 # What a successor may change while it fills a declared hole: its evidence,
 # and how many calls read each trial. Any other key asks another question,
@@ -775,6 +776,7 @@ def until_firm(
     most: int = MOST,
     on_record: Callable[[Record], None] = lambda record: None,
     parallel: int = 1,
+    withhold: Withhold | None = None,
 ) -> Firm:
     """Ask a frame one whole run at a time, and disengage once its verdict
     is firm: every input's category read alike in at least `firm` of the
@@ -789,9 +791,11 @@ def until_firm(
     battery, it reads the kept runs alone and asks nothing. `parallel`
     makes up to that many calls at once within each run, as `run`'s does;
     the runs stay one after another, since each decides whether the next
-    is asked."""
+    is asked. `withhold` refuses the frame before any call, as `run`'s does."""
     _asked_again(frame)
     _check_parallel(parallel, battery)
+    if withhold is not None and battery is not None:
+        refuse_withheld(frame, withhold, training=trains(battery, frame))
     if isinstance(firm, bool) or not isinstance(firm, int | float) or not 0 < firm <= 1:
         raise UsageError("firm is a share above 0, up to 1")
     runs = _kept(frame, kept, most)
@@ -826,6 +830,7 @@ def until_firm(
                 Budget(each, budget.output_tokens_per_call, tokens),
                 on_record=on_record,
                 parallel=parallel,
+                withhold=withhold,
             )
             runs.append(tuple(record.as_dict() for record in result.records))
             made += len(result.records)

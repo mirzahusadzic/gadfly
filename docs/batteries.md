@@ -43,6 +43,10 @@ class Battery(Protocol):
   frame, has failed, such as a refused key or a broken tool. The run keeps no
   record of that call, starts no other, keeps the calls already out, and ends
   as a stopped run that quotes the reason, as a spent budget ends one.
+- **`trains`:** an optional method, `trains(frame) -> bool`, whether this
+  frame's calls may reach a reader that trains on what it reads. A withhold
+  set's `training` part applies only when it says yes, and a battery that does
+  not say is read as one that may. A maker may say the same of its line.
 
 The protocol's invariant is **trial blindness**: a battery sees the changed
 body and the input, never `baseline`, `sham-1` or `ablation`. A scorer that
@@ -289,7 +293,13 @@ consent, retention, credential and recording rules.
 | provider collection | the router's deny data policy, `X-Codex-Router-Data-Policy: deny`, unless the exact model slug is in `trainsOnInputs` | stays on this machine by contract | stays on this machine | stays on this machine; the engine reads a new text through eGemma unless offline | unknown |
 | credentials | router token from environment or its env file; never placed in a request body or record | key from environment/file; sent only as an Authorization header | none sent | none sent | unknown |
 | deadline | whole call, `timeout` seconds, even mid-line | whole call, per attempt | whole call, `battery.timeout` (30 s, at most an hour) | whole call, `battery.timeout` (60 s, at most an hour) | unknown |
+| trains on what it reads | only when the frame names the model under `trainsOnInputs` | never | never | never | read as yes, unless it says |
 | verification | the model, the provider the router reports or a single pinned endpoint's tag, and the route; never a provider the router calls unknown | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | the engine's version, revision and packs, from its reply | unknown |
+
+`--withhold FILE`, or `withhold=` in Python, refuses before any call a frame
+whose prompts hold text that must not leave this machine. Its `always` part
+binds every battery, and its `training` part binds a battery whose calls may
+train; [the command line](command-line.md#withhold-text) shows the file.
 
 #### Costs
 

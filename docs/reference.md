@@ -16,6 +16,8 @@ and on GitHub. For narrative guidance start with
   obligations.
 - **[`midwife.stats`](#midwifestats):** how firm each trial and verdict is,
   and how likely a quorum is to reach a level.
+- **[`midwife.withhold`](#midwifewithhold):** text that must not leave this
+  machine, refused before any call.
 - **[`midwife.interventions`](#midwifeinterventions):** trial planning,
   prompts and presentation renaming.
 - **[`midwife.recoil`](#midwiferecoil):** something found deep in a chain of
@@ -129,6 +131,7 @@ run(
     settle=False,
     stop_unresolved=False,
     parallel=1,
+    withhold=None,
 )
 ```
 
@@ -143,7 +146,10 @@ reads the category a whole run would, and names the trials not asked.
 it takes them (a `concurrent` attribute that is true); records are
 handed on as each call ends, and a call already started is always kept:
 a first Ctrl-C starts no more calls, keeps those already out, then goes
-on as KeyboardInterrupt, and a second stops at once.
+on as KeyboardInterrupt, and a second stops at once. `withhold` refuses,
+before any call, a frame whose prompts hold text the set withholds
+(`midwife.withhold`), its `training` part only when the battery says its
+calls may train.
 
 #### judge
 
@@ -1111,7 +1117,7 @@ a stop for the budget is a `StoppedWarning`, as a run's is. With no
 battery, it reads the kept runs alone and asks nothing. `parallel`
 makes up to that many calls at once within each run, as `run`'s does;
 the runs stay one after another, since each decides whether the next
-is asked.
+is asked. `withhold` refuses the frame before any call, as `run`'s does.
 
 ```python
 until_firm(
@@ -1124,6 +1130,7 @@ until_firm(
     most=MOST,
     on_record=lambda record: None,
     parallel=1,
+    withhold=None,
 )
 ```
 
@@ -1162,6 +1169,131 @@ its inputs' baselines read, if the frame offers a kind.
 
 ```python
 gate(before, after, asked=None)
+```
+<!-- end api -->
+
+<!-- api midwife.withhold -->
+
+---
+
+### midwife.withhold
+
+Text that must not leave this machine, checked before any call.
+
+A withhold set is read from a file, `{"always": {...}, "training": {...}}`.
+What `always` holds no call may carry, such as a credential; what `training`
+holds may go to a reader that keeps no data, never to one that may train on
+what it reads, such as a private name or a line read from elsewhere. Each part
+may list `names`, matched as whole words in any case; `lines`, each the
+SHA-256 of a line in its normal form, its words joined by single spaces; and
+`patterns`, Python regular expressions. A line that opens with a diff marker,
+`+` or `-`, is also read without it, so a line copied into a diff still
+matches its source.
+
+`withheld` reads every prompt a frame's plan makes, which is all a run sends,
+and names each place that holds withheld text; `refuse_withheld` refuses the
+frame at the first, naming where and what kind, never the text. Whether the
+`training` part applies is the battery's to say (`trains`); one that does not
+say is read as one that may train. In a crossing, what the maker writes is not
+checked before the reader reads it.
+
+#### Part
+
+One part of a withhold set: whole-word names, line hashes, patterns.
+
+```python
+@dataclass(frozen=True)
+class Part
+```
+
+##### Part.kinds
+
+The kinds of withheld text `text` holds: a name, a line, a pattern.
+
+```python
+kinds(text)
+```
+
+#### Withhold
+
+What no call may carry (`always`), and what no call that may train may
+carry (`training`).
+
+```python
+@dataclass(frozen=True)
+class Withhold
+```
+
+#### Held
+
+A place a run would send withheld text: the trial and input whose
+prompt holds it, its kind, and the part of the set that withholds it.
+
+```python
+@dataclass(frozen=True)
+class Held
+```
+
+##### Held.as_dict
+
+The place as JSON: its trial, input, kind and part.
+
+```python
+as_dict()
+```
+
+#### normal
+
+A line's normal form, as its hash is taken: its words joined by single spaces.
+
+```python
+normal(line)
+```
+
+#### line_sha256
+
+The SHA-256 a withhold set lists a line by: of its normal form, as UTF-8.
+
+```python
+line_sha256(line)
+```
+
+#### read_withhold
+
+A withhold set from its JSON. A refusal names the file at `path` it
+was read from, `-` standard input.
+
+```python
+read_withhold(data, *, path=None)
+```
+
+#### trains
+
+Whether a battery says its calls for this frame may reach a reader
+that trains on them; one that does not say may.
+
+```python
+trains(battery, frame)
+```
+
+#### withheld
+
+Each trial and input whose prompt holds withheld text, of what kind,
+and under which part: `always` for every frame, `training` too when the
+frame's calls may train. Read over every prompt the plan makes, before
+any call.
+
+```python
+withheld(frame, withhold, *, training=True)
+```
+
+#### refuse_withheld
+
+Refuse a frame whose run would send withheld text, at its first
+place, naming where and of what kind, never the text itself.
+
+```python
+refuse_withheld(frame, withhold, *, training=True)
 ```
 <!-- end api -->
 
@@ -1567,6 +1699,16 @@ parse_stream(
 class Unified
 ```
 
+##### Unified.trains
+
+Whether this frame's calls may reach a reader that trains on them:
+only when the frame names its model under trainsOnInputs, since every
+other call goes under the router's deny data policy.
+
+```python
+trains(frame)
+```
+
 ##### Unified.check
 
 Refuse, before any call, a frame this battery must not serve: another
@@ -1674,6 +1816,14 @@ Wait until one more call fits the budget's window, then count it.
 pace()
 ```
 
+##### EGemma.trains
+
+Never: what it reads stays on this machine.
+
+```python
+trains(frame)
+```
+
 ##### EGemma.check
 
 Refuse, before any call, a frame this battery must not serve:
@@ -1744,6 +1894,14 @@ payload(frame, text, max_output_tokens)
 
 ```python
 class LocalJSON
+```
+
+##### LocalJSON.trains
+
+Never: what it reads stays on this machine.
+
+```python
+trains(frame)
 ```
 
 ##### LocalJSON.check
@@ -1944,6 +2102,14 @@ unacknowledged(served, readings)
 class Tendora
 ```
 
+##### Tendora.trains
+
+Never: what it reads stays on this machine.
+
+```python
+trains(frame)
+```
+
 ##### Tendora.check
 
 Refuse, before any call, a frame this battery must not serve:
@@ -2095,6 +2261,15 @@ the maker line's own instruction: `{"kind": "unified", "model": ...,
 class UnifiedMaker
 ```
 
+##### UnifiedMaker.trains
+
+Whether the maker's calls may reach a model that trains on them:
+only when its line names the model under trainsOnInputs.
+
+```python
+trains(line)
+```
+
 ##### UnifiedMaker.check
 
 Refuse a line the router must not be sent, as the unified battery
@@ -2119,6 +2294,15 @@ make(line, text, max_output_tokens)
 
 ```python
 class Crossing
+```
+
+##### Crossing.trains
+
+Whether either side's calls may reach a reader that trains on them;
+a maker or a reader that does not say is read as one that may.
+
+```python
+trains(frame)
 ```
 
 ##### Crossing.check
@@ -2282,7 +2466,9 @@ command_report(args)
 #### command_check_frame
 
 `gadfly check-frame`: the frame's shape against the schema (when
-jsonschema is installed), then the parser's authoritative refusal.
+jsonschema is installed), then the parser's authoritative refusal, and
+with --withhold, any prompt holding text the set withholds, every part
+read, since no battery is named.
 
 ```python
 command_check_frame(args)

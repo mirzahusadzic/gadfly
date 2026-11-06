@@ -84,6 +84,11 @@ When Gadfly prints what to do, it opens the second column.
 | `UsageError: --most is given without --calls` | `--most counts the runs each fit may take against the calls --calls gives`. Give both, or neither. |
 | `UsageError: a successor that asks the same question is read from its own runs` | `name the folder that keeps them with --runs; gadfly firm makes them`. Only a reframing is read against no category, with no runs. |
 | `UsageError: folder 'runs' keeps no run of the successor` | `gadfly firm asks it, and keeps each run there`. A run is a file named by its place, `1.jsonl` and on. |
+| `UsageError: file 'withhold.json' is not UTF-8 text` | Save the withhold set as UTF-8. In Python, `read_withhold` names it `the text given`, or by the `path` it is given. |
+| `UsageError: file 'withhold.json' cannot be read as JSON` | Correct the file; a withhold set is one JSON object. |
+| `UsageError: file 'withhold.json' is not a withhold set` | `a withhold set is a JSON object with the parts always and training, each listing names, lines (SHA-256) or patterns, as lists of strings`. Give only those parts and lists, each string non-empty. |
+| `UsageError: file 'withhold.json' lists a line that is no SHA-256` | `each line is the SHA-256 of its normal form, 64 lowercase hex digits`. A line's normal form is its words joined by single spaces; `midwife.withhold.line_sha256` gives it. |
+| `UsageError: file 'withhold.json' holds a pattern that is no regular expression` | The note quotes what Python's `re` module said. Correct the pattern, or escape it with `re.escape` to match the text as written. |
 
 ---
 
@@ -108,6 +113,7 @@ common ones.
 | `FrameError: holes name span 'paper', which the body has` | `a hole is what the body lacks`. Give the hole an id no span has. |
 | `FrameError: holes lists what the body is missing, each an id and a kind` | `a hole may also say what it is read for, under about, and its salience`. Each hole is an object with a non-empty `id` and `kind`, and may add a non-empty `about` and `salience`, nothing else. |
 | `FrameError: hole 'paper' has salience 'maybe', which is neither consider nor defer` | `consider, the default, asks a fit of it; defer keeps the fit unasked`. |
+| `FrameError: frame 'refund' would send withheld text, a name, in trial 'baseline' for input 'r1'` | `its battery may train on what it reads; read it with a reader that keeps no data, or take the text out of the frame`, or, for the `always` part, `no call may carry it`. The message names where and what kind, never the text. `gadfly check-frame --withhold` lists every prompt that holds some. |
 
 ---
 

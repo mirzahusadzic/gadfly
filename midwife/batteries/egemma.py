@@ -193,6 +193,10 @@ class EGemma:
             prune(now)
         self.starts.append(now)
 
+    def trains(self, frame: Frame) -> bool:
+        """Never: what it reads stays on this machine."""
+        return False
+
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this battery must not serve:
         another battery's, an unknown key, a temperature outside 0 to 2, an

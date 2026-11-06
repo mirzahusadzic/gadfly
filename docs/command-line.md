@@ -132,6 +132,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | `--kept` | a records file | Records already made, whose calls are not made again, so a stopped run finishes. The new file holds them first, so it is the whole run. |
 | `--settle` | flag | Stops asking a trial once its level cannot change, such as after four alike of five with four to agree. The verdict reads as a whole run's; under `stable` the baseline and repeat always run whole. |
 | `--stop-unresolved` | flag | Asks the baseline, repeat, ablation, control, presentation and placement first, then stops asking an input once no answer its other trials could give would resolve it. The verdict reads the category a whole run would and names the trials not asked. |
+| `--withhold` | a file, or `-` | Refuses, before any call and without making a file, a frame whose prompts hold text the set withholds, as [Withhold text](#withhold-text) says. |
 | `--parallel` | a whole number, 1 by default | Makes that many calls at once, for a battery that takes them (the unified battery does; eGemma, with its rate limit, does not). A first Ctrl-C lets the calls already out end and keeps them; a second stops at once. |
 | `--json` | flag | Prints the calls planned and made, the tokens they reported as `usage`, the openings by reason, why it stopped, its exit status and its warnings, as one JSON object. |
 
@@ -165,6 +166,26 @@ cat a.jsonl b.jsonl > slices.jsonl
 file, as a single run writes it, pass it as `--kept` with a new `--out`, and
 no call is spent. A trial in two slices is refused when they are read
 together: `two records for` that call.
+
+#### Withhold text
+
+`--withhold FILE` on `run`, `firm` and `check-frame` names text that must not
+leave this machine. The file has two parts, each listing `names` (whole words,
+any case), `lines` (the SHA-256 of a line's words joined by single spaces) and
+`patterns` (Python regular expressions):
+
+```json
+{"always": {"patterns": ["sk-[A-Za-z0-9]{20,}"]},
+ "training": {"names": ["Kestrel"], "lines": []}}
+```
+
+`always` binds every call, and `training` binds a battery whose calls may train
+on what it reads, which `trains` says. Every prompt the plan makes is read before
+the first call; a line opening with a diff marker is also read without it, and
+a refusal names the trial, the input and the kind, never the text.
+`check-frame --withhold` reads both parts, since no battery is named, and with
+`--json` lists every place under `withheld`; in a crossing, what the maker
+writes is not read before the reader sees it.
 
 ---
 

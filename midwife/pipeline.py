@@ -45,6 +45,7 @@ from .types import Battery, Budget, Observation, Record
 from .verdict import Finding, _check_shape, _fixed, check_records, unneeded
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
+from .withhold import Withhold, refuse_withheld, trains
 
 situate = parse
 plan = plan_trials
@@ -112,6 +113,7 @@ def run(
     settle: bool = False,
     stop_unresolved: bool = False,
     parallel: int = 1,
+    withhold: Withhold | None = None,
 ) -> RunResult:
     """Every planned trial of every input, `quorum` times each, in a fixed
     order. `only` limits the run to some trial ids (a partial run); the
@@ -130,11 +132,16 @@ def run(
     it takes them (a `concurrent` attribute that is true); records are
     handed on as each call ends, and a call already started is always kept:
     a first Ctrl-C starts no more calls, keeps those already out, then goes
-    on as KeyboardInterrupt, and a second stops at once."""
+    on as KeyboardInterrupt, and a second stops at once. `withhold` refuses,
+    before any call, a frame whose prompts hold text the set withholds
+    (`midwife.withhold`), its `training` part only when the battery says its
+    calls may train."""
     named = frame.battery["kind"]
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise BatteryError(f"this frame asks for battery {named!r}, not {battery.name!r}")
     _check_parallel(parallel, battery)
+    if withhold is not None:
+        refuse_withheld(frame, withhold, training=trains(battery, frame))
     try:
         battery.check(frame)
         fits = getattr(battery, "check_cap", None)  # optional: a cap it cannot answer within

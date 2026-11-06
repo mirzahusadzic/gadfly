@@ -16,6 +16,7 @@ No verdict changes, and nothing a caller of 0.12.0 meets changes. New:
 
 - **Calls at once while asking until firm:** `until_firm(..., parallel=N)` and `gadfly firm --parallel N` make up to N calls at once within each run, for a battery that takes them, as `run`'s `parallel` does. The runs stay one after another, and a battery that takes one call at a time is refused before any call, in `run`'s words.
 - **The readers' tokens beside firmness:** `gadfly firm` ends its last line with the tokens the calls made now reported, in and out and how many of those out were reasoning, and `--json` and `until_firm`'s result give them as `usage`, each count by name. `run --json` gives the same `usage` beside `made`, and `report --json` gives it beside `records`, the records it read. Nothing is estimated: a count no call reported is absent.
+- **Text withheld before any call:** `--withhold FILE` on `run`, `firm` and `check-frame`, and `withhold=` on `run` and `until_firm`, refuse a frame whose prompts hold text a withhold set names (`midwife.withhold`). Its `always` part binds every call, and its `training` part binds a battery whose calls may train, which a battery says with an optional `trains(frame)`; the unified battery says yes only when the frame names its model under `trainsOnInputs`, and the local batteries say no.
 
 ---
 

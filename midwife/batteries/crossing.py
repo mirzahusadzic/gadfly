@@ -50,12 +50,13 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
-from ..errors import BatteryError, StopRun, quoted
+from ..errors import BatteryError, GadflyError, StopRun, quoted
 from ..frame import Frame, parse
 from ..interventions import plan, prompt
 from ..pipeline import RAW_LIMIT, _checked
 from ..types import Battery, Observation
-from .unified import DEFAULT_URL, Unified, over_cap, request_body
+from ..withhold import trains
+from .unified import DEFAULT_URL, Unified, consented, over_cap, request_body
 
 SEPARATOR = "\n\n---\n\n"  # what parts a prompt's body from its input
 LINE_KEYS = {"kind", "maker", "reader"}
@@ -101,6 +102,9 @@ class Maker(Protocol):
     def make(self, line: dict, text: str, max_output_tokens: int) -> Made:
         """Make the artefact from the body's text once, spending at most
         `max_output_tokens`."""
+
+    # Optional: `trains(line) -> bool`, whether the maker's calls may reach a
+    # model that trains on them; a maker that does not say is read as one that may.
 
 
 class Function:
@@ -152,6 +156,11 @@ class UnifiedMaker:
         clock: Callable[[], float] = time.monotonic,
     ):
         self.router = Unified(url, timeout, clock)
+
+    def trains(self, line: dict) -> bool:
+        """Whether the maker's calls may reach a model that trains on them:
+        only when its line names the model under trainsOnInputs."""
+        return consented(line)
 
     def check(self, line: dict) -> None:
         """Refuse a line the router must not be sent, as the unified battery
@@ -249,6 +258,18 @@ class Crossing:
             reading = parse({**frame.raw, "battery": frame.battery.get("reader")})
             self._readings[frame.hash] = reading
         return reading
+
+    def trains(self, frame: Frame) -> bool:
+        """Whether either side's calls may reach a reader that trains on them;
+        a maker or a reader that does not say is read as one that may."""
+        says = getattr(self.maker, "trains", None)
+        line = frame.battery.get("maker") if isinstance(frame.battery, dict) else None
+        maker = True if not callable(says) or not isinstance(line, dict) else bool(says(line))
+        try:
+            reading = self._reading(frame)
+        except GadflyError:
+            return True
+        return maker or trains(self.reader, reading)
 
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this crossing must not serve:

@@ -360,6 +360,12 @@ class Unified:
         self.health = urlparse(self.url)._replace(path="/health", query="", fragment="").geturl()
         self.reports = False  # whether to ask what served each call; check() reads it
 
+    def trains(self, frame: Frame) -> bool:
+        """Whether this frame's calls may reach a reader that trains on them:
+        only when the frame names its model under trainsOnInputs, since every
+        other call goes under the router's deny data policy."""
+        return consented(frame.battery)
+
     def check(self, frame: Frame) -> None:
         """Refuse, before any call, a frame this battery must not serve: another
         battery's, an unknown key, an OpenAI slug, tools, or no router

@@ -19,6 +19,7 @@ Gadfly tests whether a decision rests on the evidence it is said to rest on: a f
 | Several frames counted, never combined | `midwife/portfolio.py` |
 | Statistics beside a verdict: intervals, tests, power, stability, pooling | `midwife/stats.py`, `gadfly stats` |
 | Recoil: a piece climbs a chain of frames to the holes it fills, each fit asked until firm | `midwife/recoil.py`, held by `tests/test_recoil.py`; its commands `walk`, `successor`, `firm` and `gate` in `midwife/cli.py`, held by `tests/test_recoil_cli.py` |
+| Text that must not leave the machine, refused before any call | `midwife/withhold.py`, held by `tests/test_withhold.py`; each battery's optional `trains(frame)` |
 | Command line | `midwife/cli.py` |
 | Batteries: the shared loopback call and label pointer, then the shipped ones | `midwife/batteries/critic.py`; `unified.py`, `egemma.py`, `local_json.py`, `tendora.py` (its live test runs only with `TENDORA_PACKAGE`), `crossing.py` (a maker then a reader, across a boundary) |
 | Example frames, their kept runs, predictions, results and findings | `examples/*.json`, `examples/runs/<frame>/`, `examples/*.md`; read back with `examples/read.py`, run with `examples/climb.py` |
