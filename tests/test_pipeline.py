@@ -414,3 +414,23 @@ def test_a_maker_stops_the_run_through_a_crossing(raw):
         frame, Crossing(Function("cause", broken), CauseReader()), Budget(calls=calls_needed(frame))
     )
     assert result.records == () and "the maker's tool is down" in result.stopped
+
+
+def test_unthought_counts_the_calls_that_reported_no_reasoning():
+    # only calls that report reasoning are counted, by trial, records or rows
+    from midwife.pipeline import summed_usage, unthought
+
+    rows = [
+        {"trial": "baseline", "usage": {"reasoning_tokens": 0, "output_tokens": 14}},
+        {"trial": "baseline", "usage": {"reasoning_tokens": 212, "output_tokens": 230}},
+        {"trial": "inversion", "usage": {"reasoning_tokens": 0}},
+        {"trial": "ablation", "usage": {"output_tokens": 9}},
+        {"trial": "control", "usage": {"reasoning_tokens": True}},
+    ]
+    assert unthought(rows) == {
+        "calls": 3,
+        "unthought": 2,
+        "trials": {"baseline": 1, "inversion": 1},
+    }
+    assert summed_usage(rows) == {"reasoning_tokens": 212, "output_tokens": 253}
+    assert unthought([]) == {"calls": 0, "unthought": 0, "trials": {}}

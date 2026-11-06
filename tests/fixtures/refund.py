@@ -74,6 +74,16 @@ class Metered(RuleReader):
         return read
 
 
+class Reflex(Metered):
+    """The metered reader, reporting no reasoning whenever it cannot decide."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        read = super().observe(frame, prompt, max_output_tokens)
+        if read.label == "unclear":
+            read.usage["reasoning_tokens"] = 0
+        return read
+
+
 class Unreachable(RuleReader):
     """The rule reader when its service is down: every call is an opening."""
 

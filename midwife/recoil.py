@@ -48,7 +48,7 @@ from typing import Any
 from .errors import GadflyError, RecordsError, StoppedWarning, UsageError, is_plain, quoted
 from .frame import SALIENCE, Frame, _read_once, digest, parse
 from .interventions import plan, prompt
-from .pipeline import _check_parallel, _usage, calls_needed, run
+from .pipeline import _check_parallel, calls_needed, run, summed_usage, unthought
 from .stats import stability
 from .types import Battery, Budget, Record
 from .verdict import (
@@ -717,7 +717,8 @@ class Firm:
     input's category; whether that was firm; the calls made now; and why it
     stopped short, if it did. `usage` sums each whole count the calls made
     now reported, such as `input_tokens` and `output_tokens`, by name; a
-    count no call reported is absent, never a zero."""
+    count no call reported is absent, never a zero. `unthought` counts the
+    calls made now that reported no reasoning (`midwife.pipeline.unthought`)."""
 
     frame: Frame
     runs: tuple[tuple[dict[str, Any], ...], ...]
@@ -727,6 +728,7 @@ class Firm:
     made: int
     stopped: str | None = None
     usage: dict[str, int] = field(default_factory=dict)
+    unthought: dict[str, Any] = field(default_factory=lambda: unthought([]))
 
     @property
     def category(self) -> str | None:
@@ -846,10 +848,27 @@ def until_firm(
         alike = all(share >= firm for share in shares.values()) and before in (None, read)
         if alike and place == len(runs) - 1:  # a later kept run decides instead
             return Firm(
-                frame, tuple(runs), tuple(findings), shares, True, made, usage=_usage(made_now)
+                frame,
+                tuple(runs),
+                tuple(findings),
+                shares,
+                True,
+                made,
+                usage=summed_usage(made_now),
+                unthought=unthought(made_now),
             )
         before = read
-    return Firm(frame, tuple(runs), tuple(findings), shares, False, made, stopped, _usage(made_now))
+    return Firm(
+        frame,
+        tuple(runs),
+        tuple(findings),
+        shares,
+        False,
+        made,
+        stopped,
+        summed_usage(made_now),
+        unthought(made_now),
+    )
 
 
 def calls_until_firm(

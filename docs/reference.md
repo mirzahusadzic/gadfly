@@ -110,6 +110,28 @@ times each. A budget of this many calls covers it.
 calls_needed(frame)
 ```
 
+#### summed_usage
+
+Each whole count the records' calls reported, summed by name, as
+`run --json`, `firm --json` and `report --json` give it under `usage`; a
+count no call reported is absent, never a zero.
+
+```python
+summed_usage(records)
+```
+
+#### unthought
+
+The calls whose provider reported no reasoning: of the `calls` that
+reported `reasoning_tokens`, how many reported 0 (`unthought`), and
+those by trial, as `run --json`, `firm --json` and `report --json` give
+it. Read it against the reasoning the frame asked for; nothing is resent
+and no answer is set aside, so a reflex answer counts as any other.
+
+```python
+unthought(records)
+```
+
 #### run
 
 Every planned trial of every input, `quorum` times each, in a fixed
@@ -1091,7 +1113,8 @@ of the latest whole run; how often the draws of its calls read each
 input's category; whether that was firm; the calls made now; and why it
 stopped short, if it did. `usage` sums each whole count the calls made
 now reported, such as `input_tokens` and `output_tokens`, by name; a
-count no call reported is absent, never a zero.
+count no call reported is absent, never a zero. `unthought` counts the
+calls made now that reported no reasoning (`midwife.pipeline.unthought`).
 
 ```python
 @dataclass(frozen=True)

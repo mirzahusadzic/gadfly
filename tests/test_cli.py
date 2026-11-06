@@ -114,9 +114,11 @@ def test_run_and_report_say_the_tokens_as_firm_does(tmp_path, capsys):
     usage = {"input_tokens": 8000, "output_tokens": 320, "reasoning_tokens": 240}
     ran = json.loads(capsys.readouterr().out)
     assert (ran["made"], ran["usage"]) == (8, usage)
+    none = {"calls": 8, "unthought": 0, "trials": {}}
+    assert ran["unthought"] == none
     assert main(["report", REFUND, str(out), "--json"]) == 0
     read = json.loads(capsys.readouterr().out)
-    assert (read["records"], read["usage"]) == (8, usage)
+    assert (read["records"], read["usage"], read["unthought"]) == (8, usage, none)
 
 
 def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):

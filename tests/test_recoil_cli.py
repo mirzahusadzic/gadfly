@@ -683,6 +683,7 @@ def test_firm_keeps_each_run_and_reads_them_back_as_runs_made(thrice, capsys):
         "runs": [{"file": str(runs / "1.jsonl"), "kept": True, "category": "carried"}],
         "made": 0,
         "usage": {},
+        "unthought": {"calls": 0, "unthought": 0, "trials": {}},
         "firm": asked.firm,
         "category": asked.category,
         "shares": asked.shares,
@@ -716,7 +717,7 @@ def test_firm_says_the_tokens_its_calls_reported_on_its_last_line(thrice, capsys
     assert firm(frame, runs, "Metered", "--calls", "100") == 0
     assert told(capsys)[-1] == (
         "firm: yes, carried after 1 run, read alike in 100% of draws; 24 calls made now, "
-        "24,000 tokens in, 960 out, 720 of them reasoning"
+        "24,000 tokens in, 960 out, 720 of them reasoning, 0 of 24 calls unthought"
     )
     again = runs.parent / "again"
     again.mkdir()
@@ -727,6 +728,21 @@ def test_firm_says_the_tokens_its_calls_reported_on_its_last_line(thrice, capsys
         "output_tokens": 960,
         "reasoning_tokens": 720,
     }
+
+
+def test_firm_counts_the_calls_that_reported_no_reasoning(thrice, capsys):
+    # report-only: the reflex answers are counted beside firmness, never resent
+    from midwife.pipeline import unthought
+
+    frame, runs = thrice
+    assert firm(frame, runs, "Reflex", "--calls", "100", "--json") == 0
+    document = json.loads(capsys.readouterr().out)
+    kept = load_records(str(runs / "1.jsonl"))
+    reflexes = [r for r in kept if r["observation"] == "unclear"]
+    assert reflexes and document["unthought"] == unthought(kept)
+    assert document["unthought"]["calls"] == 24
+    assert document["unthought"]["unthought"] == len(reflexes)
+    assert sum(document["unthought"]["trials"].values()) == len(reflexes)
 
 
 def test_firm_refuses_calls_at_once_a_battery_does_not_take(thrice, capsys):

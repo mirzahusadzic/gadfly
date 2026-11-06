@@ -80,16 +80,44 @@ def calls_needed(frame: Frame) -> int:
     return len(frame.inputs) * len(trial_ids(frame)) * frame.quorum
 
 
-def _usage(records: Iterable[Record | dict[str, Any]]) -> dict[str, int]:
-    """Each whole count the records' calls reported, summed by name; a count
-    no call reported is absent, never a zero."""
+def summed_usage(records: Iterable[Record | dict[str, Any]]) -> dict[str, int]:
+    """Each whole count the records' calls reported, summed by name, as
+    `run --json`, `firm --json` and `report --json` give it under `usage`; a
+    count no call reported is absent, never a zero."""
     summed: dict[str, int] = {}
     for record in records:
-        usage = record.get("usage") if isinstance(record, dict) else record.usage
-        for name, count in (usage if isinstance(usage, dict) else {}).items():
-            if isinstance(count, int) and not isinstance(count, bool):
-                summed[name] = summed.get(name, 0) + count
+        for name, count in _counts(record).items():
+            summed[name] = summed.get(name, 0) + count
     return summed
+
+
+def unthought(records: Iterable[Record | dict[str, Any]]) -> dict[str, Any]:
+    """The calls whose provider reported no reasoning: of the `calls` that
+    reported `reasoning_tokens`, how many reported 0 (`unthought`), and
+    those by trial, as `run --json`, `firm --json` and `report --json` give
+    it. Read it against the reasoning the frame asked for; nothing is resent
+    and no answer is set aside, so a reflex answer counts as any other."""
+    calls, none, trials = 0, 0, {}
+    for record in records:
+        counts = _counts(record)
+        if "reasoning_tokens" not in counts:
+            continue
+        calls += 1
+        if counts["reasoning_tokens"] == 0:
+            none += 1
+            trial = record.get("trial") if isinstance(record, dict) else record.trial
+            trials[str(trial)] = trials.get(str(trial), 0) + 1
+    return {"calls": calls, "unthought": none, "trials": trials}
+
+
+def _counts(record: Record | dict[str, Any]) -> dict[str, int]:
+    # a record's whole usage counts by name, whatever else it holds
+    usage = record.get("usage") if isinstance(record, dict) else record.usage
+    return {
+        name: count
+        for name, count in (usage if isinstance(usage, dict) else {}).items()
+        if isinstance(count, int) and not isinstance(count, bool)
+    }
 
 
 def _check_parallel(parallel: int, battery: Battery | None) -> None:

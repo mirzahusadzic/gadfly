@@ -52,7 +52,16 @@ from .errors import (
     plain,
 )
 from .frame import schema
-from .pipeline import _usage, calls_needed, judge, overall, plan, run, situate
+from .pipeline import (
+    calls_needed,
+    judge,
+    overall,
+    plan,
+    run,
+    situate,
+    summed_usage,
+    unthought,
+)
 from .portfolio import entry_from, summarize
 from .types import Battery, Budget, Record
 from .verdict import settled, unreachable
@@ -556,7 +565,8 @@ def command_run(args) -> int:
             "out": str(out),
             "planned": result.planned,
             "made": len(result.records),
-            "usage": _usage(result.records),
+            "usage": summed_usage(result.records),
+            "unthought": unthought(result.records),
             "kept": len(kept) if files else 0,
             "settled": result.settled,
             "unasked": result.unasked,
@@ -631,7 +641,8 @@ def command_report(args) -> int:
             "frame": frame.name,
             "hash": frame.hash,
             "records": len(records),
-            "usage": _usage(records),
+            "usage": summed_usage(records),
+            "unthought": unthought(records),
             "overall": overall(findings).as_dict(),
             "findings": [finding.as_dict() for finding in findings],
         }
@@ -1131,6 +1142,7 @@ def command_firm(args) -> int:
             "runs": runs,
             "made": len(made),
             "usage": asked.usage,
+            "unthought": asked.unthought,
             "firm": asked.firm,
             "category": asked.category,
             "shares": asked.shares,
@@ -1157,16 +1169,17 @@ def command_firm(args) -> int:
         state += f", read alike in {alike} of draws"
     if not asked.firm and not asked.stopped and many >= args.most:
         state += ", as many runs as --most reads"
-    print(f"firm: {state}; {len(made)} calls made now{_tokens(asked.usage)}")
+    print(f"firm: {state}; {len(made)} calls made now{_tokens(asked.usage, asked.unthought)}")
     for warning, _ in raised:
         notes = list(getattr(warning, "__notes__", []))
         print(f"{type(warning).__name__}: {warning}", *notes, sep="\n", file=sys.stderr)
     return status
 
 
-def _tokens(usage: dict[str, int]) -> str:
+def _tokens(usage: dict[str, int], reasoned: dict[str, Any] | None = None) -> str:
     # the tokens the calls made now reported, in and out, and the reasoning
-    # among those out; nothing when no call reported them
+    # among those out, then how many calls reported none; nothing for a count
+    # no call reported
     said = []
     if "input_tokens" in usage:
         said.append(f"{usage['input_tokens']:,} tokens in")
@@ -1174,6 +1187,8 @@ def _tokens(usage: dict[str, int]) -> str:
         said.append(f"{usage['output_tokens']:,} out")
         if "reasoning_tokens" in usage:
             said.append(f"{usage['reasoning_tokens']:,} of them reasoning")
+    if reasoned and reasoned["calls"]:
+        said.append(f"{reasoned['unthought']} of {reasoned['calls']} calls unthought")
     return "".join(f", {part}" for part in said)
 
 

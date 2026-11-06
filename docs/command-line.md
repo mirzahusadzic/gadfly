@@ -134,7 +134,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | `--stop-unresolved` | flag | Asks the baseline, repeat, ablation, control, presentation and placement first, then stops asking an input once no answer its other trials could give would resolve it. The verdict reads the category a whole run would and names the trials not asked. |
 | `--withhold` | a file, or `-` | Refuses, before any call and without making a file, a frame whose prompts hold text the set withholds, as [Withhold text](#withhold-text) says. |
 | `--parallel` | a whole number, 1 by default | Makes that many calls at once, for a battery that takes them (the unified battery does; eGemma, with its rate limit, does not). A first Ctrl-C lets the calls already out end and keeps them; a second stops at once. |
-| `--json` | flag | Prints the calls planned and made, the tokens they reported as `usage`, the openings by reason, why it stopped, its exit status and its warnings, as one JSON object. |
+| `--json` | flag | Prints the calls planned and made, the tokens they reported as `usage`, how many reported no reasoning as `unthought`, the openings by reason, why it stopped, its exit status and its warnings, as one JSON object. |
 
 With `--out -` the records stream to standard output, and `report` reads
 them from standard input when its records are `-`:
@@ -220,8 +220,9 @@ pr: carried
 
 It opens with the frame, the records and the overall category, then each
 input's finding; the [example report](breadth/report-example.md) reads one
-with three inputs. With `--json` it also gives the records read and the tokens
-they reported, as `records` and `usage`, as `run` and `firm` do.
+with three inputs. With `--json` it also gives the records read, the tokens
+they reported and the calls that reported no reasoning, as `records`, `usage`
+and `unthought`, as `run` and `firm` do.
 
 ---
 
@@ -365,7 +366,11 @@ uv run gadfly firm kiran.json --runs kiran-runs \
 ```
 
 It prints each run's category, whether the verdict is firm, and the tokens
-the calls made now reported, in and out, which `--json` gives as `usage`. A stop for the budget is a
+the calls made now reported, in and out, which `--json` gives as `usage`. It
+ends with how many of the calls that reported reasoning reported none, which
+`--json` gives as `unthought`, by trial too; nothing is resent, so a reflex
+answer counts as any other, and the count is read against the reasoning the
+frame asked for. A stop for the budget is a
 `StoppedWarning`, and a run that a battery or Ctrl-C cut short is named by
 its file, since it is never read as firm.
 
