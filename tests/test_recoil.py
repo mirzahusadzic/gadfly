@@ -1628,3 +1628,48 @@ def test_most_of_refuses_a_most_its_callers_cannot_read():
     for wrong in (0, True, 1.5, "2"):
         with pytest.raises(UsageError, match="^most is a whole number of runs, at least 1"):
             most_of(after, wrong)
+
+
+def tree_frame(name, spans, holes=(), offers=None, anchors=()):
+    # a frame of a work tree: its own text, what it quotes, its holes by kind
+    raw = doll(4, [], "Is the ask fulfilled?", ["yes", "no", "unclear"], list(anchors))
+    raw["name"], raw["body"] = name, {"spans": list(spans)}
+    if holes:
+        raw["holes"] = [{"id": hole, "kind": hole} for hole in holes]
+    if offers:
+        raw["offers"] = offers
+    return parse(raw)
+
+
+def test_a_decision_fills_only_its_kind_at_the_frame_that_made_what_it_quotes():
+    # what a host that climbs a tree of tasks relies on: a piece of kind K fits
+    # only holes of kind K, never every hole of a frame; and a walk climbs to the
+    # frame that made the text quoted, so quoting the root's words skips the node
+    ask = "Users can greet the script by name."
+    locus = "The greeter task: a name option, documented."
+    root = tree_frame(
+        "root",
+        [span("r1", ask, "ask"), span("r2", "The README says how to run it.", "ask")],
+        holes=("done-R1", "done-R2"),
+    )
+    node = tree_frame(
+        "node",
+        [span("locus", locus, "locus"), span("n1", ask, "ask", quoted=True)],
+        holes=("done-N1", "done-N2"),
+    )
+    step = span("s1", "hello.py takes --name and prints the greeting with it.", "step")
+    done = tree_frame(
+        "done-n1",
+        [span("of", locus, "locus", quoted=True), step],
+        offers="done-N1",
+        anchors=["s1"],
+    )
+    walked = walk(decided(done, "yes"), done, [root, node])
+    assert [(frame.name, list(holes)) for frame, holes in walked.fits] == [("node", ["done-N1"])]
+    assert "root" in names(walked.passed) and not walked.frontier
+    skipping = tree_frame(
+        "skips", [span("of", ask, "ask", quoted=True), step], offers="done-N1", anchors=["s1"]
+    )
+    walked = walk(decided(skipping, "yes"), skipping, [root, node])
+    assert walked.fits == () or list(walked.fits) == []
+    assert "node" not in names(walked.passed)
