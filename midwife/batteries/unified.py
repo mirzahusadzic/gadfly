@@ -140,7 +140,7 @@ def consented(battery: dict) -> bool:
     """Whether the frame lets this model go where inputs train: its slug,
     exactly, in the list under trainsOnInputs (a string is no list)."""
     named = battery.get("trainsOnInputs")
-    return isinstance(named, list) and battery["model"] in named
+    return isinstance(named, list) and battery.get("model") in named
 
 
 def policy(frame: Frame) -> dict[str, str]:

@@ -7,15 +7,19 @@ import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 import pytest
 
 from midwife.batteries import unified
 from midwife.batteries.critic import pointed, read_label
 from midwife.batteries.unified import Unified, parse_stream, payload, pinned, policy, routing
+from midwife.cli import main
 from midwife.errors import BatteryError
 from midwife.pipeline import situate
 from tests.fakes import Fake
+
+ROOT_DIR = Path(__file__).parent.parent
 
 TOKEN = "ab" * 32
 LISTS = unified.capabilities  # the router's health, asked as the battery asks it
@@ -749,3 +753,18 @@ def test_upgrading_says_the_old_check_let_a_consented_model_through():
     first = next(line for line in section.splitlines() if line.startswith("| The `unified`"))
     assert "unless the frame named that exact slug under `trainsOnInputs`" in first
     assert "only with consent to training it does not do" in first
+
+
+def test_a_unified_frame_without_a_model_is_the_batterys_refusal(tmp_path, capsys):
+    # pass 16 R5: with --withhold, a missing model is still a BatteryError, 6
+    raw = json.loads((ROOT_DIR / "tests/fixtures/refund.json").read_text(encoding="utf-8"))
+    raw["battery"] = {"kind": "unified", "trainsOnInputs": ["openrouter/meta/x"]}
+    frame = tmp_path / "frame.json"
+    frame.write_text(json.dumps(raw), encoding="utf-8")
+    sets = tmp_path / "w.json"
+    sets.write_text(json.dumps({"training": {"names": ["Kestrel"]}}), encoding="utf-8")
+    out = tmp_path / "records.jsonl"
+    argv = ["run", str(frame), "--battery", "midwife.batteries.unified:Unified", "--calls", "8"]
+    assert main([*argv, "--withhold", str(sets), "--out", str(out)]) == 6
+    assert not out.exists()
+    assert "BatteryError" in capsys.readouterr().err
