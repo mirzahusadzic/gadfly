@@ -1096,3 +1096,12 @@ def test_gate_refuses_a_successor_it_has_no_runs_to_read(tmp_path, capsys):
     assert told(capsys, "err")[0] == (
         f"UsageError: folder {DECOY_RUNS!r} keeps 5 runs, more than --most reads"
     )
+
+
+def test_firm_says_reasoning_reported_with_no_output_count(thrice, capsys):
+    # pass 16 R11: the text line says what --json gives
+    frame, runs = thrice
+    assert firm(frame, runs, "ReasoningAlone", "--calls", "100") == 0
+    assert told(capsys)[-1].endswith(
+        "; 24 calls made now, 120 reasoning tokens, 0 of 24 calls unthought"
+    )

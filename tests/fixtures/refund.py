@@ -74,6 +74,15 @@ class Metered(RuleReader):
         return read
 
 
+class ReasoningAlone(RuleReader):
+    """The rule reader reporting reasoning tokens and no other count."""
+
+    def observe(self, frame, prompt, max_output_tokens):
+        read = super().observe(frame, prompt, max_output_tokens)
+        read.usage.update(reasoning_tokens=5)
+        return read
+
+
 class Reflex(Metered):
     """The metered reader, reporting no reasoning whenever it cannot decide."""
 

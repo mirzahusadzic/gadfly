@@ -1206,6 +1206,8 @@ def _tokens(usage: dict[str, int], reasoned: dict[str, Any] | None = None) -> st
         said.append(f"{usage['output_tokens']:,} out")
         if "reasoning_tokens" in usage:
             said.append(f"{usage['reasoning_tokens']:,} of them reasoning")
+    elif "reasoning_tokens" in usage:  # a battery may report reasoning alone
+        said.append(f"{usage['reasoning_tokens']:,} reasoning tokens")
     if reasoned and reasoned["calls"]:
         said.append(f"{reasoned['unthought']} of {reasoned['calls']} calls unthought")
     return "".join(f", {part}" for part in said)
