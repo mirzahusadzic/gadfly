@@ -1565,14 +1565,14 @@ def main(argv: list[str] | None = None) -> int:
         except SystemExit:  # no command of Gadfly's exits so: a battery's sys.exit, a bug
             traceback.print_exc()
             return errors.BUG
-    except BrokenPipeError as error:  # no SIGPIPE ended it (Windows): end as it would
-        if program:  # what is left unwritten, the flush at exit too, goes nowhere
-            with contextlib.suppress(OSError, ValueError):
-                os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
-        if getattr(error, "running", 0):  # a call hung in its thread would hold the exit
-            os._exit(errors.PIPE)
-        return errors.PIPE
     except (GadflyError, OSError, KeyboardInterrupt) as error:
+        if _reader_gone(error):  # no SIGPIPE ended it (Windows): end as it would
+            if program:  # what is left unwritten, the flush at exit too, goes nowhere
+                with contextlib.suppress(OSError, ValueError):
+                    os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+            if getattr(error, "running", 0):  # a call hung in its thread would hold the exit
+                os._exit(errors.PIPE)
+            return errors.PIPE
         status = refused(error, as_json)
         if getattr(error, "running", 0):  # a call hung in its thread would hold the exit
             sys.stdout.flush()
@@ -1582,6 +1582,14 @@ def main(argv: list[str] | None = None) -> int:
     except Exception:
         traceback.print_exc()
         return errors.BUG  # Gadfly's fault, not the caller's
+
+
+def _reader_gone(error: BaseException) -> bool:
+    # a write to a reader that stopped reading: a broken pipe, or on Windows
+    # often "invalid argument", which names no file as a file's own error does
+    return isinstance(error, BrokenPipeError) or (
+        isinstance(error, OSError) and error.errno == errno.EINVAL and error.filename is None
+    )
 
 
 def refused(error: BaseException, as_json: bool) -> int:

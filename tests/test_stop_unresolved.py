@@ -7,6 +7,7 @@ import json
 import random
 from collections import Counter
 from pathlib import Path
+from shlex import quote
 
 import pytest
 
@@ -218,7 +219,7 @@ def test_the_command_line_stops_and_says_so(tmp_path, capsys):
     assert main([*argv, "--stop-unresolved"]) == 0
     told = capsys.readouterr().out.splitlines()
     assert told[:2] == [
-        f"wrote 5/8 calls to {out}",
+        f"wrote 5/8 calls to {quote(str(out))}",
         "unasked: 3 calls not made, their input unresolved whatever they gave",
     ]
     assert main(["report", str(path), str(out)]) == 0
@@ -239,7 +240,7 @@ def test_a_run_with_nothing_to_ask_still_makes_its_file(tmp_path, capsys):
     argv = ["run", str(path), "--battery", reader, "--calls", "2", "--out", str(out)]
     assert main([*argv, "--stop-unresolved"]) == 0
     assert capsys.readouterr().out.splitlines() == [
-        f"wrote 0/2 calls to {out}",
+        f"wrote 0/2 calls to {quote(str(out))}",
         "unasked: 2 calls not made, their input unresolved whatever they gave",
         f"to read the verdict: gadfly report {path} {out}",
     ]

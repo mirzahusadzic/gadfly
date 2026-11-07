@@ -7,6 +7,7 @@ import threading
 import time
 from collections import Counter
 from pathlib import Path
+from shlex import quote
 
 import pytest
 
@@ -183,7 +184,7 @@ def test_the_command_line_settles_and_the_report_says_so(tmp_path, capsys):
     assert main(argv) == 0
     told = capsys.readouterr().out.splitlines()
     assert told[:2] == [
-        f"wrote 16/24 calls to {out}",
+        f"wrote 16/24 calls to {quote(str(out))}",
         "settled: 8 calls not made, their trials' levels already fixed",
     ]
     assert main(["report", str(path), str(out)]) == 0

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from shlex import quote
 
 import pytest
 
@@ -135,7 +136,8 @@ def test_run_takes_auto_calls_as_a_whole_run(tmp_path, capsys):
 def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):
     status, out = run_refund(tmp_path)
     assert status == 0 and capsys.readouterr().out == (
-        f"wrote 8/8 calls to {out}\nto read the verdict: gadfly report {REFUND} {out}\n"
+        f"wrote 8/8 calls to {quote(str(out))}\n"
+        f"to read the verdict: gadfly report {quote(REFUND)} {quote(str(out))}\n"
     )
     assert len(out.read_text(encoding="utf-8").splitlines()) == 8
     assert main(["report", REFUND, str(out)]) == 0
@@ -161,7 +163,7 @@ def test_out_dash_streams_the_records_and_report_reads_them_back(capsys, monkeyp
     ]
     assert told.err == (  # the records own standard output: the rest is a message
         "wrote 8/8 calls to standard output\n"
-        f"to read the verdict: pipe them to gadfly report {REFUND} -\n"
+        f"to read the verdict: pipe them to gadfly report {quote(REFUND)} -\n"
     )
     monkeypatch.setattr("sys.stdin", io.StringIO(told.out))
     assert main(["report", REFUND, "-"]) == 0
@@ -317,7 +319,9 @@ def test_a_stopped_run_is_finished_from_its_records(tmp_path, capsys):
     rest = tmp_path / "rest.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "7"]
     assert main([*argv, "--out", str(rest), "--kept", str(first)]) == 0
-    assert f"wrote 7/7 calls to {rest}, after 1 kept record\n" in capsys.readouterr().out
+    assert (
+        f"wrote 7/7 calls to {quote(str(rest))}, after 1 kept record\n" in capsys.readouterr().out
+    )
     # the new file is the whole run, so it reports as one
     assert main(["report", REFUND, str(rest)]) == 0
     report = capsys.readouterr().out.splitlines()
@@ -488,7 +492,7 @@ def test_ctrl_c_keeps_what_was_made_and_says_how_to_finish(tmp_path, capsys):
     assert main([*argv, "--out", str(out)]) == 130
     err = capsys.readouterr().err
     assert err.startswith("KeyboardInterrupt: stopped by Ctrl-C after 2 calls")
-    assert f"finish with --kept '{out}'" in err
+    assert f"finish with --kept {str(out)!r}" in err
     assert "Traceback" not in err and len(out.read_text(encoding="utf-8").splitlines()) == 2
 
 
@@ -717,11 +721,15 @@ def test_without_sigpipe_a_reader_that_stops_reading_ends_the_command_quietly():
     assert _stopped_reader() == (141, b"")  # by hand, the status SIGPIPE gives in a shell
 
 
-def test_a_broken_pipe_ends_the_command_quietly_with_sigpipe_s_status(capsys, monkeypatch):
+@pytest.mark.parametrize(
+    "raised",  # Windows often says "invalid argument", with no file named
+    [BrokenPipeError(errno.EPIPE, "Broken pipe"), OSError(errno.EINVAL, "Invalid argument")],
+)
+def test_a_broken_pipe_ends_the_command_quietly_with_sigpipe_s_status(capsys, monkeypatch, raised):
     # where no SIGPIPE ends it (Windows), a write to the gone reader raises
     class Gone(io.StringIO):
         def write(self, text):
-            raise BrokenPipeError(errno.EPIPE, "Broken pipe")
+            raise raised
 
     monkeypatch.setattr("sys.stdout", Gone())
     assert main(["plan", REFUND]) == 141
@@ -772,8 +780,8 @@ def test_text_standard_input_holding_surrogates_is_not_utf8(capsys, monkeypatch)
 @pytest.mark.parametrize(
     ("place", "said"),
     [
-        ("blocker/records.jsonl", "NotADirectoryError: path 'blocker/records.jsonl' runs through"),
-        ("folder", "IsADirectoryError: 'folder' is a folder, not a file"),
+        ("blocker/records.jsonl", "NotADirectoryError: path {} runs through"),
+        ("folder", "IsADirectoryError: {} is a folder, not a file"),
     ],
 )
 def test_out_through_a_file_or_at_a_folder_says_which(tmp_path, capsys, monkeypatch, place, said):
@@ -782,7 +790,7 @@ def test_out_through_a_file_or_at_a_folder_says_which(tmp_path, capsys, monkeypa
     Path("folder").mkdir()
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, "--out", place]) == 7
-    assert capsys.readouterr().err.startswith(said)
+    assert capsys.readouterr().err.startswith(said.format(repr(str(Path(place)))))
 
 
 @pytest.mark.parametrize(
@@ -911,6 +919,7 @@ def test_a_refusal_prints_a_value_with_a_line_break_on_its_line(tmp_path, capsys
     assert not any(line.startswith("forged") for line in lines), lines
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows names no file with a line break")
 def test_a_run_names_a_path_with_a_line_break_on_its_line(tmp_path, capsys):
     out = tmp_path / "records\nforged.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]

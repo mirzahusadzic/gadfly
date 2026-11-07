@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from shlex import quote
 
 import pytest
 
@@ -538,7 +539,7 @@ def test_successor_writes_a_new_file_and_never_over_one(tmp_path, capsys):
     out = tmp_path / "kiran.json"
     argv = ["successor", KIRAN, "--hole", "paper", "--from", MIRZA, "--span", "says"]
     assert main([*argv, "--out", str(out)]) == 0
-    assert told(capsys)[-1] == f"wrote it to {out}"
+    assert told(capsys)[-1] == f"wrote it to {quote(str(out))}"
     first = out.read_text(encoding="utf-8")
     assert situate(json.loads(first)).name == "Kiran"
     assert main([*argv, "--out", str(out)]) == 7
