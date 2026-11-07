@@ -166,7 +166,7 @@ def test_every_page_is_in_the_sidebar_or_kept_off_the_site():
     for path in sorted((ROOT / "docs").glob("**/*.md")):
         if "[" in path.name:
             continue  # a route's template: its pages are linked from the pages they serve
-        page = str(path.relative_to(ROOT / "docs"))
+        page = path.relative_to(ROOT / "docs").as_posix()
         route = re.sub(r"(^|/)index\.md$", r"\1", page).removesuffix(".md")
         if route not in listed and page not in excluded:
             unreachable.append(page)
@@ -307,9 +307,9 @@ def _harness(name):
         ["node", str(ROOT / f"tests/{name}.mjs")],
         capture_output=True,
         text=True,
-        check=True,
         encoding="utf-8",
     )
+    assert done.returncode == 0, done.stderr  # what Node said, in the test report
     return json.loads(done.stdout)
 
 

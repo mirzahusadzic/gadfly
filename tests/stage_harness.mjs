@@ -3,7 +3,7 @@
 // it and reads the JSON it prints, one entry for each thing a reader does.
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (path) => JSON.parse(readFileSync(resolve(ROOT, path), 'utf8'));
@@ -57,7 +57,7 @@ class Node {
 
 globalThis.window = { matchMedia: () => ({ matches: true }) }; // reduced motion: short waits
 globalThis.document = { createElement: (t) => new Node(t), createElementNS: (_, t) => new Node(t) };
-await import(resolve(ROOT, 'docs/public/javascripts/dolls.js'));
+await import(pathToFileURL(resolve(ROOT, 'docs/public/javascripts/dolls.js')).href); // a URL, as Windows needs
 
 const data = read('docs/public/assets/watch/dolls.json');
 const frames = Object.fromEntries(

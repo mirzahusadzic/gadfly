@@ -42,7 +42,7 @@ def raised(path: Path):
 def test_every_refusal_is_one_of_the_classes():
     stray = []
     for path in sorted((ROOT / "midwife").rglob("*.py")):
-        where = str(path.relative_to(ROOT / "midwife"))
+        where = path.relative_to(ROOT / "midwife").as_posix()
         for line, name in raised(path):
             # `refusal` is the class a loader is handed: one of REFUSALS
             if name not in REFUSALS | PYTHONS | {"refusal"} and (where, name) not in INSIDE:

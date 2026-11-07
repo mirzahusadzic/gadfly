@@ -36,7 +36,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PAGES = ["README.md", *sorted(str(p.relative_to(ROOT)) for p in ROOT.glob("docs/**/*.md"))]
+PAGES = ["README.md", *sorted(p.relative_to(ROOT).as_posix() for p in ROOT.glob("docs/**/*.md"))]
 BLOCK = re.compile(r"```text\n((?:\$ (?:[^\n]*\\\n[ \t]+)*[^\n]*\n)+)(.*?)```", re.S)
 COMMAND = re.compile(r"\$ ((?:[^\n]*\\\n[ \t]+)*[^\n]*)\n")
 COPY = re.compile(r"<!-- copy (\S+) -->\n(.*?)<!-- end copy -->", re.S)
@@ -395,7 +395,10 @@ def readable(source: str, page: str) -> str:
     lines = path.read_text(encoding="utf-8").splitlines()
     raw = json.loads("\n".join(lines))
     frame = situate(raw)
-    href = Path(os.path.relpath(path, (ROOT / page).parent)).as_posix()
+    try:
+        href = Path(os.path.relpath(path, (ROOT / page).parent)).as_posix()
+    except ValueError:  # on another drive than the page (Windows): no relative link
+        href = path.as_uri()
     anchor = "the anchor" if len(frame.anchors) == 1 else "the anchors"
 
     def said(*keys: str) -> list[tuple[str, str]]:
@@ -482,7 +485,9 @@ def frame_index() -> str:
 
     shown = {f.source: page.removesuffix(".md").removeprefix("docs/") for page in PAGES
              for f in frames(page)}  # fmt: skip
-    sources = sorted({*(str(p.relative_to(ROOT)) for p in ROOT.glob("examples/*.json")), *shown})
+    sources = sorted(
+        {*(p.relative_to(ROOT).as_posix() for p in ROOT.glob("examples/*.json")), *shown}
+    )
     index = {}
     for source in sources:
         raw = json.loads((ROOT / source).read_text(encoding="utf-8"))

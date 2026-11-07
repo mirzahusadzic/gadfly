@@ -243,7 +243,7 @@ def demo_watched(name: str) -> dict:
     prompts = {(x["id"], t.id): prompt(frame, t, x) for x in frame.inputs for t in trials}
     digests = {key: digest(text) for key, text in prompts.items()}
     source = (DEMO / "frames" / f"tendora-{FEATURED[name]}.json").relative_to(ROOT)
-    data = watched_frame(frame, trials, prompts, str(source))
+    data = watched_frame(frame, trials, prompts, source.as_posix())
     data["labels"] = _answers(read)
     data["neutral"] = NEUTRAL
     data["runs"] = []
