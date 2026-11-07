@@ -26,6 +26,9 @@ from collections.abc import Iterable
 # The statuses no GadflyError carries: Python's own file errors, Ctrl-C, and
 # anything else raised, which is a bug (EX_SOFTWARE)
 FILE, INTERRUPTED, BUG = 7, 130, 70
+# a reader that stopped reading: SIGPIPE's in a shell, given by hand where
+# there is no SIGPIPE (Windows)
+PIPE = 141
 
 
 class GadflyError(ValueError):

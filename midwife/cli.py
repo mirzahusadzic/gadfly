@@ -22,9 +22,11 @@ directory.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import errno
 import functools
 import importlib
+import io
 import json
 import os
 import re
@@ -1518,11 +1520,23 @@ def parser() -> argparse.ArgumentParser:
 TROUBLESHOOTING = "https://mirzahusadzic.github.io/gadfly/troubleshooting"
 
 
+def _utf8() -> None:
+    """Standard output and error carry UTF-8 on every platform, as Gadfly's
+    files do. Before Python 3.15 a Windows pipe takes the code page, which
+    lacks most of Unicode, and a ✓ in a frame would end the command."""
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding="utf-8", errors=stream.errors)
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run one command. A refusal prints its class and message, then its
     notes, and exits with its class's status; with `--json`, the same as one
     object on standard error. Anything else is a bug: its traceback, and 70."""
-    if argv is None and hasattr(signal, "SIGPIPE"):
+    program = argv is None
+    if program:
+        _utf8()
+    if program and hasattr(signal, "SIGPIPE"):
         # run as the program: a reader that stops reading (`| head`) ends it at
         # once and quietly, as it ends any Unix tool (status 141 in a shell)
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
@@ -1551,6 +1565,13 @@ def main(argv: list[str] | None = None) -> int:
         except SystemExit:  # no command of Gadfly's exits so: a battery's sys.exit, a bug
             traceback.print_exc()
             return errors.BUG
+    except BrokenPipeError as error:  # no SIGPIPE ended it (Windows): end as it would
+        if program:  # what is left unwritten, the flush at exit too, goes nowhere
+            with contextlib.suppress(OSError, ValueError):
+                os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        if getattr(error, "running", 0):  # a call hung in its thread would hold the exit
+            os._exit(errors.PIPE)
+        return errors.PIPE
     except (GadflyError, OSError, KeyboardInterrupt) as error:
         status = refused(error, as_json)
         if getattr(error, "running", 0):  # a call hung in its thread would hold the exit

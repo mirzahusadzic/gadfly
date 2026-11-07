@@ -27,7 +27,7 @@ alike.
 | 7 | `FileNotFoundError`, `FileExistsError`, `PermissionError`, `IsADirectoryError`, `NotADirectoryError` | a file or a folder cannot be read or written |
 | 70 | any other | a bug in Gadfly, which prints its traceback |
 | 130 | `KeyboardInterrupt` | stopped by Ctrl-C |
-| 141 | none | the program reading its output stopped reading (`\| head`), so the command ended quietly, as any Unix tool does |
+| 141 | none | the program reading its output stopped reading (`\| head`), so the command ended quietly, as any Unix tool does, and on Windows, which has no SIGPIPE, by the same status |
 
 ---
 

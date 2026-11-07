@@ -10,6 +10,17 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
+### To 0.13.1, not yet released
+
+No verdict, record or frame changes. On Windows, these things a caller of 0.13.0 meets do change:
+
+| In 0.13.0 | In 0.13.1 | What to do |
+| --- | --- | --- |
+| Piped, standard output took Windows's code page under Python 3.13 and 3.14, so a character outside it, such as ✓ in a frame, ended the command as a bug (70), and standard error printed it as an escape | Both carry UTF-8 on every platform, as Gadfly's files do | A script that decoded Gadfly's output in the code page decodes UTF-8 |
+| Nothing ended the command quietly when its reader stopped reading, since Windows has no SIGPIPE | It ends quietly with 141, the status SIGPIPE gives on Linux and macOS | Nothing |
+
+---
+
 ### To 0.13.0
 
 No verdict or record-format changes, and a frame without the new keys keeps its hash and reading. These things a caller of 0.12.0 meets do change:

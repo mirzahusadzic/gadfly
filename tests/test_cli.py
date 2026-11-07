@@ -1,7 +1,9 @@
 """The command line, as a person runs it: plan, run, report, portfolio."""
 
+import errno
 import io
 import json
+import os
 import signal
 import subprocess
 import sys
@@ -38,10 +40,10 @@ def test_plan_says_what_each_trial_changes(capsys):
 
 
 def test_plan_says_when_a_control_empties_the_body(tmp_path, capsys):
-    raw = json.loads(Path(REFUND).read_text())
+    raw = json.loads(Path(REFUND).read_text(encoding="utf-8"))
     raw["interventions"]["control"] = [span["id"] for span in raw["body"]["spans"]]
     frame = tmp_path / "every.json"
-    frame.write_text(json.dumps(raw))
+    frame.write_text(json.dumps(raw), encoding="utf-8")
     assert main(["plan", str(frame)]) == 0
     assert capsys.readouterr().out.rstrip().endswith("  cuts every span")
 
@@ -75,10 +77,10 @@ def test_plan_names_what_no_answers_can_give(capsys):
 
 
 def test_plan_says_an_excluded_frame_is_never_carried_or_cooled(tmp_path, capsys):
-    frame = json.loads(Path(REFUND).read_text())
+    frame = json.loads(Path(REFUND).read_text(encoding="utf-8"))
     frame["outsideScope"] = "refunds above the agent's limit"
     path = tmp_path / "frame.json"
-    path.write_text(json.dumps(frame))
+    path.write_text(json.dumps(frame), encoding="utf-8")
     assert main(["plan", str(path)]) == 0
     assert capsys.readouterr().out.splitlines()[-4:] == [
         "never carried, whatever the answers",
@@ -89,10 +91,10 @@ def test_plan_says_an_excluded_frame_is_never_carried_or_cooled(tmp_path, capsys
 
 
 def test_plan_says_when_the_answers_are_too_many_to_read(tmp_path, capsys):
-    raw = json.loads(Path(REFUND).read_text())
+    raw = json.loads(Path(REFUND).read_text(encoding="utf-8"))
     raw["observe"]["labels"] += [f"other-{n}" for n in range(9)]
     frame = tmp_path / "many.json"
-    frame.write_text(json.dumps(raw))
+    frame.write_text(json.dumps(raw), encoding="utf-8")
     assert main(["plan", str(frame)]) == 0
     assert capsys.readouterr().out.splitlines()[-1] == (
         "too many answers to read which categories it can reach"
@@ -127,7 +129,7 @@ def test_run_takes_auto_calls_as_a_whole_run(tmp_path, capsys):
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "auto"]
     assert main([*argv, "--out", str(out), "--json"]) == 0
     ran = json.loads(capsys.readouterr().out)
-    assert ran["made"] == ran["planned"] == len(out.read_text().splitlines())
+    assert ran["made"] == ran["planned"] == len(out.read_text(encoding="utf-8").splitlines())
 
 
 def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):
@@ -135,7 +137,7 @@ def test_run_keeps_each_record_and_report_reads_them_back(tmp_path, capsys):
     assert status == 0 and capsys.readouterr().out == (
         f"wrote 8/8 calls to {out}\nto read the verdict: gadfly report {REFUND} {out}\n"
     )
-    assert len(out.read_text().splitlines()) == 8
+    assert len(out.read_text(encoding="utf-8").splitlines()) == 8
     assert main(["report", REFUND, str(out)]) == 0
     report = capsys.readouterr().out.splitlines()
     assert report[2] == "overall: carried"
@@ -210,7 +212,7 @@ def test_a_file_that_is_not_json_is_named_with_its_line(
     tmp_path, capsys, monkeypatch, command, name, text, said, status
 ):
     monkeypatch.chdir(tmp_path)  # so the message names the file as given
-    Path(name).write_text(text)
+    Path(name).write_text(text, encoding="utf-8")
     argv = [command, REFUND, name] if command == "report" else [command, name]
     assert main(argv) == status
     assert capsys.readouterr().err.startswith(said)
@@ -218,13 +220,13 @@ def test_a_file_that_is_not_json_is_named_with_its_line(
 
 @pytest.mark.parametrize("command", ["check-frame", "plan"])
 def test_a_frame_may_come_from_standard_input(capsys, monkeypatch, command):
-    monkeypatch.setattr("sys.stdin", io.StringIO(Path(REFUND).read_text()))
+    monkeypatch.setattr("sys.stdin", io.StringIO(Path(REFUND).read_text(encoding="utf-8")))
     assert main([command, "-"]) == 0
     assert "refund-receipt" in capsys.readouterr().out
 
 
 def test_standard_input_is_read_once(capsys, monkeypatch):
-    monkeypatch.setattr("sys.stdin", io.StringIO(Path(REFUND).read_text()))
+    monkeypatch.setattr("sys.stdin", io.StringIO(Path(REFUND).read_text(encoding="utf-8")))
     assert main(["report", "-", "-"]) == 2
     assert "standard input is read once" in capsys.readouterr().err
 
@@ -237,7 +239,7 @@ def test_out_dash_and_json_are_refused_together(capsys):
 
 
 def test_run_never_writes_over_kept_records(tmp_path, capsys):
-    (tmp_path / "records.jsonl").write_text("")
+    (tmp_path / "records.jsonl").write_text("", encoding="utf-8")
     status, _ = run_refund(tmp_path)
     assert status == 7 and capsys.readouterr().err.startswith("FileExistsError: ")
 
@@ -289,7 +291,7 @@ def test_a_run_its_budget_cuts_short_exits_with_3(tmp_path, capsys):
         "StoppedWarning: the run stopped after 3 of 8 calls; the token budget (30) is spent",
         f"finish with --kept {str(out)!r} and a new --out",
     ]
-    assert len(out.read_text().splitlines()) == 3
+    assert len(out.read_text(encoding="utf-8").splitlines()) == 3
 
 
 @pytest.mark.parametrize("name", ["-o", "--output"])
@@ -297,7 +299,7 @@ def test_the_records_file_takes_the_usual_names_too(tmp_path, capsys, name):
     out = tmp_path / "records.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, name, str(out)]) == 0
-    assert len(out.read_text().splitlines()) == 8
+    assert len(out.read_text(encoding="utf-8").splitlines()) == 8
 
 
 def test_a_flag_is_named_in_full(tmp_path, capsys):
@@ -357,7 +359,7 @@ def test_run_refuses_a_bad_battery_or_folder_before_any_call(tmp_path, capsys, a
 )
 def test_portfolio_refuses_a_report_that_is_not_one(tmp_path, capsys, document):
     report = tmp_path / "report.json"
-    report.write_text(document)
+    report.write_text(document, encoding="utf-8")
     assert main(["portfolio", str(report)]) == 5
     assert capsys.readouterr().err.startswith("RecordsError: ")
 
@@ -371,7 +373,7 @@ def test_portfolio_counts_categories_and_never_names_one(tmp_path, capsys):
         document = json.loads(capsys.readouterr().out)
         document["frame"] = name
         reports.append(tmp_path / f"{name}.json")
-        reports[-1].write_text(json.dumps(document))
+        reports[-1].write_text(json.dumps(document), encoding="utf-8")
     assert main(["portfolio", *map(str, reports)]) == 0
     assert capsys.readouterr().out.splitlines()[:2] == ["2 frames", "carried: a, b"]
     assert main(["portfolio", *map(str, reports), "--json"]) == 0
@@ -426,6 +428,7 @@ def test_python_m_midwife_is_the_command_line():
         text=True,
         cwd=ROOT,
         timeout=60,
+        encoding="utf-8",
     )
     assert done.returncode == 0 and ": 8 calls" in done.stdout
 
@@ -486,7 +489,7 @@ def test_ctrl_c_keeps_what_was_made_and_says_how_to_finish(tmp_path, capsys):
     err = capsys.readouterr().err
     assert err.startswith("KeyboardInterrupt: stopped by Ctrl-C after 2 calls")
     assert f"finish with --kept '{out}'" in err
-    assert "Traceback" not in err and len(out.read_text().splitlines()) == 2
+    assert "Traceback" not in err and len(out.read_text(encoding="utf-8").splitlines()) == 2
 
 
 def test_ctrl_c_with_out_dash_says_where_the_records_went(capsys):
@@ -509,9 +512,10 @@ def test_a_resume_with_nothing_left_still_writes_the_whole_run(tmp_path, capsys)
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, "--out", str(rest), "--kept", str(first)]) == 0
     assert "after 8 kept records" in capsys.readouterr().out
-    assert rest.read_text() == first.read_text()
+    assert rest.read_text(encoding="utf-8") == first.read_text(encoding="utf-8")
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows takes no folder's write bit from chmod")
 def test_an_unwritable_folder_is_refused_before_any_call(tmp_path, capsys):
     from tests.fixtures.refund import Counted
 
@@ -538,10 +542,10 @@ def test_a_kept_record_no_file_can_hold_is_refused_before_a_call(tmp_path, capsy
     # out before the first new call, not after it is spent (pass 4, R08)
     status, first = run_refund(tmp_path, "--only", "baseline")
     assert status == 0
-    row = json.loads(first.read_text().splitlines()[0])
+    row = json.loads(first.read_text(encoding="utf-8").splitlines()[0])
     row["raw"] = "\ud800"
     kept = tmp_path / "kept.jsonl"
-    kept.write_text(json.dumps(row) + "\n")  # ascii: the surrogate stays escaped
+    kept.write_text(json.dumps(row) + "\n", encoding="utf-8")  # ascii: the surrogate stays escaped
     out = tmp_path / "rest.jsonl"
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     capsys.readouterr()
@@ -578,7 +582,7 @@ def test_json_python_cannot_read_is_a_refusal_not_a_bug(
     tmp_path, capsys, monkeypatch, command, text, said, status
 ):
     monkeypatch.chdir(tmp_path)
-    Path("in.json").write_text(text)
+    Path("in.json").write_text(text, encoding="utf-8")
     argv = [command, REFUND, "in.json"] if command == "report" else [command, "in.json"]
     assert main(argv) == status
     err = capsys.readouterr().err
@@ -589,7 +593,10 @@ def test_a_link_where_the_records_would_go_is_refused_before_a_call(tmp_path, ca
     from tests.fixtures.refund import Counted
 
     out = tmp_path / "records.jsonl"
-    out.symlink_to(tmp_path / "nowhere.jsonl")  # a link to nothing: exists() says no
+    try:
+        out.symlink_to(tmp_path / "nowhere.jsonl")  # a link to nothing: exists() says no
+    except OSError:  # Windows lets only some accounts make one
+        pytest.skip("this account may not make a symbolic link")
     Counted.calls = 0
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Counted", "--calls", "8"]
     assert main([*argv, "--out", str(out)]) == 7
@@ -610,7 +617,7 @@ def test_a_battery_that_refuses_to_be_made_is_a_battery_error(
     # the protocol's refusal is a ValueError: on import and when made, as in check
     monkeypatch.chdir(tmp_path)
     monkeypatch.syspath_prepend(str(tmp_path))
-    Path("refusing_battery.py").write_text(source)
+    Path("refusing_battery.py").write_text(source, encoding="utf-8")
     argv = [
         "run",
         REFUND,
@@ -643,6 +650,9 @@ def test_standard_input_that_is_not_utf8_says_so(capsys, monkeypatch):
     assert capsys.readouterr().err == "FrameError: standard input is not UTF-8 text\n"
 
 
+@pytest.mark.skipif(
+    os.name == "nt", reason="Windows sends no SIGINT to one child; test_settle presses in process"
+)
 def test_a_second_ctrl_c_stops_at_once_though_a_call_hangs(tmp_path):
     # a call hung in its thread cannot be stopped; the command does not wait for it
     out = tmp_path / "records.jsonl"
@@ -652,12 +662,13 @@ def test_a_second_ctrl_c_stops_at_once_though_a_call_hangs(tmp_path):
         cwd=ROOT,
         stderr=subprocess.PIPE,
         text=True,
+        encoding="utf-8",
     )
     try:
         deadline = time.monotonic() + 10
         while (
             time.monotonic() < deadline
-            and len(out.read_text().splitlines() if out.exists() else []) < 2
+            and len(out.read_text(encoding="utf-8").splitlines() if out.exists() else []) < 2
         ):
             time.sleep(0.05)  # the two calls that answer are kept; the next two hang
         time.sleep(0.3)
@@ -671,12 +682,11 @@ def test_a_second_ctrl_c_stops_at_once_though_a_call_hangs(tmp_path):
             child.wait()
     assert status == 130
     assert child.stderr.read().startswith("KeyboardInterrupt: stopped by Ctrl-C after 2 calls")
-    assert len(out.read_text().splitlines()) == 2
+    assert len(out.read_text(encoding="utf-8").splitlines()) == 2
 
 
-def test_a_reader_that_stops_reading_ends_the_command_quietly():
-    # as `gadfly run ... --out - | head -1`: as Unix tools do, SIGPIPE ends it
-    # at once, with no message, rather than a Python warning and status 120
+def _stopped_reader() -> tuple[int, bytes]:
+    # as `gadfly run ... --out - | head -1`: the reader takes one record, then goes
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:Slow", "--calls", "8"]
     child = subprocess.Popen(
         [sys.executable, "-m", "midwife", *argv, "--out", "-"],
@@ -692,7 +702,51 @@ def test_a_reader_that_stops_reading_ends_the_command_quietly():
         if child.poll() is None:
             child.kill()
             child.wait()
-    assert status == -signal.SIGPIPE and child.stderr.read() == b""
+    return status, child.stderr.read()
+
+
+@pytest.mark.skipif(not hasattr(signal, "SIGPIPE"), reason="no SIGPIPE here; the next test")
+def test_a_reader_that_stops_reading_ends_the_command_quietly():
+    # as Unix tools do, SIGPIPE ends it at once, with no message, rather than
+    # a Python warning and status 120
+    assert _stopped_reader() == (-signal.SIGPIPE, b"")
+
+
+@pytest.mark.skipif(hasattr(signal, "SIGPIPE"), reason="SIGPIPE ends it here; the test above")
+def test_without_sigpipe_a_reader_that_stops_reading_ends_the_command_quietly():
+    assert _stopped_reader() == (141, b"")  # by hand, the status SIGPIPE gives in a shell
+
+
+def test_a_broken_pipe_ends_the_command_quietly_with_sigpipe_s_status(capsys, monkeypatch):
+    # where no SIGPIPE ends it (Windows), a write to the gone reader raises
+    class Gone(io.StringIO):
+        def write(self, text):
+            raise BrokenPipeError(errno.EPIPE, "Broken pipe")
+
+    monkeypatch.setattr("sys.stdout", Gone())
+    assert main(["plan", REFUND]) == 141
+    assert capsys.readouterr().err == ""
+
+
+def test_output_is_utf8_whatever_code_page_the_streams_were_given(tmp_path):
+    # as a Windows pipe gives them before Python 3.15: a code page with no ✓
+    frame = json.loads(Path(REFUND).read_text(encoding="utf-8"))
+    frame["interventions"]["presentation"] = {"receipt": "proof ✓"}
+    (tmp_path / "frame.json").write_text(json.dumps(frame), encoding="utf-8")
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"}
+    said = []
+    for name in ("frame.json", "missing-✓.json"):
+        done = subprocess.run(
+            [sys.executable, "-m", "midwife", "plan", str(tmp_path / name)],
+            capture_output=True,
+            cwd=ROOT,
+            env=env,
+            timeout=60,
+        )
+        said.append((done.returncode, done.stdout.decode("utf-8"), done.stderr.decode("utf-8")))
+    (planned, out, _), (missing, _, err) = said
+    assert planned == 0 and "renames receipt to proof ✓" in out
+    assert missing == 7 and "missing-✓.json" in err
 
 
 def test_a_battery_s_own_ctrl_c_at_once_ends_the_command_as_one(tmp_path, capsys, monkeypatch):
@@ -724,7 +778,7 @@ def test_text_standard_input_holding_surrogates_is_not_utf8(capsys, monkeypatch)
 )
 def test_out_through_a_file_or_at_a_folder_says_which(tmp_path, capsys, monkeypatch, place, said):
     monkeypatch.chdir(tmp_path)
-    Path("blocker").write_text("")
+    Path("blocker").write_text("", encoding="utf-8")
     Path("folder").mkdir()
     argv = ["run", REFUND, "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, "--out", place]) == 7
@@ -746,7 +800,7 @@ def test_a_battery_that_lacks_a_module_is_a_battery_error(
 ):
     monkeypatch.chdir(tmp_path)
     monkeypatch.syspath_prepend(str(tmp_path))
-    Path("refusing_import.py").write_text(source)
+    Path("refusing_import.py").write_text(source, encoding="utf-8")
     argv = [
         "run",
         REFUND,
@@ -816,9 +870,9 @@ def test_free_text_and_paths_print_quoted_when_they_would_break_a_line(
     # an exclusion's words, a path and a report's name are the caller's: one that
     # holds a line break or a colon a label ends at prints quoted, as Python quotes
     monkeypatch.chdir(tmp_path)
-    frame = json.loads(Path(REFUND).read_text())
+    frame = json.loads(Path(REFUND).read_text(encoding="utf-8"))
     frame["outsideScope"] = "refunds: none\never"
-    Path("frame.json").write_text(json.dumps(frame))
+    Path("frame.json").write_text(json.dumps(frame), encoding="utf-8")
     argv = ["run", "frame.json", "--battery", "tests.fixtures.refund:RuleReader", "--calls", "8"]
     assert main([*argv, "--out", "out: one.jsonl"]) == 0
     told = capsys.readouterr().out.splitlines()
@@ -830,7 +884,7 @@ def test_free_text_and_paths_print_quoted_when_they_would_break_a_line(
     assert main(["report", "frame.json", "out: one.jsonl", "--json"]) == 0
     document = json.loads(capsys.readouterr().out)
     document["frame"] = "a: b"
-    Path("report.json").write_text(json.dumps(document))
+    Path("report.json").write_text(json.dumps(document), encoding="utf-8")
     assert main(["portfolio", "report.json"]) == 0
     assert "unresolved: 'a: b'" in capsys.readouterr().out.splitlines()
 
@@ -879,7 +933,8 @@ def test_a_battery_of_your_own_raising_gadflys_error_is_quoted(
         f"    def {raised_in}(self, *args):\n"
         "        raise BatteryError('no key: set it\\nforged line')\n"
         "    def observe(self, frame, prompt, cap):\n"
-        "        pass\n"
+        "        pass\n",
+        encoding="utf-8",
     )
     argv = ["run", REFUND, "--battery", "own_battery:Reader", "--calls", "8"]
     assert main([*argv, "--out", str(tmp_path / "r.jsonl")]) == 6

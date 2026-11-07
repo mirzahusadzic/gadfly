@@ -16,8 +16,9 @@ Every command also takes `--json`, which prints the same as JSON. A refusal
 prints what Python's last traceback line would, its class and what went
 wrong, then what to do, and exits with its class's status: 2 for the command,
 4 the frame, 5 the records, 6 the battery and 7 a file.
-Results go to standard output and messages to standard error, and any file
-a command reads may be `-`, standard input, once in a command.
+Results go to standard output and messages to standard error, both in UTF-8 on
+every platform, and any file a command reads may be `-`, standard input, once
+in a command.
 
 | Command | Calls a model | Prints | Exit status |
 | --- | --- | --- | --- |
