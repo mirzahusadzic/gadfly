@@ -1,0 +1,2 @@
+# Text checks out with LF on every platform, so Windows reads the bytes Linux does.
+* text=auto eol=lf
