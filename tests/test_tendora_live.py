@@ -33,7 +33,9 @@ def engine(tmp_path):
     shutil.copytree(Path(PACKAGE) / "demo" / "payments-on-call", project)
     command = ["node", str(Path(PACKAGE) / "dist" / "bin" / "serve.mjs"), "--project", str(project)]
     command += ["--port", "0"] + ([] if ONLINE else ["--offline"])
-    served = subprocess.Popen(command, stdout=subprocess.PIPE, text=True, cwd=PACKAGE)
+    served = subprocess.Popen(
+        command, stdout=subprocess.PIPE, text=True, cwd=PACKAGE, encoding="utf-8"
+    )
     try:
         line = served.stdout.readline()
         found = re.search(r" at (http://\S+)", line)
@@ -79,7 +81,9 @@ def test_the_restore_inversion_against_the_engine(engine):
     # Tendora's measured reference, read through the tendora battery: Yes
     # with approval and No without, turned by the inversion, open where the
     # rule is cut; written before this run, carried on both inputs
-    raw = json.loads((Path(__file__).parent / "fixtures" / "restore-inversion.json").read_text())
+    raw = json.loads(
+        (Path(__file__).parent / "fixtures" / "restore-inversion.json").read_text(encoding="utf-8")
+    )
     raw["battery"] = {"kind": "tendora", "url": engine}
     frame = situate(raw)
     Tendora().check(frame)
@@ -104,7 +108,9 @@ def test_the_restore_inversion_against_the_engine(engine):
 def test_what_is_asked_turned_against_the_engine(engine, fixture, approved, refused):
     # Tendora's measured predictions, written before this run: the case
     # turned turns each answer; the question's description turned opens it
-    raw = json.loads((Path(__file__).parent / "fixtures" / f"{fixture}.json").read_text())
+    raw = json.loads(
+        (Path(__file__).parent / "fixtures" / f"{fixture}.json").read_text(encoding="utf-8")
+    )
     raw["battery"] = {"kind": "tendora", "url": engine}
     frame = situate(raw)
     Tendora().check(frame)

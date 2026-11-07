@@ -174,10 +174,10 @@ def test_calls_already_out_are_kept_when_cancelled(raw):
 
 
 def test_the_command_line_settles_and_the_report_says_so(tmp_path, capsys):
-    frame = json.loads(REFUND.read_text())
+    frame = json.loads(REFUND.read_text(encoding="utf-8"))
     frame["standing"] = {"quorum": 3, "agree": 2}
     path, out = tmp_path / "frame.json", tmp_path / "records.jsonl"
-    path.write_text(json.dumps(frame))
+    path.write_text(json.dumps(frame), encoding="utf-8")
     reader = "tests.fixtures.refund:RuleReader"
     argv = ["run", str(path), "--battery", reader, "--calls", "24", "--out", str(out), "--settle"]
     assert main(argv) == 0
@@ -282,7 +282,6 @@ def test_ctrl_c_between_starting_a_call_and_tracking_it_keeps_it(raw, monkeypatc
 
 
 def test_a_first_ctrl_c_lets_the_calls_out_end_and_a_second_stops(raw):
-    import os
     import signal
 
     frame = situate(raw)
@@ -293,8 +292,8 @@ def test_a_first_ctrl_c_lets_the_calls_out_end_and_a_second_stops(raw):
         def press(presses=presses, kept=kept):
             if len(kept) >= 2 and not getattr(press, "done", False):
                 press.done = True
-                for _ in range(presses):
-                    os.kill(os.getpid(), signal.SIGINT)
+                for _ in range(presses):  # raised, not sent: Windows's os.kill would end it
+                    signal.raise_signal(signal.SIGINT)
             return False
 
         with pytest.raises(KeyboardInterrupt) as raised:
@@ -338,16 +337,16 @@ def test_a_ctrl_c_in_a_run_one_call_at_a_time_leaves_none_running(raw):
 def test_a_short_stable_baseline_is_not_counted_as_settled(tmp_path, capsys):
     # under stable a missing baseline call could split it, so the report never
     # counts it among the calls that could change nothing (pass 4, R11)
-    frame = json.loads(REFUND.read_text())
+    frame = json.loads(REFUND.read_text(encoding="utf-8"))
     frame["standing"] = {"quorum": 3, "agree": 2, "stable": True}
     path, records = tmp_path / "frame.json", tmp_path / "records.jsonl"
-    path.write_text(json.dumps(frame))
+    path.write_text(json.dumps(frame), encoding="utf-8")
     reader = "tests.fixtures.refund:RuleReader"
     argv = ["run", str(path), "--battery", reader, "--calls", "24", "--out", str(records)]
     assert main(argv) == 0
-    rows = records.read_text().splitlines()
+    rows = records.read_text(encoding="utf-8").splitlines()
     short = [r for r in rows if not ('"trial": "baseline"' in r and '"run": 2' in r)]
-    records.write_text("\n".join(short) + "\n")
+    records.write_text("\n".join(short) + "\n", encoding="utf-8")
     capsys.readouterr()
     assert main(["report", str(path), str(records)]) == 0
     assert capsys.readouterr().out.splitlines()[1] == "records: 23 of 24 planned calls"

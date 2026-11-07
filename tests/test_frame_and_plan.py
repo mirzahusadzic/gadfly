@@ -142,7 +142,7 @@ def test_the_prompt_is_the_body_a_rule_and_the_input(raw):
         asked = rename(x["text"], trial.renamed)
         body = "\n".join(span.text for span in trial.spans)
         assert prompt(frame, trial, x) == f"{body}\n\n---\n\n{asked}"
-    page = (Path(__file__).parent.parent / "docs/batteries.md").read_text()
+    page = (Path(__file__).parent.parent / "docs/batteries.md").read_text(encoding="utf-8")
     assert "<the trial's spans, one per line>\n\n---\n\n<the input>" in page
 
 

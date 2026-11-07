@@ -78,7 +78,8 @@ def transcripts(page: str) -> list[Transcript]:
 def printed(transcript: Transcript) -> str:
     """What the transcript's last command prints, run as written from the root."""
     with tempfile.TemporaryDirectory() as scratch:
-        env = {**os.environ, "PYTHONPATH": str(ROOT), "NO_COLOR": "1"}
+        # every child writes UTF-8, as on a Unix terminal, whatever Windows's code page
+        env = {**os.environ, "PYTHONPATH": str(ROOT), "NO_COLOR": "1", "PYTHONIOENCODING": "utf-8"}
         out = ""
         for command in transcript.commands:
             argv = [
@@ -94,7 +95,13 @@ def printed(transcript: Transcript) -> str:
             elif argv[0] == "gadfly":
                 argv[:1] = [sys.executable, "-m", "midwife"]
             done = subprocess.run(
-                argv, cwd=ROOT, env=env, capture_output=True, text=True, timeout=120
+                argv,
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=120,
+                encoding="utf-8",
             )
             out = (done.stdout + done.stderr).replace(scratch + os.sep, "")
         return out

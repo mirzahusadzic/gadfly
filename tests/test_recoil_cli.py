@@ -249,7 +249,8 @@ def test_walk_orders_its_fits_by_the_vectors_given(tmp_path, capsys, monkeypatch
     assert (document["space"], document["vectors"]) == ("e128", digest)
     assert document["order"][0]["cosine"] == 0.6 and document["order"][0]["unordered"] is None
     # read from standard input as from a file; with no vector for the piece, it keeps its place
-    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(data[data.index(b"\n") + 1 :])))
+    piped = io.TextIOWrapper(io.BytesIO(data[data.index(b"\n") + 1 :]), encoding="utf-8")
+    monkeypatch.setattr("sys.stdin", piped)
     assert main([*argv[:-1], "-"]) == 0
     assert f"fits: Kiran ({held.hash[:12]}), hole paper, kept in its place, " in told(capsys)[1]
     monkeypatch.setattr("sys.stdin", io.StringIO(data.decode()))  # a text stream of a caller's
@@ -946,7 +947,11 @@ def test_firm_shows_another_librarys_warning_as_python_would(thrice):
     battery = "tests.fixtures.refund:Warned"
     argv = ["firm", str(frame), "--battery", battery, "--runs", str(runs), "--calls", "100"]
     done = subprocess.run(
-        [sys.executable, "-m", "midwife", *argv], cwd=ROOT, capture_output=True, text=True
+        [sys.executable, "-m", "midwife", *argv],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
     )
     assert done.returncode == 0
     assert "UserWarning: a library of the reader's warned" in done.stderr
@@ -961,6 +966,7 @@ def test_firm_numbers_a_new_run_after_every_name_a_run_could_hold(thrice, capsys
     assert sorted(path.name for path in runs.iterdir()) == ["2.jsonl", "3.jsonl", "notes.txt"]
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows takes no folder's write bit from chmod")
 def test_firm_refuses_a_runs_folder_it_cannot_write(thrice, capsys):
     frame, runs = thrice
     runs.chmod(0o500)

@@ -25,18 +25,18 @@ PAGES = ["README.md", *(str(p.relative_to(ROOT)) for p in sorted(ROOT.glob("docs
 def test_the_load_bearing_text_keeps_its_cc_by_license():
     assert (
         (ROOT / "LICENSES/CC-BY-4.0.txt")
-        .read_text()
+        .read_text(encoding="utf-8")
         .startswith("Creative Commons Attribution 4.0 International")
     )
-    page = (ROOT / "docs/load-bearing.md").read_text()
+    page = (ROOT / "docs/load-bearing.md").read_text(encoding="utf-8")
     assert "Text © 2026 Mirza Husadzic, licensed under" in page
     assert "https://creativecommons.org/licenses/by/4.0/" in page
-    assert "LICENSES/CC-BY-4.0.txt" in (ROOT / "README.md").read_text()
+    assert "LICENSES/CC-BY-4.0.txt" in (ROOT / "README.md").read_text(encoding="utf-8")
 
 
 def test_every_public_name_in_the_reference_has_a_docstring():
     # the reference is written from docstrings, so a name without one shows nothing
-    page = (ROOT / "docs/reference.md").read_text()
+    page = (ROOT / "docs/reference.md").read_text(encoding="utf-8")
     modules = re.findall(r"^<!-- api (\S+) -->$", page, re.M)
     assert modules
     missing = []
@@ -65,8 +65,8 @@ def test_the_site_publishes_the_frame_schema_where_its_id_says():
     # the site's public files are served at its root, /gadfly/
     published = ROOT / "docs/public/frame.schema.json"
     assert published.resolve() == (ROOT / "midwife/frame.schema.json").resolve()
-    assert "base: '/gadfly/'" in (ROOT / "docs/.vitepress/config.mjs").read_text()
-    schema = json.loads(published.read_text())
+    assert "base: '/gadfly/'" in (ROOT / "docs/.vitepress/config.mjs").read_text(encoding="utf-8")
+    schema = json.loads(published.read_text(encoding="utf-8"))
     assert schema["$id"] == "https://mirzahusadzic.github.io/gadfly/frame.schema.json"
 
 
@@ -98,7 +98,7 @@ SITE_ONLY = {
 def test_every_page_reads_on_github(page):
     # a callout is a GitHub alert, an included text is a copy, a module's
     # reference is written out from its docstrings
-    text = (ROOT / page).read_text()
+    text = (ROOT / page).read_text(encoding="utf-8")
     text = re.sub(r"```.*?```", "", text, flags=re.S)  # code shows as written anyway
     found = [what for what, pattern in SITE_ONLY.items() if pattern.search(text)]
     assert found == []
@@ -128,7 +128,9 @@ def _anchors(path: Path) -> set[str]:
 def _a_line_of(path: Path, anchor: str) -> bool:
     # a file's line, as GitHub numbers it: #L12
     number = re.fullmatch(r"L(\d+)", anchor)
-    return bool(number) and 1 <= int(number[1]) <= len(path.read_text().splitlines())
+    return bool(number) and 1 <= int(number[1]) <= len(
+        path.read_text(encoding="utf-8").splitlines()
+    )
 
 
 @pytest.mark.parametrize("page", PAGES)
@@ -244,7 +246,9 @@ def test_the_watch_view_refuses_what_it_cannot_play(monkeypatch):
 
 
 TEACHING = sorted(
-    p for p in (ROOT / "docs/examples").glob("*.md") if "### What to take from it" in p.read_text()
+    p
+    for p in (ROOT / "docs/examples").glob("*.md")
+    if "### What to take from it" in p.read_text(encoding="utf-8")
 )
 WATCH = re.compile(r"^<!-- watch (?:dolls )?([\w -]+) -->$", re.M)
 
@@ -265,7 +269,9 @@ def test_each_step_plays_its_own_runs_before_what_to_take_from_it(page):
 def test_the_watch_data_is_what_the_pages_play():
     pages = [*TEACHING, ROOT / "docs/first-frame.md"]
     # a frame two steps read (10c2) is played on both, from one file
-    played = {s for p in pages for m in WATCH.findall(p.read_text()) for s in m.split()}
+    played = {
+        s for p in pages for m in WATCH.findall(p.read_text(encoding="utf-8")) for s in m.split()
+    }
     assert played == set(watch_data.FRAMES)
     assert len(watch_data.FRAMES) == len(played)
     kept = {p.stem for p in watch_data.OUT.glob("*.json")}
@@ -298,7 +304,11 @@ def test_every_brushstroke_on_a_doll_is_a_line_it_says():
 def _harness(name):
     """What a Node harness in tests/ printed, read once a run."""
     done = subprocess.run(
-        ["node", str(ROOT / f"tests/{name}.mjs")], capture_output=True, text=True, check=True
+        ["node", str(ROOT / f"tests/{name}.mjs")],
+        capture_output=True,
+        text=True,
+        check=True,
+        encoding="utf-8",
     )
     return json.loads(done.stdout)
 
@@ -519,13 +529,15 @@ def test_a_frame_in_words_says_how_often_each_trial_is_asked():
     # the refund fixture asks each trial once, and the words say so
     page = (ROOT / "docs/write-a-frame.md").read_text(encoding="utf-8")
     assert "**The trials**, each asked once, 8 calls in all:" in page
-    assert not re.search(r"asked 1 times", "\n".join((ROOT / p).read_text() for p in PAGES))
+    assert not re.search(
+        r"asked 1 times", "\n".join((ROOT / p).read_text(encoding="utf-8") for p in PAGES)
+    )
 
 
 def test_the_watch_view_counts_the_asks_of_one_run():
     # a trial is asked quorum times in each run; three runs are kept, so a
     # count without "in this run" reads as a count of runs
-    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text(encoding="utf-8")
     told = re.search(r"function agreement\(.*?\n  \}\n", watch, re.S).group(0)
     assert "In this run the answers split, " in told
     assert " all ${n} times it was asked in this run." in told
@@ -553,14 +565,16 @@ def test_the_watch_view_counts_the_asks_of_one_run():
 def test_the_watch_view_keeps_the_line_under_test_in_view(tests, changed, shown, start):
     # 30 lines of 60px: a sham trial once scrolled to the line it hid and
     # left the line under test out of the list, or below the window's edge
-    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text(encoding="utf-8")
     settle = re.search(r"  function settle\(.*?\n  \}\n", watch, re.S).group(0)
     rows = [
         {"top": 60 * i, "bottom": 60 * i + 56, "test": i in tests, "changed": i in changed}
         for i in range(30)
     ]
     run = f"{settle}\nprocess.stdout.write(String(settle({json.dumps(rows)}, {shown})[0]));"
-    done = subprocess.run(["node", "-e", run], capture_output=True, text=True, check=True)
+    done = subprocess.run(
+        ["node", "-e", run], capture_output=True, text=True, check=True, encoding="utf-8"
+    )
     assert int(done.stdout) == 60 * start
 
 
@@ -576,11 +590,13 @@ def test_the_watch_view_keeps_the_line_under_test_in_view(tests, changed, shown,
 def test_the_watch_view_centres_the_lines_it_shows(line, skip, scrolled):
     # 30 lines of 60px in a 480px view: the line under test once went to the
     # top, with padding after it, so a last line stood alone in an empty panel
-    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text(encoding="utf-8")
     centred = re.search(r"  function centred\(.*?\n  \}\n", watch, re.S).group(0)
     shown = [60 * line, 60 * line + 56]
     run = f"{centred}\nprocess.stdout.write(String(centred({shown}, 480, {skip}, 1800 - 480)));"
-    done = subprocess.run(["node", "-e", run], capture_output=True, text=True, check=True)
+    done = subprocess.run(
+        ["node", "-e", run], capture_output=True, text=True, check=True, encoding="utf-8"
+    )
     assert int(done.stdout) == scrolled
 
 
@@ -588,7 +604,7 @@ def test_the_watch_view_lists_every_answer_an_instruction_names():
     # each frame's answer key is a row an answer, never a sentence to dig
     # through: every answer the instruction names, quoted or bare, gets a row,
     # and only what names none is a line of its own
-    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text(encoding="utf-8")
     answers = re.search(r"  function answers\(.*?\n  \}\n", watch, re.S).group(0)
     shown = {}
     for path in watch_data.OUT.glob("*.json"):
@@ -604,7 +620,9 @@ def test_the_watch_view_lists_every_answer_an_instruction_names():
         " [told, answers(told.slice(told.indexOf('Answer ') + 7), labels.map(escape).join('|'))];\n"
         "process.stdout.write(JSON.stringify(Object.entries(shown).map(listed)));"
     )
-    done = subprocess.run(["node", "-e", run], capture_output=True, text=True, check=True)
+    done = subprocess.run(
+        ["node", "-e", run], capture_output=True, text=True, check=True, encoding="utf-8"
+    )
     for told, listed in json.loads(done.stdout):
         assert listed, told
         rows = [i["label"] for i in listed["items"] if "label" in i]
@@ -622,7 +640,7 @@ def test_every_kind_of_trial_is_told_in_words():
     from midwife.pipeline import situate
     from tools.doc_outputs import TESTS
 
-    raw = json.loads((ROOT / "tests/fixtures/restore-inversion.json").read_text())
+    raw = json.loads((ROOT / "tests/fixtures/restore-inversion.json").read_text(encoding="utf-8"))
     raw["anchors"] = ["s15", "s14"]
     raw["interventions"].update(
         eachAnchor=True,
@@ -636,7 +654,7 @@ def test_every_kind_of_trial_is_told_in_words():
     raw["allowed"]["inputInversion"] = ["No"]
     kinds = {trial.kind for trial in plan(situate(raw))}
     assert kinds == set(TESTS)
-    watch = (ROOT / "docs/public/javascripts/watch.js").read_text()
+    watch = (ROOT / "docs/public/javascripts/watch.js").read_text(encoding="utf-8")
     told = re.search(r"const TRIALS = \{(.*?)\n  \};", watch, re.S).group(1)
     assert kinds == set(re.findall(r'^\s+"?([\w-]+)"?: \[', told, re.M))
 
@@ -697,7 +715,7 @@ def test_no_page_shows_a_whole_frame_as_json(page):
 def test_the_notices_name_what_the_site_ships():
     # the site ships others' work, and ELK's licence asks that its source be named
     notices = (ROOT / "docs/notices.md").read_text(encoding="utf-8")
-    built_with = json.loads((ROOT / "package.json").read_text())["devDependencies"]
+    built_with = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["devDependencies"]
     named = {"vitepress": "VitePress", "vue": "Vue", "mermaid": "Mermaid",
              "@mermaid-js/layout-elk": "ELK", "markdown-it-mathjax3": "markdown-it-mathjax3",
              "shiki": "Shiki"}  # fmt: skip
@@ -1080,7 +1098,7 @@ def test_every_name_a_module_defines_has_its_entry_in_the_reference():
     missing = []
     for module in re.findall(r"^<!-- api (\S+) -->$", page, re.M):
         section = page.split(f"### {module}\n", 1)[1].split("\n### ", 1)[0]
-        tree = ast.parse((ROOT / (module.replace(".", "/") + ".py")).read_text())
+        tree = ast.parse((ROOT / (module.replace(".", "/") + ".py")).read_text(encoding="utf-8"))
         names = [
             getattr(node, "name", None) or node.targets[0].id
             for node in tree.body
@@ -1106,7 +1124,9 @@ def test_the_site_splits_nothing_with_a_dot():
     site = [ROOT / page for page in PAGES if page.startswith("docs/")]
     site += sorted((ROOT / "docs/.vitepress").glob("*.mjs"))
     site += sorted((ROOT / "docs/.vitepress/theme").glob("*.*"))
-    dotted = [str(path.relative_to(ROOT)) for path in site if "·" in path.read_text()]
+    dotted = [
+        str(path.relative_to(ROOT)) for path in site if "·" in path.read_text(encoding="utf-8")
+    ]
     assert dotted == []
 
 
@@ -1123,7 +1143,9 @@ def test_the_version_badge_reads_the_release_tags():
 def test_the_local_json_page_promises_only_what_the_battery_checks():
     # the battery checks JSON and the label pointer; the answer's schema is
     # the evaluator's (pass 4, R12: the page had promised a schema check)
-    page = " ".join((ROOT / "docs/breadth/local-json-battery.md").read_text().split())
+    page = " ".join(
+        (ROOT / "docs/breadth/local-json-battery.md").read_text(encoding="utf-8").split()
+    )
     assert "invalid JSON/schema" not in page
     assert "held to its schema by the evaluator, not here" in page
 

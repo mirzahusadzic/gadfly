@@ -148,11 +148,11 @@ def test_only_the_same_readers_calls_on_the_same_prompt_are_pooled(raw):
 
 
 def write(tmp_path, frame, runs):
-    (tmp_path / "frame.json").write_text(frame.source)
+    (tmp_path / "frame.json").write_text(frame.source, encoding="utf-8")
     paths = []
     for n, records in enumerate(runs, 1):
         path = tmp_path / f"{n}.jsonl"
-        path.write_text("".join(json.dumps(r) + "\n" for r in records))
+        path.write_text("".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
         paths.append(str(path))
     return str(tmp_path / "frame.json"), paths
 
@@ -178,17 +178,17 @@ def test_stats_refuses_records_of_another_frame_and_a_reader_asked_otherwise(raw
     frame, runs = kept(raw, RuleReader(), runs=1)
     path, records = write(tmp_path, frame, runs)
     other = dict(json.loads(frame.source), name="another")
-    (tmp_path / "other.json").write_text(json.dumps(other))
+    (tmp_path / "other.json").write_text(json.dumps(other), encoding="utf-8")
     assert main(["stats", str(tmp_path / "other.json"), *records]) == 5  # RecordsError
     worded = dict(other, observe={**other["observe"], "instruction": "Decide."})
-    (tmp_path / "worded.json").write_text(json.dumps(worded))
+    (tmp_path / "worded.json").write_text(json.dumps(worded), encoding="utf-8")
     assert main(["stats", path, *records, "--pool", str(tmp_path / "worded.json"), records[0]]) == 2
     assert "UsageError: frame 'another' asks another reader" in capsys.readouterr().err
 
 
 def test_plan_shows_the_quorums_power_only_when_asked(raw, tmp_path, capsys):
     path = tmp_path / "frame.json"
-    path.write_text(json.dumps(raw))
+    path.write_text(json.dumps(raw), encoding="utf-8")
     assert main(["plan", str(path), "--agreement", "0.88"]) == 0
     second = capsys.readouterr().out.splitlines()[1]
     assert second.startswith("power: at 88% agreement, a trial reaches a level of 2 of 3 ")
@@ -268,7 +268,7 @@ def test_power_is_a_probability_at_any_quorum_and_says_what_it_counts(raw, tmp_p
     power = stats.power(situate(raw), 0.99)
     assert power.trial <= 1.0 and power.input <= 1.0
     path = tmp_path / "frame.json"
-    path.write_text(json.dumps(raw))
+    path.write_text(json.dumps(raw), encoding="utf-8")
     assert main(["plan", str(path), "--agreement", "0.9"]) == 0
     assert "and all 7 trials the plan asks of an input " in capsys.readouterr().out
 

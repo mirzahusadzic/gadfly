@@ -244,7 +244,9 @@ def test_the_totals_the_docs_quote_are_the_kept_runs():
                 gemma, off = gemma + calls, off + odd
                 incident += odd if path.stem.startswith("10") else 0
     findings = " ".join((EXAMPLES / "FINDINGS.md").read_text(encoding="utf-8").split())
-    ladder = " ".join((EXAMPLES.parent / "docs/examples/index.md").read_text().split())
+    ladder = " ".join(
+        (EXAMPLES.parent / "docs/examples/index.md").read_text(encoding="utf-8").split()
+    )
     assert f"{off} of {gemma:,} calls differed from their trial's majority" in findings
     assert f"{incident} of them are in the incident frames" in findings
     assert f"**No call failed.** {gemma:,} calls: no error" in findings
@@ -255,11 +257,15 @@ def test_the_rung_generator_never_changes_a_kept_frame(tmp_path, monkeypatch):
     # a rung frame with kept runs is never written over; the same frame is left as it is
     from examples import climb
 
-    (tmp_path / "upgrade.json").write_text((EXAMPLES / "upgrade.json").read_text())
+    (tmp_path / "upgrade.json").write_text(
+        (EXAMPLES / "upgrade.json").read_text(encoding="utf-8"), encoding="utf-8"
+    )
     monkeypatch.setattr(climb, "HERE", tmp_path)
-    first = climb.rung_frame(1).read_text()
-    assert climb.rung_frame(1).read_text() == first  # the same frame: left alone
-    (tmp_path / "rung1.json").write_text(first.replace("quill-upgrade-rung-1", "edited"))
+    first = climb.rung_frame(1).read_text(encoding="utf-8")
+    assert climb.rung_frame(1).read_text(encoding="utf-8") == first  # the same frame: left alone
+    (tmp_path / "rung1.json").write_text(
+        first.replace("quill-upgrade-rung-1", "edited"), encoding="utf-8"
+    )
     with pytest.raises(SystemExit, match="never changed"):
         climb.rung_frame(1)
-    assert "edited" in (tmp_path / "rung1.json").read_text()
+    assert "edited" in (tmp_path / "rung1.json").read_text(encoding="utf-8")

@@ -201,7 +201,7 @@ def test_check_refuses_tools_training_providers_wrong_kinds_and_no_token(
 
 def test_the_token_is_read_from_the_router_env_file(monkeypatch, tmp_path):
     env = tmp_path / "openrouter.env"
-    env.write_text(f"OTHER=1\nCODEX_ROUTER_TOKEN='{TOKEN}'\n")
+    env.write_text(f"OTHER=1\nCODEX_ROUTER_TOKEN='{TOKEN}'\n", encoding="utf-8")
     monkeypatch.delenv("CODEX_ROUTER_TOKEN", raising=False)
     monkeypatch.setattr(unified, "ENV_FILE", env)
     assert unified._token() == TOKEN

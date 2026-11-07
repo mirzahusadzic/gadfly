@@ -1590,7 +1590,7 @@ def test_the_troubleshooting_tables_name_what_recoil_refuses():
     waiting["anchors"] = []
     with pytest.raises(FrameError) as refused:
         plan(parse(waiting))
-    tables = (Path(__file__).parent.parent / "docs/troubleshooting.md").read_text()
+    tables = (Path(__file__).parent.parent / "docs/troubleshooting.md").read_text(encoding="utf-8")
     said = str(refused.value).replace("'second doll'", "'Kiran'")
     assert f"`FrameError: {said}`" in tables
     assert "`FrameError: the body holds no span`" in tables

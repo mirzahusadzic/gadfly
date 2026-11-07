@@ -27,7 +27,10 @@ STUDY = {
     },
 }
 SHIPPED = {
-    **{path.name: json.loads(path.read_text()) for path in sorted(ROOT.glob("examples/*.json"))},
+    **{
+        path.name: json.loads(path.read_text(encoding="utf-8"))
+        for path in sorted(ROOT.glob("examples/*.json"))
+    },
     "the test fixture": REFUND,
     "the study replay": frame_for(
         {"id": "c", "run_id": "r", "axis": "a", "ablated_lines": 3}, STUDY
@@ -91,7 +94,7 @@ def test_check_frame_says_ok_or_where_the_frame_is_wrong(tmp_path, capsys):
     raw["anchors"] = ["r9"]  # only the parser can see this one
     raw["interventions"]["sham"] = {"draws": 0}
     path = tmp_path / "frame.json"
-    path.write_text(json.dumps(raw))
+    path.write_text(json.dumps(raw), encoding="utf-8")
     # with --json, one FrameError on standard error, as every refusal is, listing them
     assert main(["check-frame", str(path), "--json"]) == 4
     told = capsys.readouterr()
@@ -168,7 +171,7 @@ def test_an_optional_key_set_to_null_is_refused_like_the_schema_does(path):
 @pytest.mark.parametrize("depth", [200, 600, 1000])
 def test_check_frame_refuses_a_deep_frame_as_a_frame_error(tmp_path, capsys, depth):
     path = tmp_path / "deep.json"
-    path.write_text('{"a": ' + "[" * depth + "]" * depth + "}")
+    path.write_text('{"a": ' + "[" * depth + "]" * depth + "}", encoding="utf-8")
     assert main(["check-frame", str(path)]) == 4
     err = capsys.readouterr().err
     assert err.startswith("FrameError: ") and "Traceback" not in err

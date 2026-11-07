@@ -62,7 +62,9 @@ def test_the_watch_data_digests_each_prompt_once(monkeypatch):
     digest = watch_data.digest
     monkeypatch.setattr(watch_data, "digest", lambda text: calls.append(text) or digest(text))
     watch_data.watched("upgrade")
-    frame = situate(json.loads((watch_data.ROOT / "examples/upgrade.json").read_text()))
+    frame = situate(
+        json.loads((watch_data.ROOT / "examples/upgrade.json").read_text(encoding="utf-8"))
+    )
     slots = len(frame.inputs) * len(plan(frame))  # one per input and trial, not per record
     assert len(calls) == slots, (len(calls), slots)
 
@@ -77,7 +79,7 @@ def test_a_frame_shown_in_words_finds_its_span_lines_in_one_pass(tmp_path):
             {"id": f"f{i}", "text": f"free {i}", "kind": "rule"} for i in range(n)
         ]
         path = tmp_path / f"frame-{n}.json"
-        path.write_text(json.dumps(raw, indent=2))
+        path.write_text(json.dumps(raw, indent=2), encoding="utf-8")
         return instructions(lambda: readable(str(path), "docs/first-frame.md"))
 
     small, large = shown(100), shown(200)
@@ -177,7 +179,7 @@ def test_the_examples_table_reads_each_record_once(tmp_path, monkeypatch):
         raw["inputs"] = [{"id": f"x{i}", "text": f"case {i}"} for i in range(n)]
         root = tmp_path / str(n)
         (root / "runs/x").mkdir(parents=True)
-        (root / "runs/x/1.jsonl").write_text("")
+        (root / "runs/x/1.jsonl").write_text("", encoding="utf-8")
         (root / "x.json").write_text(json.dumps(raw), encoding="utf-8")
         records = [
             {"input": f"x{i}", "trial": f"t{t}", "observation": "decline", "served": "s"}

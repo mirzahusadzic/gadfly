@@ -421,7 +421,7 @@ def test_the_command_line_runs_a_crossing_made_in_a_module_of_your_own(tmp_path,
     from midwife.cli import main
 
     path, out = tmp_path / "incident.json", tmp_path / "incident.jsonl"
-    path.write_text(json.dumps(INCIDENT))
+    path.write_text(json.dumps(INCIDENT), encoding="utf-8")
     frame = parse(copy.deepcopy(INCIDENT))
     battery = "tests.fixtures.incident:crossing"
     calls = str(calls_needed(frame))

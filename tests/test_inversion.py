@@ -102,7 +102,7 @@ class Asked(Rules):
 def test_turning_what_is_asked_turns_or_opens_each_answer(fixture, approved, refused):
     # the predictions, written before the tests: the case turned
     # turns the answer; the question's description turned leaves it open
-    frame = situate(json.loads((FRAME.parent / f"{fixture}.json").read_text()))
+    frame = situate(json.loads((FRAME.parent / f"{fixture}.json").read_text(encoding="utf-8")))
     findings = {f.input: f for f in read(frame, Asked())}
     assert findings["approved"].levels["baseline"] == "Yes"
     assert findings["approved"].levels["input-inversion"] == approved
@@ -115,7 +115,7 @@ def test_turning_what_is_asked_turns_or_opens_each_answer(fixture, approved, ref
 
 @pytest.mark.parametrize("fixture", ["restore-case-inversion", "restore-question-inversion"])
 def test_an_engine_that_drops_what_is_asked_is_misaligned(fixture):
-    frame = situate(json.loads((FRAME.parent / f"{fixture}.json").read_text()))
+    frame = situate(json.loads((FRAME.parent / f"{fixture}.json").read_text(encoding="utf-8")))
     findings = read(frame, Asked(reads_what_is_asked=False))
     assert {f.category for f in findings} == {MISALIGNED}
     assert findings[0].evidence[-1] == (
@@ -136,7 +136,7 @@ APPROVES = "the incident commander approves the restore"
 )  # fmt: skip
 def test_an_inversion_that_changes_nothing_is_refused(fixture, key, mapping, message):
     # it would be the baseline asked again, read as a turn (pass 4, R05)
-    raw = json.loads((FRAME.parent / f"{fixture}.json").read_text())
+    raw = json.loads((FRAME.parent / f"{fixture}.json").read_text(encoding="utf-8"))
     raw["interventions"][key] = mapping
     with pytest.raises(FrameError, match=message):
         situate(raw)
@@ -146,7 +146,7 @@ def test_a_case_match_wider_than_lower_is_renamed_not_a_crash():
     # the pattern matches "ſ" for "s", though "ſ".lower() is "ſ": an input
     # inversion met it mid-run, after calls were spent (pass 4, R06)
     assert rename("ſ and S and s", (("s", "x"),)) == "x and X and x"
-    raw = json.loads((FRAME.parent / "restore-case-inversion.json").read_text())
+    raw = json.loads((FRAME.parent / "restore-case-inversion.json").read_text(encoding="utf-8"))
     raw["inputs"][0]["text"] += " ſ"
     raw["interventions"]["inputInversion"] = {"has approved": "has not approved", "s": "z"}
     frame = situate(raw)

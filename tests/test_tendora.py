@@ -224,7 +224,7 @@ def test_the_reference_frame_through_an_engine_that_follows_the_chain(raw, serve
 
 def test_a_turned_question_is_asked_against_its_basis(server):
     # Tendora's route: the asked question and case, and the check they turn
-    raw = json.loads((FRAME.parent / "restore-question-inversion.json").read_text())
+    raw = json.loads((FRAME.parent / "restore-question-inversion.json").read_text(encoding="utf-8"))
     fake = server(reply("open"))
     frame = at(raw, fake.base)
     turned = next(t for t in plan(frame) if t.id == "input-inversion")
@@ -242,7 +242,7 @@ def test_a_turned_question_is_asked_against_its_basis(server):
 
 def test_a_swapped_case_asks_the_other_declared_check_as_it_stands():
     # the approved case turned is the other input's own text: its saved check
-    raw = json.loads((FRAME.parent / "restore-case-inversion.json").read_text())
+    raw = json.loads((FRAME.parent / "restore-case-inversion.json").read_text(encoding="utf-8"))
     raw["battery"] = {"kind": "tendora", "url": "http://127.0.0.1:1"}
     frame = situate(raw)
     turned = next(t for t in plan(frame) if t.id == "input-inversion")

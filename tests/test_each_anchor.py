@@ -18,7 +18,9 @@ from midwife.pipeline import calls_needed, judge, run, situate
 from midwife.types import Budget, Observation
 from midwife.verdict import CARRIED, COOLED
 
-DEMO = json.loads((Path(__file__).parent / "fixtures" / "restore-inversion.json").read_text())
+DEMO = json.loads(
+    (Path(__file__).parent / "fixtures" / "restore-inversion.json").read_text(encoding="utf-8")
+)
 TEXT = {span["id"]: span["text"] for span in DEMO["body"]["spans"]}
 
 
@@ -208,7 +210,7 @@ def test_a_bypass_of_one_anchor_is_asked_beside_that_anchors_trial():
 
 def test_the_plan_says_which_anchor_each_trial_cuts(tmp_path, capsys):
     path = tmp_path / "frame.json"
-    path.write_text(json.dumps(framed(["s22", "s23"], NOTIFY)))
+    path.write_text(json.dumps(framed(["s22", "s23"], NOTIFY)), encoding="utf-8")
     assert main(["plan", str(path), "--json"]) == 0
     trials = {t["id"]: t for t in json.loads(capsys.readouterr().out)["trials"]}
     assert (trials["ablation-s23"]["kind"], trials["ablation-s23"]["change"]) == (
@@ -233,5 +235,5 @@ def test_each_anchor_alone_is_read_only_once_the_ablation_is(tmp_path):
     [finding] = judge(frame, result.records)
     assert finding.evidence[0].startswith("the baseline and repeat sessions split")
     assert not any("carries it" in line or "alone" in line for line in finding.evidence)
-    page = (Path(__file__).parent.parent / "docs/reading-a-verdict.md").read_text()
+    page = (Path(__file__).parent.parent / "docs/reading-a-verdict.md").read_text(encoding="utf-8")
     assert "With `eachAnchor`, once the ablation is read, the evidence ends" in page

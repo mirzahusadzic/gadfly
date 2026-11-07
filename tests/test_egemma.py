@@ -185,10 +185,10 @@ def test_check_refuses_unknown_keys_bad_temperatures_and_no_key(raw, monkeypatch
 
 def test_the_key_file_comes_first(monkeypatch, tmp_path, key):
     path = tmp_path / "key"
-    path.write_text("from-file\n")
+    path.write_text("from-file\n", encoding="utf-8")
     monkeypatch.setenv("EGEMMA_API_KEY_FILE", str(path))
     assert egemma._key() == "from-file"
-    path.write_text("")
+    path.write_text("", encoding="utf-8")
     with pytest.raises(BatteryError, match="is empty"):
         egemma._key()
 

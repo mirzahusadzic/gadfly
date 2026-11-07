@@ -25,7 +25,9 @@ QUESTIONS = sorted(
 
 def read(question):
     for reader, folder, prefix in READERS:
-        raw = json.loads((folder / "frames" / f"{prefix}{question}.json").read_text())
+        raw = json.loads(
+            (folder / "frames" / f"{prefix}{question}.json").read_text(encoding="utf-8")
+        )
         records = load_records(str(folder / "runs" / f"{prefix}{question}.jsonl"))
         yield reader, raw, situate(raw), records
 
@@ -52,15 +54,15 @@ def test_each_reader_was_asked_the_same_prompts_by_its_own_frame(question):
 
 def test_the_temperature_0_frames_differ_by_their_battery_alone():
     for path in sorted((DEMO / "gemma-temperature-0" / "frames").glob("*.json")):
-        cold = json.loads(path.read_text())
-        warm = json.loads((DEMO / "frames" / path.name).read_text())
+        cold = json.loads(path.read_text(encoding="utf-8"))
+        warm = json.loads((DEMO / "frames" / path.name).read_text(encoding="utf-8"))
         assert {k for k in cold if cold[k] != warm[k]} == {"battery"}
         assert cold["battery"] == {"kind": "egemma", "temperature": 0}
 
 
 def test_every_frame_was_predicted_to_carry_before_its_calls():
     for path in (DEMO / "frames").glob("*.json"):
-        told = json.loads((DEMO / "predictions" / path.name).read_text())
+        told = json.loads((DEMO / "predictions" / path.name).read_text(encoding="utf-8"))
         assert told["frame"] == path.stem and told["verdict"] == "carried"
 
 
@@ -69,7 +71,7 @@ def test_the_demo_pages_totals_are_what_the_records_read():
     for question in QUESTIONS:
         for reader, _, frame, records in read(question):
             counted[reader][overall(judge(frame, records)).category] += 1
-    page = (ROOT / "docs" / "examples" / "payments-demo.md").read_text()
+    page = (ROOT / "docs" / "examples" / "payments-demo.md").read_text(encoding="utf-8")
     row = r"^\| (Tendora's engine|Gemma 4 at temperature [0-9.]+) \| (.+) \|$"
     rows = re.findall(row, page, re.M)
     names = {"Tendora's engine": "Tendora", "Gemma 4 at temperature 0.7": "Gemma 4 at 0.7"}

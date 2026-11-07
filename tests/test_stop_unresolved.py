@@ -209,10 +209,10 @@ def test_a_stopped_run_does_not_read_every_answer_again_at_each_call(raw):
 
 
 def test_the_command_line_stops_and_says_so(tmp_path, capsys):
-    frame = json.loads(REFUND.read_text())  # one call a trial, a control declared
+    frame = json.loads(REFUND.read_text(encoding="utf-8"))  # one call a trial, a control declared
     frame["battery"] = {"kind": "rules"}
     path, out = tmp_path / "frame.json", tmp_path / "records.jsonl"
-    path.write_text(json.dumps(frame))
+    path.write_text(json.dumps(frame), encoding="utf-8")
     reader = "tests.test_stop_unresolved:Never"
     argv = ["run", str(path), "--battery", reader, "--calls", "8", "--out", str(out)]
     assert main([*argv, "--stop-unresolved"]) == 0
@@ -229,12 +229,12 @@ def test_the_command_line_stops_and_says_so(tmp_path, capsys):
 
 def test_a_run_with_nothing_to_ask_still_makes_its_file(tmp_path, capsys):
     # no control and no bypass under all-checks: unresolved before a call
-    frame = json.loads(REFUND.read_text())
+    frame = json.loads(REFUND.read_text(encoding="utf-8"))
     frame["battery"] = {"kind": "rules"}
     frame["interventions"] = {"ablation": True}
     frame["allowed"] = {"ablation": ["grant", "decline", "unclear"]}
     path, out = tmp_path / "frame.json", tmp_path / "records.jsonl"
-    path.write_text(json.dumps(frame))
+    path.write_text(json.dumps(frame), encoding="utf-8")
     reader = "tests.test_stop_unresolved:Never"
     argv = ["run", str(path), "--battery", reader, "--calls", "2", "--out", str(out)]
     assert main([*argv, "--stop-unresolved"]) == 0
@@ -243,7 +243,7 @@ def test_a_run_with_nothing_to_ask_still_makes_its_file(tmp_path, capsys):
         "unasked: 2 calls not made, their input unresolved whatever they gave",
         f"to read the verdict: gadfly report {path} {out}",
     ]
-    assert out.read_text() == ""  # the whole run, with nothing in it
+    assert out.read_text(encoding="utf-8") == ""  # the whole run, with nothing in it
     assert main(["report", str(path), str(out)]) == 0
     assert "not asked (baseline, ablation); whatever" in capsys.readouterr().out
 
