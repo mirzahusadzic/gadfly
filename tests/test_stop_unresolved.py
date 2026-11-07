@@ -242,7 +242,7 @@ def test_a_run_with_nothing_to_ask_still_makes_its_file(tmp_path, capsys):
     assert capsys.readouterr().out.splitlines() == [
         f"wrote 0/2 calls to {quote(str(out))}",
         "unasked: 2 calls not made, their input unresolved whatever they gave",
-        f"to read the verdict: gadfly report {path} {out}",
+        f"to read the verdict: gadfly report {quote(str(path))} {quote(str(out))}",
     ]
     assert out.read_text(encoding="utf-8") == ""  # the whole run, with nothing in it
     assert main(["report", str(path), str(out)]) == 0
