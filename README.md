@@ -2,6 +2,9 @@
 
 [![CI](https://github.com/mirzahusadzic/gadfly/actions/workflows/ci.yml/badge.svg)](https://github.com/mirzahusadzic/gadfly/actions/workflows/ci.yml)
 [![midwife on PyPI](https://img.shields.io/github/v/tag/mirzahusadzic/gadfly?sort=semver&label=midwife&logo=pypi&logoColor=white)](https://pypi.org/project/midwife/)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/mirzahusadzic/gadfly/blob/main/LICENSE)
+![Python 3.13+](https://img.shields.io/badge/python-%E2%89%A53.13-3776AB?logo=python&logoColor=white)
+![macOS · Linux · Windows](https://img.shields.io/badge/platform-macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-lightgrey)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23962158.svg)](https://doi.org/10.5281/zenodo.23962158)
 
 Gadfly tests whether a decision rests on the evidence you think it rests on.

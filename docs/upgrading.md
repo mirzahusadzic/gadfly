@@ -19,6 +19,10 @@ No verdict, record or frame changes. On Windows, these things a caller of 0.13.0
 | Piped, standard output took Windows's code page under Python 3.13 and 3.14, so a character outside it, such as ✓ in a frame, ended the command as a bug (70), and standard error printed it as an escape | Both carry UTF-8 on every platform, as Gadfly's files do | A script that decoded Gadfly's output in the code page decodes UTF-8 |
 | Nothing ended the command quietly when its reader stopped reading, since Windows has no SIGPIPE | It ends quietly with 141, the status SIGPIPE gives on Linux and macOS | Nothing |
 
+New:
+
+- **Linux, macOS and Windows:** CI runs the tests on each, for Python 3.13, 3.14 and 3.15, and the package says so in its classifiers.
+
 ---
 
 ### To 0.13.0
