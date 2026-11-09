@@ -131,7 +131,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | `--token-budget` | a whole number, none by default | The most output tokens in all. |
 | `--only` | a trial id, repeatable | Runs only those trials: a partial run, for diagnosis. |
 | `--kept` | a records file | Records already made, whose calls are not made again, so a stopped run finishes. The new file holds them first, so it is the whole run. |
-| `--settle` | flag | Stops asking a trial once its level cannot change, such as after four alike of five with four to agree. The verdict reads as a whole run's; under `stable` the baseline and repeat always run whole. |
+| `--settle` | flag | Stops asking a trial once its level cannot change, such as after four alike of five with four to agree. The verdict reads as a whole run's; under `stable` the baseline and repeat always run whole. With `--parallel`, a trial has out only the calls that could fix its level, and the next goes when an answer leaves it open. |
 | `--stop-unresolved` | flag | Asks the baseline, repeat, ablation, control, presentation and placement first, then stops asking an input once no answer its other trials could give would resolve it. The verdict reads the category a whole run would and names the trials not asked. |
 | `--withhold` | a file, or `-` | Refuses, before any call and without making a file, a frame whose prompts hold text the set withholds, as [Withhold text](#withhold-text) says. |
 | `--parallel` | a whole number, 1 by default | Makes that many calls at once, for a battery that takes them (the unified battery does; eGemma, with its rate limit, does not). A first Ctrl-C lets the calls already out end and keeps them; a second stops at once. |

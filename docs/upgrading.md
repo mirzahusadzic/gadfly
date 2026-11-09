@@ -10,6 +10,12 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
+### To 0.13.2, not yet released
+
+No verdict, record or frame changes. `--settle` with `--parallel` now spares the calls one at a time would: a trial has out only those that could fix its level, where before every call could go out before any answer came back. A trial whose answers disagree takes another round, so it can take longer; one whose answers agree takes the same time for fewer calls.
+
+---
+
 ### To 0.13.1
 
 No verdict, record or frame changes. On Windows, these things a caller of 0.13.0 meets do change:

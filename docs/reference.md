@@ -159,6 +159,7 @@ run(
 
 `settle` makes no more calls for a trial whose level can no longer
 change (`settled`); the verdict reads it as it would read every call.
+With `parallel`, a trial has out only the calls that could fix its level.
 Under `standing.stable` the baseline and repeat always run whole, as
 their split is read across all their calls. `stop_unresolved` asks the
 `DECISIVE` trials first and asks an input nothing more once every answer

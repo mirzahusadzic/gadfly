@@ -2,6 +2,7 @@
 for calls at once makes them only for a battery that takes them; either way
 the verdict reads as a whole run's."""
 
+import hashlib
 import json
 import threading
 import time
@@ -17,6 +18,12 @@ from midwife.types import Budget, Observation
 from midwife.verdict import settled
 
 REFUND = Path(__file__).parent / "fixtures" / "refund.json"
+
+
+def hash_of(text):
+    return int.from_bytes(hashlib.sha256(text.encode()).digest()[:4], "big")
+
+
 LABELS = ("Yes", "No", "open")
 
 
@@ -144,6 +151,60 @@ def test_calls_at_once_settle_too(raw):
     frame, whole, result = whole_and(raw, battery, parallel=3, settle=True)
     assert result.settled > 0 and len(result.records) + result.settled == calls_needed(frame)
     assert same(judge(frame, result.records), whole)
+
+
+def test_calls_at_once_spare_what_one_at_a_time_spares(raw):
+    """Seen in frame-loop: seven at once sent a trial's every call before any answer, so asking
+    to settle saved nothing. A trial now has out only what could fix it."""
+    battery = Rules(concurrent=True, pause=0.01)
+    frame, whole, result = whole_and(raw, battery, parallel=64, settle=True)
+    assert Counter(r.trial for r in result.records) == dict.fromkeys(
+        [r.trial for r in result.records], frame.agree
+    )
+    assert same(judge(frame, result.records), whole)
+    assert battery.most > frame.agree  # still at once: only the calls that cannot help wait
+
+
+@pytest.mark.parametrize("seed", range(40))
+def test_calls_at_once_read_as_the_whole_run_whatever_the_answers(raw, seed):
+    """The oracle: for any answers, including none, the same levels and category as every call
+    made, the calls still in plan order within a trial."""
+    raw["standing"] = {"quorum": 3, "agree": 2} if seed % 2 else {"quorum": 5, "agree": 4}
+
+    def answer(prompt, n):
+        pick = hash_of(f"{seed}|{prompt}|{n}") % 4
+        return Observation(label=[*LABELS, None][pick], usage={"output_tokens": 1})
+
+    frame = situate(raw)
+    every = run(frame, Rules(answer=answer), Budget(calls=calls_needed(frame)))
+    asked = run(
+        frame,
+        Rules(concurrent=True, answer=answer),
+        Budget(calls=calls_needed(frame)),
+        parallel=7,
+        settle=True,
+    )
+    assert len(asked.records) + asked.settled == calls_needed(frame)
+    assert asked.stopped is None
+    assert same(judge(frame, asked.records), judge(frame, every.records))
+
+
+def test_a_trial_with_a_split_goes_on_to_settle_at_once(raw):
+    """No deadlock: answers that do not agree release the next call, to the quorum."""
+    raw["standing"] = {"quorum": 5, "agree": 4}
+
+    def answer(prompt, n):
+        return Observation(label=LABELS[n % 2], usage={"output_tokens": 1})
+
+    frame = situate(raw)
+    result = run(
+        frame,
+        Rules(concurrent=True, answer=answer),
+        Budget(calls=calls_needed(frame)),
+        parallel=7,
+        settle=True,
+    )
+    assert result.stopped is None and result.records
 
 
 def test_calls_at_once_keep_the_token_budget(raw):

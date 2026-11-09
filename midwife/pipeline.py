@@ -151,6 +151,7 @@ def run(
 
     `settle` makes no more calls for a trial whose level can no longer
     change (`settled`); the verdict reads it as it would read every call.
+    With `parallel`, a trial has out only the calls that could fix its level.
     Under `standing.stable` the baseline and repeat always run whole, as
     their split is read across all their calls. `stop_unresolved` asks the
     `DECISIVE` trials first and asks an input nothing more once every answer
@@ -341,9 +342,18 @@ def run(
         if (x["id"], trial.id, index) not in done
     )
     order = itertools.count()
+    out: Counter[tuple[str, str]] = Counter()  # each trial's calls out now
     started: dict[int, tuple[dict[str, str], Trial, int, str]] = {}  # each call made, until kept
     ended_at: dict[int, Observation] = {}  # each call's observation, set by its worker
     running: dict[Future[None], int] = {}
+
+    def waiting(x: dict[str, str], trial: Trial) -> bool:
+        # asked to settle, a trial has out no more calls than could fix it, so calls at
+        # once spare what one at a time spares; which call goes when never touches a level
+        key = (x["id"], trial.id)
+        if not settle or trial.id in whole or needless(x, trial):
+            return False
+        return out[key] >= max(1, frame.agree - max(tally[key].values(), default=0))
 
     def ask(seq: int, text: str) -> None:
         try:
@@ -353,6 +363,7 @@ def run(
 
     def keep_call(seq: int) -> str | None:
         x, trial, index, text = started.pop(seq)
+        out[x["id"], trial.id] -= 1
         observed = ended_at.pop(seq)
         if isinstance(observed, StopRun):
             return _halted(observed)
@@ -375,21 +386,25 @@ def run(
     try:
         while queue or running:
             while stopped is None and queue and len(running) < parallel:
-                x, trial, index = queue[0]
+                chosen = next((c for c in queue if not waiting(c[0], c[1])), None)
+                if chosen is None:  # all held: an answer now out decides what goes next
+                    break
+                x, trial, index = chosen
                 if needless(x, trial):
-                    queue.popleft()
+                    queue.remove(chosen)
                     skipped += 1
                     continue
                 if done_with(x, trial):
-                    queue.popleft()
+                    queue.remove(chosen)
                     unasked += 1
                     continue
                 stopped = "cancelled" if interrupted else blocked(len(running))
                 if stopped:
                     break
-                queue.popleft()
+                queue.remove(chosen)
                 seq, text = next(order), prompt(frame, trial, x)
                 started[seq] = (x, trial, index, text)
+                out[x["id"], trial.id] += 1
                 running[pool.submit(ask, seq, text)] = seq
             if not running:
                 break
