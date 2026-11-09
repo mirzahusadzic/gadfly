@@ -84,6 +84,19 @@ def test_every_quoted_output_is_what_the_code_prints(transcript):
     assert printed(transcript) == transcript.quoted
 
 
+def test_a_transcript_of_many_continued_lines_is_read_at_once():
+    # a block of continued lines that never closes once took twice as long
+    # for each line more: 26 took seconds (code scanning, py/redos)
+    import time
+
+    from tools.doc_outputs import BLOCK
+
+    text = "```text\n$ \\\n" + "\t\t\\\n" * 26 + "x"
+    began = time.perf_counter()
+    assert BLOCK.search(text) is None
+    assert time.perf_counter() - began < 1
+
+
 # Syntax only a site generator reads, which GitHub would show as it is written.
 SITE_ONLY = {
     "an admonition": re.compile(r"^(!!!|\?\?\?\+?) ", re.M),

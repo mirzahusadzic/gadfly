@@ -37,7 +37,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PAGES = ["README.md", *sorted(p.relative_to(ROOT).as_posix() for p in ROOT.glob("docs/**/*.md"))]
-BLOCK = re.compile(r"```text\n((?:\$ (?:[^\n]*\\\n[ \t]+)*[^\n]*\n)+)(.*?)```", re.S)
+BLOCK = re.compile(r"```text\n((?:\$ (?:[^\n]*\\\n[ \t]++)*[^\n]*\n)+)(.*?)```", re.S)
 COMMAND = re.compile(r"\$ ((?:[^\n]*\\\n[ \t]+)*[^\n]*)\n")
 COPY = re.compile(r"<!-- copy (\S+) -->\n(.*?)<!-- end copy -->", re.S)
 API = re.compile(r"<!-- api (\S+) -->\n(.*?)<!-- end api -->", re.S)
