@@ -10,7 +10,7 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
-### To 0.13.3, not yet released
+### To 0.14.0
 
 No verdict, record or frame changes. `--withhold` and `withhold=` now read what every call carries beside its prompt, the frame's instruction, its labels and its battery line, so a frame that held withheld text only there, which 0.13.2 let through, is refused before any call. Such a place has no trial: in `check-frame --withhold --json` its row under `withheld` has an empty `trial`, and its `input` says where, `the instruction`, `the labels` or `the battery line`. A script that read `trial` as always set reads `input` for these.
 
