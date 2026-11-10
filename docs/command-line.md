@@ -181,9 +181,11 @@ any case), `lines` (the SHA-256 of a line's words joined by single spaces) and
 ```
 
 `always` binds every call, and `training` binds a battery whose calls may train
-on what it reads, which `trains` says. Every prompt the plan makes is read before
-the first call; a line opening with a diff marker is also read without it, and
-a refusal names the trial, the input and the kind, never the text.
+on what it reads, which `trains` says. Before the first call, what every call
+carries beside its prompt is read (the instruction, the labels and the battery
+line), then every prompt the plan makes; a line opening with a diff marker is
+also read without it, and a refusal names the place (a trial and an input, or
+the part every call carries) and the kind, never the text.
 `check-frame --withhold` reads both parts, since no battery is named, and with
 `--json` lists every place under `withheld`; in a crossing, what the maker
 writes is not read before the reader sees it.

@@ -297,9 +297,10 @@ consent, retention, credential and recording rules.
 | verification | the model, the provider the router reports or a single pinned endpoint's tag, and the route; never a provider the router calls unknown | model and revision recorded; frame pins are enforced | what the evaluator reports under `served` | the engine's version, revision and packs, from its reply | unknown |
 
 `--withhold FILE`, or `withhold=` in Python, refuses before any call a frame
-whose prompts hold text that must not leave this machine. Its `always` part
-binds every battery, and its `training` part binds a battery whose calls may
-train; [the command line](command-line.md#withhold-text) shows the file.
+whose prompts, instruction, labels or battery line hold text that must not
+leave this machine. Its `always` part binds every battery, and its `training`
+part binds a battery whose calls may train;
+[the command line](command-line.md#withhold-text) shows the file.
 
 #### Costs
 
