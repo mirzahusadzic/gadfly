@@ -273,3 +273,22 @@ def test_the_command_line_stops_short_and_says_so(tmp_path, capsys, monkeypatch)
     assert told[2].startswith(
         "firm: no, no category after 1 run, and no firm reading of carried is left to reach; "
     )
+
+
+def test_run_on_the_command_line_stops_short_too_and_counts_it(tmp_path, capsys, monkeypatch):
+    """Parity: `run(short_of=)` has its command, and its count is in `--json`."""
+    monkeypatch.chdir(ROOT)  # the battery is imported from here
+    frame = situate(json.loads(REFUND.read_text(encoding="utf-8")))
+    argv = ["run", str(REFUND), "--battery", "tests.test_short_of:Never", "--calls", "auto"]
+    argv += ["--short-of", "carried"]
+    assert main([*argv, "--out", str(tmp_path / "a.jsonl"), "--json"]) == 0
+    said = json.loads(capsys.readouterr().out)
+    assert said["short"] > 0 and said["stopped"] is None
+    assert said["made"] + said["short"] == calls_needed(frame)
+    assert main([*argv, "--out", str(tmp_path / "b.jsonl")]) == 0
+    told = capsys.readouterr().out.splitlines()
+    assert f"short: {said['short']} calls not made, no answer left could make it read carried" in (
+        told
+    )
+    assert main(argv[:-2] + ["--out", str(tmp_path / "c.jsonl"), "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["short"] == 0

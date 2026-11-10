@@ -490,6 +490,7 @@ def command_run(args) -> int:
                 stop_unresolved=args.stop_unresolved,
                 parallel=args.parallel,
                 withhold=withhold,
+                short_of=args.short_of,
             )
     except KeyboardInterrupt as interrupt:
         # every record made so far is already in its file: say how to finish
@@ -574,6 +575,7 @@ def command_run(args) -> int:
             "kept": len(kept) if files else 0,
             "settled": result.settled,
             "unasked": result.unasked,
+            "short": result.short,
             "stopped": result.stopped,
             "openings": dict(openings.most_common()),
             "exit": status,
@@ -594,6 +596,12 @@ def command_run(args) -> int:
             print(
                 f"unasked: {result.unasked} calls not made, "
                 "their input unresolved whatever they gave",
+                file=say,
+            )
+        if result.short:
+            print(
+                f"short: {result.short} calls not made, no answer left could make it read "
+                f"{args.short_of}",
                 file=say,
             )
         read = (
@@ -1336,6 +1344,11 @@ def parser() -> argparse.ArgumentParser:
         "--stop-unresolved",
         action="store_true",
         help="ask the decisive trials first; stop an input once nothing can resolve it",
+    )
+    execute.add_argument(
+        "--short-of",
+        choices=("carried", "cooled"),
+        help="ask first what rules this category out; stop once nothing left can read it",
     )
     execute.add_argument(
         "--parallel", type=int, default=1, help="calls at once, for a battery that takes them"
