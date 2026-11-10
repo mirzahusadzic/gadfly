@@ -1234,9 +1234,11 @@ SHA-256 of a line in its normal form, its words joined by single spaces; and
 `+` or `-`, is also read without it, so a line copied into a diff still
 matches its source.
 
-`withheld` reads every prompt a frame's plan makes, which is all a run sends,
-and names each place that holds withheld text; `refuse_withheld` refuses the
-frame at the first, naming where and what kind, never the text. Whether the
+`withheld` reads all a run sends: what every call carries beside its prompt
+(the frame's instruction, its labels, and the battery line, which holds an
+output schema and a maker's instruction), then every prompt the frame's plan
+makes. It names each place that holds withheld text; `refuse_withheld` refuses
+the frame at the first, naming where and what kind, never the text. Whether the
 `training` part applies is the battery's to say (`trains`); one that does not
 say is read as one that may train. In a crossing, what the maker writes is not
 checked before the reader reads it.
@@ -1274,7 +1276,9 @@ A place a run would send withheld text: the trial and input whose
 prompt holds it, its kind, and the part of the set that withholds it. A
 trial or input whose id the set itself withholds is named by its place
 instead, `trial 3` or `input 2`, counted from 1 in the plan's and the
-frame's order, so a refusal never says the text.
+frame's order, so a refusal never says the text. Text every call carries
+beside its prompt has no trial: its `input` says where it is, `the
+instruction`, `the labels` or `the battery line`.
 
 ```python
 @dataclass(frozen=True)
@@ -1325,10 +1329,10 @@ trains(battery, frame)
 
 #### withheld
 
-Each trial and input whose prompt holds withheld text, of what kind,
-and under which part: `always` for every frame, `training` too when the
-frame's calls may train. Read over every prompt the plan makes, before
-any call.
+Each place a run would send withheld text, of what kind, and under
+which part: `always` for every frame, `training` too when the frame's
+calls may train. Read before any call, over what every call carries
+beside its prompt, then over every prompt the plan makes.
 
 ```python
 withheld(frame, withhold, *, training=True)

@@ -224,3 +224,49 @@ def test_an_oversized_pattern_is_refused_as_no_regular_expression(tmp_path, caps
     sets = tmp_path / "w.json"
     sets.write_text(json.dumps(huge), encoding="utf-8")
     assert main(["check-frame", str(REFUND), "--withhold", str(sets)]) == 2
+
+
+@pytest.mark.parametrize(
+    ("where", "plant"),
+    [
+        (
+            "the instruction",
+            lambda raw: raw["observe"].update(instruction=f"Decide; key {SECRET}."),
+        ),
+        ("the labels", lambda raw: _relabel(raw, SECRET)),
+        ("the battery line", lambda raw: raw["battery"].update(note=f"key {SECRET}")),
+    ],
+)
+def test_what_every_call_carries_beside_its_prompt_is_read_too(raw, where, plant):
+    """Seen by reading: only the prompts were read, but a battery sends the
+    instruction and the labels with every call, and its line holds what else
+    it sends, so a secret there left the machine unrefused."""
+    raw["battery"] = {"kind": "rule-reader"}
+    plant(raw)
+    frame = situate(raw)
+    held = withhold(always={"patterns": [r"sk-[a-z0-9]{20,}"]})
+    assert [h.as_dict() for h in withheld(frame, held)] == [
+        {"trial": "", "input": where, "kind": "a pattern", "part": "always"}
+    ]
+    reader = Counting(trains=False)
+    with pytest.raises(FrameError) as refused:
+        run(frame, reader, Budget(calls=100), withhold=held)
+    assert reader.calls == 0
+    assert f"in {where}, which every call carries" in str(refused.value)
+    assert SECRET not in " ".join([str(refused.value), *refused.value.__notes__])
+
+
+def _relabel(raw, label):
+    # one label renamed everywhere the frame names it
+    old = raw["observe"]["labels"][0]
+    swap = lambda value: (  # noqa: E731
+        label
+        if value == old
+        else [swap(x) for x in value]
+        if isinstance(value, list)
+        else {k: swap(v) for k, v in value.items()}
+        if isinstance(value, dict)
+        else value
+    )
+    for key in ("observe", "allowed"):
+        raw[key] = swap(raw[key])

@@ -10,9 +10,11 @@ SHA-256 of a line in its normal form, its words joined by single spaces; and
 `+` or `-`, is also read without it, so a line copied into a diff still
 matches its source.
 
-`withheld` reads every prompt a frame's plan makes, which is all a run sends,
-and names each place that holds withheld text; `refuse_withheld` refuses the
-frame at the first, naming where and what kind, never the text. Whether the
+`withheld` reads all a run sends: what every call carries beside its prompt
+(the frame's instruction, its labels, and the battery line, which holds an
+output schema and a maker's instruction), then every prompt the frame's plan
+makes. It names each place that holds withheld text; `refuse_withheld` refuses
+the frame at the first, naming where and what kind, never the text. Whether the
 `training` part applies is the battery's to say (`trains`); one that does not
 say is read as one that may train. In a crossing, what the maker writes is not
 checked before the reader reads it.
@@ -75,7 +77,9 @@ class Held:
     prompt holds it, its kind, and the part of the set that withholds it. A
     trial or input whose id the set itself withholds is named by its place
     instead, `trial 3` or `input 2`, counted from 1 in the plan's and the
-    frame's order, so a refusal never says the text."""
+    frame's order, so a refusal never says the text. Text every call carries
+    beside its prompt has no trial: its `input` says where it is, `the
+    instruction`, `the labels` or `the battery line`."""
 
     trial: str
     input: str
@@ -170,15 +174,42 @@ def trains(battery: Any, frame: Frame) -> bool:
     return True if not callable(says) else says(frame) is not False
 
 
+def _strings(value: Any) -> list[str]:
+    # every text a JSON value holds, its keys too, in its own order
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [text for key, item in value.items() for text in (key, *_strings(item))]
+    if isinstance(value, list):
+        return [text for item in value for text in _strings(item)]
+    return []
+
+
+def _carried(frame: Frame) -> list[tuple[str, str]]:
+    """What every call carries beside its prompt, by where it is: a battery
+    sends the instruction and the labels with each call, and its line holds
+    what else it may send, such as an output schema or a maker's instruction."""
+    return [
+        ("the instruction", frame.instruction),
+        ("the labels", "\n".join(frame.labels)),
+        ("the battery line", "\n".join(_strings(frame.battery))),
+    ]
+
+
 def withheld(frame: Frame, withhold: Withhold, *, training: bool = True) -> list[Held]:
-    """Each trial and input whose prompt holds withheld text, of what kind,
-    and under which part: `always` for every frame, `training` too when the
-    frame's calls may train. Read over every prompt the plan makes, before
-    any call."""
+    """Each place a run would send withheld text, of what kind, and under
+    which part: `always` for every frame, `training` too when the frame's
+    calls may train. Read before any call, over what every call carries
+    beside its prompt, then over every prompt the plan makes."""
     parts = [("always", withhold.always)]
     if training:
         parts.append(("training", withhold.training))
-    held = []
+    held = [
+        Held("", where, kind, name)
+        for where, text in _carried(frame)
+        for name, part in parts
+        for kind in part.kinds(text)
+    ]
     for place, trial in enumerate(plan(frame), 1):
         for at, x in enumerate(frame.inputs, 1):
             text = prompt(frame, trial, x)
@@ -205,10 +236,12 @@ def refuse_withheld(frame: Frame, withhold: Withhold, *, training: bool = True) 
         return
     first = held[0]
     which = "the frame" if _shown(withhold, frame.name, "") == "" else f"frame {frame.name!r}"
-    error = FrameError(
-        f"{which} would send withheld text, {first.kind}, "
+    where = (
         f"in trial {first.trial!r} for input {first.input!r}"
+        if first.trial
+        else f"in {first.input}, which every call carries"
     )
+    error = FrameError(f"{which} would send withheld text, {first.kind}, {where}")
     if first.part == "training":
         error.add_note(
             "its battery may train on what it reads; read it with a reader that keeps "
@@ -216,7 +249,7 @@ def refuse_withheld(frame: Frame, withhold: Withhold, *, training: bool = True) 
         )
     else:
         error.add_note("no call may carry it; take the text out of the frame")
-    places = len({(h.trial, h.input) for h in held})
+    places = len({(h.trial, h.input) for h in held if h.trial})
     if places > 1:
         error.add_note(f"{places} prompts in all hold withheld text")
     raise error
