@@ -1108,6 +1108,7 @@ def command_firm(args) -> int:
                 on_record=keep,
                 parallel=args.parallel,
                 withhold=withhold,
+                short_of=args.short_of,
             )
     except KeyboardInterrupt:
         # every record made so far is already in its file: say which run is cut short
@@ -1149,11 +1150,16 @@ def command_firm(args) -> int:
             )
         raised.append((warning, gives))
     paths = [path for _, path, _ in kept] + [Path(file.name) for file in files]
+    # a run cut short of a category is the last, and is read for no category of its own
+    cut = len(asked.runs) - 1 if asked.short and len(asked.runs[-1]) < each else -1
     runs = [
         {
             "file": str(paths[place]) if place < len(paths) else None,
             "kept": place < len(kept),
-            "category": overall(judge(frame, list(records))).category if records else None,
+            "category": overall(judge(frame, list(records))).category
+            if records and place != cut
+            else None,
+            **({"short": True} if place == cut else {}),
         }
         for place, records in enumerate(asked.runs)
     ]
@@ -1169,6 +1175,7 @@ def command_firm(args) -> int:
             "shares": asked.shares,
             "findings": [finding.as_dict() for finding in asked.findings],
             "stopped": asked.stopped,
+            "short": asked.short,
             "openings": dict(openings.most_common()),
             "exit": status,
             "warnings": [described(warning, gives) for warning, gives in raised],
@@ -1178,6 +1185,8 @@ def command_firm(args) -> int:
     print(f"frame: {plain(frame.name)} ({frame.hash})")
     for place, read in enumerate(runs, 1):
         how = "kept" if read["kept"] else "asked now"
+        if read.get("short"):
+            how += f", cut short: it cannot read {asked.short}"
         print(f"run {place}: {plain(read['category'] or 'no category')}, {how}")
     many = len(asked.runs)
     state = f"{'yes' if asked.firm else 'no'}, {plain(asked.category or 'no category')}"
@@ -1188,7 +1197,9 @@ def command_firm(args) -> int:
     elif shares:
         alike = ", ".join(f"{plain(x)} {_percent(share)}" for x, share in shares.items())
         state += f", read alike in {alike} of draws"
-    if not asked.firm and not asked.stopped and many >= most:
+    if asked.short:
+        state += f", and no firm reading of {asked.short} is left to reach"
+    elif not asked.firm and not asked.stopped and many >= most:
         state += ", as many runs as --most reads"
     print(f"firm: {state}; {len(made)} calls made now{_tokens(asked.usage, asked.unthought)}")
     for warning, _ in raised:
@@ -1498,6 +1509,12 @@ def parser() -> argparse.ArgumentParser:
         help="refuse before any call a frame holding text it withholds",
     )
     reading(firmed)
+    firmed.add_argument(
+        "--short-of",
+        choices=("carried", "cooled"),
+        help="stop once the verdict cannot be firm and this category, without reading which "
+        "other it is",
+    )
     firmed.add_argument("--json", action="store_true", help="print JSON instead of text")
     firmed.set_defaults(func=command_firm)
 

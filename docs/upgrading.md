@@ -14,6 +14,8 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 No verdict, record or frame changes. `--withhold` and `withhold=` now read what every call carries beside its prompt, the frame's instruction, its labels and its battery line, so a frame that held withheld text only there, which 0.13.2 let through, is refused before any call. Such a place has no trial: in `check-frame --withhold --json` its row under `withheld` has an empty `trial`, and its `input` says where, `the instruction`, `the labels` or `the battery line`. A script that read `trial` as always set reads `input` for these.
 
+`gadfly firm --short-of carried` (or `cooled`), `short_of=` in Python, is new: asking ends once the verdict cannot be firm and that category, on fewer calls, and says so without reading which other category it is. Nothing changes for a caller that does not ask for it, but `firm --json` always carries a `short` key now, `null` unless asking ended so, `Firm` a `short` field and `RunResult` a `short` count.
+
 ---
 
 ### To 0.13.2

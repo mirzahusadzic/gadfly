@@ -701,6 +701,7 @@ def test_firm_keeps_each_run_and_reads_them_back_as_runs_made(thrice, capsys):
         "shares": asked.shares,
         "findings": [finding.as_dict() for finding in asked.findings],
         "stopped": asked.stopped,
+        "short": None,
         "openings": {},
         "exit": 0,
         "warnings": [],

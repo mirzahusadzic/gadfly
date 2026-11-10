@@ -93,8 +93,9 @@ overall = midwife.verdict.overall
 
 What a run made: its records, the calls it planned, why it stopped
 early (None when it reached the end of its plan), and how many planned
-calls it skipped because their trial had settled or their input could
-read nothing but unresolved.
+calls it skipped because their trial had settled, their input could read
+nothing but unresolved, or the category it was asked for was out of
+reach.
 
 ```python
 @dataclass(frozen=True)
@@ -154,6 +155,7 @@ run(
     stop_unresolved=False,
     parallel=1,
     withhold=None,
+    short_of=None,
 )
 ```
 
@@ -165,6 +167,14 @@ their split is read across all their calls. `stop_unresolved` asks the
 `DECISIVE` trials first and asks an input nothing more once every answer
 its other trials could give reads unresolved (`unneeded`); the verdict
 reads the category a whole run would, and names the trials not asked.
+`short_of`, carried or cooled, is for a caller who needs only to know
+whether the frame reads that category: the trials that most often rule
+it out are asked first (`RULING`), and once no answer left could make an
+input read it (`out_of_reach`), and so the frame, no further call starts.
+With `parallel`, the other trials' calls wait until those first trials
+have answered, so calls at once spare what one at a time spares.
+Such a run is cut short (`short` counts the calls it left): it says the
+frame does not read that category, and not which other it reads.
 `parallel` makes up to that many calls at once, for a battery that says
 it takes them (a `concurrent` attribute that is true); records are
 handed on as each call ends, and a call already started is always kept:
@@ -651,6 +661,16 @@ otherwise, or the answers are too many to read.
 unneeded(frame, x, samples)
 ```
 
+#### out_of_reach
+
+Whether input `x` can no longer read `category`, given the answers so
+far: none of the answers its trials not asked to the end could give reads
+it. False while one could, or the answers are too many to read.
+
+```python
+out_of_reach(frame, x, samples, category)
+```
+
 #### unreachable
 
 What no answers can make this frame read, found before a call: carried
@@ -1112,7 +1132,10 @@ What asking a frame until its verdict was firm made: every run, kept
 ones first, and the last cut short when it stopped short; the findings
 of the latest whole run; how often the draws of its calls read each
 input's category; whether that was firm; the calls made now; and why it
-stopped short, if it did. `usage` sums each whole count the calls made
+stopped short, if it did. `short` names the category asking was to stop
+short of (`until_firm`'s `short_of`) once no firm reading of it was left
+to reach: the verdict is then not firm, and says only that the frame does
+not read that category firmly. `usage` sums each whole count the calls made
 now reported, such as `input_tokens` and `output_tokens`, by name; a
 count no call reported is absent, never a zero. `unthought` counts the
 calls made now that reported no reasoning (`midwife.pipeline.unthought`).
@@ -1156,8 +1179,18 @@ until_firm(
     on_record=lambda record: None,
     parallel=1,
     withhold=None,
+    short_of=None,
 )
 ```
+
+`short_of`, carried or cooled, is for a caller who needs only to know
+whether the verdict is firm and that category. Asking then ends as soon
+as it cannot be: a run that does not read the category leaves a firm
+reading of it two runs away, so when `most` allows fewer, no further run
+is asked, and such a run is itself cut short once no answer left could
+make it read the category (`run`'s `short_of`). The result is not firm
+and names the category in `short`; a firm verdict of another category,
+which whole runs might have reached, is not looked for.
 
 #### calls_until_firm
 

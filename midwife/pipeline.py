@@ -42,7 +42,16 @@ from .frame import Frame, digest, parse
 from .interventions import Trial, prompt, trial_ids
 from .interventions import plan as plan_trials
 from .types import Battery, Budget, Observation, Record
-from .verdict import Finding, _check_shape, _fixed, check_records, unneeded
+from .verdict import (
+    CARRIED,
+    COOLED,
+    Finding,
+    _check_shape,
+    _fixed,
+    check_records,
+    out_of_reach,
+    unneeded,
+)
 from .verdict import judge as judge_records
 from .verdict import overall as overall_of
 from .withhold import Withhold, refuse_withheld, trains
@@ -60,18 +69,29 @@ RAW_LIMIT = 2_000
 DECISIVE = ("baseline", "repeat", "ablation", "control", "presentation", "placement")
 
 
+# Asked to stop once a category is out of reach, a run asks these first, as
+# they most often rule it out, then the rest in the plan's order; with calls
+# at once, the rest wait until these have answered.
+RULING = {
+    CARRIED: ("baseline", "repeat", "inversion", "input-inversion"),
+    COOLED: ("baseline", "repeat", "ablation"),
+}
+
+
 @dataclass(frozen=True)
 class RunResult:
     """What a run made: its records, the calls it planned, why it stopped
     early (None when it reached the end of its plan), and how many planned
-    calls it skipped because their trial had settled or their input could
-    read nothing but unresolved."""
+    calls it skipped because their trial had settled, their input could read
+    nothing but unresolved, or the category it was asked for was out of
+    reach."""
 
     records: tuple[Record, ...]
     planned: int
     stopped: str | None  # None when it reached the end of its plan
     settled: int = 0  # calls not made: their trial's level could no longer change
     unasked: int = 0  # calls not made: their input reads unresolved whatever they give
+    short: int = 0  # calls not made: no answer left could make the frame read `short_of`
 
 
 def calls_needed(frame: Frame) -> int:
@@ -142,6 +162,7 @@ def run(
     stop_unresolved: bool = False,
     parallel: int = 1,
     withhold: Withhold | None = None,
+    short_of: str | None = None,
 ) -> RunResult:
     """Every planned trial of every input, `quorum` times each, in a fixed
     order. `only` limits the run to some trial ids (a partial run); the
@@ -157,6 +178,14 @@ def run(
     `DECISIVE` trials first and asks an input nothing more once every answer
     its other trials could give reads unresolved (`unneeded`); the verdict
     reads the category a whole run would, and names the trials not asked.
+    `short_of`, carried or cooled, is for a caller who needs only to know
+    whether the frame reads that category: the trials that most often rule
+    it out are asked first (`RULING`), and once no answer left could make an
+    input read it (`out_of_reach`), and so the frame, no further call starts.
+    With `parallel`, the other trials' calls wait until those first trials
+    have answered, so calls at once spare what one at a time spares.
+    Such a run is cut short (`short` counts the calls it left): it says the
+    frame does not read that category, and not which other it reads.
     `parallel` makes up to that many calls at once, for a battery that says
     it takes them (a `concurrent` attribute that is true); records are
     handed on as each call ends, and a call already started is always kept:
@@ -169,6 +198,8 @@ def run(
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise BatteryError(f"this frame asks for battery {named!r}, not {battery.name!r}")
     _check_parallel(parallel, battery)
+    if short_of is not None and short_of not in RULING:
+        raise UsageError(f"short_of is carried or cooled, not {short_of!r}")
     if withhold is not None:
         refuse_withheld(frame, withhold, training=trains(battery, frame))
     try:
@@ -208,8 +239,9 @@ def run(
         )
     everything = plan(frame)
     trials = [trial for trial in everything if trial.id in wanted]
-    if stop_unresolved:  # stable: the rest keep the plan's order
-        trials.sort(key=lambda t: DECISIVE.index(t.id) if t.id in DECISIVE else len(DECISIVE))
+    first = RULING[short_of] if short_of else DECISIVE if stop_unresolved else ()
+    if first:  # stable: the rest keep the plan's order
+        trials.sort(key=lambda t: first.index(t.id) if t.id in first else len(first))
     # Kept records stand for calls, so they are read as judge will read them,
     # and, being this run's own, each must name the prompt its call was planned with.
     check_records(frame, made, {trial.id: trial.body_hash for trial in everything})
@@ -250,7 +282,7 @@ def run(
         answered[x, trial] += 1
         if observation is not None:
             tally[x, trial][observation] += 1
-        if stop_unresolved and (trial in known[x] or fixed((x, trial))):
+        if (stop_unresolved or short_of) and (trial in known[x] or fixed((x, trial))):
             known[x].setdefault(trial, []).append(observation)
             if len(known[x][trial]) == 1:  # fixed now: its earlier answers too
                 known[x][trial] = [*tally[x, trial].elements()] + [None] * (
@@ -262,7 +294,9 @@ def run(
         count(record["input"], record["trial"], record["observation"])
     cap = budget.output_tokens_per_call
     records: list[Record] = []
-    spent = skipped = unasked = 0
+    spent = skipped = unasked = short = 0
+    lost: list[str] = []  # the first input found unable to read `short_of`
+    looked: dict[str, int] = {}  # each input's state when it was last looked at
 
     def needless(x: dict[str, str], trial: Trial) -> bool:
         # asked to settle, a trial whose level can no longer change asks no more
@@ -278,6 +312,18 @@ def run(
         if spared.get(x["id"], (None,))[0] != state:
             spared[x["id"]] = state, unneeded(frame, x["id"], known[x["id"]])
         return trial.id in spared[x["id"]][1]
+
+    def beyond(x: dict[str, str]) -> bool:
+        # asked for one category, a frame an input can no longer read it on asks no
+        # more; read from the input's fixed trials, once each time their answers change
+        if short_of is None or lost:
+            return bool(lost)
+        state = revision[x["id"]]
+        if looked.get(x["id"]) != state:
+            looked[x["id"]] = state
+            if out_of_reach(frame, x["id"], known[x["id"]], short_of):
+                lost.append(x["id"])
+        return bool(lost)
 
     def blocked(running: int) -> str | None:
         # why no further call may start while `running` calls are still out
@@ -305,7 +351,8 @@ def run(
         return None
 
     def ended(stopped: str | None = None) -> RunResult:
-        return _warned(RunResult(tuple(records), planned, stopped, skipped, unasked), level=4)
+        result = RunResult(tuple(records), planned, stopped, skipped, unasked, short)
+        return _warned(result, level=4)
 
     if parallel == 1:
         try:
@@ -315,6 +362,9 @@ def run(
                     continue
                 if done_with(x, trial):
                     unasked += 1
+                    continue
+                if beyond(x):
+                    short += 1
                     continue
                 stopped = blocked(0)
                 if stopped:
@@ -334,12 +384,16 @@ def run(
 
     # At once: each trial's first calls before any trial's next, so a trial
     # can settle before its later calls start; made in that order, not sorted.
+    # Asked to stop short of a category, the trials that rule it out go whole first.
+    ruling = set(RULING[short_of]) if short_of else set()
     queue = deque(
         (x, trial, index)
+        for late in (False, True)
         for index in range(frame.quorum)
         for x in frame.inputs
         for trial in trials
         if (x["id"], trial.id, index) not in done
+        and (bool(ruling) and trial.id not in ruling) is late
     )
     order = itertools.count()
     out: Counter[tuple[str, str]] = Counter()  # each trial's calls out now
@@ -351,6 +405,12 @@ def run(
         # asked to settle, a trial has out no more calls than could fix it, so calls at
         # once spare what one at a time spares; which call goes when never touches a level
         key = (x["id"], trial.id)
+        if ruling and trial.id not in ruling:
+            # asked to stop short, it waits for every ruling call to answer: one may end the run
+            if any(c[1].id in ruling for c in queue) or any(
+                n and t in ruling for (_, t), n in out.items()
+            ):
+                return True
         if not settle or trial.id in whole or needless(x, trial):
             return False
         return out[key] >= max(1, frame.agree - max(tally[key].values(), default=0))
@@ -397,6 +457,10 @@ def run(
                 if done_with(x, trial):
                     queue.remove(chosen)
                     unasked += 1
+                    continue
+                if beyond(x):
+                    queue.remove(chosen)
+                    short += 1
                     continue
                 stopped = "cancelled" if interrupted else blocked(len(running))
                 if stopped:

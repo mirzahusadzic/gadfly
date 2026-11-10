@@ -245,6 +245,16 @@ def unneeded(frame: Frame, x: str, samples: dict[str, list[str | None]]) -> froz
     )
 
 
+def out_of_reach(frame: Frame, x: str, samples: dict[str, list[str | None]], category: str) -> bool:
+    """Whether input `x` can no longer read `category`, given the answers so
+    far: none of the answers its trials not asked to the end could give reads
+    it. False while one could, or the answers are too many to read."""
+    outcomes = _outcomes(frame, x, samples)
+    if outcomes is None:
+        return False
+    return all(finding.category != category for finding, _, _ in outcomes)
+
+
 def _split(samples: dict[str, list[str | None]]) -> str | None:
     """Under `stable`, the line saying the baseline and repeat sessions split,
     read over all their calls together; None when they agree or there is no
