@@ -1135,7 +1135,8 @@ input's category; whether that was firm; the calls made now; and why it
 stopped short, if it did. `short` names the category asking was to stop
 short of (`until_firm`'s `short_of`) once no firm reading of it was left
 to reach: the verdict is then not firm, and says only that the frame does
-not read that category firmly. `usage` sums each whole count the calls made
+not read that category firmly; `any` once no firm reading of any category
+was left. `usage` sums each whole count the calls made
 now reported, such as `input_tokens` and `output_tokens`, by name; a
 count no call reported is absent, never a zero. `unthought` counts the
 calls made now that reported no reasoning (`midwife.pipeline.unthought`).
@@ -1190,7 +1191,13 @@ reading of it two runs away, so when `most` allows fewer, no further run
 is asked, and such a run is itself cut short once no answer left could
 make it read the category (`run`'s `short_of`). The result is not firm
 and names the category in `short`; a firm verdict of another category,
-which whole runs might have reached, is not looked for.
+which whole runs might have reached, is not looked for. `any` is for a
+caller who needs to know whether the verdict is firm, whatever its
+category: the last run `most` allows, when a run came before it, can be
+firm only by reading each input as that run did, so it is cut short once
+no answer left could make some input read so, and `short` is `any`. A
+run before the last is always asked whole, as the run after it is read
+against it.
 
 #### calls_until_firm
 

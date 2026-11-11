@@ -23,7 +23,7 @@ import signal
 import threading
 import warnings
 from collections import Counter, defaultdict, deque
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, replace
 from typing import Any
@@ -194,12 +194,52 @@ def run(
     before any call, a frame whose prompts hold text the set withholds
     (`midwife.withhold`), its `training` part only when the battery says its
     calls may train."""
+    return _run(
+        frame,
+        battery,
+        budget,
+        cancelled=cancelled,
+        on_record=on_record,
+        only=only,
+        kept=kept,
+        settle=settle,
+        stop_unresolved=stop_unresolved,
+        parallel=parallel,
+        withhold=withhold,
+        short_of=short_of,
+        depth=1,
+    )
+
+
+def _run(
+    frame: Frame,
+    battery: Battery,
+    budget: Budget,
+    *,
+    cancelled: Callable[[], bool] = lambda: False,
+    on_record: Callable[[Record], None] = lambda record: None,
+    only: Iterable[str] | None = None,
+    kept: Iterable[Record | dict] = (),
+    settle: bool = False,
+    stop_unresolved: bool = False,
+    parallel: int = 1,
+    withhold: Withhold | None = None,
+    short_of: str | None = None,
+    reads: Mapping[str, str] | None = None,
+    depth: int = 0,
+) -> RunResult:
+    # run, and for until_firm also `reads`, a category for each input by its
+    # id: the run is cut short once some input can no longer read its own, as
+    # `short_of` cuts it once one cannot read that category; `depth` counts
+    # the calls between run's caller and here, for the warnings' stack level
     named = frame.battery["kind"]
     if battery.name != named:  # the hash names the battery: no other reads under it
         raise BatteryError(f"this frame asks for battery {named!r}, not {battery.name!r}")
     _check_parallel(parallel, battery)
     if short_of is not None and short_of not in RULING:
         raise UsageError(f"short_of is carried or cooled, not {short_of!r}")
+    if short_of is not None:
+        reads = dict.fromkeys((x["id"] for x in frame.inputs), short_of)
     if withhold is not None:
         refuse_withheld(frame, withhold, training=trains(battery, frame))
     try:
@@ -235,11 +275,21 @@ def run(
         return _warned(
             RunResult(
                 (), planned, f"the plan needs {planned} calls; the budget allows {budget.calls}"
-            )
+            ),
+            level=3 + depth,
         )
     everything = plan(frame)
     trials = [trial for trial in everything if trial.id in wanted]
-    first = RULING[short_of] if short_of else DECISIVE if stop_unresolved else ()
+    # asked to keep each input's category in reach, the trials that rule out the
+    # one category asked go first, or those that most often fix a verdict
+    wanted_reads = set(reads.values()) if reads else set()
+    first = (
+        RULING[next(iter(wanted_reads))]
+        if len(wanted_reads) == 1 and next(iter(wanted_reads)) in RULING
+        else DECISIVE
+        if reads or stop_unresolved
+        else ()
+    )
     if first:  # stable: the rest keep the plan's order
         trials.sort(key=lambda t: first.index(t.id) if t.id in first else len(first))
     # Kept records stand for calls, so they are read as judge will read them,
@@ -282,7 +332,7 @@ def run(
         answered[x, trial] += 1
         if observation is not None:
             tally[x, trial][observation] += 1
-        if (stop_unresolved or short_of) and (trial in known[x] or fixed((x, trial))):
+        if (stop_unresolved or reads) and (trial in known[x] or fixed((x, trial))):
             known[x].setdefault(trial, []).append(observation)
             if len(known[x][trial]) == 1:  # fixed now: its earlier answers too
                 known[x][trial] = [*tally[x, trial].elements()] + [None] * (
@@ -295,7 +345,7 @@ def run(
     cap = budget.output_tokens_per_call
     records: list[Record] = []
     spent = skipped = unasked = short = 0
-    lost: list[str] = []  # the first input found unable to read `short_of`
+    lost: list[str] = []  # the first input found unable to read its category in `reads`
     looked: dict[str, int] = {}  # each input's state when it was last looked at
 
     def needless(x: dict[str, str], trial: Trial) -> bool:
@@ -314,14 +364,15 @@ def run(
         return trial.id in spared[x["id"]][1]
 
     def beyond(x: dict[str, str]) -> bool:
-        # asked for one category, a frame an input can no longer read it on asks no
-        # more; read from the input's fixed trials, once each time their answers change
-        if short_of is None or lost:
+        # asked for each input's category, a frame an input can no longer read its own
+        # on asks no more; read from the input's fixed trials, once each time their
+        # answers change
+        if not reads or lost:
             return bool(lost)
         state = revision[x["id"]]
         if looked.get(x["id"]) != state:
             looked[x["id"]] = state
-            if out_of_reach(frame, x["id"], known[x["id"]], short_of):
+            if out_of_reach(frame, x["id"], known[x["id"]], reads[x["id"]]):
                 lost.append(x["id"])
         return bool(lost)
 
@@ -352,7 +403,7 @@ def run(
 
     def ended(stopped: str | None = None) -> RunResult:
         result = RunResult(tuple(records), planned, stopped, skipped, unasked, short)
-        return _warned(result, level=4)
+        return _warned(result, level=4 + depth)
 
     if parallel == 1:
         try:
@@ -385,7 +436,7 @@ def run(
     # At once: each trial's first calls before any trial's next, so a trial
     # can settle before its later calls start; made in that order, not sorted.
     # Asked to stop short of a category, the trials that rule it out go whole first.
-    ruling = set(RULING[short_of]) if short_of else set()
+    ruling = set(first) if reads else set()
     queue = deque(
         (x, trial, index)
         for late in (False, True)

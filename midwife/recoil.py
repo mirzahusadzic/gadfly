@@ -48,7 +48,7 @@ from typing import Any
 from .errors import GadflyError, RecordsError, StoppedWarning, UsageError, is_plain, quoted
 from .frame import SALIENCE, Frame, _read_once, digest, parse
 from .interventions import plan, prompt
-from .pipeline import RULING, _check_parallel, calls_needed, run, summed_usage, unthought
+from .pipeline import RULING, _check_parallel, _run, calls_needed, summed_usage, unthought
 from .stats import stability
 from .types import Battery, Budget, Record
 from .verdict import (
@@ -79,6 +79,7 @@ GATE = {
 }
 FIRM = 0.95  # the share of draws that must read each input's category alike
 MOST = 5  # runs `until_firm` makes at most
+ANY = "any"  # `until_firm`'s short_of for a firm verdict of whatever category
 # A vector's key: the SHA-256 of the exact text it stands for, as a span's
 # source names it, and the id of the space it was made in
 SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -720,7 +721,8 @@ class Firm:
     stopped short, if it did. `short` names the category asking was to stop
     short of (`until_firm`'s `short_of`) once no firm reading of it was left
     to reach: the verdict is then not firm, and says only that the frame does
-    not read that category firmly. `usage` sums each whole count the calls made
+    not read that category firmly; `any` once no firm reading of any category
+    was left. `usage` sums each whole count the calls made
     now reported, such as `input_tokens` and `output_tokens`, by name; a
     count no call reported is absent, never a zero. `unthought` counts the
     calls made now that reported no reasoning (`midwife.pipeline.unthought`)."""
@@ -810,12 +812,18 @@ def until_firm(
     is asked, and such a run is itself cut short once no answer left could
     make it read the category (`run`'s `short_of`). The result is not firm
     and names the category in `short`; a firm verdict of another category,
-    which whole runs might have reached, is not looked for."""
+    which whole runs might have reached, is not looked for. `any` is for a
+    caller who needs to know whether the verdict is firm, whatever its
+    category: the last run `most` allows, when a run came before it, can be
+    firm only by reading each input as that run did, so it is cut short once
+    no answer left could make some input read so, and `short` is `any`. A
+    run before the last is always asked whole, as the run after it is read
+    against it."""
     _asked_again(frame)
     most = most_of(frame, most)
     _check_parallel(parallel, battery)
-    if short_of is not None and short_of not in RULING:
-        raise UsageError(f"short_of is carried or cooled, not {short_of!r}")
+    if short_of is not None and short_of not in (*RULING, ANY):
+        raise UsageError(f"short_of is carried, cooled or any, not {short_of!r}")
     if withhold is not None and battery is not None:
         refuse_withheld(frame, withhold, training=trains(battery, frame))
     if isinstance(firm, bool) or not isinstance(firm, int | float) or not 0 < firm <= 1:
@@ -833,7 +841,7 @@ def until_firm(
     def last(place: int) -> bool:
         # whether a run at `place` that does not read `short_of` leaves no firm
         # reading of it: one needs the two runs after it, both reading it
-        return short_of is not None and most < place + 3
+        return short_of in RULING and most < place + 3
 
     for place in range(most):
         if place >= len(runs):
@@ -857,7 +865,9 @@ def until_firm(
                     stacklevel=2,
                 )
                 break
-            result = run(
+            # the last run, after another, is firm only if it reads each input as that did
+            alike = short_of == ANY and before is not None and place == most - 1
+            result = _run(
                 frame,
                 battery,
                 Budget(each, budget.output_tokens_per_call, tokens),
@@ -865,6 +875,7 @@ def until_firm(
                 parallel=parallel,
                 withhold=withhold,
                 short_of=short_of if last(place) else None,
+                reads=dict(before) if alike and before is not None else None,
             )
             runs.append(tuple(record.as_dict() for record in result.records))
             made += len(result.records)
@@ -880,7 +891,7 @@ def until_firm(
                 break
         findings, shares = _read(frame, runs, place)
         read = {f.input: f.category for f in findings}
-        if short_of is not None and set(read.values()) != {short_of}:
+        if short_of in RULING and set(read.values()) != {short_of}:
             missed = place
         alike = all(share >= firm for share in shares.values()) and before in (None, read)
         if alike and place == len(runs) - 1:  # a later kept run decides instead

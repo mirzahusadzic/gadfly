@@ -13,7 +13,7 @@ import pytest
 from midwife.cli import main
 from midwife.errors import UsageError
 from midwife.pipeline import calls_needed, judge, overall, run, situate
-from midwife.recoil import until_firm
+from midwife.recoil import ANY, until_firm
 from midwife.types import Budget, Observation
 from midwife.verdict import CARRIED, COOLED, out_of_reach
 
@@ -176,12 +176,11 @@ def test_out_of_reach_reads_only_what_is_fixed(raw):
 def test_a_category_that_cannot_be_stopped_short_of_is_refused(raw):
     frame = situate(raw)
     budget = Budget(calls=calls_needed(frame))
-    for ask in (
-        lambda: run(frame, Reader(reads), budget, short_of="unresolved"),
-        lambda: until_firm(frame, Reader(reads), budget, short_of="unresolved"),
-    ):
-        with pytest.raises(UsageError, match="short_of is carried or cooled"):
-            ask()
+    for short_of in ("unresolved", ANY):  # a single run has no run before it to read as
+        with pytest.raises(UsageError, match="short_of is carried or cooled, not"):
+            run(frame, Reader(reads), budget, short_of=short_of)
+    with pytest.raises(UsageError, match="short_of is carried, cooled or any, not 'unresolved'"):
+        until_firm(frame, Reader(reads), budget, short_of="unresolved")
 
 
 # ---- asked until firm
@@ -242,6 +241,90 @@ def test_until_firm_asks_nothing_after_a_kept_run_that_leaves_no_firm_reading(ra
     assert again.made == each and again.short is None
 
 
+# ---- asked until firm, whatever its category
+
+
+def then(first, after):
+    """Answers as `first` in a prompt's first run of three calls, then as `after`."""
+    return lambda prompt, n: first(prompt, n) if n <= 3 else after(prompt, n)
+
+
+def test_a_firm_reading_of_another_category_is_never_cut_short_of_any(raw):
+    # the firm miss: the second run reads as the first, firmly, but not carried;
+    # stopping short of carried cuts it, stopping short of any reads it whole
+    frame = situate(raw)
+    whole, each = firmly(frame, wavers, runs=2, most=2)
+    asked, _ = firmly(frame, wavers, runs=2, most=2, short_of=ANY)
+    carried, _ = firmly(frame, wavers, runs=2, most=2, short_of=CARRIED)
+    assert whole.firm and whole.category != CARRIED and whole.made == 2 * each
+    assert asked.firm and asked.short is None
+    assert (asked.runs, asked.findings, asked.shares) == (whole.runs, whole.findings, whole.shares)
+    assert not carried.firm and carried.short == CARRIED
+
+
+def test_the_last_run_is_cut_once_it_cannot_read_as_the_run_before(raw):
+    frame = situate(raw)
+    whole, each = firmly(frame, then(wavers, reads), runs=2, most=2)
+    asked, _ = firmly(frame, then(wavers, reads), runs=2, most=2, short_of=ANY)
+    assert not whole.firm and whole.made == 2 * each
+    assert asked.short == ANY and not asked.firm and asked.stopped is None
+    assert [len(r) for r in asked.runs][0] == each and each < asked.made < 2 * each
+    assert asked.findings == tuple(judge(frame, asked.runs[0]))  # the whole run's, the first
+
+
+def test_no_run_but_the_last_is_cut_short_of_any(raw):
+    # each run before the last is read against by the next, so it is asked whole,
+    # and a single run has none before it to read as
+    frame = situate(raw)
+    one, each = firmly(frame, then(wavers, reads), most=1, short_of=ANY)
+    assert one.short is None and one.made == each
+    three, _ = firmly(frame, then(wavers, reads), runs=3, most=3, short_of=ANY)
+    assert [len(r) for r in three.runs][:2] == [each, each]
+
+
+@pytest.mark.parametrize("carriage", ["listed", "all-checks"])
+@pytest.mark.parametrize("most", [2, 3])
+@pytest.mark.parametrize("seed", range(60))
+def test_a_reading_cut_short_of_any_was_never_going_to_be_firm(raw, seed, most, carriage):
+    # random answers, splits included, on two inputs: asking cut short of any would
+    # not have been firm whole, and asking that goes on reads as asking whole does
+    raw["carriage"] = carriage
+    raw["inputs"].append({"id": "x2", "text": "A customer with a receipt asks on day 40."})
+    if seed % 2:
+        raw["interventions"]["control"] = ["r1", "r2", "r3", "r4"]
+    frame = situate(raw)
+    whole, _ = firmly(frame, noisy(seed), runs=most, most=most)
+    asked, _ = firmly(frame, noisy(seed), runs=most, most=most, short_of=ANY)
+    if asked.short:
+        assert asked.short == ANY and not whole.firm and not asked.firm
+        assert asked.runs[:-1] == whole.runs[:-1] and len(asked.runs) == most
+        assert asked.findings == tuple(judge(frame, whole.runs[-2]))
+    else:  # the same calls, the deciding trials first in the last run
+        assert [sorted(map(calls, r)) for r in asked.runs] == [
+            sorted(map(calls, r)) for r in whole.runs
+        ]
+        assert (asked.firm, asked.findings, asked.shares) == (
+            whole.firm,
+            whole.findings,
+            whole.shares,
+        )
+
+
+def calls(record):
+    return json.dumps(record, sort_keys=True)
+
+
+def test_some_random_readings_are_cut_short_of_any_and_some_are_firm(raw):
+    # the property above is not vacuous
+    frame = situate(raw)
+    cut = firm = 0
+    for seed in range(60):
+        asked, _ = firmly(frame, noisy(seed), runs=2, most=2, short_of=ANY)
+        cut += asked.short == ANY
+        firm += asked.firm
+    assert cut > 5 and firm > 5, (cut, firm)
+
+
 # ---- the command line
 
 
@@ -292,3 +375,33 @@ def test_run_on_the_command_line_stops_short_too_and_counts_it(tmp_path, capsys,
     )
     assert main(argv[:-2] + ["--out", str(tmp_path / "c.jsonl"), "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["short"] == 0
+
+
+def test_the_command_line_stops_short_of_any_and_says_so(raw, tmp_path, capsys, monkeypatch):
+    monkeypatch.chdir(ROOT)  # the battery is imported from here
+    raw["standing"] = {**raw["standing"], "most": 2}
+    path, runs = tmp_path / "frame.json", tmp_path / "runs"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    runs.mkdir()
+    argv = ["firm", str(path), "--battery", "tests.test_short_of:Turns", "--runs", str(runs)]
+    argv += ["--calls", "auto", "--short-of", "any"]
+    assert main([*argv, "--json"]) == 0
+    said = json.loads(capsys.readouterr().out)
+    assert (said["firm"], said["short"], said["stopped"]) == (False, "any", None)
+    assert [run.get("short", False) for run in said["runs"]] == [False, True]
+    each = calls_needed(situate(raw))
+    assert each < said["made"] < 2 * each
+    for name in ("1.jsonl", "2.jsonl"):  # asked again from the start, in words
+        (runs / name).unlink()
+    assert main(argv) == 0
+    told = capsys.readouterr().out.splitlines()
+    assert told[2] == "run 2: no category, asked now, cut short: it cannot read as run 1 did"
+    assert ", and no firm reading is left to reach; " in told[3]
+
+
+class Turns(Reader):
+    """Wavers in a prompt's first run, then reads the rule: the second run cannot
+    read as the first."""
+
+    def __init__(self):
+        super().__init__(then(wavers, reads))

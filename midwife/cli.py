@@ -1194,7 +1194,11 @@ def command_firm(args) -> int:
     for place, read in enumerate(runs, 1):
         how = "kept" if read["kept"] else "asked now"
         if read.get("short"):
-            how += f", cut short: it cannot read {asked.short}"
+            how += (
+                f", cut short: it cannot read as run {place - 1} did"
+                if asked.short == recoil.ANY
+                else f", cut short: it cannot read {asked.short}"
+            )
         print(f"run {place}: {plain(read['category'] or 'no category')}, {how}")
     many = len(asked.runs)
     state = f"{'yes' if asked.firm else 'no'}, {plain(asked.category or 'no category')}"
@@ -1205,7 +1209,9 @@ def command_firm(args) -> int:
     elif shares:
         alike = ", ".join(f"{plain(x)} {_percent(share)}" for x, share in shares.items())
         state += f", read alike in {alike} of draws"
-    if asked.short:
+    if asked.short == recoil.ANY:
+        state += ", and no firm reading is left to reach"
+    elif asked.short:
         state += f", and no firm reading of {asked.short} is left to reach"
     elif not asked.firm and not asked.stopped and many >= most:
         state += ", as many runs as --most reads"
@@ -1524,9 +1530,9 @@ def parser() -> argparse.ArgumentParser:
     reading(firmed)
     firmed.add_argument(
         "--short-of",
-        choices=("carried", "cooled"),
+        choices=("carried", "cooled", "any"),
         help="stop once the verdict cannot be firm and this category, without reading which "
-        "other it is",
+        "other it is; any: once it cannot be firm at all",
     )
     firmed.add_argument("--json", action="store_true", help="print JSON instead of text")
     firmed.set_defaults(func=command_firm)

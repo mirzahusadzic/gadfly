@@ -15,7 +15,7 @@ each answering one need and keeping its contracts.
 | Dead ends before a call | `gadfly plan` | the verdict rules, read over every answer each trial could give |
 | Shams of another kind | `"sham": {"draws": n, "kind": {anchor: kind}}` | old frames' hashes and plans |
 | Stopping at unresolved | `gadfly run --stop-unresolved` | the category a whole run reads |
-| Stopping short of a category | `gadfly run --short-of`, `gadfly firm --short-of` | a run cut short only when no answer left could read the category, and firm only on whole runs |
+| Stopping short of a category, or of any firm verdict | `gadfly run --short-of`, `gadfly firm --short-of` | a run cut short only when no answer left could read the category, or read as the run before, and firm only on whole runs |
 | Records through a pipe | `gadfly run --out -`, `gadfly report FRAME -` | each record written as it exists, never over a file |
 | Errors and warnings as classes | `midwife.errors`, `--json` on every command | one exit status a class, and every message tabled |
 | Inversion and input inversion | `"inversion"` and `"inputInversion"`, with their `allowed` | old frames' hashes and plans |
