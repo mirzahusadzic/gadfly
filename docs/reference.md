@@ -1665,7 +1665,9 @@ What this battery promises, whatever the frame says:
   provider the router reports (`X-Codex-Router-Report: provider`, asked when
   the router lists it), or, for one pinned endpoint, that endpoint's tag;
   never a provider the router calls unknown; then the route the router
-  names, the upstream the call went to (`anthropic`, `openrouter`, `openai`);
+  names, the upstream the call went to (`anthropic`, `openrouter`, `openai`),
+  and on Anthropic's API how the router says the call thought (`off`,
+  `adaptive`, `budget`), never a guess;
 - `fallback: "none"` keeps an `anthropic/` model's calls on Anthropic's API,
   never moved to another provider (`X-Codex-Router-Fallback: none`): a
   refusal there is an opening that says why;
@@ -1769,9 +1771,11 @@ The answer's text, its usage, an opening if the call did not complete,
 and what served it, from the router's server-sent events: the model the
 response names, then the provider the router reports, or the endpoint it
 names, or `pin`, the one endpoint the call was pinned to, joined by
-" via "; then the route the router names, as "(route anthropic)".
-A stream still coming at `deadline` (on `clock`) is cut there, and a
-connection that times out or fails mid-stream keeps what arrived.
+" via "; then the route the router names, as "(route anthropic)", and
+after it how the router says the call thought, where it says so, as
+"(route anthropic; thinking off)". A stream still coming at `deadline`
+(on `clock`) is cut there, and a connection that times out or fails
+mid-stream keeps what arrived.
 
 ```python
 parse_stream(

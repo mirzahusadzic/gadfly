@@ -711,6 +711,53 @@ def test_a_record_names_the_route_the_router_says_a_call_went(
     assert battery.observe(situate(raw), "p", 16).served == served
 
 
+@pytest.mark.parametrize("thinking", ["off", "adaptive", "budget"])
+def test_a_record_names_how_a_call_thought_after_its_route(raw, token, router, thinking):
+    # the router's word for the request it sent on Anthropic's API, however the call ended
+    reported = {"model": "m", "provider": "Anthropic", "route": "anthropic", "thinking": thinking}
+    battery = Unified(router((200, {}, completed(**reported))).url)
+    battery.check(situate(raw))
+    served = battery.observe(situate(raw), "p", 16).served
+    assert served == f"m via Anthropic (route anthropic; thinking {thinking})"
+    for status in ("failed", "incomplete"):
+        final = sse({"type": f"response.{status}", "response": reported})
+        assert parse_stream(final.splitlines())[3] == served
+
+
+@pytest.mark.parametrize(
+    "reported, served",
+    [
+        ({"route": "anthropic"}, "m via Anthropic (route anthropic)"),
+        ({"route": "anthropic", "thinking": "loud"}, "m via Anthropic (route anthropic)"),
+        ({"route": "anthropic", "thinking": "Off"}, "m via Anthropic (route anthropic)"),
+        ({"route": "anthropic", "thinking": 2048}, "m via Anthropic (route anthropic)"),
+        ({"route": "anthropic", "thinking": ["off"]}, "m via Anthropic (route anthropic)"),
+        ({"thinking": "off"}, "m via Anthropic"),  # no route shown, nothing after it
+        ({"route": "Open Router", "thinking": "off"}, "m via Anthropic"),
+    ],
+)  # fmt: skip
+def test_how_a_call_thought_is_left_out_unless_the_router_says_it_after_a_route(
+    raw, token, router, reported, served
+):
+    # never a guess: a word the router does not use, or none, leaves served as it was
+    battery = Unified(router((200, {}, completed(model="m", provider="Anthropic", **reported))).url)
+    battery.check(situate(raw))
+    assert battery.observe(situate(raw), "p", 16).served == served
+
+
+@pytest.mark.parametrize("thinking", ["off", "adaptive", "budget"])
+def test_how_a_call_thought_adds_no_comma_to_what_served_it(thinking):
+    # a crossing joins its sides' served with ", read by", and what reads served
+    # takes a side up to the next comma: the route alone holds none, nor may this
+    def served(**said):
+        reported = {"model": "m", "provider": "Anthropic", "route": "anthropic", **said}
+        final = sse({"type": "response.completed", "response": reported})
+        return parse_stream(final.splitlines())[3]
+
+    alone, thought = served(), served(thinking=thinking)
+    assert thought != alone and thought.count(",") == alone.count(",")
+
+
 @pytest.mark.parametrize(
     "model",
     [

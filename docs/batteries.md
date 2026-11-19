@@ -339,7 +339,12 @@ response names, then the provider the router reports, or, for a call pinned to
 one endpoint, that endpoint's tag; a provider the router does not yet know is
 left out, never guessed. Then it records the route the router names, the
 upstream the call went to, as `claude-sonnet-5-5 via Anthropic (route
-anthropic)`. The `crossing` battery records `made by …, read by …`,
+anthropic)`.
+
+Where the router reports how a call thought, which it does on Anthropic's
+API, `served` says that after the route: `thinking off`, `thinking adaptive`
+or `thinking budget`. It is the router's word for the request it sent, not
+a count of tokens. The `crossing` battery records `made by …, read by …`,
 and its raw answer keeps the artefact's SHA-256 whole, beside as much of the
 artefact and the reader's answer as fit the record's 2,000 characters.
 

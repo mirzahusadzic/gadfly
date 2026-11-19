@@ -10,6 +10,12 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
+### To 0.16.0, not yet released
+
+No verdict or frame changes. A record's `served` now also says how the call thought where the router reports it, after the route (`thinking off`, `thinking adaptive` or `thinking budget`), so a reader asked not to think can be seen not to have; records made before read as they did.
+
+---
+
 ### To 0.15.0
 
 No verdict, record or frame changes. `gadfly firm --short-of any`, `short_of="any"` in Python, is new: the last run `--most` allows, when a run came before it, is cut short once it cannot read each input as that run did, so a firm verdict of any category is still read whole, and `short` is then `any`. `until_firm` now refuses another value as `short_of is carried, cooled or any, not …`, where `run`, which has no run before it to read as, still says `carried or cooled`.
