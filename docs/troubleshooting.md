@@ -186,6 +186,8 @@ reach what it needs, and no call was made.
 | `BatteryError: battery.reader names kind 'egemma', not 'unified'` | `this crossing was made with another; make one with Crossing(maker, reader)`. `Crossing()` makes and reads through the router; for another maker or reader, make the crossing in Python and name it with `--battery yourmodule:crossing`. |
 | `BatteryError: input 'q1' holds the line that parts a body from its input` | `the maker reads what comes before the last '---' line; keep such lines out of inputs and renamings`. |
 | `BatteryError: battery.maker.instruction says what the maker writes` | The `crossing` battery's maker line has no instruction of its own to write the artefact by; the frame's instruction is the reader's. |
+| `BatteryError: the branch battery reads no 'also' under battery` | The `branch` battery's line takes `kind`, `maker` and `reader` and nothing else; what a side needs goes in its own line. |
+| `BatteryError: a trial's body holds the line that parts it from the artefact` | `the reader tells the artefact, the body and the input apart by '---' lines; keep such lines out of spans and renamings`. |
 
 ---
 
@@ -250,6 +252,7 @@ call did.
 | `"the maker made nothing ('the call ended incomplete')"` | The `crossing` battery's maker ran out of its half of the cap before the artefact was written, and the reader was not asked. Raise `--output-tokens`, so that half of it holds the maker's thought and its text. |
 | `"the reader gave no label ('the call passed its timeout')"` | The `crossing` battery's reader gave no answer to read; its own reason is quoted, as any battery's opening would read. The artefact it was given is kept in the record's raw answer. |
 | `"the maker's report of what it spent is not a count of tokens"` | A maker of your own reported its spend as something other than whole, non-negative counts, so the reader was not asked and the call is charged the maker's whole share. |
+| `"the maker made text that holds the line that parts it from the body"` | The `branch` battery's maker wrote a `---` line of its own, so the reader could not have told the artefact from the body and was not asked. The text is kept in the record's raw answer; ask for a list without rules in the maker's instruction. |
 | `"the maker spent the call's whole cap"` | The maker reported spending all of the call's output tokens, so none were left for the reader. Raise `--output-tokens`. |
 
 ---

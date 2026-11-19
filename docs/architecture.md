@@ -61,7 +61,7 @@ flowchart TB
         ST["<b>Your records</b><br/>file, database, fixture"]
         subgraph B["Batteries: one Protocol"]
             UN["<b>unified</b><br/>an LLM critic"]
-            CR["<b>crossing</b><br/>a maker, then a reader"]
+            CR["<b>crossing, branch</b><br/>a maker and a reader"]
             EB["<b>egemma</b><br/>Gemma 4"]
             LJ["<b>local-json</b><br/>your evaluator"]
             TD["<b>tendora</b><br/>Tendora's engine"]

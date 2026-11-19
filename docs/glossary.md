@@ -183,7 +183,8 @@ A run asks a battery each trial's prompt and keeps what comes back.
   is read again without a model.
 - **Maker and artefact:** with the `crossing` battery, the maker writes the
   artefact that crosses from each trial's body, and the reader decides from
-  the artefact.
+  the artefact. With the `branch` battery the maker writes it from the
+  input alone, once, and the reader decides each trial against it.
 - **Source:** on a span, the SHA-256 of the exact text it crossed with, and
   where that came from; the parser holds the span's text to it.
 - **Budget:** the most a run may spend: a number of calls, a cap on each

@@ -188,8 +188,8 @@ line), then every prompt the plan makes; a line opening with a diff marker is
 also read without it, and a refusal names the place (a trial and an input, or
 the part every call carries) and the kind, never the text.
 `check-frame --withhold` reads both parts, since no battery is named, and with
-`--json` lists every place under `withheld`; in a crossing, what the maker
-writes is not read before the reader sees it.
+`--json` lists every place under `withheld`; in a crossing or a branch, what
+the maker writes is not read before the reader sees it.
 
 ---
 

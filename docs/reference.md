@@ -1280,8 +1280,8 @@ output schema and a maker's instruction), then every prompt the frame's plan
 makes. It names each place that holds withheld text; `refuse_withheld` refuses
 the frame at the first, naming where and what kind, never the text. Whether the
 `training` part applies is the battery's to say (`trains`); one that does not
-say is read as one that may train. In a crossing, what the maker writes is not
-checked before the reader reads it.
+say is read as one that may train. In a crossing or a branch, what the maker
+writes is not checked before the reader reads it.
 
 #### Part
 
@@ -2426,6 +2426,112 @@ check_cap(frame, cap)
 One call across the boundary: the maker makes the artefact from
 the body, then the reader reads it with the input; the reader's
 label, or an opening that says which side gave none, and why.
+
+```python
+observe(frame, prompt, max_output_tokens)
+```
+<!-- end api -->
+
+<!-- api midwife.batteries.branch -->
+
+---
+
+### midwife.batteries.branch
+
+The branch battery: one reading of the question, shared by every trial.
+
+A reader that thinks before each label thinks much the same about the same
+question in every trial of a frame. Here that thought is had once: a maker
+reads a trial's input alone and writes what an answer would have to rest
+on, before any evidence is seen; a reader then decides each trial from
+that artefact, the trial's body and the input. Every call that carries the
+same input branches from the same artefact, so the reader's line can ask
+for little thinking, or for none.
+
+```json
+"battery": {"kind": "branch",
+            "maker": {"kind": "unified", "model": "...",
+                      "instruction": "List what would have to be said."},
+            "reader": {"kind": "unified", "model": "...",
+                       "reasoning": "none"}}
+```
+
+The frame's instruction and labels are the reader's, and its instruction
+says how to read the three parts it is given; the maker's instruction is
+its own, in its line. `Branch()` makes the artefact and reads it through
+the router; `Branch(maker, reader)` takes any maker and any battery, from
+Python. It is the crossing battery turned around: there the maker sees
+the body and never the input, here the input and never the body.
+
+What this battery promises, whatever the frame says:
+- the maker sees the input and nothing else, neither the body nor the
+  trial's id, so nothing a trial took out of the evidence can come back
+  through what the maker wrote; the reader sees the artefact, then the
+  body, then the input, each parted from the next by a line of three
+  dashes;
+- an input's artefact is made once for a frame by each battery object, and
+  every later call that carries that input reads that same artefact; an
+  artefact not made is an opening, never a guessed label, the reader is
+  not asked, and the next call makes it again;
+- the call that makes an artefact shares its cap as a crossing's does: the
+  maker is given half and the reader what the maker left; a call that
+  finds the artefact made gives the reader its whole cap, and its record
+  counts nothing for the making;
+- a side's report of its spend is taken only as whole counts, none
+  negative, so a report can never buy the other side a larger cap; a side
+  that reports nothing, or no such count, is charged all it was given;
+- the record keeps the artefact's SHA-256 whole, with as much of its text
+  and of the reader's answer as fit the record, and names what made it and
+  what read it;
+- each side keeps its own promises: through the router, the deny data
+  policy and every other check of the unified battery hold for the maker's
+  line as for the reader's.
+
+#### Branch
+
+`battery: {"kind": "branch", "maker": {...}, "reader": {...}}`
+
+```python
+class Branch
+```
+
+##### Branch.trains
+
+Whether either side's calls may reach a reader that trains on them;
+a maker or a reader that does not say is read as one that may.
+
+```python
+trains(frame)
+```
+
+##### Branch.check
+
+Refuse, before any call, a frame this branch must not serve:
+another battery's, an unknown key, a maker or reader line this branch
+was not made with or that its side refuses, or a prompt whose
+artefact, body and input could not be told apart.
+
+```python
+check(frame)
+```
+
+##### Branch.check_cap
+
+Refuse, before any call, a cap that leaves a side's thinking budget
+no room in the call that makes an artefact: the maker writes within
+half of that call's cap, and the reader reads within what the maker
+leaves, at least the other half.
+
+```python
+check_cap(frame, cap)
+```
+
+##### Branch.observe
+
+One call from the shared artefact: the maker's reading of the
+input, made now or by an earlier call, then the reader's label from
+it, the body and the input; or an opening that says which side gave
+none, and why.
 
 ```python
 observe(frame, prompt, max_output_tokens)

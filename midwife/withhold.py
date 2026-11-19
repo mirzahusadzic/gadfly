@@ -16,8 +16,8 @@ output schema and a maker's instruction), then every prompt the frame's plan
 makes. It names each place that holds withheld text; `refuse_withheld` refuses
 the frame at the first, naming where and what kind, never the text. Whether the
 `training` part applies is the battery's to say (`trains`); one that does not
-say is read as one that may train. In a crossing, what the maker writes is not
-checked before the reader reads it.
+say is read as one that may train. In a crossing or a branch, what the maker
+writes is not checked before the reader reads it.
 """
 
 from __future__ import annotations

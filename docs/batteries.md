@@ -72,7 +72,7 @@ battery to add as it needs.
 
 ### The shipped batteries
 
-Five batteries come with Gadfly, and the guarantees in this section are
+Six batteries come with Gadfly, and the guarantees in this section are
 theirs, not the protocol's. A battery of your own may do anything its code
 does.
 
@@ -83,6 +83,7 @@ does.
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 | `tendora` | Tendora's engine server, from its demo package, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
 | `crossing` | a maker, then a reader: the maker writes an artefact from the trial's body, and the reader decides from it | each side's own guarantees, through the router the unified battery's; the maker never sees the input; the cap is shared between the two; records the artefact's SHA-256 and what made and read it |
+| `branch` | a maker, then a reader: the maker writes from a trial's input, once, what an answer would have to rest on, and the reader decides every trial against it | each side's own guarantees, through the router the unified battery's; the maker never sees the body; an input's artefact is made once and read by every call that carries the input; records the artefact's SHA-256 and what made and read it |
 | your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
 
 #### Addresses and keys
@@ -278,6 +279,84 @@ crossing = Crossing(Function("incident-cause", cause), EGemma())
 Kept in a module of your own, `--battery yourmodule:crossing` runs it. The
 function's line is `{"kind": "incident-cause"}`, so the frame's hash names
 the function by that name alone: give a changed function a new name.
+
+#### A maker before the evidence
+
+The `branch` battery turns the crossing around: the maker writes from each
+trial's input, before any evidence is seen, what an answer would have to
+rest on, and the reader decides every trial against that. An input's
+artefact is made once and every call that carries the input reads it, so
+the reader's line can ask for little thinking, or for none. The frame's
+instruction says how the three parts it is given are read:
+
+```json
+"battery": {
+  "kind": "branch",
+  "maker": {
+    "kind": "unified",
+    "model": "anthropic/claude-sonnet-5-5",
+    "instruction": "List what the lines would have to say."
+  },
+  "reader": {
+    "kind": "unified",
+    "model": "anthropic/claude-sonnet-5-5",
+    "reasoning": "none"
+  }
+}
+```
+
+`Branch` with no arguments makes and reads through the unified model
+router, and each side's line is held to every check of the `unified`
+battery:
+
+```text
+gadfly run incident.json \
+    --battery midwife.batteries.branch:Branch \
+    --calls 150 --output-tokens 4000 \
+    --out incident.jsonl
+```
+
+- **What the maker sees:** the input alone, never the body and never which
+  trial it serves, so nothing a trial took out of the evidence can come
+  back through what the maker wrote.
+- **What the reader sees:** the artefact, the trial's body and the input,
+  with a `---` line between each.
+- **What a call spends:** the call that makes an artefact shares its cap as
+  a crossing's does. Every later call gives the reader the whole of
+  `--output-tokens`, and its record counts nothing for the making.
+- **When a side fails:** an artefact not made is an opening that says so,
+  the reader is not asked, and the next call makes it again. An artefact
+  that holds a `---` line of its own is an opening too.
+- **What the maker's instruction asks:** it is part of the instrument. One
+  that asks for more than the evidence can say turns the reader against
+  sound evidence in every trial at once, and no quorum sees it. Say in it
+  what kind of evidence there is, as the frame's locus and grain do, so
+  that the list asks only for what such evidence can say.
+- **What a maker has room for:** the call that makes an artefact gives the
+  maker half its cap, and the cap can be no larger than the reader takes.
+  Ask the maker for what settles the question in a few lines, not for a
+  list for each label.
+- **Repeated runs:** one battery object keeps an input's artefact for as
+  long as it lives, so `gadfly firm` measures the reader's variation over
+  that one artefact and never the maker's.
+- **Where it pays:** the battery saves what the reader would have spent
+  thinking in every trial. A reader that does not think has nothing to
+  save, and is not shown to read better through it.
+
+A maker of your own and any battery work as they do for a crossing:
+
+```python
+from midwife.batteries.branch import Branch
+from midwife.batteries.crossing import Function
+from midwife.batteries.egemma import EGemma
+
+
+def needs(question: str) -> str:
+    return f"To answer {question!r}, the lines must name the change."
+
+
+branch = Branch(Function("rollback-needs", needs), EGemma())
+```
 
 #### Privacy and routing
 
