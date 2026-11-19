@@ -2472,7 +2472,10 @@ What this battery promises, whatever the frame says:
 - an input's artefact is made once for a frame by each battery object, and
   every later call that carries that input reads that same artefact; an
   artefact not made is an opening, never a guessed label, the reader is
-  not asked, and the next call makes it again;
+  not asked, and the next call makes it again; an input a trial renames,
+  as presentation and input inversion do, is another input, with an
+  artefact of its own, so the words it renamed cannot come back through
+  the first;
 - the call that makes an artefact shares its cap as a crossing's does: the
   maker is given half and the reader what the maker left; a call that
   finds the artefact made gives the reader its whole cap, and its record

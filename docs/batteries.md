@@ -342,6 +342,14 @@ gadfly run incident.json \
 - **Repeated runs:** one battery object keeps an input's artefact for as
   long as it lives, so `gadfly firm` measures the reader's variation over
   that one artefact and never the maker's.
+- **A renamed input:** presentation and input inversion rename the input,
+  so their trials carry another input and the maker writes an artefact for
+  it. A run's records then name two SHA-256 values; reading the first one
+  there would bring back the words the trial renamed.
+- **What a record keeps:** the artefact's SHA-256 whole, beside as much of
+  the artefact and the reader's answer as fit the record's 2,000
+  characters, the longer cut first. A cut artefact no longer hashes to its
+  SHA-256, so ask the maker for a list that leaves room for the answer.
 - **Where it pays:** the battery saves what the reader would have spent
   thinking in every trial. A reader that does not think has nothing to
   save, and is not shown to read better through it.

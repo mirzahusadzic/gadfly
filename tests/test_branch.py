@@ -151,6 +151,42 @@ def test_each_input_has_an_artefact_of_its_own():
     assert made == {needs(QUESTION), needs("Should deploy 42 be kept?")}
 
 
+def test_an_input_a_trial_renames_has_an_artefact_of_its_own():
+    raw = copy.deepcopy(NEEDS)
+    raw["interventions"]["presentation"] = {"rolled": "pulled"}  # a word of the input alone
+    renamed = "Should deploy 42 be pulled back now?"
+    maker = Watching()
+    frame, _, result = branched(maker, raw=raw)
+    assert [text for _, text, _ in maker.seen] == [QUESTION, renamed]
+    for record in result.records:
+        made = json.loads(record.raw)["made"]["text"]
+        assert made == needs(renamed if record.trial == "presentation" else QUESTION)
+        if record.trial == "presentation":
+            assert "rolled" not in made  # the renamed word does not come back through it
+
+
+def test_a_record_keeps_the_artefacts_hash_whole_where_its_text_is_cut():
+    class Long(Watching):
+        def make(self, line, text, max_output_tokens):
+            from midwife.batteries.crossing import Made
+
+            return Made("- a line it rests on\n" * 90, usage={"output_tokens": 40})
+
+    class Answering(NeedsReader):
+        def observe(self, frame, prompt, max_output_tokens):
+            seen = super().observe(frame, prompt, max_output_tokens)
+            return Observation(label=seen.label, raw="because " * 40, usage=seen.usage)
+
+    frame, _, result = branched(Long(), Answering())
+    whole = "- a line it rests on\n" * 90
+    for record in result.records:
+        assert len(record.raw) <= 2_000
+        kept = json.loads(record.raw)
+        assert kept["made"]["sha256"] == hashlib.sha256(whole.encode()).hexdigest()
+        assert whole.startswith(kept["made"]["text"]) and kept["made"]["text"] != whole
+        assert kept["read"] == "because " * 40  # the shorter text is kept whole
+
+
 def test_calls_at_once_still_make_one_artefact():
     class Slow(Watching):
         def make(self, line, text, max_output_tokens):
