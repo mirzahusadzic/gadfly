@@ -294,13 +294,16 @@ instruction says how the three parts it is given are read:
   "kind": "branch",
   "maker": {
     "kind": "unified",
-    "model": "anthropic/claude-sonnet-5-5",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": ["openrouter/meta/muse-spark-1.3-contributor"],
     "instruction": "List what the lines would have to say."
   },
   "reader": {
     "kind": "unified",
-    "model": "anthropic/claude-sonnet-5-5",
-    "reasoning": "none"
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "minimal",
+    "trainsOnInputs": ["openrouter/meta/muse-spark-1.3-contributor"]
   }
 }
 ```
