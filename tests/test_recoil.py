@@ -665,6 +665,19 @@ def test_a_crossings_records_are_checked_before_they_are_climbed():
     claimed = run(reader, Claiming(), Budget(calls=calls_needed(reader))).records
     with pytest.raises(RecordsError, match="frame 'rollback-from-cause' is no crossing"):
         walk(piece, start, [reader], made=[claimed])
+    # a branch's records hold an artefact, made from the input and not from a
+    # body, so none is a parent: the refusal says which kind it lacks
+    from midwife.batteries.branch import Branch
+    from midwife.batteries.crossing import Function
+    from tests.fixtures.needs import NEEDS, NeedsReader, needs
+
+    branch = parse(copy.deepcopy(NEEDS))
+    branched = Branch(Function("needs", needs), NeedsReader())
+    made = run(branch, branched, Budget(calls=calls_needed(branch))).records
+    assert all(json.loads(record.raw)["made"]["text"] for record in made)
+    lacks = "frame 'rollback-from-needs' is no crossing, so its records made no artefact from a "
+    with pytest.raises(RecordsError, match=lacks):
+        walk(piece, start, [branch], made=[made])
     # runs, not records: a flat list is refused, not read as one run or many
     with pytest.raises(UsageError, match="made holds a record where a run belongs"):
         walk(piece, start, [incident], made=kept)
