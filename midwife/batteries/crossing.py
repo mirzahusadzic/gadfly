@@ -236,6 +236,98 @@ def _raw(read: str, made: str, sha: str) -> str:
     return whole
 
 
+@dataclass(frozen=True)
+class _Attempt:
+    # one try at an artefact: the observation that ends the call when none
+    # was made, or the artefact with its hash and what its maker reported,
+    # spent and was served by
+    ended: Observation | None
+    text: str = ""
+    sha: str = ""
+    usage: dict[str, int] = field(default_factory=dict)
+    spent: int = 0
+    served: str = ""
+
+
+def _attempt(maker: Maker, line: dict, text: str, share: int, cap: int) -> _Attempt:
+    # the maker makes its artefact from `text` within `share` of the call's
+    # `cap`; whatever it does instead ends the call as an opening that names
+    # the maker, charged as the report allows
+    served = f"made by {maker.name}"
+    whole = {"output_tokens": share}  # what a maker that says nothing is charged
+    try:
+        made = maker.make(line, text, share)
+    except StopRun:
+        raise  # the harness failed: the run stops, as run says
+    except Exception as error:  # noqa: BLE001 — the failure is the observation
+        opening = f"the maker failed ({type(error).__name__})"
+        return _Attempt(Observation(label=None, opening=opening, usage=whole, served=served))
+    if not isinstance(made, Made):
+        opening = "the maker returned nothing it made"
+        return _Attempt(Observation(label=None, opening=opening, usage=whole, served=served))
+    served = f"made by {_named(made.served, maker.name)}"
+    made_usage, spent, sound = _report(made.usage, share)
+    raw = made.raw if isinstance(made.raw, str) else ""
+    if not sound:
+        opening = "the maker's report of what it spent is not a count of tokens"
+        return _Attempt(
+            Observation(label=None, opening=opening, raw=raw, usage=whole, served=served)
+        )
+    usage = _usage(made_usage, {}, spent)
+    if made.opening is not None:
+        opening = f"the maker made nothing ({made.opening!r})"
+        return _Attempt(
+            Observation(label=None, opening=opening, raw=raw, usage=usage, served=served)
+        )
+    if not isinstance(made.text, str) or not made.text.strip():
+        opening = "the maker made an empty artefact"
+        return _Attempt(Observation(label=None, opening=opening, usage=usage, served=served))
+    try:
+        sha = hashlib.sha256(made.text.encode("utf-8")).hexdigest()
+    except UnicodeEncodeError:  # a lone surrogate: no text a file or a hash can hold
+        opening = "the maker made text that is not valid Unicode"
+        return _Attempt(Observation(label=None, opening=opening, usage=usage, served=served))
+    if cap - spent < 1:
+        opening = "the maker spent the call's whole cap"
+        kept = _raw("", made.text, sha)
+        return _Attempt(
+            Observation(label=None, opening=opening, raw=kept, usage=usage, served=served)
+        )
+    return _Attempt(None, made.text, sha, made_usage, spent, served)
+
+
+def _read(reader: Battery, reading: Frame, asked: str, tried: _Attempt, left: int) -> Observation:
+    # the reader decides from what it is asked within what the maker left of
+    # the call's cap; its label, or an opening that names the reader, with
+    # the artefact kept in the record either way
+    maker = tried.served
+    try:
+        seen = reader.observe(reading, asked, left)
+    except StopRun:
+        raise  # the harness failed: the run stops, as run says
+    except Exception as error:  # noqa: BLE001 — the failure is the observation
+        return Observation(
+            label=None,
+            opening=f"the reader failed ({type(error).__name__})",
+            raw=_raw("", tried.text, tried.sha),
+            usage=_usage(tried.usage, {}, tried.spent + left),
+            served=maker,
+        )
+    seen = _checked(reading, seen)  # as run holds any battery's answer
+    read_usage, read, sound = _report(seen.usage, left)
+    served = f"{maker}, read by {_named(seen.served, reader.name)}"
+    kept = _raw(seen.raw, tried.text, tried.sha)
+    if not sound:
+        opening = "the reader's report of what it spent is not a count of tokens"
+        usage = _usage(tried.usage, {}, tried.spent + left)
+        return Observation(label=None, opening=opening, raw=kept, usage=usage, served=served)
+    usage = _usage(tried.usage, read_usage, tried.spent + read)
+    if seen.opening is not None:
+        opening = f"the reader gave no label ({seen.opening!r})"
+        return Observation(label=None, opening=opening, raw=kept, usage=usage, served=served)
+    return Observation(label=seen.label, raw=kept, usage=usage, served=served)
+
+
 class Crossing:
     """`battery: {"kind": "crossing", "maker": {...}, "reader": {...}}`"""
 
@@ -336,82 +428,10 @@ class Crossing:
         the body, then the reader reads it with the input; the reader's
         label, or an opening that says which side gave none, and why."""
         reading = self._reading(frame)
-        line = frame.battery
         body, _, question = prompt.rpartition(SEPARATOR)
         share = max(1, max_output_tokens // 2)
-        maker = f"made by {self.maker.name}"
-        whole = {"output_tokens": share}  # what a maker that says nothing is charged
-        try:
-            made = self.maker.make(line["maker"], body, share)
-        except StopRun:
-            raise  # the harness failed: the run stops, as run says
-        except Exception as error:  # noqa: BLE001 — the failure is the observation
-            opening = f"the maker failed ({type(error).__name__})"
-            return Observation(label=None, opening=opening, usage=whole, served=maker)
-        if not isinstance(made, Made):
-            opening = "the maker returned nothing it made"
-            return Observation(label=None, opening=opening, usage=whole, served=maker)
-        maker = f"made by {_named(made.served, self.maker.name)}"
-        made_usage, spent, sound = _report(made.usage, share)
-        raw = made.raw if isinstance(made.raw, str) else ""
-        if not sound:
-            opening = "the maker's report of what it spent is not a count of tokens"
-            return Observation(label=None, opening=opening, raw=raw, usage=whole, served=maker)
-        if made.opening is not None:
-            return Observation(
-                label=None,
-                opening=f"the maker made nothing ({made.opening!r})",
-                raw=raw,
-                usage=_usage(made_usage, {}, spent),
-                served=maker,
-            )
-        if not isinstance(made.text, str) or not made.text.strip():
-            return Observation(
-                label=None,
-                opening="the maker made an empty artefact",
-                usage=_usage(made_usage, {}, spent),
-                served=maker,
-            )
-        try:
-            sha = hashlib.sha256(made.text.encode("utf-8")).hexdigest()
-        except UnicodeEncodeError:  # a lone surrogate: no text a file or a hash can hold
-            return Observation(
-                label=None,
-                opening="the maker made text that is not valid Unicode",
-                usage=_usage(made_usage, {}, spent),
-                served=maker,
-            )
-        left = max_output_tokens - spent
-        if left < 1:
-            return Observation(
-                label=None,
-                opening="the maker spent the call's whole cap",
-                raw=_raw("", made.text, sha),
-                usage=_usage(made_usage, {}, spent),
-                served=maker,
-            )
-        try:
-            seen = self.reader.observe(reading, f"{made.text}{SEPARATOR}{question}", left)
-        except StopRun:
-            raise  # the harness failed: the run stops, as run says
-        except Exception as error:  # noqa: BLE001 — the failure is the observation
-            return Observation(
-                label=None,
-                opening=f"the reader failed ({type(error).__name__})",
-                raw=_raw("", made.text, sha),
-                usage=_usage(made_usage, {}, spent + left),
-                served=maker,
-            )
-        seen = _checked(reading, seen)  # as run holds any battery's answer
-        read_usage, read, sound = _report(seen.usage, left)
-        served = f"{maker}, read by {_named(seen.served, self.reader.name)}"
-        kept = _raw(seen.raw, made.text, sha)
-        if not sound:
-            opening = "the reader's report of what it spent is not a count of tokens"
-            usage = _usage(made_usage, {}, spent + left)
-            return Observation(label=None, opening=opening, raw=kept, usage=usage, served=served)
-        usage = _usage(made_usage, read_usage, spent + read)
-        if seen.opening is not None:
-            opening = f"the reader gave no label ({seen.opening!r})"
-            return Observation(label=None, opening=opening, raw=kept, usage=usage, served=served)
-        return Observation(label=seen.label, raw=kept, usage=usage, served=served)
+        tried = _attempt(self.maker, frame.battery["maker"], body, share, max_output_tokens)
+        if tried.ended is not None:
+            return tried.ended
+        asked = f"{tried.text}{SEPARATOR}{question}"
+        return _read(self.reader, reading, asked, tried, max_output_tokens - tried.spent)
