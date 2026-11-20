@@ -335,6 +335,20 @@ gadfly run incident.json \
   sound evidence in every trial at once, and no quorum sees it. Say in it
   what kind of evidence there is, as the frame's locus and grain do, so
   that the list asks only for what such evidence can say.
+- **What the frame's instruction says of a gap:** asked what would show
+  the answer wrong, a maker names lines that would be missing. A reader
+  told to hold the evidence against that list can then read a gap as a
+  no. One sentence in the frame's instruction keeps a gap undecided; with
+  the labels `supports`, `does-not-support` and `unclear`, it reads "A
+  thing the lines leave out makes the answer unclear, even where the
+  first part counts it as a sign that the claim is false. Answer
+  does-not-support only where a line shows that the claim is not so or
+  contradicts it."
+- **Where a gap is the answer:** a reader under that sentence still
+  answers no where a line gives the no, as "whatever is not granted above
+  is denied" does in an access policy. Where silence must answer, because
+  the evidence is the whole of its subject, say so in a line of the
+  evidence. Without such a line, the reader answers unclear.
 - **What a maker has room for:** the call that makes an artefact gives the
   maker half its cap, and the cap can be no larger than the reader takes.
   Ask the maker for what settles the question in a few lines, not for a
