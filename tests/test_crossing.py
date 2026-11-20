@@ -552,3 +552,61 @@ def test_the_record_keeps_the_artefacts_hash_whole_and_parses_however_long():
         assert kept["made"]["sha256"] == hashlib.sha256(made.encode()).hexdigest()
         assert made.startswith(kept["made"]["text"]) and read.startswith(kept["read"])
     assert kept == {"made": {"sha256": kept["made"]["sha256"], "text": "aaaaa"}, "read": "bbbbb"}
+
+
+def test_a_reader_stops_the_run_through_a_crossing_and_its_call_makes_no_record():
+    from midwife.batteries.crossing import Crossing, Function
+    from midwife.errors import StopRun
+
+    class Halting(CauseReader):
+        def observe(self, frame, prompt, max_output_tokens):
+            raise StopRun("the reader was refused its key")
+
+    frame = parse(copy.deepcopy(INCIDENT))
+    crossing = Crossing(Function("cause", cause), Halting())
+    result = run(frame, crossing, Budget(calls=calls_needed(frame)))
+    assert result.records == ()
+    assert result.stopped == "the battery stopped the run ('the reader was refused its key')"
+
+
+def test_a_reader_line_that_is_no_battery_is_read_as_one_that_may_train():
+    # the maker's line goes under the deny data policy; a reader line the
+    # frame cannot be read with says nothing, so the crossing may train
+    from midwife.batteries.crossing import Crossing, UnifiedMaker
+    from midwife.batteries.unified import Unified
+
+    line = {"kind": "crossing", "maker": MAKER, "reader": READER}
+    crossing = Crossing(UnifiedMaker(), Unified())
+    assert crossing.trains(parse({**copy.deepcopy(INCIDENT), "battery": line})) is False
+    for reader in ("unified", {"kind": 5}, {"model": READER["model"]}):
+        frame = parse({**copy.deepcopy(INCIDENT), "battery": {**line, "reader": reader}})
+        assert crossing.trains(frame) is True
+
+
+def test_a_record_whose_artefact_and_answer_both_run_long_is_filled_to_the_cap():
+    # either text alone is past the record's cap: the longer gives way first,
+    # then the other is cut to the longest beginning that fits
+    from midwife.batteries.crossing import Crossing, Made
+    from midwife.pipeline import RAW_LIMIT
+
+    class Long:
+        name = "cause"
+
+        def check(self, line):
+            pass
+
+        def make(self, line, text, max_output_tokens):
+            return Made(self.text, usage={"output_tokens": 10})
+
+    frame = parse(copy.deepcopy(INCIDENT))
+    for made, read in [("m" * 3_000, "r" * 2_500), ("m" * 2_500, "r" * 3_000)]:
+        maker, reader = Long(), Reporting()
+        maker.text = made
+        reader.answer = Observation(label="rollback", raw=read, usage={"output_tokens": 3})
+        result = run(frame, Crossing(maker, reader), Budget(calls=3), only=["baseline"])
+        raw = result.records[0].raw
+        kept = json.loads(raw)
+        assert len(raw) == RAW_LIMIT  # nothing that fits is cut
+        assert kept["made"]["sha256"] == hashlib.sha256(made.encode()).hexdigest()
+        assert made.startswith(kept["made"]["text"]) and read.startswith(kept["read"])
+        assert result.records[0].observation == "rollback"

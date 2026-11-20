@@ -645,3 +645,18 @@ def test_the_crossing_reads_as_it_did_before_its_parts_were_shared():
     seen = crossing.observe(frame, f"{plan(frame)[0].text}{PARTS}{QUESTION}", 100)
     assert isinstance(seen, Observation) and seen.label == "rollback"
     assert reader.prompts == [(f"{cause(plan(frame)[0].text)}{PARTS}{QUESTION}", 100)]
+
+
+def test_a_reader_line_that_is_no_battery_is_read_as_one_that_may_train():
+    # the maker's line goes under the deny data policy; a reader line the
+    # frame cannot be read with says nothing, so the branch may train
+    from midwife.batteries.branch import Branch
+    from midwife.batteries.crossing import UnifiedMaker
+    from midwife.batteries.unified import Unified
+
+    line = {"kind": "branch", "maker": MAKER, "reader": READER}
+    branch = Branch(UnifiedMaker(), Unified())
+    assert branch.trains(parse({**copy.deepcopy(NEEDS), "battery": line})) is False
+    for reader in ("unified", {"kind": 5}, {"model": READER["model"]}):
+        frame = parse({**copy.deepcopy(NEEDS), "battery": {**line, "reader": reader}})
+        assert branch.trains(frame) is True

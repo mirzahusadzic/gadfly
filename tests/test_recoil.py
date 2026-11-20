@@ -1686,3 +1686,47 @@ def test_a_decision_fills_only_its_kind_at_the_frame_that_made_what_it_quotes():
     walked = walk(decided(skipping, "yes"), skipping, [root, node])
     assert walked.fits == () or list(walked.fits) == []
     assert "node" not in names(walked.passed)
+
+
+def test_a_parent_that_is_a_sibling_too_is_offered_the_piece_once_as_a_parent():
+    # the start quotes the shared line and the workshop's mark; the maker
+    # holds the mark as its own and quotes the shared line, so it is the
+    # start's parent and its sibling both: reached as a parent first, it is
+    # not offered again sideways
+    start = framed("start", "the start's own line", quotes=[SHARED, WORKSHOP])
+    maker = framed("maker", WORKSHOP, quotes=[SHARED], holes=["h"])
+    sibling = framed("sibling", "the sibling's own line", quotes=[SHARED], holes=["h"])
+    walked = walk(found(start, "own"), start, [maker, sibling], sideways=True)
+    assert walked.siblings == (sibling,)
+    assert [(frame.name, holes) for frame, holes in walked.fits] == [
+        ("maker", ("h",)),
+        ("sibling", ("h",)),
+    ]
+    assert [fit.sideways for fit in walked.order] == [False, True]
+
+
+@pytest.mark.parametrize(
+    ("near", "about"),
+    [
+        ([1e308, 1e308], [1, 1]),  # each product finite, their sum past the largest float
+        ([1e200, 1e200], [1e200, -1e200]),  # products of inf and -inf, which sum to no number
+    ],
+)
+def test_a_dot_product_too_large_to_sum_is_said_never_scored(near, about):
+    start = star("start", "the start's own line")
+    piece = Piece(SHARED, "note")
+    vectors = read_vectors(jsonl((SHARED, "s", near), ("A", "s", about)))
+    [read] = walk(piece, start, [read_for("a", "A")], vectors=vectors).order
+    assert (read.cosine, read.unordered) == (None, "its cosine overflows")
+
+
+def test_a_successor_that_closes_no_hole_reframes_only_by_what_else_it_changed():
+    # its holes as they were, none closed: what it can take in is the same,
+    # so only the keys it changed beyond its evidence are said
+    second, fourth = dolls()[1], dolls()[3]
+    assert reframes(second, second) == []
+    assert reframes(fourth, fourth) == []  # no hole before or after
+    asked = parse({**second.raw, "purpose": "list each doll for a sale"})
+    assert reframes(second, asked) == ["purpose"]
+    lighter = parse({**second.raw, "standing": LIGHT})
+    assert reframes(second, lighter) == []  # its standing is part of its evidence

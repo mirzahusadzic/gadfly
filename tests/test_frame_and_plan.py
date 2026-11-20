@@ -466,3 +466,65 @@ def test_a_name_gadfly_prints_on_a_line_is_one_plain_name(raw, change, said):
     change(raw)
     with pytest.raises(FrameError, match=re.escape(f"{said} is not one plain name")):
         parse(raw)
+
+
+@pytest.mark.parametrize("value", [["a", "frame"], "a frame", None, 3])
+def test_a_frame_that_is_no_json_object_is_refused(value):
+    with pytest.raises(FrameError, match="^a frame is a JSON object$"):
+        parse(value)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        # each part of the wrong type or empty, refused by what it should be
+        (lambda r: r.update(name=5), "name must be a str"),
+        (lambda r: r.update(relation="  "), "relation is empty"),
+        (lambda r: r.update(baseline=""), "the baseline is a non-empty text or object"),
+        (lambda r: r.update(baseline={}), "the baseline is a non-empty text or object"),
+        (lambda r: r.update(baseline=["pinned"]), "the baseline is a non-empty text or object"),
+        (lambda r: r["observe"].update(labels=["grant", "grant"]), "labels are distinct"),
+        (lambda r: r["observe"].update(labels=["grant", ""]), "labels are distinct"),
+        (lambda r: r["observe"].update(labels=["grant", 2]), "labels are distinct"),
+        (lambda r: r["body"]["spans"].append("r6"), "a span is {id, text} with an optional"),
+        (lambda r: r["body"]["spans"].append({"id": "r6"}), "a span is {id, text}"),
+        (
+            lambda r: r["body"]["spans"].append({"id": "r6", "text": "t", "note": "n"}),
+            "a span is {id, text}",
+        ),
+        (
+            lambda r: r["body"]["spans"].append({"id": "r6", "text": ""}),
+            "a span's id, text and kind are non-empty strings",
+        ),
+        (
+            lambda r: r["body"]["spans"].append({"id": "r6", "text": "t", "kind": 1}),
+            "a span's id, text and kind are non-empty strings",
+        ),
+        (lambda r: r["interventions"].update(repeat="yes"), "repeat is true or false"),
+        (lambda r: r["interventions"].update(bypass=[]), "bypass lists the spans it removes"),
+        (lambda r: r["interventions"].update(bypass="r5"), "bypass lists the spans it removes"),
+        (lambda r: r["interventions"].update(cumulative=[]), "cumulative lists the spans"),
+        (lambda r: r["interventions"].update(presentation={}), "presentation maps words"),
+        (
+            lambda r: r["interventions"].update(presentation={"receipt": ""}),
+            "presentation maps words to their replacements",
+        ),
+    ],
+)
+def test_a_part_of_the_wrong_shape_is_refused_by_what_it_should_be(raw, change, message):
+    change(raw)
+    with pytest.raises(FrameError, match=f"^{re.escape(message)}"):
+        parse(raw)
+
+
+def test_an_input_inversion_that_names_a_phrase_twice_in_two_cases_is_refused(raw):
+    # it inverts without case, so the two would turn the same words two ways
+    raw["interventions"]["inputInversion"] = {
+        "without a receipt": "with a receipt",
+        "Without a Receipt": "with a slip",
+    }
+    raw["allowed"]["inputInversion"] = ["grant"]
+    with pytest.raises(FrameError, match=re.escape("inputInversion names a phrase twice")):
+        parse(raw)
+    del raw["interventions"]["inputInversion"]["Without a Receipt"]
+    assert parse(raw).interventions["inputInversion"] == {"without a receipt": "with a receipt"}

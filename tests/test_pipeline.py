@@ -434,3 +434,57 @@ def test_unthought_counts_the_calls_that_reported_no_reasoning():
     }
     assert summed_usage(rows) == {"reasoning_tokens": 212, "output_tokens": 253}
     assert unthought([]) == {"calls": 0, "unthought": 0, "trials": {}}
+
+
+def test_steps_reads_past_a_branch_record_whose_raw_names_no_step():
+    # a raw that is no JSON, no object, or names its step by no SHA-256 gives
+    # nothing, and the step a record does name is still read
+    from midwife.pipeline import steps
+
+    sha = "a" * 64
+
+    def row(trial, raw, observation="keep"):
+        made = {"battery": "branch", "input": "q1", "trial": trial, "observation": observation}
+        return {**made, "raw": raw}
+
+    records = [
+        row("baseline", "not json"),
+        row("baseline", ""),
+        row("baseline", "[1, 2]"),
+        row("baseline", "null"),
+        row("baseline", json.dumps({"made": "the step"})),
+        row("baseline", json.dumps({"made": {"sha256": 7}})),
+        row("baseline", json.dumps({"made": {"sha256": sha}})),
+        row("repeat", json.dumps({"made": {"sha256": sha}})),
+        row("ablation", json.dumps({"made": {"sha256": "b" * 64}}), observation=None),
+    ]
+    assert steps(records) == {
+        "q1": {"steps": [sha], "trials": {"baseline": [sha], "repeat": [sha]}, "remade": []}
+    }
+    assert steps(records[:6]) == {}
+
+
+def test_a_run_at_once_off_the_main_thread_leaves_ctrl_c_alone_and_runs_whole(raw):
+    # calls at once hold a first Ctrl-C, but only the main thread may set a
+    # signal handler: a run in a worker thread keeps every call and touches
+    # no handler, rather than failing to set one
+    import signal
+    import threading
+
+    class AtOnce(Rules):
+        concurrent = True
+
+    frame, ran = situate(raw), []
+    before = signal.getsignal(signal.SIGINT)
+
+    def ask():
+        ran.append(run(frame, AtOnce(), Budget(calls=21), parallel=3))
+
+    worker = threading.Thread(target=ask)
+    worker.start()
+    worker.join(timeout=30)
+    assert not worker.is_alive()
+    [result] = ran
+    assert result.stopped is None and len(result.records) == result.planned == 21
+    assert judge(frame, result.records)[0].category == CARRIED
+    assert signal.getsignal(signal.SIGINT) is before

@@ -15,6 +15,8 @@ from midwife.verdict import (
     OUTSIDE,
     UNRESOLVED,
     level,
+    out_of_reach,
+    unneeded,
     unreachable,
 )
 from tests.conftest import REFUND
@@ -640,3 +642,32 @@ def test_unreachable_names_both_categories_an_exclusion_rules_out(raw, carriage)
     raw["carriage"] = carriage
     said = ["declared outside scope (refunds above the agent's limit)"]
     assert unreachable(situate(raw)) == {CARRIED: said, COOLED: said}
+
+
+def test_unreachable_names_the_one_input_no_answers_bring_near(raw):
+    # two labels: the ablation must move decline to grant, and the input
+    # inversion must reach decline, so no baseline lets both move. x1, which
+    # the inversion turns, never reads carried; x2, which it does not reach,
+    # can, so carried is said of x1 alone
+    raw["observe"]["labels"] = ["grant", "decline"]
+    raw["interventions"]["inputInversion"] = {"without a receipt": "with a receipt"}
+    raw["allowed"] = {"ablation": ["grant"], "inputInversion": ["decline"]}
+    raw["inputs"].append({"id": "x2", "text": "A customer asks for a refund of a gift card."})
+    assert unreachable(situate(raw)) == {CARRIED: ["in x1, no answers come near"]}
+
+
+def test_unneeded_and_out_of_reach_give_up_rather_than_read_too_many_answers(raw):
+    # the repeat split from the baseline: whatever the rest give, it reads
+    # unresolved, so with three labels every trial left is unneeded and
+    # carried is out of reach
+    split = {"baseline": ["decline"] * 3, "repeat": ["grant"] * 3}
+    frame = situate(raw)
+    left = {"ablation", "sham-1", "sham-2", "presentation", "bypass"}
+    assert unneeded(frame, "x1", split) == left
+    assert out_of_reach(frame, "x1", split, CARRIED)
+    # with 23 labels, the four trials left could answer 23 ** 4 ways, past
+    # the most a check reads: it claims nothing, and every trial is asked
+    raw["observe"]["labels"] += [f"other-{n}" for n in range(20)]
+    frame = situate(raw)
+    assert unneeded(frame, "x1", split) == frozenset()
+    assert not out_of_reach(frame, "x1", split, CARRIED)

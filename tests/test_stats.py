@@ -7,7 +7,7 @@ import pytest
 
 from midwife import stats
 from midwife.cli import main
-from midwife.errors import UsageError
+from midwife.errors import RecordsError, UsageError
 from midwife.pipeline import calls_needed, run, situate
 from midwife.types import Budget, Observation
 from tests.fixtures.refund import RuleReader, Unreachable
@@ -305,3 +305,23 @@ def test_a_name_ending_in_a_colon_prints_quoted(raw, tmp_path, capsys):
         out = capsys.readouterr().out.splitlines()
         assert [line for line in out if line.count(": ") > 1] == [], argv
         assert f"'weird:' ({frame.hash})" in out[0]
+
+
+def test_compare_leaves_out_a_trial_no_run_asked(raw):
+    # a run cut short before its bypass: the bypass has no answers to count,
+    # so it has no row, rather than a row of nothing
+    frame, runs = kept(raw, RuleReader(), runs=2)
+    short = [[record for record in records if record["trial"] != "bypass"] for records in runs]
+    rows = {row.trial: row for row in stats.compare(frame, short)["x1"]}
+    assert "bypass" not in rows
+    assert list(rows) == ["baseline", "repeat", "ablation", "sham-1", "sham-2", "presentation"]
+    assert rows["ablation"].answers == {"grant": 6}
+
+
+def test_a_report_with_no_calls_to_count_is_refused(raw):
+    for runs in ([], [[]], [[], []]):
+        with pytest.raises(RecordsError, match="^no records to count") as refused:
+            stats.require_runs(runs)
+        assert refused.value.__notes__ == ["give the kept runs of this frame"]
+    _, made = kept(raw, RuleReader(), runs=1)
+    assert stats.require_runs([[], *made]) is None  # one run with calls is enough

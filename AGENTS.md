@@ -68,7 +68,7 @@ Every page reads the same on GitHub as on the site. The site may add a second vi
 
 ### Validate and commit
 
-- Checks: `uv run ruff check .`, `uv run ruff format --check .`, `uv run pytest` (85% coverage; `GADFLY_ATP_PLANS` adds the After the Poem replay) and `npm run docs:build`, which fails on a dead link. CI runs them on Python 3.13 to 3.15, every action pinned to its release's commit. Its Python jobs have Node but no `node_modules`: a test's Node harness uses Node alone, and what needs the site's packages is checked in the docs job.
+- Checks: `uv run ruff check .`, `uv run ruff format --check .`, `uv run pytest` (100% of statements and branches; `GADFLY_ATP_PLANS` adds the After the Poem replay) and `npm run docs:build`, which fails on a dead link. CI runs them on Python 3.13 to 3.15, every action pinned to its release's commit. Its Python jobs have Node but no `node_modules`: a test's Node harness uses Node alone, and what needs the site's packages is checked in the docs job.
 - A behavior change or a fix comes with a test that fails on the old code and passes after.
 - Each open code-scanning alert is fixed, with that test, or dismissed with its reason.
 - A live run spends a provider's calls: count them first (`gadfly plan`, `calls_needed`), and run only when the task includes it.

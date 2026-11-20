@@ -45,7 +45,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=midwife --cov-report=term-missing --cov-fail-under=85"
+addopts = "--cov=midwife --cov-branch --cov-report=term-missing --cov-fail-under=100"
 testpaths = ["tests"]
 pythonpath = ["."]
 

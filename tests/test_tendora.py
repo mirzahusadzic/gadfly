@@ -574,3 +574,83 @@ def test_a_reading_maker_crosses_to_the_engine_with_each_statements_reading(raw,
         assert sent["readings"] == [reading(text) for text in sent["statements"]]
     [finding] = judge(frame, result.records)
     assert finding.category == "carried"
+
+
+def test_an_answer_that_holds_only_on_a_condition_is_the_conditional_label(raw):
+    # supported, but on a condition: the frame's conditional, never the name
+    body = json.loads(reply("supported", "Sam")[2])
+    body["answers"][0]["conditional"] = True
+    assert label_of(body, situate(raw).labels) == ("conditional", None)
+
+
+@pytest.mark.parametrize("readings", [{}, {"readings": "tab"}])
+@pytest.mark.parametrize(
+    "given",
+    [
+        "Maya declares.",  # no rule parts a body from the input
+        f"Maya declares.{RULE}Who notifies the customers?",  # an input not in the form
+    ],
+)
+def test_a_prompt_not_in_gadflys_form_is_never_sent(raw, server, readings, given):
+    # with readings or without, the engine is asked only a body and a check's input
+    fake = server(reply("supported", "Sam"))
+    frame = at(raw, fake.base, **readings)
+    assert request_body(frame, given) is None
+    seen = Tendora().observe(frame, given, 64)
+    assert (seen.label, seen.opening) == (None, "the prompt is not in Gadfly's form")
+    assert fake.requests == []
+
+
+def test_what_it_reads_never_trains(raw):
+    assert Tendora().trains(at(raw, "http://127.0.0.1:1")) is False
+
+
+def test_check_refuses_another_batterys_frame(raw):
+    raw["battery"] = {"kind": "local-json", "url": "http://127.0.0.1:1"}
+    with pytest.raises(ValueError, match="this frame asks for battery 'local-json'"):
+        Tendora().check(situate(raw))
+
+
+def baseline_prompt(frame):
+    return prompt(frame, plan(frame)[0], frame.inputs[0])
+
+
+def test_a_reply_still_coming_at_the_deadline_is_an_opening_that_keeps_what_arrived(raw, server):
+    import itertools
+
+    fake = server(reply("supported", "Sam"))
+    frame = at(raw, fake.base, timeout=10)
+    clock = itertools.chain([0.0, 0.0], itertools.repeat(999.0)).__next__
+    seen = Tendora(clock=clock).observe(frame, baseline_prompt(frame), 64)
+    assert (seen.label, seen.opening) == (None, "the call passed its timeout")
+    assert '"Sam"' in seen.raw  # what arrived is kept, never read as an answer
+
+
+def test_an_engine_that_cannot_be_reached_is_an_opening(raw):
+    import socket
+
+    closed = socket.socket()
+    closed.bind(("127.0.0.1", 0))
+    port = closed.getsockname()[1]
+    closed.close()  # nothing listens there now
+    frame = at(raw, f"http://127.0.0.1:{port}")
+    seen = Tendora().observe(frame, baseline_prompt(frame), 64)
+    assert seen.label is None
+    assert seen.opening.startswith("the engine could not be reached (")
+
+
+@pytest.mark.parametrize(
+    "body, opening",
+    [
+        (
+            json.dumps({"status": "supported", "padding": "x" * 1_000_000}).encode(),
+            "the answer exceeded the size cap",
+        ),
+        (b'["supported", "Sam"]', "the engine's reply is not a JSON object"),
+    ],
+)
+def test_a_reply_past_the_cap_or_not_an_object_is_an_opening(raw, server, body, opening):
+    fake = server((200, {"content-type": "application/json"}, body))
+    frame = at(raw, fake.base)
+    seen = Tendora().observe(frame, baseline_prompt(frame), 64)
+    assert (seen.label, seen.opening) == (None, opening)

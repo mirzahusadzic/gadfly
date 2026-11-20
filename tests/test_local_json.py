@@ -172,3 +172,14 @@ def test_a_reply_that_stalls_after_its_first_chunk_ends_at_the_deadline(raw):
         server.server_close()
     assert late.opening == "the call passed its timeout" and late.raw == '{"answer": '
     assert took < 0.9, took  # one deadline, not a deadline and a timeout more
+
+
+def test_what_it_reads_never_trains(raw):
+    assert LocalJSON().trains(frame_at(raw, "http://127.0.0.1:1/judge")) is False
+
+
+def test_a_reply_past_the_size_cap_is_an_opening_though_it_names_a_label(raw, evaluator):
+    # the reply is read only to its cap: whatever it says, a longer one is no answer
+    fake = evaluator(reply("decline", text="x" * 1_000_000))
+    observation = LocalJSON().observe(frame_at(raw, fake.base + "/judge"), "p", 32)
+    assert (observation.label, observation.opening) == (None, "the answer exceeded the size cap")

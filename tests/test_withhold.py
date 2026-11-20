@@ -270,3 +270,36 @@ def _relabel(raw, label):
     )
     for key in ("observe", "allowed"):
         raw[key] = swap(raw[key])
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        b'{"always": []}',
+        b'{"always": "sk-"}',
+        b'{"training": {"words": ["Priya"]}}',
+        b'{"always": {"names": ["Priya"]}, "training": {"names": [], "regex": []}}',
+    ],
+)
+def test_a_part_that_is_not_its_lists_is_refused_and_named(text):
+    # a part is an object of names, lines and patterns, and nothing else:
+    # a misspelt list would otherwise hold nothing back, unsaid
+    with pytest.raises(UsageError, match="^file 'w.json' is not a withhold set") as refused:
+        read_withhold(text, path="w.json")
+    assert refused.value.__notes__[0].startswith("a withhold set is a JSON object")
+
+
+def test_the_battery_line_is_read_for_its_texts_beside_numbers_and_flags(raw):
+    # numbers, flags and nulls in the battery line hold no text to send; the
+    # strings beside them, keys included, are read wherever they nest
+    raw["battery"] = {
+        "kind": "rule-reader",
+        "settings": {"cap": 64, "strict": True, "seed": None, "tags": [1, f"key {SECRET}"]},
+    }
+    frame = situate(raw)
+    held = withhold(always={"patterns": [r"sk-[a-z0-9]{20,}"]})
+    assert [h.as_dict() for h in withheld(frame, held)] == [
+        {"trial": "", "input": "the battery line", "kind": "a pattern", "part": "always"}
+    ]
+    keyed = withhold(always={"names": ["strict"]})
+    assert [h.input for h in withheld(frame, keyed)] == ["the battery line"]

@@ -381,3 +381,14 @@ def test_a_budget_in_seconds_that_are_not_seconds_is_no_budget(raw, key, server,
     battery = EGemma(fake.base + "/judge")
     battery.check(situate(raw))
     assert battery.budget is None
+
+
+def test_a_wait_given_as_a_date_falls_back_to_the_seconds_the_detail_names(frame, key, server):
+    # Retry-After may be an HTTP date; the battery reads only seconds, so
+    # the rate limiter's own words decide the wait
+    waits = []
+    busy = json.dumps({"detail": "Rate limit exceeded. Try again in 7 seconds."}).encode()
+    dated = {"retry-after": "Wed, 21 Oct 2015 07:28:00 GMT"}
+    fake = server([(429, dated, busy), reply("decline")])
+    observation = EGemma(fake.base + "/judge", sleep=waits.append).observe(frame, "p", 32)
+    assert observation.label == "decline" and waits == [7.0] and len(fake.requests) == 2

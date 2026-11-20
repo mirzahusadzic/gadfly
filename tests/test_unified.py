@@ -4,6 +4,7 @@ what it refuses, and how it reads the stream. No model is called."""
 import itertools
 import json
 import socket
+import struct
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -815,3 +816,102 @@ def test_a_unified_frame_without_a_model_is_the_batterys_refusal(tmp_path, capsy
     assert main([*argv, "--withhold", str(sets), "--out", str(out)]) == 6
     assert not out.exists()
     assert "BatteryError" in capsys.readouterr().err
+
+
+def test_a_refusal_whose_body_is_not_the_routers_json_is_its_status_alone(raw, token, router):
+    # a 409 or 502 is read for the router's reason; a body that is no JSON,
+    # or one cut at 4,096 bytes, gives none, and the call is its status
+    long = json.dumps({"error": {"code": "data_policy", "padding": "x" * 5_000}}).encode()
+    for status, body in ((409, b"busy, try later"), (502, b"<html>gateway</html>"), (409, long)):
+        seen = Unified(router((status, {}, body)).url).observe(situate(raw), "p", 16)
+        assert seen.label is None and seen.served == ""
+        assert seen.opening == f"the router answered {status}"
+
+
+def test_a_stream_whose_deadline_passes_before_its_first_read_reads_nothing(raw, token, router):
+    # the head came in time; the body's first read would start past the deadline
+    fake = router((200, {}, answer("decline")))
+    clock = itertools.chain([0.0], itertools.repeat(999.0)).__next__
+    seen = Unified(fake.url, timeout=10, clock=clock).observe(situate(raw), "p", 16)
+    assert (seen.label, seen.opening, seen.raw) == (None, "the call passed its timeout", "")
+    assert len(fake.requests) == 1
+
+
+def test_a_stream_that_never_ends_a_line_stops_at_the_size_cap(raw, token, router):
+    # a line still open past the cap is handed on whole, and read as past it
+    fake = router((200, {}, b"data: " + b"x" * 1_100_000))
+    seen = Unified(fake.url).observe(situate(raw), "p", 16)
+    assert (seen.label, seen.opening) == (None, "the answer exceeded the size cap")
+
+
+def test_a_last_event_with_no_line_end_is_still_read(raw, token, router):
+    fake = router((200, {}, answer("decline").rstrip(b"\n")))
+    seen = Unified(fake.url).observe(situate(raw), "p", 16)
+    assert (seen.label, seen.opening) == ("decline", None)
+
+
+def test_events_of_other_kinds_and_parts_that_are_not_text_add_nothing():
+    # the answer is the deltas, or else the final output's text parts: an
+    # event the battery does not read, a refusal part and a usage value that
+    # is no count are passed over
+    events = sse(
+        {"type": "response.created", "response": {"model": "elsewhere", "usage": {"x": 9}}},
+        {"type": "response.output_text.done", "text": json.dumps({"label": "grant"})},
+        {
+            "type": "response.completed",
+            "response": {
+                "model": "m",
+                "usage": {"output_tokens": 2, "total_tokens": True, "service_tier": "default"},
+                "output": [
+                    {
+                        "content": [
+                            {"type": "refusal", "refusal": "grant"},
+                            {"type": "output_text", "text": json.dumps({"label": "decline"})},
+                        ]
+                    }
+                ],
+            },
+        },
+    )
+    text, usage, opening, served = parse_stream(events.splitlines())
+    assert (text, opening, served) == ('{"label": "decline"}', None, "m")
+    assert usage == {"output_tokens": 2}
+
+
+class Resetting:
+    """A loopback router that sends its head and one event, then, once told,
+    resets the connection rather than closing it."""
+
+    def __init__(self, sent):
+        self.listener = socket.create_server(("127.0.0.1", 0))
+        self.url = f"http://127.0.0.1:{self.listener.getsockname()[1]}/v1/responses"
+        self.told = threading.Event()
+        threading.Thread(target=self.serve, args=(sent,), daemon=True).start()
+
+    def serve(self, sent):
+        connection, _ = self.listener.accept()
+        with connection:
+            asked = b""
+            while b"\r\n\r\n" not in asked:
+                asked += connection.recv(65_536)
+            connection.sendall(b"HTTP/1.0 200 OK\r\ncontent-type: text/event-stream\r\n\r\n" + sent)
+            self.told.wait(10)
+            # a linger of none: closing sends a reset, not the stream's end
+            connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+        self.listener.close()
+
+
+def test_a_connection_reset_mid_stream_is_an_opening_that_keeps_what_arrived(raw, token):
+    delta = sse({"type": "response.output_text.delta", "delta": json.dumps({"label": "decline"})})
+    server, calls = Resetting(delta), itertools.count()
+
+    def clock():
+        # the battery asks the time for the deadline, before its first read and
+        # after the first line: then the router resets
+        if next(calls) == 2:
+            server.told.set()
+        return 0.0
+
+    seen = Unified(server.url, timeout=10, clock=clock).observe(situate(raw), "p", 16)
+    assert (seen.label, seen.opening) == (None, "the connection failed (ConnectionResetError)")
+    assert seen.raw == '{"label": "decline"}'  # kept beside the opening, never read as a label
