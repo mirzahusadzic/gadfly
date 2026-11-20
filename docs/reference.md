@@ -2415,7 +2415,8 @@ check(frame)
 
 Refuse, before any call, a cap that leaves a side's thinking budget
 no room: the maker writes within half of each call's cap, and the
-reader reads within what the maker leaves, at least the other half.
+reader reads within what the maker leaves, at least the other half. A
+reader with a `check_cap` of its own is asked for that half.
 
 ```python
 check_cap(frame, cap)
@@ -2523,7 +2524,8 @@ check(frame)
 Refuse, before any call, a cap that leaves a side's thinking budget
 no room in the call that makes an artefact: the maker writes within
 half of that call's cap, and the reader reads within what the maker
-leaves, at least the other half.
+leaves, at least the other half. A reader with a `check_cap` of its
+own is asked for that half and for a later call's whole cap.
 
 ```python
 check_cap(frame, cap)

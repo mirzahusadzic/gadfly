@@ -339,6 +339,37 @@ def test_a_dash_line_in_any_form_in_a_body_or_an_input_is_refused(where, text):
         branch.check(parse(raw))
 
 
+@pytest.mark.parametrize("kind", ["branch", "crossing"])
+def test_a_reader_that_refuses_its_cap_is_asked_before_any_call(kind):
+    from midwife.batteries.branch import Branch
+    from midwife.batteries.crossing import Crossing, Function
+
+    class Picky(NeedsReader):
+        def __init__(self):
+            super().__init__()
+            self.asked = []
+
+        def check_cap(self, frame, cap):
+            self.asked.append(cap)
+            if cap < 500:
+                raise ValueError(f"I need 500 tokens, not {cap}")
+
+    reader = Picky()
+    raw = copy.deepcopy(NEEDS)
+    if kind == "crossing":
+        raw["battery"]["kind"] = "crossing"
+        battery = Crossing(Function("needs", cause), reader)
+    else:
+        battery = Branch(Function("needs", needs), reader)
+    frame = parse(raw)
+    with pytest.raises(BatteryError, match="refused this frame") as error:
+        run(frame, battery, Budget(calls=calls_needed(frame), output_tokens_per_call=600))
+    assert reader.prompts == [] and min(reader.asked) == 300
+    assert "it said 'I need 500 tokens, not 300'" in error.value.__notes__
+    side = error.value.__cause__.__notes__
+    assert any("battery.reader, that is refused" in note for note in side)
+
+
 def test_a_side_that_fails_is_an_opening_that_names_it():
     from midwife.batteries.branch import Branch
     from midwife.batteries.crossing import Function

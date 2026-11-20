@@ -164,7 +164,8 @@ class Branch:
         """Refuse, before any call, a cap that leaves a side's thinking budget
         no room in the call that makes an artefact: the maker writes within
         half of that call's cap, and the reader reads within what the maker
-        leaves, at least the other half."""
+        leaves, at least the other half. A reader with a `check_cap` of its
+        own is asked for that half and for a later call's whole cap."""
         share = max(1, cap // 2)
         for side, room in (("maker", share), ("reader", cap - share)):
             line = frame.battery.get(side)
@@ -175,6 +176,15 @@ class Branch:
                     f"the branch's {side} gets {room!r} of the {cap!r} tokens of a call that "
                     "makes an artefact; raise --output-tokens, or lower the budget",
                 )
+        fits = getattr(self.reader, "check_cap", None)  # the reader's own, where it has one
+        if callable(fits):
+            reading = self._reading(frame)
+            try:
+                for room in sorted({cap - share, cap}):
+                    fits(reading, room)
+            except ValueError as error:
+                error.add_note("it is the branch's reader line, battery.reader, that is refused")
+                raise
 
     def _stem(self, frame: Frame, question: str, cap: int) -> _Attempt:
         # the artefact every call with this input branches from: made by the
