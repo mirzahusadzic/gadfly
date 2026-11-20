@@ -575,6 +575,9 @@ def _run(
             keep_call(seq)
         interrupt.running = sum(not call.done() for call in running)  # still out
         raise
+    except Exception as error:  # such as a reader gone: the exit need not wait for a hung call
+        error.running = sum(not call.done() for call in running)  # still out
+        raise
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
         if held and signal.getsignal(signal.SIGINT) is hold:

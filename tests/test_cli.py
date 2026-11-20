@@ -932,9 +932,11 @@ def test_a_run_names_a_path_with_a_line_break_on_its_line(tmp_path, capsys):
 def test_a_battery_of_your_own_raising_gadflys_error_is_quoted(
     tmp_path, capsys, monkeypatch, raised_in
 ):
-    # a battery's words are quoted whichever class it raises them with
+    # a battery's words are quoted whichever class it raises them with; each
+    # case imports its own module, not one an earlier case left behind
     monkeypatch.chdir(tmp_path)
     monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.delitem(sys.modules, "own_battery", raising=False)
     Path("own_battery.py").write_text(
         "from midwife.errors import BatteryError\n"
         "class Reader:\n"
@@ -964,3 +966,45 @@ def test_check_frame_refuses_a_frame_that_is_not_json_in_its_one_shape(tmp_path,
     assert error["problems"][0]["problem"] == error["message"]
     assert main(["check-frame", str(frame)]) == 4
     assert capsys.readouterr().err.startswith(f"FrameError: {error['message']}\n")
+
+
+def test_a_reader_gone_with_a_call_still_out_ends_at_once(tmp_path, monkeypatch, capsys):
+    # with no SIGPIPE to end it (Windows), a run whose reader is gone while a
+    # call hangs in its thread must not wait for that call at exit
+    import errno
+    import io
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.delitem(sys.modules, "hung_reader", raising=False)
+    (tmp_path / "hung_reader.py").write_text(
+        "import threading\n"
+        "from tests.fixtures.refund import RuleReader\n"
+        "release = threading.Event()\n"
+        "class Reader(RuleReader):\n"
+        "    concurrent = True\n"
+        "    def __init__(self):\n"
+        "        self.calls, self.lock = 0, threading.Lock()\n"
+        "    def observe(self, frame, prompt, max_output_tokens):\n"
+        "        with self.lock:\n"
+        "            self.calls += 1\n"
+        "            hangs = self.calls > 1\n"
+        "        if hangs:\n"
+        "            release.wait(5)\n"
+        "        return super().observe(frame, prompt, max_output_tokens)\n",
+        encoding="utf-8",
+    )
+
+    class Gone(io.StringIO):
+        def write(self, text):
+            raise BrokenPipeError(errno.EPIPE, "Broken pipe")
+
+    exits = []
+    monkeypatch.setattr(os, "_exit", exits.append)
+    monkeypatch.setattr(sys, "stdout", Gone())
+    argv = ["run", REFUND, "--battery", "hung_reader:Reader", "--calls", "8"]
+    try:
+        assert main([*argv, "--parallel", "2", "--out", "-"]) == 141
+        assert exits == [141]  # it would end at once, not wait for the hung call
+    finally:
+        sys.modules["hung_reader"].release.set()
