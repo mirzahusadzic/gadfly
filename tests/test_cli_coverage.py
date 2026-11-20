@@ -378,6 +378,24 @@ def test_as_the_program_its_output_is_utf8_and_sigpipe_ends_it(tmp_path, program
         assert signal.getsignal(signal.SIGPIPE) == signal.SIG_DFL
 
 
+@pytest.mark.parametrize("platform", ["with its own SIGPIPE", "with none, as Windows"])
+def test_as_the_program_it_lets_sigpipe_end_it_on_every_platform(
+    platform, program, monkeypatch, capsys
+):
+    # Windows has no SIGPIPE, so a stand-in lets the line that sets it run
+    # there too; the handlers it sets are recorded, not set on this process
+    stand_in = getattr(signal, "SIGPIPE", 13)
+    if platform.endswith("Windows"):
+        monkeypatch.delattr(signal, "SIGPIPE", raising=False)
+    monkeypatch.setattr(signal, "SIGPIPE", stand_in, raising=False)
+    set_to = []
+    monkeypatch.setattr(signal, "signal", lambda signum, handler: set_to.append((signum, handler)))
+    program("plan", REFUND)
+    assert main() == 0
+    assert (stand_in, signal.SIG_DFL) in set_to
+    assert ": 8 calls" in capsys.readouterr().out
+
+
 def test_as_the_program_a_gone_reader_is_sent_nothing_more(tmp_path, capsys, program, monkeypatch):
     # where no SIGPIPE ends it, what is left unwritten goes to the null device
     class Gone(io.StringIO):
@@ -410,3 +428,49 @@ def test_python_m_midwife_cli_is_the_command_line_too(capsys, program, monkeypat
         runpy.run_module("midwife.cli", run_name="__main__")
     assert ended.value.code == 0
     assert ": 8 calls" in capsys.readouterr().out.splitlines()[0]
+
+
+# ---- a folder that cannot be written, on every platform
+
+
+@pytest.fixture
+def unwritable(monkeypatch):
+    """A folder the system says cannot be written: chmod takes no folder's
+    write bit on Windows, so os.access answers for it here, everywhere."""
+    folders, asked = [], os.access
+
+    def access(path, mode, *args, **kwargs):
+        if mode == os.W_OK and Path(path) in folders:
+            return False
+        return asked(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(os, "access", access)
+    return folders.append
+
+
+def test_an_unwritable_folder_for_the_records_is_refused_everywhere(tmp_path, unwritable, capsys):
+    folder = tmp_path / "kept"
+    folder.mkdir()
+    unwritable(folder)
+    assert main(["run", REFUND, *RULES, "--out", str(folder / "records.jsonl")]) == 7
+    assert capsys.readouterr().err.splitlines()[-2:] == [
+        f"PermissionError: folder {str(folder)!r} cannot be written",
+        "choose another --out",
+    ]
+    assert list(folder.iterdir()) == []
+
+
+def test_an_unwritable_runs_folder_is_refused_by_firm_everywhere(tmp_path, unwritable, capsys):
+    raw = json.loads(Path(REFUND).read_text(encoding="utf-8"))
+    raw["standing"] = {"quorum": 3, "agree": 2}
+    frame, runs = tmp_path / "refund.json", tmp_path / "runs"
+    frame.write_text(json.dumps(raw), encoding="utf-8")
+    runs.mkdir()
+    unwritable(runs)
+    battery = ["--battery", "tests.fixtures.refund:RuleReader", "--calls", "100"]
+    assert main(["firm", str(frame), *battery, "--runs", str(runs)]) == 7
+    assert capsys.readouterr().err.splitlines()[-2:] == [
+        f"PermissionError: folder {str(runs)!r} cannot be written",
+        "choose another --runs",
+    ]
+    assert list(runs.iterdir()) == []
