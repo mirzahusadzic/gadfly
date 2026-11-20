@@ -192,3 +192,26 @@ def test_python_m_midwife_exits_with_the_commands_status(
     assert done.value.code == status
     printed = capsys.readouterr()
     assert said in (printed.out if status == 0 else printed.err)
+
+
+def test_a_refusals_body_keeps_what_arrived_before_its_read_failed():
+    # a refusal's body read only so far: what came is kept, whatever ended the
+    # read, on every platform, not only where a socket's wait runs out
+    class Body:
+        def __init__(self):
+            self.reads = 0
+
+        def read1(self, amount):
+            self.reads += 1
+            if self.reads > 1:
+                raise TimeoutError("timed out")
+            return b'{"error": "busy'
+
+        def close(self):
+            pass
+
+    error = urllib.error.HTTPError("http://127.0.0.1:1/judge", 503, "busy", {}, Body())
+    try:
+        assert critic.read_error(error, time.monotonic() + 5, time.monotonic) == b'{"error": "busy'
+    finally:
+        error.close()

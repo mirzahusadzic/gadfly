@@ -335,6 +335,7 @@ def test_a_stopped_run_does_no_more_work_a_call_as_the_trials_grow(raw):
                 counted[0] += 1
             return trace
 
+        before = sys.gettrace()  # coverage's own, where it traces this way (Python 3.13)
         sys.settrace(trace)
         try:
             result = run(
@@ -344,7 +345,7 @@ def test_a_stopped_run_does_no_more_work_a_call_as_the_trials_grow(raw):
                 stop_unresolved=True,
             )
         finally:
-            sys.settrace(None)
+            sys.settrace(before)
         return counted[0] / len(result.records)
 
     small, large = lines_a_call(8), lines_a_call(32)
