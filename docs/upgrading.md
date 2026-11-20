@@ -10,7 +10,7 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
-### To 0.16.0, not yet released
+### To 0.16.0
 
 No verdict or frame changes. A record's `served` now also says how the call thought where the router reports it, after the route (`thinking off`, `thinking adaptive` or `thinking budget`), so a reader asked not to think can be seen not to have; records made before read as they did.
 
