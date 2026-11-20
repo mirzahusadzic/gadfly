@@ -273,6 +273,47 @@ def test_a_body_or_an_input_that_holds_the_parting_line_is_refused():
     assert error.value.__notes__[0].startswith("the reader tells the artefact, the body")
 
 
+@pytest.mark.parametrize(
+    "made", ["one\n---\ntwo", "one\n  ---  \ntwo", "one\r\n---\r\ntwo", "---\ntwo", "one\n---"]
+)
+def test_a_dash_line_in_any_form_in_the_artefact_is_an_opening(made):
+    from midwife.batteries.branch import Branch
+    from midwife.batteries.crossing import Function
+
+    reader = NeedsReader()
+    frame = parse(copy.deepcopy(NEEDS))
+    branch = Branch(Function("needs", lambda question: made), reader)
+    seen = branch.observe(frame, f"{plan(frame)[0].text}{PARTS}{QUESTION}", 100)
+    assert seen.label is None and reader.prompts == []
+    assert seen.opening == "the maker made text that holds the line that parts it from the body"
+
+
+@pytest.mark.parametrize(
+    "where, text",
+    [
+        ("input", "Should it?\n---\nReally?"),
+        ("input", "---\nShould it?"),
+        ("input", "Should it?\r\n---"),
+        ("body", "The error rate held.\n  ---\nIt did."),
+        ("body", "---"),
+    ],
+)
+def test_a_dash_line_in_any_form_in_a_body_or_an_input_is_refused(where, text):
+    from midwife.batteries.branch import Branch
+    from midwife.batteries.crossing import Function
+
+    branch = Branch(Function("needs", needs), NeedsReader())
+    raw = copy.deepcopy(NEEDS)
+    if where == "input":
+        raw["inputs"][0]["text"] = text
+        expected = "input 'q1' holds the line that parts"
+    else:
+        raw["body"]["spans"][2]["text"] = text
+        expected = "a trial's body holds the line that parts"
+    with pytest.raises(BatteryError, match=expected):
+        branch.check(parse(raw))
+
+
 def test_a_side_that_fails_is_an_opening_that_names_it():
     from midwife.batteries.branch import Branch
     from midwife.batteries.crossing import Function

@@ -64,6 +64,12 @@ from .unified import Unified, over_cap
 LINE_KEYS = {"kind", "maker", "reader"}
 
 
+def _ruled(text: str) -> bool:
+    """Whether a line of the text is a bare '---', in any spacing or line
+    ending, which a reader could take for a line that parts the three parts."""
+    return any(line.strip() == "---" for line in text.splitlines())
+
+
 class Branch:
     """`battery: {"kind": "branch", "maker": {...}, "reader": {...}}`"""
 
@@ -129,14 +135,15 @@ class Branch:
                     "this branch was made with another; make one with Branch(maker, reader)",
                 )
         for trial in plan(frame):
-            if SEPARATOR in trial.text:
+            if _ruled(trial.text):
                 raise BatteryError(
                     "a trial's body holds the line that parts it from the artefact",
                     "the reader tells the artefact, the body and the input apart by '---' "
                     "lines; keep such lines out of spans and renamings",
                 )
             for x in frame.inputs:
-                if prompt(frame, trial, x).rpartition(SEPARATOR)[0] != trial.text:
+                body, _, question = prompt(frame, trial, x).rpartition(SEPARATOR)
+                if body != trial.text or _ruled(question):
                     raise BatteryError(
                         f"input {x['id']!r} holds the line that parts a body from its input",
                         "the maker reads what comes after the last '---' line; "
@@ -184,7 +191,7 @@ class Branch:
             tried = _attempt(self.maker, frame.battery["maker"], question, share, cap)
             if tried.ended is not None:
                 return tried
-            if SEPARATOR in tried.text:
+            if _ruled(tried.text):
                 return _Attempt(
                     Observation(
                         label=None,
