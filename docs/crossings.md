@@ -41,10 +41,16 @@ cause section the commander reads".
 
 The battery line names the maker, with its own instruction of what to write,
 and the reader, so the frame's hash names both. The `crossing` battery runs
-it, and [Batteries](batteries.md#a-maker-before-the-reader) holds that line,
+it, and [Batteries](batteries.md#a-maker-and-a-reader) holds that line,
 what each side sees and spends, and how to write a maker in Python. The
 [crossing example](examples/crossing.md) writes one incident up two ways, as
 a cause section and as a status update.
+
+The `branch` battery also puts a maker before the reader, but it is no
+crossing: its maker reads the frame's input, the question, and never the
+evidence, so nothing the anchors said passes through what it writes. Its
+frame reads as any frame does, with the maker part of the reader, and
+[Batteries](batteries.md#a-maker-before-the-evidence) says when that pays.
 
 ---
 

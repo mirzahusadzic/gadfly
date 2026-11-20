@@ -37,8 +37,8 @@ class Battery(Protocol):
   `run(parallel=N)` make calls side by side; the unified battery sets it.
 - **`check_cap`:** an optional method, `check_cap(frame, cap)`. `run` calls
   it after `check` with each answer's cap, so a battery refuses a cap it
-  cannot answer within before any call; the unified and crossing batteries
-  refuse one that leaves a thinking budget no room.
+  cannot answer within before any call; the unified, crossing and branch
+  batteries refuse one that leaves a thinking budget no room.
 - **`StopRun`:** raised by a battery or a maker when its harness, not the
   frame, has failed, such as a refused key or a broken tool. The run keeps no
   record of that call, starts no other, keeps the calls already out, and ends
@@ -65,8 +65,9 @@ input's text:
 ```
 
 A span the trial cuts is simply absent, so a control that names every span
-sends an empty body, and under presentation the input is renamed too. The instruction and the labels come from the frame, for the
-battery to add as it needs.
+sends an empty body, and under presentation the input is renamed too. The
+instruction and the labels come from the frame, for the battery to add as it
+needs.
 
 ---
 
@@ -110,29 +111,51 @@ keeps it, and names where the label lives with a JSON pointer:
 "battery": {
   "kind": "unified",
   "model": "anthropic/claude-sonnet-5-5",
-  "reasoning": "low",
+  "reasoning": "none",
+  "fallback": "none",
   "output": {
     "schema": {
       "type": "object",
-      "properties": {"review": {"type": "object"}}
+      "properties": {
+        "review": {
+          "type": "object",
+          "properties": {"verdict": {"enum": ["approve", "reject"]}},
+          "required": ["verdict"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["review"],
+      "additionalProperties": false
     },
     "label": "/review/verdict"
   }
 }
 ```
 
+The schema is sent as a strict one, so name the label's place in it, list
+the frame's labels there and require it, as the default schema does. An
+answer with nothing at the pointer, or a label the frame does not list, is
+an opening.
+
 #### Reasoning
 
 A frame asks its model to think in its battery line. The `unified` battery
 passes `battery.reasoning` to the model through the router as an effort, one
-of `none`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max`. A model that
-does not take a level refuses the call, which comes back as an opening.
+of `none`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max`. The router's
+catalog lists the levels each model takes; one outside them may be sent as
+another, passed on as it is, or refused as an opening, so name a level the
+catalog lists.
 
-A level is a request: some models decide on each call whether to think at
-all. Each record's `usage` keeps every whole count the router reports, and
-each count of a breakdown such as `output_tokens_details` under its own name,
-so a call's `reasoning_tokens` say whether it thought, when the router passes
-them on.
+On Anthropic's API, `none` turns thinking off for Claude Sonnet 5.5 alone,
+and Claude takes `minimal`, and `none` on any other model, as `low`.
+Wherever its thinking is not off, Claude thinks adaptively: it decides on
+each call whether to think, and the level only leans it.
+
+A record's `served` says how the router asked the call to think, where it
+says so, and its `usage` keeps every whole count the router reports, each
+count of a breakdown such as `output_tokens_details` under its own name. A
+call's `reasoning_tokens` then say whether it thought, when the router
+passes them on.
 
 A Claude model that still takes a thinking budget, such as Claude Sonnet 4.6,
 thinks on every call within it. With `thinkingBudget` in the battery line, in
@@ -148,15 +171,6 @@ opening:
   "thinkingBudget": 2048
 }
 ```
-
-#### Claude on Anthropic's API
-
-The router serves an `anthropic/` model on Anthropic's own API, and by
-default moves a call Anthropic refuses to another provider. `"fallback":
-"none"` in the battery line keeps every call there, so one frame is read by
-one route; a refusal comes back as an opening that says why. A thinking
-budget keeps its calls there too. Name it for a new frame with a Claude
-reader; a frame without it reads as before.
 
 Gemma 4 has no levels: its thinking is on or off. With `reasoning: true` in
 the battery line, eGemma lets Gemma think before every answer, and only the
@@ -174,6 +188,15 @@ opens before any request.
 Each record's `usage` counts the thought's tokens as `reasoning_tokens`. It
 needs an eGemma newer than its v0.5.0, whose `/judge` takes `reasoning`; an
 older one answers 422, which the battery records as an opening.
+
+#### Claude on Anthropic's API
+
+The router serves an `anthropic/` model on Anthropic's own API, and by
+default moves a call Anthropic refuses to another provider. `"fallback":
+"none"` in the battery line keeps every call there, so one frame is read by
+one route; a refusal comes back as an opening that says why. A thinking
+budget keeps its calls there too. Name it for a new frame with a Claude
+reader; a frame without it reads as before.
 
 #### Tendora's engine
 
@@ -209,179 +232,6 @@ before any call when it is a span, and is an opening, never sent, when a
 crossing's maker wrote it. The reply must list in `served.readings` exactly
 the statements sent a reading, or the call is an opening, since an engine
 that ignored them answered from the bare statements.
-
-#### A maker before the reader
-
-The `crossing` battery runs a [crossing](crossings.md) out through a maker
-that runs again: the maker writes an artefact from each trial's body, and a
-reader decides from it. Its line names each side in a line of its own. The
-frame's instruction and labels are the reader's, the maker's instruction is
-in its line, and the frame's hash names both:
-
-```json
-"battery": {
-  "kind": "crossing",
-  "maker": {
-    "kind": "unified",
-    "model": "anthropic/claude-sonnet-5-5",
-    "instruction": "Write the incident's cause in two sentences."
-  },
-  "reader": {
-    "kind": "unified",
-    "model": "anthropic/claude-sonnet-5-5",
-    "reasoning": "low"
-  }
-}
-```
-
-`Crossing` with no arguments makes and reads through the unified model
-router, and each side's line is held to every check of the `unified`
-battery. Give each call room for both answers:
-
-```text
-gadfly run incident.json \
-    --battery midwife.batteries.crossing:Crossing \
-    --calls 150 --output-tokens 4000 \
-    --out incident.jsonl
-```
-
-- **What the maker sees:** the trial's body alone, never the input and never
-  which trial it serves.
-- **What the reader sees:** the artefact, the `---` line, and the input, as
-  any battery sees a body and its input.
-- **What a call spends:** the maker is given half of `--output-tokens`, and
-  the reader what the maker left, so the cap and the token budget hold for
-  the call as a whole.
-- **When a side fails:** an artefact not made is an opening that says so
-  (`the maker made nothing (…)`), and the reader is not asked; a reading
-  not made says so too (`the reader gave no label (…)`). A side that
-  reports nothing, or a spend that is not a count, is charged all it was
-  given.
-
-A maker of your own is any object with a `name`, `check(line)` and
-`make(line, text, max_output_tokens)`, which returns a `Made`; any battery
-reads. `Function` makes a maker of a plain function of the body's text:
-
-```python
-from midwife.batteries.crossing import Crossing, Function
-from midwife.batteries.egemma import EGemma
-
-
-def cause(body: str) -> str:
-    if "connection pool" in body:
-        return "The deploy shrank the connection pool."
-    return "The cause is not known yet."
-
-
-crossing = Crossing(Function("incident-cause", cause), EGemma())
-```
-
-Kept in a module of your own, `--battery yourmodule:crossing` runs it. The
-function's line is `{"kind": "incident-cause"}`, so the frame's hash names
-the function by that name alone: give a changed function a new name.
-
-#### A maker before the evidence
-
-The `branch` battery turns the crossing around: the maker writes from each
-trial's input, before any evidence is seen, what an answer would have to
-rest on, and the reader decides every trial against that. An input's
-artefact is made once and every call that carries the input reads it, so
-the reader's line can ask for little thinking, or for none. The frame's
-instruction says how the three parts it is given are read:
-
-```json
-"battery": {
-  "kind": "branch",
-  "maker": {
-    "kind": "unified",
-    "model": "openrouter/meta/muse-spark-1.3-contributor",
-    "reasoning": "low",
-    "trainsOnInputs": ["openrouter/meta/muse-spark-1.3-contributor"],
-    "instruction": "List what the lines would have to say."
-  },
-  "reader": {
-    "kind": "unified",
-    "model": "openrouter/meta/muse-spark-1.3-contributor",
-    "reasoning": "minimal",
-    "trainsOnInputs": ["openrouter/meta/muse-spark-1.3-contributor"]
-  }
-}
-```
-
-`Branch` with no arguments makes and reads through the unified model
-router, and each side's line is held to every check of the `unified`
-battery:
-
-```text
-gadfly run incident.json \
-    --battery midwife.batteries.branch:Branch \
-    --calls 150 --output-tokens 4000 \
-    --out incident.jsonl
-```
-
-- **What the maker sees:** the input alone, never the body and never which
-  trial it serves, so nothing a trial took out of the evidence can come
-  back through what the maker wrote.
-- **What the reader sees:** the artefact, the trial's body and the input,
-  with a `---` line between each.
-- **What a call spends:** the call that makes an artefact shares its cap as
-  a crossing's does. Every later call gives the reader the whole of
-  `--output-tokens`, and its record counts nothing for the making.
-- **When a side fails:** an artefact not made is an opening that says so,
-  the reader is not asked, and the next call makes it again. An artefact
-  that holds a `---` line of its own is an opening too.
-- **What the maker's instruction asks:** it is part of the instrument. One
-  that asks for more than the evidence can say turns the reader against
-  sound evidence in every trial at once, and no quorum sees it. Say in it
-  what kind of evidence there is, as the frame's locus and grain do, so
-  that the list asks only for what such evidence can say.
-- **What the frame's instruction says of a gap:** asked what would show
-  the answer wrong, a maker names lines that would be missing. A reader
-  told to hold the evidence against that list can then read a gap as a
-  no. One sentence in the frame's instruction keeps a gap undecided; with
-  the labels `supports`, `does-not-support` and `unclear`, it reads "A
-  thing the lines leave out makes the answer unclear, even where the
-  first part counts it as a sign that the claim is false. Answer
-  does-not-support only where a line shows that the claim is not so or
-  contradicts it."
-- **Where a gap is the answer:** a reader under that sentence still
-  answers no where a line gives the no, as "whatever is not granted above
-  is denied" does in an access policy. Where silence must answer, because
-  the evidence is the whole of its subject, say so in a line of the
-  evidence. Without such a line, the reader answers unclear.
-- **What a maker has room for:** the call that makes an artefact gives the
-  maker half its cap, and the cap can be no larger than the reader takes.
-  Ask the maker for what settles the question in a few lines, not for a
-  list for each label.
-- **Repeated runs:** one battery object keeps an input's artefact for as
-  long as it lives, so `gadfly firm` measures the reader's variation over
-  that one artefact and never the maker's.
-- **A renamed input:** presentation and input inversion rename the input,
-  so their trials carry another input and the maker writes an artefact for
-  it. A run's records then name two SHA-256 values; reading the first one
-  there would bring back the words the trial renamed.
-- **What a record keeps:** the artefact's SHA-256 whole, beside as much of
-  the artefact and the reader's answer as fit the record's 2,000
-  characters, the longer cut first. A cut artefact no longer hashes to its
-  SHA-256, so ask the maker for a list that leaves room for the answer.
-- **Where it pays:** the battery saves what the reader would have spent
-  thinking in every trial. A reader that does not think has nothing to
-  save, and is not shown to read better through it.
-
-A maker of your own and any battery work as they do for a crossing:
-
-```python
-from midwife.batteries.branch import Branch
-from midwife.batteries.crossing import Function
-from midwife.batteries.egemma import EGemma
-
-
-def needs(question: str) -> str:
-    return f"To answer {question!r}, the lines must name the change."
-
-
-branch = Branch(Function("rollback-needs", needs), EGemma())
-```
 
 #### Privacy and routing
 
@@ -424,7 +274,6 @@ which is asked before every call. `run(settle=True)` spends fewer calls: a
 trial stops once its level can no longer change, and the verdict reads as
 it would over every call.
 
-
 #### Record provenance
 
 Every record names these, so a verdict can be traced to what was read and who
@@ -448,9 +297,337 @@ anthropic)`.
 Where the router reports how a call thought, which it does on Anthropic's
 API, `served` says that after the route: `thinking off`, `thinking adaptive`
 or `thinking budget`. It is the router's word for the request it sent, not
-a count of tokens. The `crossing` battery records `made by …, read by …`,
-and its raw answer keeps the artefact's SHA-256 whole, beside as much of the
-artefact and the reader's answer as fit the record's 2,000 characters.
+a count of tokens. What a crossing's and a branch's records keep is said
+with [a maker and a reader](#a-maker-and-a-reader).
+
+### A maker and a reader
+
+Two shipped batteries put a maker before the reader. The `crossing`
+battery's maker writes from each trial's body, and the `branch` battery's
+from each trial's input, before any evidence is seen; the reader then
+decides from what the maker wrote. The frame's instruction and labels are
+the reader's, the maker's instruction is in its own line, and the frame's
+hash names both.
+
+With no arguments, `Crossing` and `Branch` make and read through the unified
+model router, and each side's line is held to every check of the `unified`
+battery. Give each call room for both answers:
+
+```text
+gadfly run incident.json \
+    --battery midwife.batteries.crossing:Crossing \
+    --calls 150 --output-tokens 4000 \
+    --out incident.jsonl
+```
+
+Both batteries keep these promises:
+
+- **What a call spends:** the call that makes an artefact gives the maker
+  half of `--output-tokens` and the reader what the maker left, so the cap
+  and the token budget hold for the call as a whole. A side that reports
+  nothing, or a spend that is not a count, is charged all it was given.
+- **When a side fails:** an artefact not made is an opening that says so
+  (`the maker made nothing (…)`), and the reader is not asked; a reading not
+  made says so too (`the reader gave no label (…)`).
+- **What a record keeps:** `served` reads `made by …, read by …`, and the raw
+  answer keeps the artefact's SHA-256 whole, beside as much of the artefact
+  and the reader's answer as fit the record's 2,000 characters, the longer
+  cut first. A cut artefact no longer hashes to its SHA-256.
+
+Both examples below have the maker think and tell the reader not to:
+
+- **Why the reader need not think:** the thinking is the maker's, once for
+  each input in a branch and once for each trial's body in a crossing, so the
+  reader's part is only to read, to see whether what it is given says what
+  the maker's text says it must.
+- **What that gains:** a reading in a few tokens, about ten from Claude
+  Sonnet 5.5 at `none`, so a quorum and repeated runs cost little beyond
+  their input, and no reader's thought can shift the standard from trial to
+  trial.
+- **Why only the reader:** the maker's text is the standard every reading is
+  held to, so the maker must think, and for certain: pick one whose thinking
+  cannot be skipped, as Muse Spark 1.3's cannot, never one that decides call
+  by call whether to think. A reader that does not think cannot add what a
+  thin standard lacks.
+- **Why a good model:** without thought, the reader has only the model's own
+  reading to go on, so pick one that reads well without it. The router turns
+  Claude Sonnet 5.5's thinking off at `none`, and each record's `served`
+  says "thinking off".
+
+#### A maker before the reader
+
+The `crossing` battery runs a [crossing](crossings.md) out through a maker
+that runs again. The maker sees the trial's body alone, never the input and
+never which trial it serves; the reader sees the artefact, the `---` line
+and the input, as any battery sees a body and its input:
+
+```json
+"battery": {
+  "kind": "crossing",
+  "maker": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": ["openrouter/meta/muse-spark-1.3-contributor"],
+    "instruction": "You write the cause section of an incident report from the signals and changes given. In two or three sentences, say what most likely caused what the signals show, using only what is given. Do not recommend an action."
+  },
+  "reader": {
+    "kind": "unified",
+    "model": "anthropic/claude-sonnet-5-5",
+    "reasoning": "none",
+    "fallback": "none"
+  }
+}
+```
+
+#### A maker before the evidence
+
+Someone holds a claim, and a reader is to say whether a page bears it. The
+`branch` battery puts one written step between the two: from the claim
+alone, before any page is read, a maker writes what the claim would have to
+look like in the lines of its own locus, and the reader holds every trial's
+page against that step. The step has four parts:
+
+- **What its words mean there:** what each key term of the claim must mean
+  in such lines.
+- **What else must be so:** what else the lines must show for the claim to
+  hold.
+- **What the lines would say if it were false.**
+- **What one would believe with no line at all:** a belief from experience
+  that would make the claim seem true with no evidence, named so that the
+  reader keeps it out.
+
+Each part has a trial beside it: renaming tests the words, cutting the
+anchors what else must be so, turning them the false case, and the bypass
+the belief, with a control beside them all. The step is thin when it adds
+nothing of its own, and that takes two befores: the claim is said before its
+page is read, and the step is written from the claim alone before the page
+is read. A page that cannot bear the claim is then the first finding, before
+any reader is called.
+
+| | One turn | Through the branch |
+| --- | --- | --- |
+| What the reader is given | the trial's page and the claim | the step, the page and the claim |
+| Who reasons, and when | the reader, in every call, after it has seen the page | a maker, once for each claim, before any page is seen |
+| The reader's effort | as the frame sets it | none needed, since the reasoning is done |
+| Requests a call | one | two in the first call for a claim, the maker's and then the reader's, and one after |
+
+Three things follow from that order:
+
+- **Fixed first:** the standard is fixed before any page is seen, and is the
+  same in every trial, so it cannot bend to what one trial shows or lacks.
+- **On record:** the step is in the record, so a verdict can be read back to
+  what it rested on.
+- **Paid once:** the reasoning is paid once for a claim, not once for a
+  trial, so the reader can be told not to think.
+
+Three public examples, each said as a claim, were read one call at a time:
+in one turn by Muse at `low`, thinking, and through the branch twice, with
+Muse at `low` making the step anew each run and Claude Sonnet 5.5 at `none`
+reading. An arrow leads from one turn to the branch, whose figures, in
+bold, are the mean of its two runs:
+
+| Example, as a claim | Readings | Verdict | Input tokens a reading | Output tokens | Time |
+| --- | --- | --- | --- | --- | --- |
+| [19](examples/index.md), "Gadfly calls the router over the same Responses API that Codex uses" | 35 | carried → **carried** | 451 → **1,044** | 23,087 → **2,785, 88% fewer** | 150 s → **78 s, 48% less** |
+| [22](examples/dolls.md#22-kiran-with-the-paper), "Kiran is a boy" | 24 | carried → **carried** | 353 → **880** | 13,915 → **2,772, 80% fewer** | 101 s → **79 s, 22% less** |
+| [22c](examples/dolls.md#22c-mirza-holding-a-paper-that-is-not-mirzas), "the paper that the doll holds is about someone other than the doll" | 27 | cooled → **cooled** | 275 → **746** | 15,845 → **2,712, 83% fewer** | 102 s → **73 s, 28% less** |
+
+The branch reached the one-turn verdict on all three, in both of its runs,
+and the maker wrote nearly the same step each time: on 22 both runs gave the
+same key terms, the same false case and the same belief to keep out, that the
+name sounds like a boy's. Output tokens fell by four fifths or more, and time
+by a fifth to a half, since a call's time is not only what it writes. These
+are one or two runs a frame, an indication and not a rate, and the two
+models differ in price, so tokens compare work, not money.
+
+Reach for it where someone will act on a decision without rereading what it
+rests on. Say the input as a claim someone holds, never as an open question:
+"What am I?" gives the maker nothing to take apart, and "Kiran is a boy"
+does. Carried then means that the answer rests on what was declared, for
+this reader and this page; it does not mean the claim is true.
+
+Its line names each side, as a crossing's does. Here the maker thinks at
+`low` and writes the step, and the reader, Claude Sonnet 5.5 at `none`, does
+not think at all:
+
+```json
+"battery": {
+  "kind": "branch",
+  "maker": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": ["openrouter/meta/muse-spark-1.3-contributor"],
+    "instruction": "You are given a claim about an incident. It will be checked against lines of evidence that you are not shown. Take the claim apart, as a numbered list of at most eight short lines: first, what each key term of the claim must mean in such lines; second, what else the lines must show for the claim to hold; third, what the lines would show if the claim were false; fourth, any belief from experience that would make the claim seem true with no evidence at all, named so that the reader keeps it out. Use only the claim. Write no line of dashes."
+  },
+  "reader": {
+    "kind": "unified",
+    "model": "anthropic/claude-sonnet-5-5",
+    "reasoning": "none",
+    "fallback": "none"
+  }
+}
+```
+
+It runs as a crossing does, with `--battery midwife.batteries.branch:Branch`.
+The maker sees the claim alone, never the page and never which trial it
+serves, so nothing a trial took out of the evidence can come back through
+the step; the reader sees the step, the page and the claim, with a `---`
+line between each.
+
+- **One step for each claim:** the first call that carries a claim makes its
+  step, and every later one reads it, giving the reader the whole of
+  `--output-tokens` and counting nothing for the making. A making that fails
+  is made again by the next call, and a step that holds a `---` line of its
+  own is an opening.
+- **Repeated runs:** one battery object keeps a claim's step for as long as
+  it lives, so within one `gadfly firm` the reader's variation is measured
+  over one step, never the maker's. A new command, or a run resumed with a
+  new object, makes the step again from the same claim.
+- **A renamed claim:** presentation and input inversion rename the claim, so
+  the maker writes a step for it too, and a run's records name two SHA-256
+  values. Reading the first there would bring back the words the trial
+  renamed.
+
+When to use which:
+
+- **One turn:** a reader that does not reason on its own, where the branch
+  only costs more; a question nobody holds as a claim; and once on any
+  frame, as the reference.
+- **Through the branch:** a claim someone holds, a standard wanted fixed
+  before the page and on record, and many readings of each claim (a quorum,
+  the runs of `gadfly firm`).
+
+Why both:
+
+- **One turn is the reference:** it is the simpler path, and Gadfly's count
+  of calls is the same for both.
+- **The branch holds the claim to its step:** each claim the maker reads
+  costs one more request.
+- **They are not quite the same measurement:** in one turn the reader can
+  set its standard after it has seen the page, and through the branch it
+  cannot. Run both once on a frame of your own before relying on the branch.
+
+#### How to ask the maker
+
+The maker's instruction is the instrument itself, and a fault in it reaches
+every trial at once:
+
+- **Ask for the four parts, from the claim alone:** for the kind of lines
+  there are, as the frame's locus and grain name it, in at most a few short
+  lines.
+- **Leave the reader room:** every call reads the step, and a record keeps
+  2,000 characters of it and the answer. A small reader with a short output
+  limit cannot read through a long one.
+- **Try it on a known answer first:** run a new maker instruction on a frame
+  whose answer is known, beside its one-turn reading. The baseline must
+  still carry and the ablation must still move.
+
+The worst cases, each worth a check before a run:
+
+- **The step grows thick:** it adds rivals, softenings or readings the claim
+  never made. A sign is a line that goes back neither to a word of the claim
+  nor to what that word must mean in such lines.
+- **The claim is fitted to its page:** worded after the page was read, or
+  reworded until it passes.
+- **The step presses every claim down to what the page literally says:** it
+  then comes back carried and shows little.
+- **A page composed for the claim:** it cannot falsify it.
+
+The frame's instruction tells the reader what its three parts are; with the
+labels `supports`, `does-not-support` and `unclear`, it opens:
+
+> You are given three parts, parted by lines of dashes: first what the claim
+> needs, written before the evidence was seen; then the lines of evidence;
+> then the claim. Decide from the lines of evidence alone, held against the
+> first part; where the first part names a belief to keep out, do not use it.
+
+Asked what would show the claim false, a maker names lines that would be
+missing, and a reader holding the page against that list can then read a gap
+as a no. One sentence more in the frame's instruction keeps a gap undecided:
+
+> A thing the lines leave out makes the answer unclear, even where the first
+> part counts it as a sign that the claim is false. Answer does-not-support
+> only where a line shows that the claim is not so or contradicts it.
+
+A reader under that sentence still answers no where a line gives the no, as
+"whatever is not granted above is denied" does in an access policy. Where
+silence must answer, because the evidence is the whole of its subject, say
+so in a line of the evidence; without such a line, the reader answers
+unclear.
+
+#### A maker of your own
+
+A maker is any object with a `name`, `check(line)` and `make(line, text,
+max_output_tokens)`, which returns a `Made`: the text it wrote, or an
+opening that says why there is none, with what it spent in `usage` and what
+served it. Any battery reads.
+
+For a crossing, `Function` makes a maker of a plain function of the body's
+text, such as a template, a parser or a fixed rule:
+
+```python
+from midwife.batteries.crossing import Crossing, Function
+from midwife.batteries.egemma import EGemma
+
+
+def cause(body: str) -> str:
+    if "connection pool" in body:
+        return "The deploy shrank the connection pool."
+    return "The cause is not known yet."
+
+
+crossing = Crossing(Function("incident-cause", cause), EGemma())
+```
+
+Kept in a module of your own, `--battery yourmodule:crossing` runs it. The
+function's line is `{"kind": "incident-cause"}`, so the frame's hash names
+the function by that name alone: give a changed function a new name.
+
+A branch's maker writes the step every reading is held to, so it is a model
+that thinks, held to the method:
+
+- **From the claim alone:** `text` is the claim. Ask for the four parts and
+  nothing else, as the maker's instruction in the branch's example does.
+- **Thinking, for certain:** call a model whose thinking cannot be skipped,
+  at a level it declares.
+- **Within its share:** spend at most `max_output_tokens`, and report every
+  whole count in `usage`; a maker that reports nothing is charged all it was
+  given.
+- **Never a guess:** where it writes no step, return an opening; write no
+  `---` line; raise `StopRun` when its own harness fails; and say
+  `trains(line)` when its calls may reach a model that trains on them.
+
+```python
+from midwife.batteries.branch import Branch
+from midwife.batteries.crossing import Made
+from midwife.batteries.unified import Unified
+
+STEP = "Take the claim apart, as a numbered list ..."
+
+
+class ClaimMaker:
+    name = "claim-maker"
+
+    def check(self, line):
+        if set(line) != {"kind"}:
+            raise ValueError("claim-maker's line names its kind alone")
+
+    def make(self, line, text, max_output_tokens):
+        reply = your_model(STEP, text, max_output_tokens)
+        if not reply.text:
+            return Made(None, opening="no step", usage=reply.usage)
+        return Made(reply.text, usage=reply.usage, served=reply.model)
+
+
+branch = Branch(ClaimMaker(), Unified())
+```
+
+`your_model` stands for your own call to a model that thinks. `Branch()`
+with no arguments already makes the step through the router, with the
+maker's instruction in its line, so write your own only for a model the
+router does not serve.
 
 ---
 
