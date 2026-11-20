@@ -4,6 +4,7 @@ No model is called, and nothing leaves this machine."""
 
 import http.client
 import json
+import os
 import runpy
 import signal
 import socket
@@ -67,6 +68,9 @@ def at(raw, timeout):
     return situate(raw)
 
 
+@pytest.mark.skipif(
+    os.name == "nt", reason="Windows' shutdown wakes no read another thread waits on"
+)
 def test_a_deadline_wakes_the_call_past_a_connection_let_go_of_or_already_shut(
     raw, held, monkeypatch
 ):
@@ -82,7 +86,68 @@ def test_a_deadline_wakes_the_call_past_a_connection_let_go_of_or_already_shut(
     assert held.woken and took < 2, took  # the last socket was shut, not left to its own wait
 
 
-def test_a_head_that_comes_in_as_the_deadline_passes_is_closed_unread(raw, held, monkeypatch):
+class Deadline:
+    """The watchdog's timer, standing in for threading.Timer: its deadline
+    comes when the test says, on every platform, not on a clock."""
+
+    made = []
+
+    def __init__(self, timeout, at_deadline):
+        self.at_deadline, self.daemon = at_deadline, False
+        Deadline.made.append(self)
+
+    def start(self):
+        pass
+
+    def cancel(self):
+        pass
+
+
+class Sock:
+    """A connection's socket that says whether the deadline shut it."""
+
+    def __init__(self, refuses=False):
+        self.refuses, self.shut = refuses, False
+
+    def shutdown(self, how):
+        if self.refuses:
+            raise OSError("not connected")
+        self.shut = how == socket.SHUT_RDWR
+
+
+def deadline_within(then):
+    # an opener whose call meets its deadline while it is open: a connection
+    # urllib has let go of, one whose socket refuses to shut, one waiting
+    let_go, refusing, waiting = (http.client.HTTPConnection("127.0.0.1") for _ in range(3))
+    refusing.sock, waiting.sock = Sock(refuses=True), Sock()
+
+    class Director:
+        def __init__(self, watched):
+            self.watched = watched
+
+        def open(self, request, timeout):
+            self.watched.connections += [let_go, refusing, waiting]
+            Deadline.made[-1].at_deadline()
+            return then()
+
+    return Director, waiting.sock
+
+
+def test_at_the_deadline_each_waiting_connection_is_shut_and_the_call_is_a_timeout(
+    raw, monkeypatch
+):
+    def cut():
+        raise urllib.error.URLError(http.client.RemoteDisconnected("closed without response"))
+
+    monkeypatch.setattr(critic.threading, "Timer", Deadline)
+    director, waiting = deadline_within(cut)
+    monkeypatch.setattr(critic, "opener", director)
+    seen = LocalJSON().observe(at(raw, 0.2), "p", 32)
+    assert (seen.label, seen.opening) == (None, "the call passed its timeout")
+    assert waiting.shut  # past the one let go of and the one that refused
+
+
+def test_a_head_that_comes_in_as_the_deadline_passes_is_closed_unread(raw, monkeypatch):
     class Response:
         closed = read = False
 
@@ -94,10 +159,12 @@ def test_a_head_that_comes_in_as_the_deadline_passes_is_closed_unread(raw, held,
             return json.dumps({"answer": {"label": "grant"}}).encode()
 
     response = Response()
-    monkeypatch.setattr(critic, "opener", held.opener(lambda: response))
+    monkeypatch.setattr(critic.threading, "Timer", Deadline)
+    director, waiting = deadline_within(lambda: response)
+    monkeypatch.setattr(critic, "opener", director)
     seen = LocalJSON().observe(at(raw, 0.2), "p", 32)
     assert (seen.label, seen.opening, seen.raw) == (None, "the call passed its timeout", "")
-    assert held.woken and response.closed and not response.read
+    assert waiting.shut and response.closed and not response.read
 
 
 @pytest.fixture

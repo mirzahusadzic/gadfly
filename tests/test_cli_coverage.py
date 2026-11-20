@@ -474,3 +474,18 @@ def test_an_unwritable_runs_folder_is_refused_by_firm_everywhere(tmp_path, unwri
         "choose another --runs",
     ]
     assert list(runs.iterdir()) == []
+
+
+def test_a_frame_nested_past_what_python_reads_is_refused_as_such(tmp_path, monkeypatch, capsys):
+    # how deep JSON may nest before Python's reader gives up depends on the
+    # platform's stack, so here the reader gives up at once, on every platform
+    import midwife.cli as cli
+
+    def too_deep(text, *args, **kwargs):
+        raise RecursionError("maximum recursion depth exceeded")
+
+    path = tmp_path / "deep.json"
+    path.write_text("[[[]]]", encoding="utf-8")
+    monkeypatch.setattr(cli.json, "loads", too_deep)
+    assert main(["check-frame", str(path)]) == 4
+    assert capsys.readouterr().err.splitlines()[-1].endswith("nests too deep to read")
