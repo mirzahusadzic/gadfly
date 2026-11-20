@@ -14,9 +14,11 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 No verdict or frame changes. A record's `served` now also says how the call thought where the router reports it, after the route (`thinking off`, `thinking adaptive` or `thinking budget`), so a reader asked not to think can be seen not to have; records made before read as they did.
 
-The `branch` battery is new: a maker writes from each trial's input, once, what an answer would have to rest on, and a reader decides every trial against it, so the reader's line can ask for little thinking or for none ([a maker before the evidence](batteries.md#a-maker-before-the-evidence)). Three public examples said as claims, read in one turn and through it, are [kept with their records](https://github.com/mirzahusadzic/gadfly/tree/main/examples/branch). The `crossing` battery makes and reads as it did.
+The `branch` battery is new: someone holds a claim, a maker that thinks takes it apart from the claim alone before any page is read, and a reader holds every trial against that step, so the reader's line can ask for no thinking at all ([a maker before the evidence](batteries.md#a-maker-before-the-evidence)). Three public examples said as claims, read in one turn and through it, are [kept with their records](https://github.com/mirzahusadzic/gadfly/tree/main/examples/branch).
 
 `run --json`, `firm --json` and `report --json` each hold a new field, `steps`, with `midwife.pipeline.steps` and `Firm.steps` in Python: for a branch's records, each input's steps by SHA-256, the steps each trial read, and under `remade` the trials that read more than one, made anew between runs. It is empty for every other battery. A crossing's or branch's record now keeps as much of its text as fits, escapes counted, where it cut more before, and a branch's record cuts the reader's answer before the maker's step.
+
+A `crossing` battery now asks its reader's own `check_cap`, where it has one, before the first call, as `run` asks any battery's, so a reader of your own that refuses its share of the cap refuses the run before any call, where it was called before. Where no SIGPIPE ends it, as on Windows, a run whose reader goes away while calls are still out exits at once with 141, rather than wait for a call hung in its thread. `examples/read.py --made` reads a branch's records too, its step once for each input.
 
 ---
 
