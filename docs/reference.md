@@ -1957,6 +1957,63 @@ there is none.
 ```python
 observe(frame, prompt, max_output_tokens)
 ```
+
+#### EGemmaMaker
+
+A maker on this machine's eGemma, for a crossing or a branch: it writes
+from the text it is given under its line's instruction, held to one string
+field, and nothing leaves this machine.
+
+```python
+class EGemmaMaker
+```
+
+```json
+"maker": {"kind": "egemma", "reasoning": true,
+          "instruction": "Take the claim apart, ..."}
+```
+
+With `reasoning: true`, Gemma thinks before it writes: the call's cap is
+split, the text keeping STEP_TOKENS and the thought the rest, up to
+MAX_THOUGHT_TOKENS, and a cap with no room for a thought is an opening.
+Given an `EGemma`, it shares that battery's pace, so a branch's maker and
+reader stay within eGemma's budget together. It never trains.
+
+##### EGemmaMaker.trains
+
+Never: what it reads stays on this machine.
+
+```python
+trains(line)
+```
+
+##### EGemmaMaker.check
+
+Refuse, before any call, a maker line it must not serve: an unknown
+key, no instruction, a temperature outside 0 to 2, reasoning that is
+not true or false, an empty pin, or no key; then read eGemma's budget.
+
+```python
+check(line)
+```
+
+##### EGemmaMaker.check_cap
+
+Refuse, before any call, a share of the cap with no room for a
+thought beside the text, where the line asks Gemma to think.
+
+```python
+check_cap(line, cap)
+```
+
+##### EGemmaMaker.make
+
+One /judge call: the text Gemma wrote, or an opening that says why
+there is none.
+
+```python
+make(line, text, max_output_tokens)
+```
 <!-- end api -->
 
 <!-- api midwife.batteries.local_json -->
@@ -2434,7 +2491,8 @@ check(frame)
 Refuse, before any call, a cap that leaves a side's thinking budget
 no room: the maker writes within half of each call's cap, and the
 reader reads within what the maker leaves, at least the other half. A
-reader with a `check_cap` of its own is asked for that half.
+maker with a `check_cap` of its own is asked for its share, and a
+reader with one for the other half.
 
 ```python
 check_cap(frame, cap)
@@ -2477,10 +2535,12 @@ for little thinking, or for none.
 
 The frame's instruction and labels are the reader's, and its instruction
 says how to read the three parts it is given; the maker's instruction is
-its own, in its line. `Branch()` makes the artefact and reads it through
-the router; `Branch(maker, reader)` takes any maker and any battery, from
-Python. It is the crossing battery turned around: there the maker sees
-the body and never the input, here the input and never the body.
+its own, in its line. `Branch()` makes each side from its line's kind:
+`unified`, through the router, or `egemma`, on this machine's eGemma, whose
+maker and reader then share its pace and take calls one at a time;
+`Branch(maker, reader)` takes any maker and any battery, from Python. It
+is the crossing battery turned around: there the maker sees the body and
+never the input, here the input and never the body.
 
 What this battery promises, whatever the frame says:
 - the maker sees the input and nothing else, neither the body nor the
@@ -2518,6 +2578,10 @@ What this battery promises, whatever the frame says:
 class Branch
 ```
 
+Branch has these properties:
+
+- **`concurrent`:** `bool`. Calls at once only when both sides take them; a branch that chose its own sides takes them always, and makes them one at a time where its sides do not.
+
 ##### Branch.trains
 
 Whether either side's calls may reach a reader that trains on them;
@@ -2543,8 +2607,9 @@ check(frame)
 Refuse, before any call, a cap that leaves a side's thinking budget
 no room in the call that makes an artefact: the maker writes within
 half of that call's cap, and the reader reads within what the maker
-leaves, at least the other half. A reader with a `check_cap` of its
-own is asked for that half and for a later call's whole cap.
+leaves, at least the other half. A maker with a `check_cap` of its own
+is asked for its share; a reader with one, for that half and for a
+later call's whole cap.
 
 ```python
 check_cap(frame, cap)

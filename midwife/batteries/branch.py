@@ -16,10 +16,12 @@ for little thinking, or for none.
 
 The frame's instruction and labels are the reader's, and its instruction
 says how to read the three parts it is given; the maker's instruction is
-its own, in its line. `Branch()` makes the artefact and reads it through
-the router; `Branch(maker, reader)` takes any maker and any battery, from
-Python. It is the crossing battery turned around: there the maker sees
-the body and never the input, here the input and never the body.
+its own, in its line. `Branch()` makes each side from its line's kind:
+`unified`, through the router, or `egemma`, on this machine's eGemma, whose
+maker and reader then share its pace and take calls one at a time;
+`Branch(maker, reader)` takes any maker and any battery, from Python. It
+is the crossing battery turned around: there the maker sees the body and
+never the input, here the input and never the body.
 
 What this battery promises, whatever the frame says:
 - the maker sees the input and nothing else, neither the body nor the
@@ -60,6 +62,7 @@ from ..interventions import plan, prompt
 from ..types import Battery, Observation
 from ..withhold import trains
 from .crossing import SEPARATOR, Maker, UnifiedMaker, _Attempt, _attempt, _raw, _read, _usage
+from .egemma import EGemma, EGemmaMaker
 from .unified import Unified, over_cap
 
 LINE_KEYS = {"kind", "maker", "reader"}
@@ -77,16 +80,51 @@ class Branch:
     name = "branch"
 
     def __init__(self, maker: Maker | None = None, reader: Battery | None = None):
-        self.maker = maker if maker is not None else UnifiedMaker()
-        self.reader = reader if reader is not None else Unified()
-        # calls at once only when both sides take them
-        self.concurrent = all(
-            getattr(side, "concurrent", False) is True for side in (self.maker, self.reader)
-        )
+        # Branch(): each side is made from its line's kind, at the first frame
+        self._chosen = maker is None and reader is None
+        self.maker: Maker | None = maker if maker is not None or self._chosen else UnifiedMaker()
+        self.reader: Battery | None = reader if reader is not None or self._chosen else Unified()
+        self._one: threading.Lock | None = None  # held by each call where the sides take one
         self._readings: dict[str, Frame] = {}
         self._made: dict[tuple[str, str], _Attempt] = {}
         self._making: dict[tuple[str, str], threading.Lock] = {}
         self._guard = threading.Lock()
+
+    @property
+    def concurrent(self) -> bool:
+        """Calls at once only when both sides take them; a branch that chose
+        its own sides takes them always, and makes them one at a time where
+        its sides do not."""
+        if self._chosen:
+            return True
+        return all(getattr(side, "concurrent", False) is True for side in (self.maker, self.reader))
+
+    def _sides(self, frame: Frame) -> None:
+        # Branch(): the maker and the reader its line names, made once; an
+        # eGemma pair shares one pace, and a pair that takes calls one at a
+        # time is given a lock
+        if self.maker is not None:
+            return
+        line = frame.battery
+        kinds = {}
+        for side in ("maker", "reader"):
+            named = line.get(side)
+            kind = named.get("kind") if isinstance(named, dict) else None
+            if kind not in ("unified", "egemma"):
+                raise BatteryError(
+                    f"battery.{side} names kind {kind!r}, which Branch() does not make",
+                    "Branch() makes each side of kind unified or egemma; "
+                    "for another, make one with Branch(maker, reader)",
+                )
+            kinds[side] = kind
+        reader = Unified() if kinds["reader"] == "unified" else EGemma()
+        if kinds["maker"] == "unified":
+            maker: Maker = UnifiedMaker()
+        else:
+            maker = EGemmaMaker(reader if isinstance(reader, EGemma) else EGemma())
+        self.maker, self.reader = maker, reader
+        if not all(getattr(side, "concurrent", False) is True for side in (maker, reader)):
+            self._one = threading.Lock()
 
     def _reading(self, frame: Frame) -> Frame:
         # the frame as the reader reads it: this frame, with the reader's line
@@ -100,6 +138,10 @@ class Branch:
     def trains(self, frame: Frame) -> bool:
         """Whether either side's calls may reach a reader that trains on them;
         a maker or a reader that does not say is read as one that may."""
+        try:
+            self._sides(frame)
+        except GadflyError:
+            return True
         says = getattr(self.maker, "trains", None)
         line = frame.battery.get("maker") if isinstance(frame.battery, dict) else None
         maker = (
@@ -124,12 +166,15 @@ class Branch:
             raise BatteryError(
                 f"the branch battery reads no {quoted(sorted(unknown))} under battery"
             )
-        for side, made in (("maker", self.maker), ("reader", self.reader)):
+        for side in ("maker", "reader"):
             named = line.get(side)
             if not isinstance(named, dict) or not isinstance(named.get("kind"), str):
                 raise BatteryError(
                     f"battery.{side} is a line of its own with a kind", "as battery is"
                 )
+        self._sides(frame)
+        for side, made in (("maker", self.maker), ("reader", self.reader)):
+            named = line[side]
             if named["kind"] != made.name:
                 raise BatteryError(
                     f"battery.{side} names kind {named['kind']!r}, not {made.name!r}",
@@ -165,8 +210,10 @@ class Branch:
         """Refuse, before any call, a cap that leaves a side's thinking budget
         no room in the call that makes an artefact: the maker writes within
         half of that call's cap, and the reader reads within what the maker
-        leaves, at least the other half. A reader with a `check_cap` of its
-        own is asked for that half and for a later call's whole cap."""
+        leaves, at least the other half. A maker with a `check_cap` of its own
+        is asked for its share; a reader with one, for that half and for a
+        later call's whole cap."""
+        self._sides(frame)
         share = max(1, cap // 2)
         for side, room in (("maker", share), ("reader", cap - share)):
             line = frame.battery.get(side)
@@ -177,6 +224,13 @@ class Branch:
                     f"the branch's {side} gets {room!r} of the {cap!r} tokens of a call that "
                     "makes an artefact; raise --output-tokens, or lower the budget",
                 )
+        made = getattr(self.maker, "check_cap", None)  # the maker's own, where it has one
+        if callable(made):
+            try:
+                made(frame.battery["maker"], share)
+            except ValueError as error:
+                error.add_note("it is the branch's maker line, battery.maker, that is refused")
+                raise
         fits = getattr(self.reader, "check_cap", None)  # the reader's own, where it has one
         if callable(fits):
             reading = self._reading(frame)
@@ -222,6 +276,12 @@ class Branch:
         input, made now or by an earlier call, then the reader's label from
         it, the body and the input; or an opening that says which side gave
         none, and why."""
+        if self._one is not None:  # sides that take one call at a time
+            with self._one:
+                return self._observe(frame, prompt, max_output_tokens)
+        return self._observe(frame, prompt, max_output_tokens)
+
+    def _observe(self, frame: Frame, prompt: str, max_output_tokens: int) -> Observation:
         reading = self._reading(frame)
         body, _, question = prompt.rpartition(SEPARATOR)
         tried = self._stem(frame, question, max_output_tokens)

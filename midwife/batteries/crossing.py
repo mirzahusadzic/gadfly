@@ -434,7 +434,8 @@ class Crossing:
         """Refuse, before any call, a cap that leaves a side's thinking budget
         no room: the maker writes within half of each call's cap, and the
         reader reads within what the maker leaves, at least the other half. A
-        reader with a `check_cap` of its own is asked for that half."""
+        maker with a `check_cap` of its own is asked for its share, and a
+        reader with one for the other half."""
         share = max(1, cap // 2)
         for side, room in (("maker", share), ("reader", cap - share)):
             line = frame.battery.get(side)
@@ -445,6 +446,13 @@ class Crossing:
                     f"the crossing's {side} gets {room!r} of each call's {cap!r} tokens; "
                     "raise --output-tokens, or lower the budget",
                 )
+        made = getattr(self.maker, "check_cap", None)  # the maker's own, where it has one
+        if callable(made):
+            try:
+                made(frame.battery["maker"], share)
+            except ValueError as error:
+                error.add_note("it is the crossing's maker line, battery.maker, that is refused")
+                raise
         fits = getattr(self.reader, "check_cap", None)  # the reader's own, where it has one
         if callable(fits):
             try:

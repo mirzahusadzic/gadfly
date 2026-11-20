@@ -84,7 +84,7 @@ does.
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 | `tendora` | Tendora's engine server, from its demo package, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
 | `crossing` | a maker, then a reader: the maker writes an artefact from the trial's body, and the reader decides from it | each side's own guarantees, through the router the unified battery's; the maker never sees the input; the cap is shared between the two; records the artefact's SHA-256 and what made and read it |
-| `branch` | a maker, then a reader: the maker writes from a trial's input, once, what an answer would have to rest on, and the reader decides every trial against it | each side's own guarantees, through the router the unified battery's; the maker never sees the body; an input's artefact is made once and read by every call that carries the input; records the artefact's SHA-256 and what made and read it |
+| `branch` | a maker, then a reader: the maker writes from a trial's input, once, what an answer would have to rest on, and the reader decides every trial against it; each side through the router or on this machine's eGemma | each side's own guarantees, through the router the unified battery's, on eGemma the eGemma battery's; the maker never sees the body; an input's artefact is made once and read by every call that carries the input; records the artefact's SHA-256 and what made and read it |
 | your own | an evaluation engine, deterministic rule, or local system | yours; the class's `name` is the frame's `battery.kind`; a battery never sees the trial id |
 
 #### Addresses and keys
@@ -309,9 +309,10 @@ decides from what the maker wrote. The frame's instruction and labels are
 the reader's, the maker's instruction is in its own line, and the frame's
 hash names both.
 
-With no arguments, `Crossing` and `Branch` make and read through the unified
-model router, and each side's line is held to every check of the `unified`
-battery. Give each call room for both answers:
+With no arguments, `Crossing` makes and reads through the unified model
+router, and `Branch` makes each side from its line's kind: `unified`, held to
+every check of the `unified` battery, or `egemma`, on this machine's eGemma.
+Give each call room for both answers:
 
 ```text
 gadfly run incident.json \
@@ -473,6 +474,27 @@ not think at all:
 ```
 
 It runs as a crossing does, with `--battery midwife.batteries.branch:Branch`.
+On this machine alone, both sides are eGemma, the maker thinking and the
+reader not, and nothing leaves this machine:
+
+```json
+"battery": {
+  "kind": "branch",
+  "maker": {
+    "kind": "egemma",
+    "reasoning": true,
+    "instruction": "You are given a claim about an incident. ..."
+  },
+  "reader": {"kind": "egemma", "reasoning": false}
+}
+```
+
+The two sides share eGemma's pace, so together they stay within the budget
+eGemma publishes, and they take calls one at a time, as eGemma does, even
+under `--parallel`. With `reasoning: true` the maker's text keeps 512 tokens
+of its share and Gemma thinks in the rest, up to 4,096; it may think as long
+as it is let, so the maker's share sets how long each making takes.
+
 The maker sees the claim alone, never the page and never which trial it
 serves, so nothing a trial took out of the evidence can come back through
 the step; the reader sees the step, the page and the claim, with a `---`
@@ -628,9 +650,10 @@ branch = Branch(ClaimMaker(), Unified())
 ```
 
 `your_model` stands for your own call to a model that thinks. `Branch()`
-with no arguments already makes the step through the router, with the
-maker's instruction in its line, so write your own only for a model the
-router does not serve.
+with no arguments already makes the step through the router or on this
+machine's eGemma, with the maker's instruction in its line, and
+`EGemmaMaker` is the eGemma maker for a crossing of your own, so write your
+own only for a model neither serves.
 
 ---
 
