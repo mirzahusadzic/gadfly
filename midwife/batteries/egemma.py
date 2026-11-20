@@ -69,6 +69,8 @@ BATTERY_KEYS = {"kind", "temperature", "output", "model", "revision", "reasoning
 # about ten tokens. The thought gets the rest, up to eGemma's own cap.
 ANSWER_TOKENS = 64
 MAX_THOUGHT_TOKENS = 4096
+# The most an answer may be asked for: eGemma refuses more (its JUDGE_MAX_TOKENS).
+ANSWER_LIMIT = 1024
 # A maker's text, a step of a few short lines, keeps this much of a call's
 # cap; with reasoning the thought gets the rest, up to MAX_THOUGHT_TOKENS.
 STEP_TOKENS = 512
@@ -130,14 +132,15 @@ def _wait(error: urllib.error.HTTPError, body: Callable[[], bytes]) -> float:
 
 def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
     """The /judge request: the instruction, the text, the schema, the answer's
-    cap, and the frame's temperature if it names one. With reasoning, the call's
-    cap is split: the answer keeps ANSWER_TOKENS and the thought the rest."""
+    cap, at most ANSWER_LIMIT, which eGemma refuses to exceed, and the frame's
+    temperature if it names one. With reasoning, the call's cap is split: the
+    answer keeps ANSWER_TOKENS and the thought the rest."""
     schema, _ = output_schema(frame)
     body = {
         "instructions": frame.instruction,
         "input": text,
         "schema": schema,
-        "max_tokens": max_output_tokens,
+        "max_tokens": min(max_output_tokens, ANSWER_LIMIT),
     }
     if "temperature" in frame.battery:
         body["temperature"] = frame.battery["temperature"]

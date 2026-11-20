@@ -1898,8 +1898,9 @@ What this battery promises, whatever the frame says:
 #### payload
 
 The /judge request: the instruction, the text, the schema, the answer's
-cap, and the frame's temperature if it names one. With reasoning, the call's
-cap is split: the answer keeps ANSWER_TOKENS and the thought the rest.
+cap, at most ANSWER_LIMIT, which eGemma refuses to exceed, and the frame's
+temperature if it names one. With reasoning, the call's cap is split: the
+answer keeps ANSWER_TOKENS and the thought the rest.
 
 ```python
 payload(frame, text, max_output_tokens)

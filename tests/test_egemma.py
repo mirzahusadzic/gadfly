@@ -66,7 +66,7 @@ def test_without_reasoning_no_thought_is_asked_for(frame):
     for battery in ({"kind": "egemma"}, {"kind": "egemma", "reasoning": False}):
         body = payload(situate({**frame.raw, "battery": battery}), "p", 4160)
         assert "reasoning" not in body and "max_reasoning_tokens" not in body
-        assert body["max_tokens"] == 4160
+        assert body["max_tokens"] == egemma.ANSWER_LIMIT  # 4,160 eGemma would refuse
 
 
 def test_with_reasoning_the_calls_cap_is_split_between_thought_and_answer(frame):
@@ -392,3 +392,9 @@ def test_a_wait_given_as_a_date_falls_back_to_the_seconds_the_detail_names(frame
     fake = server([(429, dated, busy), reply("decline")])
     observation = EGemma(fake.base + "/judge", sleep=waits.append).observe(frame, "p", 32)
     assert observation.label == "decline" and waits == [7.0] and len(fake.requests) == 2
+
+
+def test_an_answer_is_never_asked_for_more_than_egemma_takes(frame):
+    # eGemma refuses an answer's max_tokens past its own 1,024 with a 422
+    assert payload(frame, "p", 4000)["max_tokens"] == egemma.ANSWER_LIMIT == 1024
+    assert payload(frame, "p", 300)["max_tokens"] == 300

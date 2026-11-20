@@ -183,7 +183,8 @@ answer is held to the schema:
 `--output-tokens` stays the whole call's cap: the answer keeps 64 of it and
 the thought gets the rest, up to 4,096, so `--output-tokens 4160` gives a
 whole thought. A cap of 64 or less leaves no room for one, and each call
-opens before any request.
+opens before any request. Without a thought, an answer is asked for at most 1,024
+tokens, the most eGemma gives one.
 
 Each record's `usage` counts the thought's tokens as `reasoning_tokens`. It
 needs an eGemma newer than its v0.5.0, whose `/judge` takes `reasoning`; an
