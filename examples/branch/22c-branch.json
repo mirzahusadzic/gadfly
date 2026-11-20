@@ -1,0 +1,172 @@
+{
+  "allowed": {
+    "ablation": [
+      "unclear"
+    ],
+    "bypass": [
+      "unclear"
+    ]
+  },
+  "anchors": [
+    "notmine"
+  ],
+  "baseline": "the doll as unpacked; nothing changed",
+  "battery": {
+    "kind": "branch",
+    "maker": {
+      "kind": "unified",
+      "model": "openrouter/meta/muse-spark-1.3-contributor",
+      "reasoning": "low",
+      "trainsOnInputs": [
+        "openrouter/meta/muse-spark-1.3-contributor"
+      ],
+      "instruction": "You are given a claim about one doll of a set of nesting dolls. It will be checked against lines the doll says of itself that you are not shown. Take the claim apart, as a numbered list of at most eight short lines: first, what each key term of the claim must mean in such lines; second, what else the lines must show for the claim to hold; third, what the lines would show if the claim were false; fourth, any belief from experience that would make the claim seem true with no line at all, named so that the reader keeps it out. Use only the claim. Write no line of dashes."
+    },
+    "reader": {
+      "kind": "unified",
+      "model": "anthropic/claude-sonnet-5-5",
+      "reasoning": "none",
+      "fallback": "none"
+    }
+  },
+  "body": {
+    "spans": [
+      {
+        "id": "shape",
+        "kind": "shape",
+        "text": "My shape is that of a famous doll."
+      },
+      {
+        "id": "name",
+        "kind": "name",
+        "text": "My name is Mirza."
+      },
+      {
+        "id": "inside",
+        "kind": "inside",
+        "source": {
+          "sha256": "08e221a75e35a7d8491cea018b6ee6f26549de26c448a6231f53a8aadcf9bb0b"
+        },
+        "text": "Mirza sits inside Robin."
+      },
+      {
+        "id": "body",
+        "kind": "paint",
+        "text": "Below my headscarf I am painted teal."
+      },
+      {
+        "id": "scarf",
+        "kind": "paint",
+        "text": "My headscarf is purple and covers my head and shoulders."
+      },
+      {
+        "id": "face",
+        "kind": "paint",
+        "text": "My face is painted cream."
+      },
+      {
+        "id": "hair",
+        "kind": "paint",
+        "text": "My hair is yellow, parted in the middle."
+      },
+      {
+        "id": "eyes",
+        "kind": "paint",
+        "text": "My eyes are large and blue."
+      },
+      {
+        "id": "cheeks",
+        "kind": "paint",
+        "text": "My cheeks are painted pink."
+      },
+      {
+        "id": "lips",
+        "kind": "paint",
+        "text": "My lips are a small red bow."
+      },
+      {
+        "id": "flower",
+        "kind": "paint",
+        "text": "A sunflower with a brown heart is painted on my front."
+      },
+      {
+        "id": "trim",
+        "kind": "paint",
+        "text": "My headscarf ends in a row of lilac scallops."
+      },
+      {
+        "id": "flowers",
+        "kind": "paint",
+        "text": "Smaller sunflowers are painted on my sides."
+      },
+      {
+        "id": "slip",
+        "kind": "holds",
+        "text": "I hold a piece of paper."
+      },
+      {
+        "id": "says",
+        "kind": "kiran-paper",
+        "text": "The paper says: \"My name is Kiran, and I am a boy.\""
+      },
+      {
+        "id": "notmine",
+        "kind": "owner",
+        "text": "This paper is not mine."
+      }
+    ]
+  },
+  "crossing": "the doll's entry in the catalogue",
+  "grain": "one line a doll says",
+  "inputs": [
+    {
+      "id": "other",
+      "text": "Claim: the paper that the doll holds is about someone other than the doll."
+    }
+  ],
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "cumulative": [
+      "inside",
+      "name"
+    ],
+    "sham": {
+      "draws": 2,
+      "kind": {
+        "notmine": "paint"
+      }
+    },
+    "presentation": {
+      "paper": "note"
+    },
+    "bypass": [
+      "says"
+    ],
+    "control": [
+      "slip",
+      "says",
+      "notmine"
+    ]
+  },
+  "locus": "what Mirza says of itself",
+  "materialized": true,
+  "name": "mirza-claim-sonnet-branch-muse-maker",
+  "observe": {
+    "labels": [
+      "supports",
+      "does-not-support",
+      "unclear"
+    ],
+    "instruction": "You are given three parts, parted by lines of dashes: first what the claim needs, written before the doll's lines were seen; then the doll's lines; then the claim. Decide from the doll's lines alone, held against the first part; where the first part names a belief to keep out, do not use it. A painted nesting doll describes itself. Use only the lines given. Answer supports if the lines show what the claim says and show nothing against it, does-not-support if they show that it is not so or show something that contradicts it, unclear if they do not show either."
+  },
+  "promise": "the lines support the claim with the disowning line and without it, since the doll's own name is not the name the paper gives; with the disowning and both lines that name the doll cut, it is no longer supports; with the paper's words cut and the disowning left, it is unclear; and with every line of the paper cut, it is no longer supports",
+  "purpose": "catalogue each doll as a boy or a girl",
+  "relation": "the claim is supported by the doll disowning the paper",
+  "role": "a collector cataloguing a set of nesting dolls",
+  "standing": {
+    "agree": 2,
+    "quorum": 3
+  },
+  "trajectory": "the claim, the doll as unpacked, what it says of itself and of the paper, the answer"
+}

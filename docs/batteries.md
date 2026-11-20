@@ -425,12 +425,13 @@ Three public examples, each said as a claim, were read one call at a time:
 in one turn by Muse at `low`, thinking, and through the branch twice, with
 Muse at `low` making the step anew each run and Claude Sonnet 5.5 at `none`
 reading. An arrow leads from one turn to the branch, whose figures, in
-bold, are the mean of its two runs:
+bold, are the mean of its two runs; the frames, records and predictions are
+[kept with the examples](https://github.com/mirzahusadzic/gadfly/tree/main/examples/branch):
 
 | Example, as a claim | Readings | Verdict | Input tokens a reading | Output tokens | Time |
 | --- | --- | --- | --- | --- | --- |
-| [19](examples/index.md), "Gadfly calls the router over the same Responses API that Codex uses" | 35 | carried → **carried** | 451 → **1,044** | 23,087 → **2,785, 88% fewer** | 150 s → **78 s, 48% less** |
-| [22](examples/dolls.md#22-kiran-with-the-paper), "Kiran is a boy" | 24 | carried → **carried** | 353 → **880** | 13,915 → **2,772, 80% fewer** | 101 s → **79 s, 22% less** |
+| [19](examples/index.md), "Gadfly, a separate library, calls the router over the same Responses API that Codex uses, so Codex is not the router's only client" | 35 | carried → **carried** | 451 → **1,044** | 23,087 → **2,785, 88% fewer** | 150 s → **78 s, 48% less** |
+| [22](examples/dolls.md#22-kiran-with-the-paper), "Kiran is a boy" | 24 | carried → **carried** | 353 → **879** | 13,915 → **2,772, 80% fewer** | 101 s → **79 s, 22% less** |
 | [22c](examples/dolls.md#22c-mirza-holding-a-paper-that-is-not-mirzas), "the paper that the doll holds is about someone other than the doll" | 27 | cooled → **cooled** | 275 → **746** | 15,845 → **2,712, 83% fewer** | 102 s → **73 s, 28% less** |
 
 The branch reached the one-turn verdict on all three, in both of its runs,

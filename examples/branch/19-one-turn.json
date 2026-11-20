@@ -1,0 +1,123 @@
+{
+  "name": "router-waist-claim-muse",
+  "relation": "the claim is supported by the line where a second program, Gadfly, posts to the router's Responses API, not by the programs' names",
+  "locus": "the evidence a reviewer has across two repositories: the router's README, docs and code, and the library that also calls it",
+  "role": "a reviewer of a repository's design",
+  "grain": "one fact about the repositories",
+  "purpose": "check whether the evidence shows a program other than Codex speaking the router's protocol, before the review calls the router more than Codex's adapter",
+  "trajectory": "repositories, evidence, the reviewer's finding, the review report",
+  "crossing": "the finding written in the review",
+  "promise": "the lines support the claim while Gadfly's line to the router is there; without it the answer is unclear, with it turned so that Gadfly's calls go past the router it is does-not-support, with the repository, Codex and Gadfly renamed it stays supports, and with that line, the summary and the provider line cut it is no longer supports; no bypass is declared, as Gadfly's own line holds both its address and its protocol, and the provider line cut alone leaves supports open from the page",
+  "baseline": "the router read beside the line from the library that calls it; nothing changed",
+  "body": {
+    "spans": [
+      {
+        "id": "summary",
+        "kind": "readme",
+        "text": "README: codex-unified-model-router is a loopback-only router that lets one Codex thread switch between OpenAI, Claude and DeepSeek models from Codex's own model picker."
+      },
+      {
+        "id": "provider",
+        "kind": "readme",
+        "text": "README: Codex talks to the router as one model provider, over the Responses API. The router picks the upstream from the model slug, adapts each request to that provider and streams the response back."
+      },
+      {
+        "id": "install",
+        "kind": "code",
+        "text": "install.mjs writes the router into Codex's config.toml as its model provider, with the router's model catalog and prompts."
+      },
+      {
+        "id": "pin",
+        "kind": "code",
+        "text": "install.mjs pins Codex's app-server daemon to the installed Codex CLI, so the daemon no longer updates itself to a release the router has not been tested with."
+      },
+      {
+        "id": "ultraspark",
+        "kind": "docs",
+        "text": "docs/setup.md: Ultra Spark is a catalog entry the installer adds, DeepSeek with prompts/ultra-spark.md. It hands tasks to up to 10 Muse Spark workers through Codex's spawn_agent, and the lead's and every worker's calls go through the router."
+      },
+      {
+        "id": "keys",
+        "kind": "code",
+        "text": "Every provider key stays in the router's own process on loopback; a client holds only a local token."
+      },
+      {
+        "id": "deps",
+        "kind": "readme",
+        "text": "README: Node.js 20 or later, and zero npm runtime dependencies."
+      },
+      {
+        "id": "tests",
+        "kind": "readme",
+        "text": "README: the tests need no API keys or network access, and CI runs them on Linux, macOS and Windows."
+      },
+      {
+        "id": "gadfly",
+        "kind": "library",
+        "text": "Gadfly, a separate Python library with no runtime dependencies, reads models through its unified battery, which posts to the router's http://127.0.0.1:18766/v1/responses with the router's local token."
+      },
+      {
+        "id": "records",
+        "kind": "library",
+        "text": "Gadfly keeps every call as one JSON line, from which any verdict is read again without a model."
+      }
+    ]
+  },
+  "anchors": [
+    "gadfly"
+  ],
+  "inputs": [
+    {
+      "id": "client",
+      "text": "Claim: Gadfly, a separate library, calls the router over the same Responses API that Codex uses, so Codex is not the router's only client."
+    }
+  ],
+  "observe": {
+    "labels": [
+      "supports",
+      "does-not-support",
+      "unclear"
+    ],
+    "instruction": "You review the design of software repositories. Use only the lines given. Answer supports if the lines show what the claim says and show nothing against it, does-not-support if they show that it is not so or show something that contradicts it, unclear if they do not show either."
+  },
+  "interventions": {
+    "repeat": true,
+    "ablation": true,
+    "sham": true,
+    "presentation": {
+      "codex-unified-model-router": "unified-model-router",
+      "Codex": "Orrin",
+      "Gadfly": "Tansy"
+    },
+    "inversion": {
+      "posts to the router's http://127.0.0.1:18766/v1/responses with the router's local token": "posts to each provider's own API directly, never through the router"
+    },
+    "control": [
+      "summary",
+      "provider",
+      "gadfly"
+    ]
+  },
+  "allowed": {
+    "ablation": [
+      "unclear"
+    ],
+    "inversion": [
+      "does-not-support"
+    ]
+  },
+  "standing": {
+    "quorum": 5,
+    "agree": 4
+  },
+  "materialized": true,
+  "carriage": "listed",
+  "battery": {
+    "kind": "unified",
+    "model": "openrouter/meta/muse-spark-1.3-contributor",
+    "reasoning": "low",
+    "trainsOnInputs": [
+      "openrouter/meta/muse-spark-1.3-contributor"
+    ]
+  }
+}
