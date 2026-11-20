@@ -42,8 +42,9 @@ What this battery promises, whatever the frame says:
   negative, so a report can never buy the other side a larger cap; a side
   that reports nothing, or no such count, is charged all it was given;
 - the record keeps the artefact's SHA-256 whole, with as much of its text
-  and of the reader's answer as fit the record, and names what made it and
-  what read it;
+  and of the reader's answer as fit the record, the answer giving way first,
+  since the artefact is the standard every reading was held to, and names
+  what made it and what read it;
 - each side keeps its own promises: through the router, the deny data
   policy and every other check of the unified battery hold for the maker's
   line as for the reader's.
@@ -207,7 +208,7 @@ class Branch:
                         label=None,
                         opening="the maker made text that holds the line that parts it from "
                         "the body",
-                        raw=_raw("", tried.text, tried.sha),
+                        raw=_raw("", tried.text, tried.sha, step_first=True),
                         usage=_usage(tried.usage, {}, tried.spent),
                         served=tried.served,
                     )
@@ -227,4 +228,6 @@ class Branch:
         if tried.ended is not None:
             return tried.ended
         asked = f"{tried.text}{SEPARATOR}{body}{SEPARATOR}{question}"
-        return _read(self.reader, reading, asked, tried, max_output_tokens - tried.spent)
+        return _read(
+            self.reader, reading, asked, tried, max_output_tokens - tried.spent, step_first=True
+        )

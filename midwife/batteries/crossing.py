@@ -218,12 +218,13 @@ def _named(served: object, name: str) -> str:
     return served if isinstance(served, str) and served else name
 
 
-def _raw(read: str, made: str, sha: str) -> str:
+def _raw(read: str, made: str, sha: str, step_first: bool = False) -> str:
     # the artefact's hash, its text and the reader's answer, as one JSON
     # object that fits the record's raw whole: the longer of the two texts is
     # cut to the longest beginning that fits as written, escapes counted, so
     # the hash is always kept, the record always parses and nothing that fits
-    # is cut
+    # is cut; with step_first, a branch's, the answer gives way before the
+    # step, which is the standard every reading was held to
     def written(read: str, made: str) -> str:
         kept = {"made": {"sha256": sha, "text": made}, "read": read}
         return json.dumps(kept, ensure_ascii=False)
@@ -242,10 +243,10 @@ def _raw(read: str, made: str, sha: str) -> str:
         return text[:kept]
 
     while len(whole := written(read, made)) > RAW_LIMIT:
-        if len(made) >= len(read):
-            made = cut(made, lambda part, read=read: written(read, part))
-        else:
+        if bool(read) if step_first else len(made) < len(read):
             read = cut(read, lambda part, made=made: written(part, made))
+        else:
+            made = cut(made, lambda part, read=read: written(read, part))
     return whole
 
 
@@ -309,10 +310,18 @@ def _attempt(maker: Maker, line: dict, text: str, share: int, cap: int) -> _Atte
     return _Attempt(None, made.text, sha, made_usage, spent, served)
 
 
-def _read(reader: Battery, reading: Frame, asked: str, tried: _Attempt, left: int) -> Observation:
+def _read(
+    reader: Battery,
+    reading: Frame,
+    asked: str,
+    tried: _Attempt,
+    left: int,
+    step_first: bool = False,
+) -> Observation:
     # the reader decides from what it is asked within what the maker left of
     # the call's cap; its label, or an opening that names the reader, with
-    # the artefact kept in the record either way
+    # the artefact kept in the record either way, before the answer where
+    # step_first says so
     maker = tried.served
     try:
         seen = reader.observe(reading, asked, left)
@@ -322,14 +331,14 @@ def _read(reader: Battery, reading: Frame, asked: str, tried: _Attempt, left: in
         return Observation(
             label=None,
             opening=f"the reader failed ({type(error).__name__})",
-            raw=_raw("", tried.text, tried.sha),
+            raw=_raw("", tried.text, tried.sha, step_first),
             usage=_usage(tried.usage, {}, tried.spent + left),
             served=maker,
         )
     seen = _checked(reading, seen)  # as run holds any battery's answer
     read_usage, read, sound = _report(seen.usage, left)
     served = f"{maker}, read by {_named(seen.served, reader.name)}"
-    kept = _raw(seen.raw, tried.text, tried.sha)
+    kept = _raw(seen.raw, tried.text, tried.sha, step_first)
     if not sound:
         opening = "the reader's report of what it spent is not a count of tokens"
         usage = _usage(tried.usage, {}, tried.spent + left)

@@ -185,7 +185,7 @@ def test_a_record_keeps_the_artefacts_hash_whole_where_its_text_is_cut():
         kept = json.loads(record.raw)
         assert kept["made"]["sha256"] == hashlib.sha256(whole.encode()).hexdigest()
         assert whole.startswith(kept["made"]["text"]) and kept["made"]["text"] != whole
-        assert kept["read"] == "because " * 40  # the shorter text is kept whole
+        assert kept["read"] == ""  # the answer gives way before the step
 
 
 @pytest.mark.parametrize("whole", ["e\n" * 3000, 'say "so"\\\n' * 600, "plain words " * 400])
@@ -226,6 +226,36 @@ def test_the_examples_reader_shows_a_branchs_step_once_for_its_input(tmp_path, m
     shown = read.made(tmp_path / "rollback-from-needs.json", 1)
     assert shown.startswith("baseline, read as rollback")
     assert shown.count("To answer") == 1  # one input, renamed by no trial: one step
+
+
+@pytest.mark.parametrize("step, answer", [(1_500, 1_200), (3_000, 2_500)])
+def test_a_record_keeps_the_step_before_the_readers_answer(step, answer):
+    from midwife.pipeline import RAW_LIMIT
+
+    made = ("s" * 49 + "\n") * (step // 50)
+
+    class Long(Watching):
+        def make(self, line, text, max_output_tokens):
+            from midwife.batteries.crossing import Made
+
+            return Made(made, usage={"output_tokens": 40})
+
+    class Explaining(NeedsReader):
+        def observe(self, frame, prompt, max_output_tokens):
+            seen = super().observe(frame, prompt, max_output_tokens)
+            return Observation(label=seen.label, raw="r" * answer, usage=seen.usage)
+
+    _, _, result = branched(Long(), Explaining())
+    sha = hashlib.sha256(made.encode()).hexdigest()
+    for record in result.records:
+        kept = json.loads(record.raw)
+        assert len(record.raw) <= RAW_LIMIT and kept["made"]["sha256"] == sha
+        if len(json.dumps({"made": {"sha256": sha, "text": made}, "read": ""})) <= RAW_LIMIT:
+            assert kept["made"]["text"] == made  # the whole step, the answer cut
+            assert "r" * len(kept["read"]) == kept["read"] and len(kept["read"]) < answer
+        else:
+            assert kept["read"] == "" and made.startswith(kept["made"]["text"])
+            assert kept["made"]["text"]  # never the step emptied for an answer
 
 
 def test_calls_at_once_still_make_one_artefact():

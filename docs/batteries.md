@@ -331,8 +331,9 @@ Both batteries keep these promises:
   made says so too (`the reader gave no label (…)`).
 - **What a record keeps:** `served` reads `made by …, read by …`, and the raw
   answer keeps the artefact's SHA-256 whole, beside as much of the artefact
-  and the reader's answer as fit the record's 2,000 characters, the longer
-  cut first. A cut artefact no longer hashes to its SHA-256.
+  and the reader's answer as fit the record's 2,000 characters: a crossing
+  cuts the longer first, and a branch cuts the answer first, so its step
+  stays on record. A cut artefact no longer hashes to its SHA-256.
 
 Both examples below have the maker think and tell the reader not to:
 
