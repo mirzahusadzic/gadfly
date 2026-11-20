@@ -213,6 +213,21 @@ def test_a_record_keeps_the_longest_beginning_of_the_artefact_that_fits(whole):
         assert kept["made"]["text"] == whole[:longest]
 
 
+def test_the_examples_reader_shows_a_branchs_step_once_for_its_input(tmp_path, monkeypatch):
+    from examples import read
+
+    frame, _, result = branched()
+    (tmp_path / "rollback-from-needs.json").write_text(json.dumps(NEEDS), encoding="utf-8")
+    kept = tmp_path / "runs" / "rollback-from-needs"
+    kept.mkdir(parents=True)
+    lines = (json.dumps(record.as_dict()) for record in result.records)
+    (kept / "1.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    monkeypatch.setattr(read, "HERE", tmp_path)
+    shown = read.made(tmp_path / "rollback-from-needs.json", 1)
+    assert shown.startswith("baseline, read as rollback")
+    assert shown.count("To answer") == 1  # one input, renamed by no trial: one step
+
+
 def test_calls_at_once_still_make_one_artefact():
     class Slow(Watching):
         def make(self, line, text, max_output_tokens):

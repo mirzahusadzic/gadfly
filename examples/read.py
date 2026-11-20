@@ -170,16 +170,18 @@ def verdict(path: Path, n: int, only: str | None = None) -> str:
 
 
 def made(path: Path, n: int) -> str:
-    """What a crossing's maker wrote for each trial in run N, from the first
-    call of each, and what the reader answered from it."""
+    """What the maker wrote in run N, from the first call of each trial, and
+    what the reader answered from it: a crossing's maker writes from each
+    trial's body, and a branch's from the input alone, so a branch's text is
+    shown where it first appears, and again only where another was made."""
     frame = situate(json.loads(path.read_text(encoding="utf-8")))
-    if frame.battery["kind"] != "crossing":
+    if frame.battery["kind"] not in ("crossing", "branch"):
         raise SystemExit(f"{path.name} makes nothing for its reader to read")
     first = {}
     for record in load_records(str(runs_of(path)[n - 1])):
         if record["run"] == 0:
             first.setdefault((record["input"], record["trial"]), record)
-    lines = []
+    lines, shown = [], set()
     for x in frame.inputs:
         for trial in plan(frame):
             record = first.get((x["id"], trial.id))
@@ -187,9 +189,16 @@ def made(path: Path, n: int) -> str:
                 continue
             name = trial.id if len(frame.inputs) == 1 else f"{x['id']}/{trial.id}"
             lines.append(f"{name}, read as {record['observation'] or 'an opening'}")
-            text = json.loads(record["raw"])["made"]["text"]
+            kept = json.loads(record["raw"]).get("made", {})
+            if frame.battery["kind"] == "branch" and kept.get("sha256") in shown:
+                continue
+            shown.add(kept.get("sha256"))
             lines += textwrap.wrap(
-                text, 72, initial_indent="  ", subsequent_indent="  ", break_on_hyphens=False
+                kept.get("text", ""),
+                72,
+                initial_indent="  ",
+                subsequent_indent="  ",
+                break_on_hyphens=False,
             )
     return "\n".join(lines)
 
