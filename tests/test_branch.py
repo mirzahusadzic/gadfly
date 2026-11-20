@@ -187,6 +187,31 @@ def test_a_record_keeps_the_artefacts_hash_whole_where_its_text_is_cut():
         assert kept["read"] == "because " * 40  # the shorter text is kept whole
 
 
+@pytest.mark.parametrize("whole", ["e\n" * 3000, 'say "so"\\\n' * 600, "plain words " * 400])
+def test_a_record_keeps_the_longest_beginning_of_the_artefact_that_fits(whole):
+    from midwife.pipeline import RAW_LIMIT
+
+    class Long(Watching):
+        def make(self, line, text, max_output_tokens):
+            from midwife.batteries.crossing import Made
+
+            return Made(whole, usage={"output_tokens": 40})
+
+    _, _, result = branched(Long())
+    sha = hashlib.sha256(whole.encode()).hexdigest()
+    for record in result.records:
+        kept = json.loads(record.raw)
+        read = kept["read"]
+
+        def written(n, read=read):
+            made = {"made": {"sha256": sha, "text": whole[:n]}, "read": read}
+            return json.dumps(made, ensure_ascii=False)
+
+        longest = max(n for n in range(len(whole) + 1) if len(written(n)) <= RAW_LIMIT)
+        assert kept["made"]["sha256"] == sha and len(record.raw) <= RAW_LIMIT
+        assert kept["made"]["text"] == whole[:longest]
+
+
 def test_calls_at_once_still_make_one_artefact():
     class Slow(Watching):
         def make(self, line, text, max_output_tokens):

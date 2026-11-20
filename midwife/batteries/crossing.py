@@ -221,18 +221,31 @@ def _named(served: object, name: str) -> str:
 def _raw(read: str, made: str, sha: str) -> str:
     # the artefact's hash, its text and the reader's answer, as one JSON
     # object that fits the record's raw whole: the longer of the two texts is
-    # cut until it fits, so the hash is always kept and the record always
-    # parses
+    # cut to the longest beginning that fits as written, escapes counted, so
+    # the hash is always kept, the record always parses and nothing that fits
+    # is cut
     def written(read: str, made: str) -> str:
         kept = {"made": {"sha256": sha, "text": made}, "read": read}
         return json.dumps(kept, ensure_ascii=False)
 
+    def cut(text: str, record: Callable[[str], str]) -> str:
+        # the longest beginning of text whose record fits: fitting holds for
+        # kept and fails for over
+        kept, over = 0, len(text)
+        if len(record("")) <= RAW_LIMIT:
+            while over - kept > 1:
+                middle = (kept + over) // 2
+                if len(record(text[:middle])) <= RAW_LIMIT:
+                    kept = middle
+                else:
+                    over = middle
+        return text[:kept]
+
     while len(whole := written(read, made)) > RAW_LIMIT:
-        over = len(whole) - RAW_LIMIT
         if len(made) >= len(read):
-            made = made[: max(0, len(made) - over)]
+            made = cut(made, lambda part, read=read: written(read, part))
         else:
-            read = read[: max(0, len(read) - over)]
+            read = cut(read, lambda part, made=made: written(part, made))
     return whole
 
 
