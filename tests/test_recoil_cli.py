@@ -696,6 +696,7 @@ def test_firm_keeps_each_run_and_reads_them_back_as_runs_made(thrice, capsys):
         "made": 0,
         "usage": {},
         "unthought": {"calls": 0, "unthought": 0, "trials": {}},
+        "steps": {},
         "firm": asked.firm,
         "category": asked.category,
         "shares": asked.shares,

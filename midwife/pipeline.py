@@ -18,6 +18,7 @@ makes several calls at once for a battery that takes them.
 from __future__ import annotations
 
 import itertools
+import json
 import re
 import signal
 import threading
@@ -128,6 +129,38 @@ def unthought(records: Iterable[Record | dict[str, Any]]) -> dict[str, Any]:
             trial = record.get("trial") if isinstance(record, dict) else record.trial
             trials[str(trial)] = trials.get(str(trial), 0) + 1
     return {"calls": calls, "unthought": none, "trials": trials}
+
+
+def steps(records: Iterable[Record | dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """A branch's steps, by input, as `run --json`, `firm --json` and
+    `report --json` give them: every SHA-256 its maker's step had, in the
+    order first read (`steps`), the steps each trial read (`trials`), and the
+    trials that read more than one (`remade`). One battery object makes an
+    input's step once, so a trial that read two was read through a step made
+    anew, by another command or a resumed run: how alike the makings were
+    shows in the verdicts beside them. Records of another battery, and calls
+    that opened before a step was read, give nothing."""
+    found: dict[str, dict[str, Any]] = {}
+    for record in records:
+        as_dict = record if isinstance(record, dict) else record.as_dict()
+        if as_dict.get("battery") != "branch" or as_dict.get("observation") is None:
+            continue
+        try:
+            made = json.loads(as_dict.get("raw") or "").get("made", {})
+        except (ValueError, AttributeError):
+            continue
+        sha = made.get("sha256") if isinstance(made, dict) else None
+        if not isinstance(sha, str):
+            continue
+        entry = found.setdefault(str(as_dict["input"]), {"steps": [], "trials": {}})
+        if sha not in entry["steps"]:
+            entry["steps"].append(sha)
+        read = entry["trials"].setdefault(str(as_dict["trial"]), [])
+        if sha not in read:
+            read.append(sha)
+    for entry in found.values():
+        entry["remade"] = [trial for trial, read in entry["trials"].items() if len(read) > 1]
+    return found
 
 
 def _counts(record: Record | dict[str, Any]) -> dict[str, int]:

@@ -484,7 +484,8 @@ line between each.
 - **Repeated runs:** one battery object keeps a claim's step for as long as
   it lives, so within one `gadfly firm` the reader's variation is measured
   over one step, never the maker's. A new command, or a run resumed with a
-  new object, makes the step again from the same claim.
+  new object, makes the step again from the same claim, and `--json` gives
+  each claim's steps as `steps`, with the trials that read more than one.
 - **A renamed claim:** presentation and input inversion rename the claim, so
   the maker writes a step for it too, and a run's records name two SHA-256
   values. Reading the first there would bring back the words the trial

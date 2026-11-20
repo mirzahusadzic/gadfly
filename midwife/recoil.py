@@ -49,6 +49,7 @@ from .errors import GadflyError, RecordsError, StoppedWarning, UsageError, is_pl
 from .frame import SALIENCE, Frame, _read_once, digest, parse
 from .interventions import plan, prompt
 from .pipeline import RULING, _check_parallel, _run, calls_needed, summed_usage, unthought
+from .pipeline import steps as read_steps
 from .stats import stability
 from .types import Battery, Budget, Record
 from .verdict import (
@@ -726,7 +727,10 @@ class Firm:
     was left. `usage` sums each whole count the calls made
     now reported, such as `input_tokens` and `output_tokens`, by name; a
     count no call reported is absent, never a zero. `unthought` counts the
-    calls made now that reported no reasoning (`midwife.pipeline.unthought`)."""
+    calls made now that reported no reasoning (`midwife.pipeline.unthought`).
+    `steps` gives a branch's steps over every run read, kept ones included
+    (`midwife.pipeline.steps`): a trial that read more than one was read
+    through a step made anew between runs."""
 
     frame: Frame
     runs: tuple[tuple[dict[str, Any], ...], ...]
@@ -738,6 +742,7 @@ class Firm:
     usage: dict[str, int] = field(default_factory=dict)
     unthought: dict[str, Any] = field(default_factory=lambda: unthought([]))
     short: str | None = None
+    steps: dict[str, Any] = field(default_factory=dict)
 
     @property
     def category(self) -> str | None:
@@ -905,6 +910,7 @@ def until_firm(
                 made,
                 usage=summed_usage(made_now),
                 unthought=unthought(made_now),
+                steps=read_steps(record for run in runs for record in run),
             )
         before = read
     return Firm(
@@ -918,6 +924,7 @@ def until_firm(
         summed_usage(made_now),
         unthought(made_now),
         short,
+        read_steps(record for run in runs for record in run),
     )
 
 

@@ -307,7 +307,9 @@ def test_a_body_or_an_input_that_holds_the_parting_line_is_refused():
     with pytest.raises(BatteryError, match="input 'q1' holds the line that parts") as error:
         branch.check(parse(raw))
     assert error.value.__notes__[0].startswith("the maker reads what comes after the last")
-    rows = (pathlib.Path(__file__).parent.parent / "docs/troubleshooting.md").read_text()
+    rows = (pathlib.Path(__file__).parent.parent / "docs/troubleshooting.md").read_text(
+        encoding="utf-8"
+    )
     assert f"`{error.value.__notes__[0]}`" in rows  # the branch's own words, not the crossing's
     raw = copy.deepcopy(NEEDS)
     raw["body"]["spans"][2]["text"] = f"The error rate held.{PARTS}It did."
@@ -562,6 +564,74 @@ def test_the_command_line_runs_a_branch_made_in_a_module_of_your_own(tmp_path, c
     capsys.readouterr()
     assert main(["report", str(path), str(out)]) == 0
     assert "q1: carried" in capsys.readouterr().out
+
+
+def test_a_step_made_anew_between_runs_is_named_where_a_trial_read_it():
+    from midwife.batteries.branch import Branch
+    from midwife.batteries.crossing import Function
+    from midwife.pipeline import steps
+    from midwife.recoil import until_firm
+
+    class Unsteady(NeedsReader):
+        # answers apart from call to call, so a run of it is not firm
+        def observe(self, frame, prompt, max_output_tokens):
+            seen = super().observe(frame, prompt, max_output_tokens)
+            label = seen.label if len(self.prompts) % 2 else "keep"
+            return Observation(label=label, usage=seen.usage, served=seen.served)
+
+    frame, _, first = branched(reader=Unsteady())
+    once = steps(first.records)
+    assert list(once) == ["q1"] and len(once["q1"]["steps"]) == 1 and once["q1"]["remade"] == []
+    anew = Branch(Function("needs", lambda question: needs(question) + " Again."), NeedsReader())
+    asked = until_firm(frame, anew, Budget(calls=calls_needed(frame)), kept=[first.records], most=2)
+    read = asked.steps["q1"]
+    assert len(read["steps"]) == 2
+    assert read["remade"] == [trial.id for trial in plan(frame)]  # every trial read both
+
+
+def test_firm_says_where_a_trial_read_a_step_made_anew(tmp_path, capsys):
+    from midwife.batteries.branch import Branch
+    from midwife.batteries.crossing import Function
+    from midwife.cli import main
+
+    class Unsteady(NeedsReader):
+        def observe(self, frame, prompt, max_output_tokens):
+            seen = super().observe(frame, prompt, max_output_tokens)
+            label = "rollback" if len(self.prompts) % 2 else "keep"  # never firm
+            return Observation(label=label, usage=seen.usage, served=seen.served)
+
+    again = Branch(Function("needs", lambda question: needs(question) + " Again."), Unsteady())
+    frame, _, first = branched(again.maker, again.reader)
+    path, runs = tmp_path / "needs.json", tmp_path / "runs"
+    path.write_text(json.dumps(NEEDS), encoding="utf-8")
+    runs.mkdir()
+    lines = (json.dumps(record.as_dict()) for record in first.records)
+    (runs / "1.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    battery = ["--battery", "tests.fixtures.needs:branch", "--output-tokens", "100"]
+    assert main(["firm", str(path), *battery, "--runs", str(runs), "--calls", "auto",
+                 "--most", "2"]) in (0, 3)  # fmt: skip
+    said = capsys.readouterr().out
+    assert "steps: input 'q1' read 2 steps across the runs, made anew between them" in said
+
+
+def test_run_firm_and_report_give_a_branchs_steps_alike(tmp_path, capsys):
+    from midwife.cli import load_records, main
+    from midwife.pipeline import steps
+
+    path, out, runs = tmp_path / "needs.json", tmp_path / "needs.jsonl", tmp_path / "runs"
+    path.write_text(json.dumps(NEEDS), encoding="utf-8")
+    calls = str(calls_needed(parse(copy.deepcopy(NEEDS))))
+    battery = ["--battery", "tests.fixtures.needs:branch", "--output-tokens", "100"]
+    assert main(["run", str(path), *battery, "--calls", calls, "--out", str(out), "--json"]) == 0
+    ran = json.loads(capsys.readouterr().out)
+    assert main(["report", str(path), str(out), "--json"]) == 0
+    reported = json.loads(capsys.readouterr().out)
+    expected = steps(load_records(str(out)))
+    assert ran["steps"] == reported["steps"] == expected and expected["q1"]["remade"] == []
+    runs.mkdir()
+    assert main(["firm", str(path), *battery, "--runs", str(runs), "--calls", "auto",
+                 "--most", "2", "--json"]) in (0, 3)  # fmt: skip
+    assert list(json.loads(capsys.readouterr().out)["steps"]) == ["q1"]
 
 
 def test_the_crossing_reads_as_it_did_before_its_parts_were_shared():

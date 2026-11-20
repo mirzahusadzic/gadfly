@@ -61,6 +61,7 @@ from .pipeline import (
     plan,
     run,
     situate,
+    steps,
     summed_usage,
     unthought,
 )
@@ -572,6 +573,7 @@ def command_run(args) -> int:
             "made": len(result.records),
             "usage": summed_usage(result.records),
             "unthought": unthought(result.records),
+            "steps": steps(result.records),
             "kept": len(kept) if files else 0,
             "settled": result.settled,
             "unasked": result.unasked,
@@ -655,6 +657,7 @@ def command_report(args) -> int:
             "records": len(records),
             "usage": summed_usage(records),
             "unthought": unthought(records),
+            "steps": steps(records),
             "overall": overall(findings).as_dict(),
             "findings": [finding.as_dict() for finding in findings],
         }
@@ -1178,6 +1181,7 @@ def command_firm(args) -> int:
             "made": len(made),
             "usage": asked.usage,
             "unthought": asked.unthought,
+            "steps": asked.steps,
             "firm": asked.firm,
             "category": asked.category,
             "shares": asked.shares,
@@ -1216,6 +1220,13 @@ def command_firm(args) -> int:
     elif not asked.firm and not asked.stopped and many >= most:
         state += ", as many runs as --most reads"
     print(f"firm: {state}; {len(made)} calls made now{_tokens(asked.usage, asked.unthought)}")
+    for x, read in asked.steps.items():
+        if read["remade"]:
+            trials = ", ".join(plain(trial) for trial in read["remade"])
+            print(
+                f"steps: input {x!r} read {len(read['steps'])} steps across the runs, "
+                f"made anew between them; {trials} read more than one"
+            )
     for warning, _ in raised:
         notes = list(getattr(warning, "__notes__", []))
         print(f"{type(warning).__name__}: {warning}", *notes, sep="\n", file=sys.stderr)

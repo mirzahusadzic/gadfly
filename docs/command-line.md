@@ -136,7 +136,7 @@ Ctrl-C, it says where the records made so far are and how to finish with
 | `--short-of` | `carried` or `cooled` | For a caller who needs only to know whether the frame reads that category. Asks first the trials that most often rule it out, then stops once no answer left could make an input read it, and `--json` counts the calls not made under `short`. Such a run is not whole: `report` reads it unresolved, naming the trials with no agreed level, so it says only that the frame does not read the category. A frame with more answers left than the rules can be read over is cut only once fewer are left. |
 | `--withhold` | a file, or `-` | Refuses, before any call and without making a file, a frame whose prompts hold text the set withholds, as [Withhold text](#withhold-text) says. |
 | `--parallel` | a whole number, 1 by default | Makes that many calls at once, for a battery that takes them (the unified battery does; eGemma, with its rate limit, does not). A first Ctrl-C lets the calls already out end and keeps them; a second stops at once. |
-| `--json` | flag | Prints the calls planned and made, the tokens they reported as `usage`, how many reported no reasoning as `unthought`, the calls not made under `settled`, `unasked` and `short`, the openings by reason, why it stopped, its exit status and its warnings, as one JSON object. |
+| `--json` | flag | Prints the calls planned and made, the tokens they reported as `usage`, how many reported no reasoning as `unthought`, a branch's steps as `steps`, the calls not made under `settled`, `unasked` and `short`, the openings by reason, why it stopped, its exit status and its warnings, as one JSON object. |
 
 With `--out -` the records stream to standard output, and `report` reads
 them from standard input when its records are `-`:
@@ -225,8 +225,8 @@ pr: carried
 It opens with the frame, the records and the overall category, then each
 input's finding; the [example report](breadth/report-example.md) reads one
 with three inputs. With `--json` it also gives the records read, the tokens
-they reported and the calls that reported no reasoning, as `records`, `usage`
-and `unthought`, as `run` and `firm` do.
+they reported, the calls that reported no reasoning and a branch's steps, as
+`records`, `usage`, `unthought` and `steps`, as `run` and `firm` do.
 
 ---
 
@@ -374,7 +374,9 @@ the calls made now reported, in and out, which `--json` gives as `usage`. It
 ends with how many of the calls that reported reasoning reported none, which
 `--json` gives as `unthought`, by trial too; nothing is resent, so a reflex
 answer counts as any other, and the count is read against the reasoning the
-frame asked for. A stop for the budget is a
+frame asked for. For a branch, `--json` gives each input's steps as `steps`,
+and where a trial read more than one, made anew between runs by another
+command, a line names them. A stop for the budget is a
 `StoppedWarning`, and a run that a battery or Ctrl-C cut short is named by
 its file, since it is never read as firm.
 
@@ -402,7 +404,7 @@ uv run gadfly plan kiran.json --most 5 --runs kiran-runs
 | `--short-of` | `carried`, `cooled` or `any` | For a caller who needs only to know whether the verdict is firm and that category. A run that does not read it leaves a firm reading of it two runs away, so when `--most` allows fewer, asking ends there; such a run asks first the trials that most often rule the category out and is cut short once no answer left could make it read it. The verdict is then not firm, exit 0, and `--json` names the category under `short`; the run cut short is kept in its file, marked `short` and read for no category, so move it out of the folder before asking again. A firm verdict of another category, which whole runs might have reached, is not looked for. `any` is for a caller who needs to know whether the verdict is firm, whatever its category: only the last run `--most` allows, after another, is cut short, once it cannot read each input as the run before did, and `short` is then `any`. `until_firm`'s `short_of` in Python. |
 | `--parallel` | a whole number, 1 by default | Makes that many calls at once within each run, for a battery that takes them; the runs stay one after another. |
 | `--withhold` | a file, or `-` | Refuses, before any call and without making a file, a frame whose prompts hold text the set withholds, as [Withhold text](#withhold-text) says. |
-| `--json` | flag | Each run's file and category, whether the verdict is firm, the shares, the latest run's findings, the calls made, their `usage` and `unthought` counts, why it stopped, its exit status and its warnings. |
+| `--json` | flag | Each run's file and category, whether the verdict is firm, the shares, the latest run's findings, the calls made, their `usage` and `unthought` counts, a branch's `steps`, why it stopped, its exit status and its warnings. |
 
 #### Read the gate
 

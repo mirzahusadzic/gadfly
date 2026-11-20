@@ -133,6 +133,21 @@ and no answer is set aside, so a reflex answer counts as any other.
 unthought(records)
 ```
 
+#### steps
+
+A branch's steps, by input, as `run --json`, `firm --json` and
+`report --json` give them: every SHA-256 its maker's step had, in the
+order first read (`steps`), the steps each trial read (`trials`), and the
+trials that read more than one (`remade`). One battery object makes an
+input's step once, so a trial that read two was read through a step made
+anew, by another command or a resumed run: how alike the makings were
+shows in the verdicts beside them. Records of another battery, and calls
+that opened before a step was read, give nothing.
+
+```python
+steps(records)
+```
+
 #### run
 
 Every planned trial of every input, `quorum` times each, in a fixed
@@ -1140,6 +1155,9 @@ was left. `usage` sums each whole count the calls made
 now reported, such as `input_tokens` and `output_tokens`, by name; a
 count no call reported is absent, never a zero. `unthought` counts the
 calls made now that reported no reasoning (`midwife.pipeline.unthought`).
+`steps` gives a branch's steps over every run read, kept ones included
+(`midwife.pipeline.steps`): a trial that read more than one was read
+through a step made anew between runs.
 
 ```python
 @dataclass(frozen=True)
