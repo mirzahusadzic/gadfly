@@ -5,6 +5,7 @@ and readers are rules."""
 import copy
 import hashlib
 import json
+import pathlib
 import threading
 
 import pytest
@@ -291,6 +292,8 @@ def test_a_body_or_an_input_that_holds_the_parting_line_is_refused():
     with pytest.raises(BatteryError, match="input 'q1' holds the line that parts") as error:
         branch.check(parse(raw))
     assert error.value.__notes__[0].startswith("the maker reads what comes after the last")
+    rows = (pathlib.Path(__file__).parent.parent / "docs/troubleshooting.md").read_text()
+    assert f"`{error.value.__notes__[0]}`" in rows  # the branch's own words, not the crossing's
     raw = copy.deepcopy(NEEDS)
     raw["body"]["spans"][2]["text"] = f"The error rate held.{PARTS}It did."
     with pytest.raises(BatteryError, match="a trial's body holds the line that parts") as error:

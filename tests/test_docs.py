@@ -835,9 +835,10 @@ SAID = {
 
 
 def test_every_message_the_command_line_says_has_its_row():
-    # the other way round from the test above: each message cli.py and
-    # recoil.py make, wherever they make it, is a row under its class, so a
-    # new one cannot go untabled (pass 12, D3)
+    # the other way round from the test above: each message cli.py,
+    # recoil.py and the crossing and branch batteries make, wherever they make
+    # it, is a row under its class, so a new one cannot go untabled (pass 12,
+    # D3; pass 17, B5)
     import ast
 
     rows = []
@@ -847,7 +848,9 @@ def test_every_message_the_command_line_says_has_its_row():
                 kind, _, message = (a or b).partition(": ")
                 rows.append((kind, message))
     untabled = []
-    for path in ("midwife/cli.py", "midwife/recoil.py"):
+    said = ("midwife/cli.py", "midwife/recoil.py")
+    batteries = ("midwife/batteries/crossing.py", "midwife/batteries/branch.py")
+    for path in said + batteries:
         source = (ROOT / path).read_text(encoding="utf-8")
         for call in ast.walk(ast.parse(source)):
             if not (isinstance(call, ast.Call) and getattr(call.func, "id", "") in SAID):
