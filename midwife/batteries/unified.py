@@ -247,18 +247,17 @@ def request_body(
     return body
 
 
-def _lines(response, deadline: float | None = None, clock=time.monotonic):
+def _lines(response, deadline: float, clock=time.monotonic):
     """The response's lines as they arrive. It reads what the socket has, in
     chunks, and joins a line across them, so an event longer than a chunk
     arrives whole; each read waits at most until the deadline, so a stream
     that never ends a line is still cut there (TimeoutError)."""
     pending = bytearray()
     while True:
-        if deadline is not None:
-            left = deadline - clock()
-            if left <= 0:
-                raise TimeoutError("the call passed its timeout")
-            wait_at_most(response, left)
+        left = deadline - clock()
+        if left <= 0:
+            raise TimeoutError("the call passed its timeout")
+        wait_at_most(response, left)
         chunk = response.read1(CHUNK)
         if not chunk:
             break
@@ -267,8 +266,7 @@ def _lines(response, deadline: float | None = None, clock=time.monotonic):
             yield bytes(pending[: end + 1])
             del pending[: end + 1]
         if len(pending) > MAX_RESPONSE_BYTES:  # one line past the cap: parse_stream says so
-            yield bytes(pending)
-            return
+            break
     if pending:
         yield bytes(pending)
 

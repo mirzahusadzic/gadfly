@@ -241,7 +241,8 @@ class EGemma:
             method="POST",
             headers={"content-type": "application/json", "authorization": f"Bearer {_key()}"},
         )
-        for attempt in range(RETRIES + 1):
+        attempt = 0
+        while True:  # each pass reads an answer, opens, or waits and tries again
             self.pace()  # a retry is a call too: eGemma's limiter counts it
             deadline = self.clock() + self.timeout  # waits for eGemma's pace are not the call's
             try:
@@ -262,6 +263,7 @@ class EGemma:
                 return Observation(
                     label=None, opening=f"eGemma could not be reached ({type(reason).__name__})"
                 )
+            attempt += 1
         if len(body) > MAX_RESPONSE_BYTES:
             return Observation(label=None, opening="the answer exceeded the size cap")
         try:

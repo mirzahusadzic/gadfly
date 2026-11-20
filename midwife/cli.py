@@ -110,8 +110,6 @@ def load_battery(spec: str):
             f"module {module_name!r} could not be imported", f"it said {str(error)!r}"
         ) from None
     except ValueError as error:  # a battery refuses with a ValueError, as in check
-        if isinstance(error, GadflyError) and module_name.startswith("midwife."):
-            raise  # a shipped battery's refusal, in Gadfly's own words
         raise BatteryError(
             f"battery {spec!r} could not be made", f"it said {str(error)!r}"
         ) from error

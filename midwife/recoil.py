@@ -980,9 +980,8 @@ def _asked_again(frame: Frame) -> None:
 def _kept(
     frame: Frame, kept: Sequence[Iterable[Record | dict[str, Any]]], most: int
 ) -> list[tuple[dict[str, Any], ...]]:
-    # the kept runs, each this frame's own and whole, no more than most reads
-    if isinstance(most, bool) or not isinstance(most, int) or most < 1:
-        raise UsageError("most is a whole number of runs, at least 1")
+    # the kept runs, each this frame's own and whole, no more than most reads;
+    # most is a whole number from 1, as most_of, asked first, holds it
     kept = list(kept)
     if len(kept) > most:
         raise UsageError(
