@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from midwife.batteries import egemma
+from midwife.batteries import critic, egemma
 from midwife.batteries.egemma import EGemma, payload
 from midwife.errors import BatteryError
 from midwife.pipeline import calls_needed, judge, run, situate
@@ -332,8 +332,11 @@ class Replay:
 def copied_to_read(frame, chunks):
     piece = Counted(b'{"answer": null, "text": "", "truncated": false}')
     Counted.copied = 0
-    with patch.object(egemma, "opener", lambda: Replay([piece] * chunks)):
+    replay = Replay([piece] * chunks)
+    # the call opens through critic's opener, so the replay stands in there
+    with patch.object(critic, "opener", lambda *handlers: replay):
         EGemma().observe(frame, "p", 8)
+    assert next(replay.chunks, None) is None  # every chunk was read, from the replay
     return Counted.copied
 
 

@@ -11,6 +11,30 @@ import pytest
 IMPORTED_BEFORE = "midwife" in sys.modules
 
 
+# what a battery calls by default on this machine: eGemma, the router, a local
+# JSON judge and Tendora. A test reaches only its own fakes, never these
+REAL_PORTS = {8000, 18766, 8765, 8791}
+LOOPBACK = {"127.0.0.1", "::1", "localhost"}
+reached: list[tuple] = []
+
+
+def _audit(event, args):
+    if event == "socket.connect" and isinstance(args[1], tuple) and len(args[1]) >= 2:
+        if args[1][0] in LOOPBACK and args[1][1] in REAL_PORTS:
+            reached.append(args[1][:2])
+
+
+sys.addaudithook(_audit)  # an audit hook stays for the run: it only records
+
+
+@pytest.fixture(autouse=True)
+def no_real_service():
+    """Fail a test that connects to a real service on this machine."""
+    reached.clear()
+    yield
+    assert reached == [], f"the test reached a real service at {reached}"
+
+
 def pytest_configure(config):
     # a run warns of its openings and stops; tests that mean to hear them use
     # pytest.warns. Said here rather than in pyproject.toml, whose filter
