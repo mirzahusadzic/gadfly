@@ -275,6 +275,31 @@ def test_calls_at_once_stop_too(raw):
         assert read.category == overall(judge(frame, whole.records)).category
 
 
+def test_calls_at_once_resumed_ask_nothing_an_input_no_longer_needs(raw):
+    # the decisive trials kept from a run that stopped: at once, as one at a
+    # time, the rest are not asked, whatever the threads' timing
+    class AtOnce(Reader):
+        concurrent = True
+
+    frame = situate(raw)
+    whole = run(frame, Reader(lambda prompt, n: "decline"), Budget(calls=calls_needed(frame)))
+    decisive = [r for r in whole.records if r.trial not in ("sham-1", "sham-2", "bypass")]
+    reader = AtOnce(lambda prompt, n: "decline")
+    resumed = run(
+        frame,
+        reader,
+        Budget(calls=calls_needed(frame)),
+        kept=decisive,
+        stop_unresolved=True,
+        parallel=3,
+    )
+    assert reader.asked == Counter() and resumed.unasked == 3 * frame.quorum
+    [finding] = judge(frame, decisive + list(resumed.records))
+    assert finding.evidence[-1] == (
+        "not asked (sham-1, sham-2, bypass); whatever they gave, it reads unresolved"
+    )
+
+
 def test_a_trial_cut_short_reads_as_left_not_as_split(raw):
     # as calls made at once leave it: one answer of three, the rest never asked
     frame = situate(raw)
