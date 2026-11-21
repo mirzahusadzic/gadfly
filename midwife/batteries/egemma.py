@@ -159,8 +159,9 @@ def payload(frame: Frame, text: str, max_output_tokens: int) -> dict:
 def _read(line: dict, reply: dict) -> tuple[dict, str | None]:
     """What a reply holds for the record, its text, usage and what served it,
     and an opening where it gives no answer: a pin it breaks, a cut, no JSON,
-    or a schema it breaks. `served` says whether Gemma thought where eGemma
-    reports its reasoning tokens: eGemma's word, never guessed."""
+    or a schema it breaks. `served` says whether Gemma thought: from the
+    thought eGemma returns, where an empty one is none, else from the
+    reasoning tokens it reports. eGemma's word, never guessed."""
     text = str(reply.get("text", ""))
     reported = reply.get("usage")
     usage = {
@@ -169,8 +170,13 @@ def _read(line: dict, reply: dict) -> tuple[dict, str | None]:
         if isinstance(v, int) and not isinstance(v, bool)
     }
     served = f"{reply.get('model', '')}@{reply.get('revision', '')}".strip("@")[:200]
-    if "reasoning_tokens" in usage:
-        served = f"{served} (thinking {'on' if usage['reasoning_tokens'] else 'off'})".strip()
+    thought = reply.get("reasoning")
+    if isinstance(thought, dict):  # the thought itself: an empty one is none
+        thinking: bool | None = bool(str(thought.get("text", "")).strip())
+    else:
+        thinking = bool(usage["reasoning_tokens"]) if "reasoning_tokens" in usage else None
+    if thinking is not None:
+        served = f"{served} (thinking {'on' if thinking else 'off'})".strip()
     seen = {"raw": text, "usage": usage, "served": served}
     for pin in ("model", "revision"):
         if pin in line and reply.get(pin) != line[pin]:

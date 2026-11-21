@@ -493,8 +493,9 @@ reader not, and nothing leaves this machine:
 The two sides share eGemma's pace, so together they stay within the budget
 eGemma publishes, and they take calls one at a time, as eGemma does, even
 under `--parallel`. With `reasoning: true` the maker's text keeps 512 tokens
-of its share and Gemma thinks in the rest, up to 4,096; it may think as long
-as it is let, so the maker's share sets how long each making takes.
+of its share and Gemma thinks in the rest, up to 4,096. `served` says
+`thinking on` only where eGemma returns a thought with words in it, and
+`thinking off` where the thought came back empty.
 
 The maker sees the claim alone, never the page and never which trial it
 serves, so nothing a trial took out of the evidence can come back through

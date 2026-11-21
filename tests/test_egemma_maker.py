@@ -169,6 +169,22 @@ def test_a_reader_on_egemma_says_whether_it_thought(key, server):
     assert seen.served == "gemma@r (thinking off)"
 
 
+@pytest.mark.parametrize(
+    "thought, said",
+    [
+        ({"text": "", "truncated": False}, "(thinking off)"),  # closed at once: one token
+        ({"text": "  ", "truncated": False}, "(thinking off)"),
+        ({"text": "Kiran is the doll.", "truncated": False}, "(thinking on)"),
+        (None, "(thinking on)"),  # no thought returned: its count says
+    ],
+)
+def test_served_says_gemma_thought_only_where_it_wrote_a_thought(key, server, thought, said):
+    # eGemma may return a thought of one token, the closing mark, and no text
+    fake = server(written("a step", reasoning=thought, usage={"reasoning_tokens": 1}))
+    made = EGemmaMaker(EGemma(fake.base + "/judge")).make(LINE, "a claim", 2000)
+    assert made.served == f"gemma@r {said}" and made.usage["reasoning_tokens"] == 1
+
+
 # ---- a branch on this machine
 
 

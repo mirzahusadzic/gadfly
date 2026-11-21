@@ -14,7 +14,7 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 No verdict or frame changes. A branch can run on this machine alone: `Branch()` makes each side from its line's kind, `unified` through the router or `egemma` on this machine's eGemma, and `EGemmaMaker` is the eGemma maker, so a maker that thinks and a reader that does not can both be Gemma, and nothing leaves this machine ([a maker before the evidence](batteries.md#a-maker-before-the-evidence)). An eGemma branch's two sides share eGemma's pace and take calls one at a time, even under `--parallel`.
 
-A record the eGemma battery makes now says in `served` whether Gemma thought, where eGemma reports its reasoning tokens: `gemma@r (thinking off)`. A crossing or a branch now asks its maker's own `check_cap`, where it has one, before any call, as it asks its reader's. The eGemma battery now asks for an answer of at most 1,024 tokens, which eGemma refuses to exceed, where a larger `--output-tokens` without reasoning opened every call with `eGemma answered 422`.
+A record the eGemma battery makes now says in `served` whether Gemma thought: `gemma@r (thinking off)` where the thought eGemma returns is empty, even when the line asks for one. A crossing or a branch now asks its maker's own `check_cap`, where it has one, before any call, as it asks its reader's. The eGemma battery now asks for an answer of at most 1,024 tokens, which eGemma refuses to exceed, where a larger `--output-tokens` without reasoning opened every call with `eGemma answered 422`.
 
 ---
 
