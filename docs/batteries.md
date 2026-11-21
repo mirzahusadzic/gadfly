@@ -80,7 +80,7 @@ does.
 | Battery | Reads with | Guarantees and recorded provenance |
 |---|---|---|
 | `unified` | an LLM through the [unified model router](https://github.com/mirzahusadzic/unified-model-router), named as the router names its models | loopback, no tools, no proxy, no redirects, the router's deny data policy unless the exact model slug is listed under `trainsOnInputs`, checked at the router's `GET /health` before any call; refuses OpenAI slugs; `endpoints` pins up to 16 endpoints the router may use, through the router's own header; `fallback` and `thinkingBudget` keep a Claude model on Anthropic's API, the second with a fixed thinking budget; records the model, the provider the router reports or a single pinned endpoint's tag, and the route |
-| `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced; Gemma thinks first with `reasoning: true` |
+| `egemma` | Gemma through [eGemma](https://github.com/mirzahusadzic/egemma)'s `/judge` | loopback, no persona, no cache, paced to `GET /rate-limits`; caps time, tokens and bytes; records `model` and `revision`; optional frame pins are enforced; Gemma thinks first with `reasoning: true`; `EGemmaMaker`, the maker of a `crossing` or `branch`, writes through the same call |
 | `local-json` | any evaluator on this machine that answers JSON, at `battery.url` | loopback, no proxy, no redirects, no credentials; a whole-call deadline (`timeout`) and a size cap; records what the evaluator says served |
 | `tendora` | Tendora's engine server, from its demo package, at `battery.url`, asked again against the trial's statements | loopback, no proxy, no redirects, no credentials; read-only on the engine's side; a whole-call deadline and a size cap; records the engine's version, revision and packs |
 | `crossing` | a maker, then a reader: the maker writes an artefact from the trial's body, and the reader decides from it | each side's own guarantees, through the router the unified battery's; the maker never sees the input; the cap is shared between the two; records the artefact's SHA-256 and what made and read it |
@@ -495,7 +495,10 @@ eGemma publishes, and they take calls one at a time, as eGemma does, even
 under `--parallel`. With `reasoning: true` the maker's text keeps 512 tokens
 of its share and Gemma thinks in the rest, up to 4,096. `served` says
 `thinking on` only where eGemma returns a thought with words in it, and
-`thinking off` where the thought came back empty.
+`thinking off` where the thought came back empty. Example 22 read this way
+on this machine alone as it reads through the router, its maker thinking
+each time to the end of its share, so the share bounds how long each making
+takes; that run is kept with the others.
 
 The maker sees the claim alone, never the page and never which trial it
 serves, so nothing a trial took out of the evidence can come back through

@@ -93,3 +93,33 @@ uv run gadfly run examples/branch/19-one-turn.json \
 
 Example 22 takes 24 calls, and 22c takes 27. Each run makes its step anew,
 so how alike the makings are shows across runs.
+
+## On this machine alone
+
+`22-local.json` is example 22's branch frame with both sides on this
+machine's [eGemma](https://github.com/mirzahusadzic/egemma): Gemma makes the
+step with `reasoning: true` and reads every trial with `reasoning: false`, so
+nothing leaves the machine. It was run once, one call at a time:
+
+| Example | Read | Verdict | Output tokens | Time |
+| --- | --- | --- | --- | --- |
+| 22 | branch on eGemma | carried | 7,340 | 122 s |
+
+It read every trial as one turn did. Of its output tokens, 6,976 are the
+maker's thought: both times Gemma thought to the end of the 3,488 tokens her
+share left her. Every record's `served` says "thinking on" for the making and
+"thinking off" for the reading. `PREDICTIONS-local.md` was written before the
+run, and every prediction held; `PREDICTIONS-local.sha256` holds its SHA-256
+and the frame's.
+
+Two earlier runs, not kept, found what this one needed. eGemma refuses an
+answer longer than 1,024 tokens, which Gadfly no longer asks for. An eGemma
+that had lost the start of each prompt after a long call returned empty
+thoughts, fixed in eGemma's `f360e9f`. A live run needs eGemma from that
+commit on, with its key in `EGEMMA_API_KEY`:
+
+```sh
+uv run gadfly run examples/branch/22-local.json \
+    --battery midwife.batteries.branch:Branch \
+    --calls 24 --output-tokens 8000 --out local.jsonl
+```

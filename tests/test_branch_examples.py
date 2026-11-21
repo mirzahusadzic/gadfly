@@ -34,9 +34,28 @@ def seconds_of(example, run):
 
 
 def test_the_predictions_and_frames_are_as_they_were_hashed_before_the_runs():
-    for line in (HERE / "PREDICTIONS.sha256").read_text(encoding="utf-8").splitlines():
-        sha, name = line.split()
-        assert hashlib.sha256((HERE / name).read_bytes()).hexdigest() == sha, name
+    for hashed in ("PREDICTIONS.sha256", "PREDICTIONS-local.sha256"):
+        for line in (HERE / hashed).read_text(encoding="utf-8").splitlines():
+            sha, name = line.split()
+            assert hashlib.sha256((HERE / name).read_bytes()).hexdigest() == sha, name
+
+
+def test_the_local_run_carried_with_the_maker_thinking_and_the_reader_not():
+    # both sides on this machine's eGemma: a making thought, every reading did not
+    frame = situate(json.loads((HERE / "22-local.json").read_text(encoding="utf-8")))
+    records = records_of("22", "local")
+    assert len(records) == calls_needed(frame)
+    assert overall(judge(frame, records)).category == "carried"
+    for record in records:
+        made, read = record["served"].removeprefix("made by ").split(", read by ")
+        assert made.endswith("(thinking on)") and read.endswith("(thinking off)")
+    assert all(entry["remade"] == [] for entry in steps(records).values())
+    out = sum(r["usage"]["output_tokens"] for r in records)
+    thought = sum(r["usage"]["reasoning_tokens"] for r in records)
+    readme = (HERE / "README.md").read_text(encoding="utf-8")
+    seconds = seconds_of("22", "local")
+    assert f"| 22 | branch on eGemma | carried | {out:,} | {seconds} s |" in readme
+    assert f"{thought:,} are the\nmaker's thought" in readme
 
 
 @pytest.mark.parametrize("example", sorted(READ))
