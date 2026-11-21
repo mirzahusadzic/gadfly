@@ -99,6 +99,13 @@ three words:
 }
 ```
 
+It renames whole words only, in any case, and keeps a capital where the text
+had one. Everything else stays as it was: the spans and their order, every
+word the map does not name, and the frame's instruction and labels, which the
+reader is given as the frame wrote them. So a map should not rename a word the
+instruction or the labels use, or the reader is told of a word the trial took
+away.
+
 ---
 
 ### Placement is one move

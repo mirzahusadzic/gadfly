@@ -515,10 +515,15 @@ line between each.
   over one step, never the maker's. A new command, or a run resumed with a
   new object, makes the step again from the same claim, and `--json` gives
   each claim's steps as `steps`, with the trials that read more than one.
-- **A renamed claim:** presentation and input inversion rename the claim, so
-  the maker writes a step for it too, and a run's records name two SHA-256
-  values. Reading the first there would bring back the words the trial
-  renamed.
+- **A renamed claim:** where presentation renames a word of the claim, and
+  under input inversion, the claim is another input, so the maker writes a
+  step for it too and a run's records name two SHA-256 values. Reading the
+  first there would bring back the words the trial renamed. A presentation
+  that renames only words of the page reads the baseline's step.
+- **A moved presentation:** a presentation with a step of its own reads a
+  second draw of the maker as well as new words, so a move there may be the
+  draw's and not the wording's, though the verdict reads both alike. Compare
+  the two steps in `steps` before taking it for the wording's.
 
 When to use which:
 
@@ -547,6 +552,16 @@ every trial at once:
 - **Ask for the four parts, from the claim alone:** for the kind of lines
   there are, as the frame's locus and grain name it, in at most a few short
   lines.
+- **Say what a line can hold:** where the lines only tell of a thing, as an
+  account of a change, a summary or a witness's word does, say so, and that
+  they never show the thing itself. A maker not told may ask for proof only
+  the thing could give, such as its code or a run, and a reader that follows
+  such a step answers unclear on every page.
+- **Keep the fourth part a belief:** it names what one would believe with no
+  line at all, such as what such things usually do. An example that names a
+  kind of line instead, such as a line that only says the claim holds, makes
+  the maker name kinds of lines there, and where every line only tells, the
+  reader is told to doubt them all.
 - **Leave the reader room:** every call reads the step, and a record keeps
   2,000 characters of it and the answer. A small reader with a short output
   limit cannot read through a long one.
@@ -559,6 +574,8 @@ The worst cases, each worth a check before a run:
 - **The step grows thick:** it adds rivals, softenings or readings the claim
   never made. A sign is a line that goes back neither to a word of the claim
   nor to what that word must mean in such lines.
+- **The step asks for what no line can hold:** a demonstration, a run or the
+  code itself, where the lines only tell. Read the steps before any reading.
 - **The claim is fitted to its page:** worded after the page was read, or
   reworded until it passes.
 - **The step presses every claim down to what the page literally says:** it

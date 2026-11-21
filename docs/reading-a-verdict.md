@@ -133,6 +133,29 @@ fallback and materialization stay open until their trials or the frame settle
 them. Traceability rests on the records, each of which names its frame,
 battery, body, prompt and what served it.
 
+A record keeps its prompt as a SHA-256, not as text. To see what a reader
+was given, rebuild each prompt from the frame; its `digest` is the record's
+`prompt`:
+
+```python
+import json
+
+from midwife.frame import digest, load
+from midwife.pipeline import plan, prompt
+
+frame = load("frame.json")
+trials = {trial.id: trial for trial in plan(frame)}
+inputs = {x["id"]: x for x in frame.inputs}
+for record in map(json.loads, open("run.jsonl", encoding="utf-8")):
+    trial = trials[record["trial"]]
+    text = prompt(frame, trial, inputs[record["input"]])
+    assert digest(text) == record["prompt"]
+```
+
+The battery adds the frame's instruction and labels to that text. Through a
+branch the reader is also given the step first, which its record names by
+its SHA-256 and keeps as far as it fits.
+
 ---
 
 ### Several inputs

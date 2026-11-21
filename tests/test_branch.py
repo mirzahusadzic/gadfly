@@ -166,6 +166,17 @@ def test_an_input_a_trial_renames_has_an_artefact_of_its_own():
             assert "rolled" not in made  # the renamed word does not come back through it
 
 
+def test_a_presentation_of_the_page_alone_reads_the_baselines_step():
+    # NEEDS renames "shrank", a word of the page alone: the claim is the same
+    # input, so its one step is read, and a move there is not the maker's draw
+    assert "shrank" not in QUESTION and NEEDS["interventions"]["presentation"] == {"shrank": "cut"}
+    maker = Watching()
+    frame, _, result = branched(maker)
+    assert [text for _, text, _ in maker.seen] == [QUESTION]
+    made = {json.loads(record.raw)["made"]["sha256"] for record in result.records}
+    assert "presentation" in {record.trial for record in result.records} and len(made) == 1
+
+
 def test_a_record_keeps_the_artefacts_hash_whole_where_its_text_is_cut():
     class Long(Watching):
         def make(self, line, text, max_output_tokens):
