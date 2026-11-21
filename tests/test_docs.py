@@ -1088,6 +1088,14 @@ def test_every_theme_keeps_its_text_readable_on_every_surface():
     assert low == []
 
 
+def test_the_colour_sheet_wraps_its_words_inside_the_top_bar():
+    # the sheet opens inside VitePress's top bar, which keeps its text on one
+    # line (white-space nowrap): unset, the intro ran past the sheet's edge
+    css = THEMES.read_text(encoding="utf-8")
+    sheet = re.search(r"\n\.gf-theme-menu \{(.*?)\}", css, re.S).group(1)
+    assert "white-space: normal;" in sheet
+
+
 def test_the_watch_view_tells_every_answer_apart_for_every_eye():
     # the answers' dots, in the light and the dark themes, apart under
     # red-green colour blindness: the validator's target, every pair

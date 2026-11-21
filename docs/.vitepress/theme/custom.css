@@ -284,7 +284,8 @@
 
 /* The theme menu (ThemeMenu.vue), After the Poem's: the top bar shows the
  * study's swatch; the sheet, "Find the mood.", holds a card for each study
- * with its own swatch, the current one outlined. */
+ * with its own swatch, the current one outlined. The sheet wraps its words,
+ * since the top bar it opens in keeps text on one line. */
 .gf-theme { position: relative; display: flex; align-items: center; }
 .VPNavBar .gf-theme { margin-left: 16px; }
 @media (max-width: 767px) {
@@ -328,6 +329,7 @@
   border-radius: 12px;
   background: var(--vp-c-bg-elv);
   box-shadow: 0 12px 38px rgba(0, 0, 0, 0.25);
+  white-space: normal;
 }
 .gf-theme.inline .gf-theme-menu {
   position: static;
@@ -366,7 +368,7 @@
 .gf-theme-card:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--vp-c-brand-1); }
 .gf-theme-card input { position: absolute; width: 0; height: 0; opacity: 0; }
 .gf-theme-card .gf-dots { width: 45px; }
-.gf-theme-name { min-width: 0; white-space: normal; }
+.gf-theme-name { min-width: 0; }
 .gf-theme-name small { display: block; font-size: 15px; line-height: 22px; color: var(--vp-c-text-2); }
 
 /* Scrollbars, all of them (the page, the sidebar, code, menus): thin, in the
