@@ -445,6 +445,11 @@ one call at a time by a fifth to a half, since a call's time is not only
 what it writes. These are one or two runs a frame, an indication and not a
 rate, and the two models differ in price, so tokens compare work, not money.
 
+As a ratio, the branch wrote 5.0 to 8.3 times fewer output tokens than one
+turn, a saving in decoded tokens alone. Each reading took in 2.3 to 2.7
+times the input of a one-turn call, as it carries the step, and what either
+costs in money depends on the two models' prices.
+
 A third run each way made 24 calls at once (`--parallel 24`), one under
 the provider's limit on requests in flight. One call after another, a run's
 time is the sum of its calls' times; at 24 at once the calls overlap, and a
