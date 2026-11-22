@@ -10,9 +10,9 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
-### To 0.17.1, not yet released
+### To 0.17.1
 
-No verdict or frame changes. A call the router answers with 429 now keeps the provider's own words in its opening, as `the router answered 429 (...)`, where it kept the status alone. Anthropic's, for one, names its limit on requests in flight at once.
+No verdict or frame changes. A call the router answers with 429 now keeps the provider's own words in its opening, as `the router answered 429 (...)`, where it kept the status alone. Anthropic's, for one, names its limit on requests in flight at once. The branch's page now also times its examples with calls at once, and with its step kept from an earlier making, from runs kept with the examples.
 
 ---
 
