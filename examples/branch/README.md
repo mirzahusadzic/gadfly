@@ -42,9 +42,24 @@ three parts are.
 | 22c | one turn | cooled | 15,845 | 102 s |
 | 22c | branch, run A | cooled | 2,605 | 72 s |
 | 22c | branch, run B | cooled | 2,819 | 74 s |
+| 19 | one turn, 8 at once | carried | 24,064 | 20 s |
+| 19 | branch, 8 at once | unresolved | 3,187 | 20 s |
+| 22 | one turn, 8 at once | carried | 16,568 | 18 s |
+| 22 | branch, 8 at once | carried | 3,008 | 17 s |
+| 22c | one turn, 8 at once | cooled | 14,726 | 15 s |
+| 22c | branch, 8 at once | cooled | 2,698 | 16 s |
+| 19 | one turn, 24 at once | carried | 23,628 | 10 s |
+| 19 | branch, 24 at once | carried | 3,085 | 14 s |
+| 22 | one turn, 24 at once | carried | 16,147 | 8 s |
+| 22 | branch, 24 at once | carried | 2,289 | 10 s |
+| 22c | one turn, 24 at once | cooled | 14,697 | 10 s |
+| 22c | branch, 24 at once | carried | 2,661 | 11 s |
 
 The branch read every example as one turn did, in both of its runs, on
-four fifths or more fewer output tokens. The maker wrote nearly the same
+four fifths or more fewer output tokens. The rows at 8 and 24 calls at once
+(`--parallel`) show the branch saving no time, and slower than one turn at
+24. In them the branch's verdict differed twice: 19 read unresolved at 8, its
+ablation split 3 unclear to 2 does-not-support, and 22c carried at 24. The maker wrote nearly the same
 step each time: on 22 both runs named the same key terms, the same false
 case and the same belief to keep out, that the name sounds like a boy's.
 Each Sonnet call's `served` says "thinking off", and each making records
@@ -64,6 +79,15 @@ cd examples/branch && shasum -a 256 -c PREDICTIONS.sha256
 `RESULTS.md` holds each prediction against what happened. The verdicts and
 the stable step held; the output tokens at least 85% fewer and the time at
 least 40% less held on 19 and missed on 22 and 22c.
+
+The runs with eight calls at once have their own `PREDICTIONS-parallel.md`,
+written and hashed in `PREDICTIONS-parallel.sha256` before any call, and
+`RESULTS-parallel.md`. Their verdicts held but for 19 through the branch,
+and the branch saved 6% of the time at most, as predicted. At 24 at once, below the
+provider's limit of 25 requests in flight, `PREDICTIONS-p24.md` and
+`RESULTS-p24.md` do the same: the branch was slower than one turn on every
+frame, as predicted, and 22c through it read carried. A run with every call
+at once stopped on that limit, and `RESULTS-all-at-once.md` says how.
 
 ## Read the records back
 

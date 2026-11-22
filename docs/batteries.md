@@ -431,7 +431,7 @@ reading. An arrow leads from one turn to the branch, whose figures, in
 bold, are the mean of its two runs; the frames, records and predictions are
 [kept with the examples](https://github.com/mirzahusadzic/gadfly/tree/main/examples/branch):
 
-| Example, as a claim | Readings | Verdict | Input tokens a reading | Output tokens | Time |
+| Example, as a claim | Readings | Verdict | Input tokens a reading | Output tokens | Time, one call after another |
 | --- | --- | --- | --- | --- | --- |
 | [19](examples/index.md), "Gadfly, a separate library, calls the router over the same Responses API that Codex uses, so Codex is not the router's only client" | 35 | carried → **carried** | 451 → **1,044** | 23,087 → **2,785, 88% fewer** | 150 s → **78 s, 48% less** |
 | [22](examples/dolls.md#22-kiran-with-the-paper), "Kiran is a boy" | 24 | carried → **carried** | 353 → **879** | 13,915 → **2,772, 80% fewer** | 101 s → **79 s, 22% less** |
@@ -441,9 +441,29 @@ The branch reached the one-turn verdict on all three, in both of its runs,
 and the maker wrote nearly the same step each time: on 22 both runs gave the
 same key terms, the same false case and the same belief to keep out, that the
 name sounds like a boy's. Output tokens fell by four fifths or more, and time
-by a fifth to a half, since a call's time is not only what it writes. These
-are one or two runs a frame, an indication and not a rate, and the two
-models differ in price, so tokens compare work, not money.
+one call at a time by a fifth to a half, since a call's time is not only
+what it writes. These are one or two runs a frame, an indication and not a
+rate, and the two models differ in price, so tokens compare work, not money.
+
+A third run each way made 24 calls at once (`--parallel 24`), one under
+the provider's limit on requests in flight. One call after another, a run's
+time is the sum of its calls' times; at 24 at once the calls overlap, and a
+run lasts until its last call ends, which for the branch comes after its
+step is made:
+
+| Example | One turn, 24 at once | Branch, 24 at once | Output tokens, 24 at once |
+| --- | --- | --- | --- |
+| 19 | 10 s | 14 s | 23,628 → **3,085, 87% fewer** |
+| 22 | 8 s | 10 s | 16,147 → **2,289, 86% fewer** |
+| 22c | 10 s | 11 s | 14,697 → **2,661, 82% fewer** |
+
+The branch was slower than one turn on all three, and its output tokens
+stayed four fifths fewer. The time it loses is the maker's: its step is
+one thinking call of 970 to 1,380 output tokens, 1.4 to 2.2 times a
+one-turn call's mean, and every reading of its input waits for it. In the
+runs at 8 and 24 at once the branch's verdict also differed from one turn's
+twice: 19 read unresolved at 8, and 22c carried at 24, where one turn read
+it cooled.
 
 Reach for it where someone will act on a decision without rereading what it
 rests on. Say the input as a claim someone holds, never as an open question:
