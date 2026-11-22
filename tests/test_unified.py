@@ -818,6 +818,25 @@ def test_a_unified_frame_without_a_model_is_the_batterys_refusal(tmp_path, capsy
     assert "BatteryError" in capsys.readouterr().err
 
 
+def test_a_rate_limit_keeps_the_providers_own_words(raw, token, router):
+    # the router passes a provider's 429 on with its body, which names the
+    # limit, such as Anthropic's on requests in flight; a body without a
+    # message is the status alone
+    said = "Number of concurrent requests across all models has exceeded your organization's limit."
+    anthropic = json.dumps(
+        {"type": "error", "error": {"type": "rate_limit_error", "message": said}}
+    )
+    seen = Unified(router((429, {}, anthropic.encode())).url).observe(situate(raw), "p", 16)
+    assert seen.label is None and seen.served == ""
+    assert seen.opening == f"the router answered 429 ({said!r})"
+    long = json.dumps({"error": {"message": "y" * 300}}).encode()
+    cut = Unified(router((429, {}, long)).url).observe(situate(raw), "p", 16).opening
+    assert cut == f"the router answered 429 ({'y' * 200!r})"
+    for body in (b"slow down", json.dumps({"error": {"message": ""}}).encode()):
+        bare = Unified(router((429, {}, body)).url).observe(situate(raw), "p", 16).opening
+        assert bare == "the router answered 429"
+
+
 def test_a_refusal_whose_body_is_not_the_routers_json_is_its_status_alone(raw, token, router):
     # a 409 or 502 is read for the router's reason; a body that is no JSON,
     # or one cut at 4,096 bytes, gives none, and the call is its status

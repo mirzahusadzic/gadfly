@@ -10,6 +10,12 @@ and until then uv answers that it does not exist. Wait a few minutes, then
 
 ---
 
+### To 0.17.1, not yet released
+
+No verdict or frame changes. A call the router answers with 429 now keeps the provider's own words in its opening, as `the router answered 429 (...)`, where it kept the status alone. Anthropic's, for one, names its limit on requests in flight at once.
+
+---
+
 ### To 0.17.0
 
 No verdict or frame changes. A branch can run on this machine alone: `Branch()` makes each side from its line's kind, `unified` through the router or `egemma` on this machine's eGemma, and `EGemmaMaker` is the eGemma maker, so a maker that thinks and a reader that does not can both be Gemma, and nothing leaves this machine ([a maker before the evidence](batteries.md#a-maker-before-the-evidence)). An eGemma branch's two sides share eGemma's pace and take calls one at a time, even under `--parallel`. Run eGemma from its commit `f360e9f` on: before it, once any call ran longer than Gemma's 1,024-token window, every later thought came back empty until eGemma restarted, and `served` says `thinking off` for such a making.

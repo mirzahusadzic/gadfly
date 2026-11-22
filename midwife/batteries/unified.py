@@ -546,10 +546,15 @@ class Unified:
                 pin = endpoints[0] if len(endpoints) == 1 else None
                 return parse_stream(lines, deadline, self.clock, pin)
         except urllib.error.HTTPError as error:
-            # only a refusal whose body says why is read: 409 data_policy, 502 anthropic_refused
+            # only a refusal whose body says why is read: 409 data_policy, 429 the
+            # provider's limit, as the router passes it on, 502 anthropic_refused
             said = {}
-            if error.code in (409, 502):
+            if error.code in (409, 429, 502):
                 said = _refusal(read_error(error, deadline, self.clock))
+            if error.code == 429:
+                message = said.get("message")
+                if isinstance(message, str) and message:
+                    return "", {}, f"the router answered 429 ({message[:200]!r})", ""
             if error.code == 409 and said.get("code") == "data_policy":
                 model = battery["model"]
                 opening = f"the router refused model {model!r}, whose provider trains on its inputs"
