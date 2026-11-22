@@ -451,11 +451,11 @@ time is the sum of its calls' times; at 24 at once the calls overlap, and a
 run lasts until its last call ends, which for the branch comes after its
 step is made:
 
-| Example | One turn, 24 at once | Branch, 24 at once | Output tokens, 24 at once |
-| --- | --- | --- | --- |
-| 19 | 10 s | 14 s | 23,628 → **3,085, 87% fewer** |
-| 22 | 8 s | 10 s | 16,147 → **2,289, 86% fewer** |
-| 22c | 10 s | 11 s | 14,697 → **2,661, 82% fewer** |
+| Example | One turn, 24 at once | Branch, 24 at once | Branch with its step kept, 24 at once | Output tokens, 24 at once |
+| --- | --- | --- | --- | --- |
+| 19 | 10 s | 14 s | 6 s | 23,628 → **3,085, 87% fewer** |
+| 22 | 8 s | 10 s | 2 s | 16,147 → **2,289, 86% fewer** |
+| 22c | 10 s | 11 s | 5 s | 14,697 → **2,661, 82% fewer** |
 
 The branch was slower than one turn on all three, and its output tokens
 stayed four fifths fewer. The time it loses is the maker's: its step is
@@ -464,6 +464,11 @@ one-turn call's mean, and every reading of its input waits for it. In the
 runs at 8 and 24 at once the branch's verdict also differed from one turn's
 twice: 19 read unresolved at 8, and 22c carried at 24, where one turn read
 it cooled.
+
+Kept from an earlier making, as in the fourth column, the step costs no
+wait: every reading starts at once, and one reading took 1.6 to 2.2 s one
+call after another. A kept step no longer shows how alike its makings are,
+which is why the runs above make it anew.
 
 Reach for it where someone will act on a decision without rereading what it
 rests on. Say the input as a claim someone holds, never as an open question:

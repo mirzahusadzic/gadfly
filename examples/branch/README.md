@@ -54,6 +54,12 @@ three parts are.
 | 22 | branch, 24 at once | carried | 2,289 | 10 s |
 | 22c | one turn, 24 at once | cooled | 14,697 | 10 s |
 | 22c | branch, 24 at once | carried | 2,661 | 11 s |
+| 19 | branch, step kept, one at a time | carried | 375 | 55 s |
+| 19 | branch, step kept, 24 at once | carried | 375 | 6 s |
+| 22 | branch, step kept, one at a time | carried | 255 | 54 s |
+| 22 | branch, step kept, 24 at once | carried | 255 | 2 s |
+| 22c | branch, step kept, one at a time | cooled | 279 | 59 s |
+| 22c | branch, step kept, 24 at once | cooled | 279 | 5 s |
 
 The branch read every example as one turn did, in both of its runs, on
 four fifths or more fewer output tokens. The rows at 8 and 24 calls at once
@@ -88,6 +94,20 @@ provider's limit of 25 requests in flight, `PREDICTIONS-p24.md` and
 `RESULTS-p24.md` do the same: the branch was slower than one turn on every
 frame, as predicted, and 22c through it read carried. A run with every call
 at once stopped on that limit, and `RESULTS-all-at-once.md` says how.
+
+The rows with the step kept read run A's own steps, from `kept-steps.json`,
+through the function maker in `kept_step.py`, on frames that differ from the
+branch frames only in the maker's line (`19-kept-step.json` and the like).
+`PREDICTIONS-kept-step.md` was written and hashed before them, and every
+prediction in `RESULTS-kept-step.md` held: one reading took 1.6 to 2.2 s,
+and with 24 at once the branch took 2 to 6 s, under one turn's 8 to 10 s.
+To run one:
+
+```sh
+uv run gadfly run examples/branch/19-kept-step.json \
+    --battery examples.branch.kept_step:battery_19 \
+    --calls 35 --output-tokens 4000 --parallel 24 --out kept.jsonl
+```
 
 ## Read the records back
 

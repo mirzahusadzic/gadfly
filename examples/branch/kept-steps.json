@@ -1,0 +1,14 @@
+{
+  "19": {
+    "Claim: Gadfly, a separate library, calls the router over the same Responses API that Codex uses, so Codex is not the router's only client.": "1) Gadfly must appear as a code name separate from Codex and router\n2) Separate library must mean its own package imported by others\n3) Router must mean request dispatcher and Responses API must mean shared interface\n4) Same as Codex must mean matching invocation pattern actually used\n5) Claim also needs lines showing both Codex and Gadfly as callers\n6) If false lines would show Codex alone or Gadfly absent or on other path\n7) Exclude prior belief in reusable services called generality bias",
+    "Claim: Tansy, a separate library, calls the router over the same Responses API that Orrin uses, so Orrin is not the router's only client.": "1. Tansy must appear as library apart from router and Orrin\n2. router must appear as shared target of calls\n3. Responses API must appear as same named interface for both\n4. Orrin must appear as another client besides Tansy\n5. lines must also show actual call from Tansy to router via that API\n6. if false lines would show no Tansy call or different API or Orrin alone\n7. prior belief in modular reuse making shared router seem likely kept out"
+  },
+  "22": {
+    "Claim: Kiran is a boy.": "1. Kiran must mean the speaker itself\n2. is must mean identity stated in lines\n3. a boy must mean male child status\n4. lines must show speaker called Kiran\n5. lines must show speaker called a boy\n6. if false lines show other name or status\n7. name sound bias kept out with no line",
+    "Claim: Deniz is a boy.": "1. Deniz must mean the speaker itself by name\n2. is must mean present self identity\n3. boy must mean male child person\n4. Lines must show speaker calls self Deniz\n5. Lines must show speaker calls self a boy\n6. If false lines would deny Deniz or deny boy\n7. Belief that Deniz sounds male must be set aside"
+  },
+  "22c": {
+    "Claim: the paper that the doll holds is about someone other than the doll.": "1. paper means text item mentioned by doll\n2. holds means in doll possession now\n3. about means describes or names\n4. someone other means a person apart from doll\n5. lines must show holder as one self and topic as another self\n6. if false lines would show holder and topic as same self\n7. set aside usual belief that held notes concern other people",
+    "Claim: the note that the doll holds is about someone other than the doll.": "1. note means words on paper in lines\n2. holds means doll has it in lines\n3. is about means text refers to\n4. someone other than the doll means person distinct from speaker\n5. lines must show both holding and distinct reference\n6. false would show reference to speaker itself\n7. keep out habit that notes are for others"
+  }
+}
